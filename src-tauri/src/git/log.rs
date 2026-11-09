@@ -1,5 +1,6 @@
 //! Lecture de l'historique : `git log` → commits parsés → lignes du graphe.
 
+use std::collections::HashSet;
 use std::path::Path;
 use std::time::Instant;
 
@@ -31,6 +32,9 @@ pub struct CommitRow {
     pub edges: Vec<[u16; 3]>,
     /// Ligne « modifications en cours », placée en tête quand le répertoire de travail n'est pas propre.
     pub wip: bool,
+    /// Vrai si le commit n'est atteignable depuis aucune branche distante : il n'a pas été poussé.
+    /// Toujours faux quand le dépôt ne suit aucune branche distante.
+    pub local_only: bool,
 }
 
 #[derive(Serialize)]
@@ -128,6 +132,28 @@ fn parse_log(raw: &str) -> Vec<Meta> {
     commits
 }
 
+/// Repère les commits absents de toute branche distante.
+/// `commits` est en ordre topologique : chaque commit précède ses parents.
+fn find_local_only(commits: &[Meta]) -> Vec<bool> {
+    let is_remote = |meta: &Meta| meta.refs.iter().any(|r| r.kind == "remote");
+    if !commits.iter().any(is_remote) {
+        // Aucune branche distante connue : la distinction n'a pas de sens.
+        return vec![false; commits.len()];
+    }
+    let mut pushed: HashSet<&str> = HashSet::new();
+    commits
+        .iter()
+        .map(|meta| {
+            let on_remote = is_remote(meta) || pushed.contains(meta.sha.as_str());
+            if on_remote {
+                // Tout ancêtre d'un commit poussé l'est aussi.
+                pushed.extend(meta.parents.iter().map(String::as_str));
+            }
+            !on_remote
+        })
+        .collect()
+}
+
 /// Compte les fichiers modifiés dans la sortie de `git status --porcelain -z`.
 fn count_changes(status: &[u8]) -> usize {
     let mut count = 0;
@@ -197,6 +223,7 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
     if let Some(n) = limit {
         metas.truncate(n);
     }
+    let local_only = find_local_only(&metas);
     let parse_ms = ms(start);
 
     let wip_files = step(&mut journal, root, &["status", "--porcelain", "-z", "--untracked-files=all"])
@@ -230,10 +257,11 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
                 lane: row.lane,
                 edges: row.edges,
                 wip: true,
+                local_only: false,
             });
         }
     }
-    for (meta, row) in metas.into_iter().zip(layout) {
+    for ((meta, row), local_only) in metas.into_iter().zip(layout).zip(local_only) {
         commits.push(CommitRow {
             sha: meta.sha,
             parents: meta.parents,
@@ -244,6 +272,7 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
             lane: row.lane,
             edges: row.edges,
             wip: false,
+            local_only,
         });
     }
 
@@ -298,6 +327,23 @@ mod tests {
         assert_eq!(commits[0].refs[0].kind, "head");
         assert!(commits[1].parents.is_empty());
         assert_eq!(commits[1].time, 1_720_000_000);
+    }
+
+    #[test]
+    fn unpushed_commits_are_local_only() {
+        // d (main, local) → c (origin/main) → a ; e (sujet, local) → a.
+        let raw = "d\x1fc\x1fA\x1f4\x1fHEAD -> refs/heads/main\x1fd\x1e\
+e\x1fa\x1fA\x1f3\x1frefs/heads/sujet\x1fe\x1e\
+c\x1fa\x1fA\x1f2\x1frefs/remotes/origin/main\x1fc\x1e\
+a\x1f\x1fA\x1f1\x1f\x1fa\x1e";
+        let commits = parse_log(raw);
+        assert_eq!(find_local_only(&commits), vec![true, true, false, false]);
+    }
+
+    #[test]
+    fn nothing_is_local_only_without_a_remote() {
+        let commits = parse_log("b\x1fa\x1fA\x1f2\x1fHEAD -> refs/heads/main\x1fb\x1e\na\x1f\x1fA\x1f1\x1f\x1fa\x1e");
+        assert_eq!(find_local_only(&commits), vec![false, false]);
     }
 
     #[test]

@@ -5,7 +5,7 @@
   import DiffView from './DiffView.svelte';
   import FileList from './FileList.svelte';
   import WorkPanel from './WorkPanel.svelte';
-  import type { CommandLog, CommitDetail, Diff, Done, FileChange, LogResult, Status } from './types';
+  import type { CommandLog, CommitDetail, CommitRow, Diff, Done, FileChange, LogResult, RefKind, Status } from './types';
 
   const ROW = 28; // hauteur d'une ligne
   const LANE = 16; // largeur d'une lane
@@ -65,6 +65,8 @@
   const rows = $derived(commits.slice(winStart, winEnd));
   const current = $derived(selected >= 0 ? (commits[selected] ?? null) : null);
   const lastCommand = $derived(journal.at(-1) ?? null);
+  // Sans branche distante connue, distinguer « local » de « distant » n'a pas de sens.
+  const hasRemote = $derived(commits.some((c) => c.refs.some((r) => r.kind === 'remote')));
   // Clé du commit sélectionné : ne change pas quand l'historique est simplement rechargé.
   const currentKey = $derived(current ? `${current.sha}|${current.parents[0] ?? ''}` : '');
   const wipCount = $derived(
@@ -142,6 +144,50 @@
     } finally {
       loading = false;
     }
+  }
+
+  // --- Étiquettes de références -------------------------------------------------------------
+
+  interface Label {
+    name: string;
+    kind: RefKind;
+    /** La référence existe sur cette machine, sur un dépôt distant, ou les deux. */
+    local: boolean;
+    remote: boolean;
+    title: string;
+  }
+
+  /** Nom d'une branche distante sans son dépôt : `origin/feat/x` → `feat/x`. */
+  const bare = (remote: string) => remote.slice(remote.indexOf('/') + 1);
+
+  /**
+   * Étiquettes d'un commit. Une branche locale et ses homologues distantes posées sur le même
+   * commit sont réunies en une seule étiquette, qui porte les deux icônes.
+   */
+  function labels(commit: CommitRow): Label[] {
+    const locals = new Set(commit.refs.filter((r) => r.kind === 'head' || r.kind === 'local').map((r) => r.name));
+    const out: Label[] = [];
+    for (const ref of commit.refs) {
+      if (ref.kind === 'head' || ref.kind === 'local') {
+        const twins = commit.refs.filter((r) => r.kind === 'remote' && bare(r.name) === ref.name).map((r) => r.name);
+        const current = ref.kind === 'head' ? 'Branche courante' : 'Branche locale';
+        out.push({
+          name: ref.name,
+          kind: ref.kind,
+          local: true,
+          remote: twins.length > 0,
+          title: twins.length ? `${current} ${ref.name}, au même commit que ${twins.join(', ')}` : `${current} ${ref.name}`,
+        });
+      } else if (ref.kind === 'remote') {
+        if (!locals.has(bare(ref.name))) {
+          out.push({ name: ref.name, kind: ref.kind, local: false, remote: true, title: `Branche distante ${ref.name}` });
+        }
+      } else {
+        const title = ref.kind === 'tag' ? `Tag ${ref.name}` : 'HEAD détaché';
+        out.push({ name: ref.name, kind: ref.kind, local: false, remote: false, title });
+      }
+    }
+    return out;
   }
 
   async function pick() {
@@ -564,6 +610,18 @@
   });
 </script>
 
+{#snippet icon(name: 'local' | 'remote' | 'tag')}
+  <svg class="ico" viewBox="0 0 16 16" aria-hidden="true">
+    {#if name === 'local'}
+      <rect x="3" y="3.5" width="10" height="7" rx="1" /><path d="M1.5 12.5h13" />
+    {:else if name === 'remote'}
+      <path d="M4.6 12.5a3 3 0 0 1-.5-5.96 4 4 0 0 1 7.72.9A2.55 2.55 0 0 1 11.4 12.5z" />
+    {:else}
+      <path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z" /><circle cx="5.6" cy="5.6" r="0.6" />
+    {/if}
+  </svg>
+{/snippet}
+
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="view" onkeydown={onViewKey}>
   <header class="toolbar">
@@ -679,8 +737,20 @@
                   <span class="ref k-wip">// WIP</span>
                   <span class="subject muted">{wipCount} fichier{wipCount > 1 ? 's' : ''} modifié{wipCount > 1 ? 's' : ''}</span>
                 {:else}
-                  {#each commit.refs as ref (ref.kind + ref.name)}
-                    <span class="ref k-{ref.kind}" style:--c="var(--l{commit.lane % 8})">{ref.kind === 'head' ? '✓ ' : ''}{ref.name}</span>
+                  {#if hasRemote}
+                    {#if commit.localOnly}
+                      <span class="where local" title="Commit local : pas encore poussé">{@render icon('local')}</span>
+                    {:else}
+                      <span class="where" title="Commit présent sur le dépôt distant">{@render icon('remote')}</span>
+                    {/if}
+                  {/if}
+                  {#each labels(commit) as label (label.kind + label.name)}
+                    <span class="ref k-{label.kind}" style:--c="var(--l{commit.lane % 8})" title={label.title}>
+                      {#if label.local}{@render icon('local')}{/if}
+                      {#if label.remote}{@render icon('remote')}{/if}
+                      {#if label.kind === 'tag'}{@render icon('tag')}{/if}
+                      <span class="ref-name">{label.kind === 'head' ? '✓ ' : ''}{label.name}</span>
+                    </span>
                   {/each}
                   <span class="subject">{commit.subject}</span>
                 {/if}
@@ -725,6 +795,10 @@
           <dd>{fullDateFmt.format(current.time * 1000)}</dd>
           <dt>Parent{current.parents.length > 1 ? 's' : ''}</dt>
           <dd class="mono">{current.parents.length ? current.parents.map((p) => p.slice(0, 7)).join(', ') : 'aucun (premier commit)'}</dd>
+          {#if hasRemote}
+            <dt>Emplacement</dt>
+            <dd>{current.localOnly ? 'Local uniquement, pas encore poussé' : 'Présent sur le dépôt distant'}</dd>
+          {/if}
           {#if current.refs.length}
             <dt>Références</dt>
             <dd>{current.refs.map((r) => r.name).join(', ')}</dd>
@@ -982,11 +1056,44 @@
   .muted {
     color: var(--muted);
   }
-  .ref {
+  .ico {
     flex: none;
-    max-width: 220px;
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  /* Emplacement du commit : discret quand il est poussé, visible quand il ne l'est pas. */
+  .where {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    color: var(--muted);
+    opacity: 0.45;
+  }
+  .where.local {
+    color: var(--warn);
+    opacity: 1;
+  }
+  .where .ico {
+    width: 14px;
+    height: 14px;
+  }
+  .ref-name {
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .ref {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 220px;
+    overflow: hidden;
     font-size: 11px;
     line-height: 16px;
     padding: 0 6px;

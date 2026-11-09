@@ -19,6 +19,8 @@ export interface CommitRow {
   /** Segments vers la ligne suivante : [colonne de départ, colonne d'arrivée, lane]. */
   edges: [number, number, number][];
   wip: boolean;
+  /** Commit absent de toute branche distante : pas encore poussé. */
+  localOnly: boolean;
 }
 
 export interface CommandLog {
