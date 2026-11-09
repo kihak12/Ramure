@@ -1,0 +1,146 @@
+/* Jetons de couleur de Ramure. Chaque composant passe par ces variables : pas de couleur en dur. */
+:root {
+  color-scheme: light;
+  --bg: #f7f9f8;
+  --panel: #ffffff;
+  --side: #ecf0ee;
+  --line: #d7dfdb;
+  --ink: #1a2520;
+  --muted: #66756e;
+  --sel: #e2ecf8;
+  --hover: #eff3f1;
+  --accent: #2f6fd0;
+  --on-accent: #ffffff;
+  --ok: #2c7a4b;
+  --warn: #9a5b0b;
+  --warn-soft: #fbf0dc;
+  --bad: #b42318;
+  --bad-soft: #fbe5e2;
+  --term-bg: #fbfcfb;
+  --term-ink: #1e2a24;
+  /* Couleurs des lanes du graphe */
+  --l0: #2f6fd0;
+  --l1: #c2410c;
+  --l2: #2b8c5b;
+  --l3: #8a4cc4;
+  --l4: #a87c00;
+  --l5: #c33a6f;
+  --l6: #11808a;
+  --l7: #66751c;
+
+  --f-ui: 'Segoe UI', Ubuntu, system-ui, sans-serif;
+  --f-mono: 'Cascadia Mono', 'Ubuntu Mono', Consolas, 'DejaVu Sans Mono', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #121916;
+    --panel: #161f1b;
+    --side: #0f1513;
+    --line: #25302b;
+    --ink: #dce5e0;
+    --muted: #879790;
+    --sel: #1d3245;
+    --hover: #1a2420;
+    --accent: #62a0f5;
+    --on-accent: #0b1622;
+    --ok: #5bc08a;
+    --warn: #f0a44b;
+    --warn-soft: #3a2b14;
+    --bad: #f07167;
+    --bad-soft: #3a1715;
+    --term-bg: #0b100e;
+    --term-ink: #cfe0d7;
+    --l0: #62a0f5;
+    --l1: #f2844e;
+    --l2: #55c68b;
+    --l3: #b98aeb;
+    --l4: #e8be45;
+    --l5: #ee79a2;
+    --l6: #3fc4cc;
+    --l7: #b0c25a;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  font-size: 13px;
+  line-height: 1.35;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.mono {
+  font-family: var(--f-mono);
+}
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) {
+  background: var(--hover);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(1.08);
+}
+
+.field {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 5px 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.label {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
