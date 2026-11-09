@@ -737,19 +737,12 @@
                   <span class="ref k-wip">// WIP</span>
                   <span class="subject muted">{wipCount} fichier{wipCount > 1 ? 's' : ''} modifié{wipCount > 1 ? 's' : ''}</span>
                 {:else}
-                  {#if hasRemote}
-                    {#if commit.localOnly}
-                      <span class="where local" title="Commit local : pas encore poussé">{@render icon('local')}</span>
-                    {:else}
-                      <span class="where" title="Commit présent sur le dépôt distant">{@render icon('remote')}</span>
-                    {/if}
-                  {/if}
                   {#each labels(commit) as label (label.kind + label.name)}
                     <span class="ref k-{label.kind}" style:--c="var(--l{commit.lane % 8})" title={label.title}>
+                      <span class="ref-name">{label.kind === 'head' ? '✓ ' : ''}{label.name}</span>
                       {#if label.local}{@render icon('local')}{/if}
                       {#if label.remote}{@render icon('remote')}{/if}
                       {#if label.kind === 'tag'}{@render icon('tag')}{/if}
-                      <span class="ref-name">{label.kind === 'head' ? '✓ ' : ''}{label.name}</span>
                     </span>
                   {/each}
                   <span class="subject">{commit.subject}</span>
@@ -1065,23 +1058,6 @@
     stroke-width: 1.4;
     stroke-linecap: round;
     stroke-linejoin: round;
-  }
-  /* Emplacement du commit : discret quand il est poussé, visible quand il ne l'est pas. */
-  .where {
-    flex: none;
-    display: grid;
-    place-items: center;
-    width: 16px;
-    color: var(--muted);
-    opacity: 0.45;
-  }
-  .where.local {
-    color: var(--warn);
-    opacity: 1;
-  }
-  .where .ico {
-    width: 14px;
-    height: 14px;
   }
   .ref-name {
     overflow: hidden;

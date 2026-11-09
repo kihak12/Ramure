@@ -11,9 +11,9 @@ Ubuntu ; J1 ajoute le travail quotidien sur un dépôt : indexer, commiter, sync
 - **Graphe** : ouvre un dépôt, lance `git log`, calcule les lanes en Rust et dessine le graphe
   sur un canvas. Seules les lignes visibles existent dans la page. La barre d'état affiche les
   temps (git, lanes, affichage) et la fluidité du dernier défilement.
-- **Local ou distant** : chaque commit porte une icône, ordinateur s'il n'a pas encore été
-  poussé, nuage s'il est sur le dépôt distant. Les étiquettes de branches portent les mêmes
-  icônes ; une branche locale et sa branche distante au même commit partagent une étiquette.
+- **Local ou distant** : l'étiquette d'une branche porte une icône, ordinateur pour le dernier
+  commit local, nuage pour le dernier commit du dépôt distant. Quand les deux sont au même
+  commit, ils partagent une étiquette qui porte les deux icônes.
 - **Modifications en cours** : la ligne « WIP » en tête du graphe ouvre le panneau d'index.
   Fichiers non indexés et indexés, indexation et retrait fichier par fichier ou en bloc,
   abandon des modifications (avec confirmation), message et commit (Ctrl + Entrée).
