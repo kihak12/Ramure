@@ -38,3 +38,52 @@ export interface LogResult {
   timings: { gitMs: number; parseMs: number; layoutMs: number };
   commands: CommandLog[];
 }
+
+// --- Répertoire de travail et index (src-tauri/src/git/work.rs) ---------------------------
+
+export type ChangeKind =
+  | 'added'
+  | 'modified'
+  | 'deleted'
+  | 'renamed'
+  | 'copied'
+  | 'typechange'
+  | 'untracked'
+  | 'conflict';
+
+export interface FileChange {
+  path: string;
+  oldPath: string | null;
+  kind: ChangeKind;
+}
+
+export interface Status {
+  head: string | null;
+  branch: string | null;
+  upstream: string | null;
+  ahead: number;
+  behind: number;
+  staged: FileChange[];
+  unstaged: FileChange[];
+}
+
+export interface Diff {
+  text: string;
+  truncated: boolean;
+}
+
+export interface CommitDetail {
+  message: string;
+  files: FileChange[];
+}
+
+/** Enveloppe des commandes git : la donnée, et les commandes lancées pour l'obtenir. */
+export interface Done<T> {
+  data: T;
+  commands: CommandLog[];
+}
+
+export interface Failed {
+  message: string;
+  commands: CommandLog[];
+}

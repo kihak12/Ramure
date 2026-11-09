@@ -21,6 +21,15 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             git::git_log,
+            git::work::git_status,
+            git::work::git_diff_file,
+            git::work::git_commit_detail,
+            git::work::git_diff_commit,
+            git::work::git_stage,
+            git::work::git_unstage,
+            git::work::git_discard,
+            git::work::git_commit,
+            git::work::git_sync,
             ssh::ssh_defaults,
             ssh::ssh_connect,
             ssh::ssh_write,

@@ -1,8 +1,11 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { open } from '@tauri-apps/plugin-dialog';
-  import { onMount, tick } from 'svelte';
-  import type { LogResult } from './types';
+  import { ask, open } from '@tauri-apps/plugin-dialog';
+  import { onMount, tick, untrack } from 'svelte';
+  import DiffView from './DiffView.svelte';
+  import FileList from './FileList.svelte';
+  import WorkPanel from './WorkPanel.svelte';
+  import type { CommandLog, CommitDetail, Diff, Done, FileChange, LogResult, Status } from './types';
 
   const ROW = 28; // hauteur d'une ligne
   const LANE = 16; // largeur d'une lane
@@ -11,6 +14,15 @@
   const STEP = 12; // la fenêtre de rendu ne se déplace que par paliers de 12 lignes
   const MAX_GRAPH = 340; // largeur maximale de la colonne du graphe
   const STORAGE_KEY = 'ramure.repo';
+  const JOURNAL_MAX = 300; // commandes conservées dans le journal
+
+  type Busy = '' | 'fetch' | 'pull' | 'push' | 'commit' | 'index';
+  interface OpenFile {
+    /** `u:chemin`, `s:chemin` (répertoire de travail) ou `c:chemin` (commit). */
+    key: string;
+    title: string;
+    subtitle: string;
+  }
 
   // `$state.raw` : 50 000 lignes ne doivent pas être enveloppées dans des proxys réactifs.
   let result = $state.raw<LogResult | null>(null);
@@ -26,6 +38,18 @@
   let dark = $state(false);
   let copied = $state(false);
 
+  let journal = $state.raw<CommandLog[]>([]);
+  let status = $state.raw<Status | null>(null);
+  let busy = $state<Busy>('');
+  let notice = $state<{ ok: boolean; title: string; body: string } | null>(null);
+  let message = $state('');
+  let detail = $state.raw<CommitDetail | null>(null);
+  let detailError = $state('');
+  let openFile = $state<OpenFile | null>(null);
+  let diff = $state.raw<Diff | null>(null);
+  let diffLoading = $state(false);
+  let diffError = $state('');
+
   let scroller = $state<HTMLDivElement>();
   let canvas = $state<HTMLCanvasElement>();
 
@@ -40,26 +64,68 @@
   );
   const rows = $derived(commits.slice(winStart, winEnd));
   const current = $derived(selected >= 0 ? (commits[selected] ?? null) : null);
-  const lastCommand = $derived(result?.commands.at(-1) ?? null);
+  const lastCommand = $derived(journal.at(-1) ?? null);
+  // Clé du commit sélectionné : ne change pas quand l'historique est simplement rechargé.
+  const currentKey = $derived(current ? `${current.sha}|${current.parents[0] ?? ''}` : '');
+  const wipCount = $derived(
+    status ? new Set([...status.staged, ...status.unstaged].map((f) => f.path)).size : (result?.wipFiles ?? 0),
+  );
+  const locked = $derived(loading || busy !== '');
 
   const dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   const fullDateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full', timeStyle: 'short' });
   const numFmt = new Intl.NumberFormat('fr-FR');
   const ms = (n: number) => `${numFmt.format(Math.round(n))} ms`;
 
-  async function load(path: string) {
+  function record(commands: CommandLog[]) {
+    if (commands.length) journal = [...journal, ...commands].slice(-JOURNAL_MAX);
+  }
+
+  /** Appelle une commande git du cœur Rust et verse ses commandes au journal, réussite ou non. */
+  async function git<T>(command: string, args: Record<string, unknown>): Promise<T> {
+    try {
+      const reply = await invoke<Done<T>>(command, args);
+      record(reply.commands);
+      return reply.data;
+    } catch (e) {
+      if (e && typeof e === 'object' && 'message' in e) {
+        const failed = e as { message: string; commands?: CommandLog[] };
+        record(failed.commands ?? []);
+        throw new Error(failed.message);
+      }
+      throw new Error(typeof e === 'string' ? e : String(e));
+    }
+  }
+
+  const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+  /** `keep` : conserve la sélection et la position, pour un rechargement après une opération. */
+  async function load(path: string, keep = false) {
     if (!path || loading) return;
     loading = true;
     error = '';
+    const previous = keep ? current : null;
     const t0 = performance.now();
     try {
       const data = await invoke<LogResult>('git_log', { repo: path, limit: limit > 0 ? limit : null });
       const t1 = performance.now();
+      if (data.repo !== result?.repo) {
+        status = null;
+        message = '';
+        notice = null;
+      }
       result = data;
-      selected = -1;
+      record(data.commands);
+      if (previous?.wip) selected = data.commits[0]?.wip ? 0 : -1;
+      else if (previous) selected = data.commits.findIndex((c) => c.sha === previous.sha);
+      else selected = -1;
       frames = null;
-      scrollTop = 0;
-      if (scroller) scroller.scrollTop = 0;
+      if (!keep) {
+        scrollTop = 0;
+        if (scroller) scroller.scrollTop = 0;
+      }
+      logHead = undefined;
+      void refreshStatus(true);
       try {
         localStorage.setItem(STORAGE_KEY, data.repo);
       } catch {
@@ -85,6 +151,235 @@
 
   function reload() {
     if (result) void load(result.repo);
+  }
+
+  // --- Répertoire de travail, index et commit ---------------------------------------------
+
+  // Commit courant au moment du dernier chargement de l'historique ; `undefined` tant qu'il est inconnu.
+  let logHead: string | null | undefined;
+
+  /** Enregistre un nouvel état ; recharge l'historique s'il ne lui correspond plus. */
+  function applyStatus(next: Status, fromLoad = false) {
+    status = next;
+    if (fromLoad || logHead === undefined) {
+      logHead = next.head;
+      return;
+    }
+    const dirty = next.staged.length + next.unstaged.length > 0;
+    if (result && (next.head !== logHead || dirty !== !!commits[0]?.wip)) void load(result.repo, true);
+  }
+
+  async function refreshStatus(fromLoad = false) {
+    const repo = result?.repo;
+    if (!repo) return;
+    try {
+      const next = await git<Status>('git_status', { repo });
+      if (repo === result?.repo) applyStatus(next, fromLoad);
+    } catch (e) {
+      if (!fromLoad) notify(false, "Impossible de lire l'état du dépôt", errorText(e));
+    }
+  }
+
+  let noticeTimer = 0;
+  function notify(ok: boolean, title: string, body = '') {
+    clearTimeout(noticeTimer);
+    // Les sorties bavardes (push, fetch) sont réduites à leurs dernières lignes.
+    notice = { ok, title, body: ok ? body.split('\n').slice(-6).join('\n') : body };
+    if (ok) noticeTimer = window.setTimeout(() => (notice = null), 5000);
+  }
+
+  /** Lance une commande qui modifie l'index et renvoie le nouvel état. */
+  async function mutate(command: string, args: Record<string, unknown>) {
+    if (!result || busy) return;
+    busy = 'index';
+    try {
+      applyStatus(await git<Status>(command, { repo: result.repo, ...args }));
+      syncOpenDiff();
+    } catch (e) {
+      notify(false, "L'opération a échoué", errorText(e));
+      void refreshStatus();
+    } finally {
+      busy = '';
+    }
+  }
+
+  const stage = (files: FileChange[]) => mutate('git_stage', { paths: files.map((f) => f.path) });
+  // Retirer un renommage de l'index concerne ses deux chemins.
+  const unstage = (files: FileChange[]) =>
+    mutate('git_unstage', { paths: files.flatMap((f) => (f.oldPath ? [f.oldPath, f.path] : [f.path])) });
+
+  async function discard(files: FileChange[]) {
+    if (!files.length) return;
+    const what = files.length === 1 ? `« ${files[0].path} »` : `${files.length} fichiers`;
+    const fresh = files.filter((f) => f.kind === 'untracked');
+    const question =
+      fresh.length === files.length
+        ? `Supprimer ${what} ? ${files.length === 1 ? 'Ce fichier est nouveau' : 'Ces fichiers sont nouveaux'} : git ne pourra pas le${files.length === 1 ? '' : 's'} restaurer.`
+        : `Abandonner les modifications non indexées de ${what} ? Elles seront perdues définitivement.`;
+    const confirmed = await ask(question, { title: 'Abandonner les modifications', kind: 'warning', okLabel: 'Abandonner', cancelLabel: 'Annuler' });
+    if (!confirmed) return;
+    await mutate('git_discard', {
+      tracked: files.filter((f) => f.kind !== 'untracked').map((f) => f.path),
+      untracked: fresh.map((f) => f.path),
+    });
+  }
+
+  async function commit() {
+    if (!result || busy) return;
+    busy = 'commit';
+    try {
+      await git<null>('git_commit', { repo: result.repo, message });
+      message = '';
+      closeDiff();
+      notify(true, 'Commit créé');
+    } catch (e) {
+      notify(false, 'Le commit a échoué', errorText(e));
+    } finally {
+      busy = '';
+    }
+    await load(result.repo, true);
+    // La ligne WIP a disparu : on montre le commit qui vient d'être créé.
+    if (selected < 0 && commits.length) selected = 0;
+  }
+
+  const SYNC = {
+    fetch: { done: 'Récupération terminée', failed: 'La récupération a échoué' },
+    pull: { done: 'Branche mise à jour', failed: 'Le tirage a échoué' },
+    push: { done: 'Branche poussée', failed: 'Le push a échoué' },
+  } as const;
+
+  async function sync(action: keyof typeof SYNC) {
+    if (!result || busy) return;
+    busy = action;
+    try {
+      const output = await git<string>('git_sync', { repo: result.repo, action });
+      notify(true, SYNC[action].done, output);
+    } catch (e) {
+      notify(false, SYNC[action].failed, errorText(e));
+    } finally {
+      busy = '';
+    }
+    await load(result.repo, true);
+  }
+
+  // --- Diff -------------------------------------------------------------------------------
+
+  let diffToken = 0;
+
+  async function showDiff(file: OpenFile, fetch: () => Promise<Diff>) {
+    const token = ++diffToken;
+    openFile = file;
+    diffLoading = true;
+    diffError = '';
+    try {
+      const data = await fetch();
+      if (token === diffToken) diff = data;
+    } catch (e) {
+      if (token === diffToken) {
+        diff = null;
+        diffError = errorText(e);
+      }
+    } finally {
+      if (token === diffToken) diffLoading = false;
+    }
+  }
+
+  function closeDiff() {
+    diffToken++;
+    openFile = null;
+    diff = null;
+    diffError = '';
+    diffLoading = false;
+  }
+
+  function openWorkDiff(file: FileChange, staged: boolean) {
+    const repo = result?.repo;
+    if (!repo) return;
+    diff = null;
+    void showDiff(
+      {
+        key: `${staged ? 's' : 'u'}:${file.path}`,
+        title: file.path,
+        subtitle: `${staged ? 'Indexé' : 'Non indexé'}${file.oldPath ? ` · renommé depuis ${file.oldPath}` : ''}`,
+      },
+      () =>
+        git<Diff>('git_diff_file', {
+          repo,
+          path: file.path,
+          oldPath: file.oldPath,
+          staged,
+          untracked: file.kind === 'untracked',
+        }),
+    );
+  }
+
+  function openCommitDiff(file: FileChange) {
+    const repo = result?.repo;
+    const commit = current;
+    if (!repo || !commit || commit.wip) return;
+    diff = null;
+    void showDiff(
+      {
+        key: `c:${file.path}`,
+        title: file.path,
+        subtitle: `${commit.sha.slice(0, 7)} · ${commit.subject}${file.oldPath ? ` · renommé depuis ${file.oldPath}` : ''}`,
+      },
+      () =>
+        git<Diff>('git_diff_commit', {
+          repo,
+          sha: commit.sha,
+          parent: commit.parents[0] ?? null,
+          path: file.path,
+          oldPath: file.oldPath,
+        }),
+    );
+  }
+
+  /** Après une modification de l'index : le diff ouvert suit son fichier, ou se ferme s'il a quitté sa liste. */
+  function syncOpenDiff() {
+    if (!openFile || !status || openFile.key.startsWith('c:')) return;
+    const staged = openFile.key.startsWith('s:');
+    const path = openFile.key.slice(2);
+    const file = (staged ? status.staged : status.unstaged).find((f) => f.path === path);
+    if (file) openWorkDiff(file, staged);
+    else closeDiff();
+  }
+
+  // Détail du commit sélectionné, chargé après une courte pause pour ne pas lancer git
+  // à chaque ligne survolée au clavier.
+  let detailTimer = 0;
+  $effect(() => {
+    void currentKey;
+    untrack(() => {
+      clearTimeout(detailTimer);
+      closeDiff();
+      detail = null;
+      detailError = '';
+      const commit = current;
+      const repo = result?.repo;
+      if (!commit || commit.wip || !repo) return;
+      const key = currentKey;
+      detailTimer = window.setTimeout(async () => {
+        try {
+          const data = await git<CommitDetail>('git_commit_detail', {
+            repo,
+            sha: commit.sha,
+            parent: commit.parents[0] ?? null,
+          });
+          if (key === currentKey) detail = data;
+        } catch (e) {
+          if (key === currentKey) detailError = errorText(e);
+        }
+      }, 120);
+    });
+  });
+
+  function onViewKey(e: KeyboardEvent) {
+    if (e.key === 'Escape' && openFile) {
+      e.preventDefault();
+      closeDiff();
+      scroller?.focus();
+    }
   }
 
   // --- Dessin du graphe -------------------------------------------------------------------
@@ -244,6 +539,12 @@
     });
     if (scroller) observer.observe(scroller);
 
+    // Retour dans la fenêtre : les fichiers ont pu changer dans l'éditeur ou le terminal.
+    const onFocus = () => {
+      if (result && !loading && !busy) void refreshStatus();
+    };
+    window.addEventListener('focus', onFocus);
+
     let saved = '';
     try {
       saved = localStorage.getItem(STORAGE_KEY) ?? '';
@@ -255,47 +556,72 @@
     return () => {
       media.removeEventListener('change', onTheme);
       observer.disconnect();
+      window.removeEventListener('focus', onFocus);
+      clearTimeout(noticeTimer);
+      clearTimeout(detailTimer);
       if (raf) cancelAnimationFrame(raf);
     };
   });
 </script>
 
-<div class="view">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="view" onkeydown={onViewKey}>
   <header class="toolbar">
     <div class="repo">
       <b>{result?.name ?? 'Aucun dépôt'}</b>
       <small class="mono">{result ? (result.branch ?? 'HEAD détaché') : 'ouvre un dossier pour commencer'}</small>
     </div>
-    <button class="btn primary" type="button" onclick={pick} disabled={loading}>Ouvrir un dépôt…</button>
-    <button class="btn" type="button" onclick={reload} disabled={!result || loading}>Recharger</button>
+    <button class="btn" type="button" onclick={pick} disabled={locked}>Ouvrir…</button>
+    <button class="btn" type="button" onclick={reload} disabled={!result || locked}>Recharger</button>
+    <div class="sync" role="group" aria-label="Synchronisation">
+      <button class="btn" type="button" onclick={() => sync('fetch')} disabled={!result || locked} title="git fetch --all">
+        {busy === 'fetch' ? 'Récupération…' : 'Récupérer'}
+      </button>
+      <button
+        class="btn"
+        type="button"
+        onclick={() => sync('pull')}
+        disabled={!status?.upstream || locked}
+        title={status?.upstream ? `git pull depuis ${status.upstream}` : "Cette branche n'a pas de branche distante associée"}
+      >
+        {busy === 'pull' ? 'Tirage…' : 'Tirer'}{#if status?.behind}<span class="pill">↓ {status.behind}</span>{/if}
+      </button>
+      <button
+        class="btn"
+        type="button"
+        onclick={() => sync('push')}
+        disabled={!status?.branch || locked}
+        title={status?.upstream ? `git push vers ${status.upstream}` : 'Publie la branche et la relie à son homologue distante'}
+      >
+        {busy === 'push' ? 'Envoi…' : status && status.branch && !status.upstream ? 'Publier' : 'Pousser'}{#if status?.ahead}<span class="pill">↑ {status.ahead}</span>{/if}
+      </button>
+    </div>
     <label class="limit">
-      <span class="label">Commits chargés</span>
-      <select class="field" bind:value={limit} onchange={reload} disabled={loading}>
+      <span class="label">Commits</span>
+      <select class="field" bind:value={limit} onchange={reload} disabled={locked}>
         <option value={1000}>1 000</option>
         <option value={10000}>10 000</option>
         <option value={50000}>50 000</option>
         <option value={0}>Tous</option>
       </select>
     </label>
-    <div class="stats" aria-live="polite">
-      {#if loading}
-        <span>Chargement…</span>
-      {:else if result}
-        <span><b>{numFmt.format(commits.length - (result.wipFiles > 0 ? 1 : 0))}</b> commits{result.truncated ? ' (historique tronqué)' : ''}</span>
-        <span>git {ms(result.timings.gitMs)}</span>
-        <span>lanes {ms(result.timings.layoutMs)}</span>
-        <span>affiché en <b>{ms(perf.paint)}</b></span>
-        {#if frames}
-          <span title="Temps moyen entre deux images pendant le dernier défilement, et pire image (99e centile). 16,7 ms = 60 images par seconde.">
-            défilement <b>{frames.avg.toFixed(1)} ms</b>/image, pire {frames.worst.toFixed(0)} ms
-          </span>
-        {/if}
-      {/if}
-    </div>
   </header>
+
+  {#if notice}
+    <div class="notice" class:bad={!notice.ok} role={notice.ok ? 'status' : 'alert'}>
+      <div>
+        <b>{notice.title}</b>
+        {#if notice.body}<pre class="mono">{notice.body}</pre>{/if}
+      </div>
+      <button class="btn" type="button" onclick={() => (notice = null)}>Fermer</button>
+    </div>
+  {/if}
 
   <div class="body">
     <div class="graph">
+      {#if openFile}
+        <DiffView title={openFile.title} subtitle={openFile.subtitle} {diff} loading={diffLoading} error={diffError} onclose={closeDiff} />
+      {/if}
       <div class="head" style:padding-left="{graphW}px">
         <span>Message</span><span>Auteur</span><span>Date</span><span>SHA</span>
       </div>
@@ -351,7 +677,7 @@
               <span class="msg">
                 {#if commit.wip}
                   <span class="ref k-wip">// WIP</span>
-                  <span class="subject muted">{result?.wipFiles} fichier{(result?.wipFiles ?? 0) > 1 ? 's' : ''} modifié{(result?.wipFiles ?? 0) > 1 ? 's' : ''}</span>
+                  <span class="subject muted">{wipCount} fichier{wipCount > 1 ? 's' : ''} modifié{wipCount > 1 ? 's' : ''}</span>
                 {:else}
                   {#each commit.refs as ref (ref.kind + ref.name)}
                     <span class="ref k-{ref.kind}" style:--c="var(--l{commit.lane % 8})">{ref.kind === 'head' ? '✓ ' : ''}{ref.name}</span>
@@ -368,14 +694,28 @@
       </div>
     </div>
 
-    <aside class="detail">
+    <aside class="detail" class:working={current?.wip}>
       {#if current?.wip}
-        <span class="label">Modifications en cours</span>
-        <p class="title">{result?.wipFiles} fichier{(result?.wipFiles ?? 0) > 1 ? 's' : ''} modifié{(result?.wipFiles ?? 0) > 1 ? 's' : ''} sur {result?.branch ?? 'HEAD'}</p>
-        <p class="muted">L'index, le diff et le commit arrivent au jalon J1.</p>
+        {#if status}
+          <WorkPanel
+            {status}
+            busy={locked}
+            active={openFile && !openFile.key.startsWith('c:') ? openFile.key : null}
+            bind:message
+            onopen={openWorkDiff}
+            onstage={stage}
+            onunstage={unstage}
+            ondiscard={discard}
+            oncommit={commit}
+          />
+        {:else}
+          <p class="muted">Lecture de l'état du dépôt…</p>
+        {/if}
       {:else if current}
+        {@const body = detail ? detail.message.split('\n').slice(1).join('\n').trim() : ''}
         <span class="label">Commit</span>
         <p class="title">{current.subject}</p>
+        {#if body}<p class="message">{body}</p>{/if}
         <dl>
           <dt>SHA</dt>
           <dd class="mono sha-full">{current.sha}</dd>
@@ -391,23 +731,59 @@
           {/if}
         </dl>
         <button class="btn" type="button" onclick={() => copySha(current.sha)}>{copied ? 'SHA copié' : 'Copier le SHA'}</button>
-        <p class="muted">Fichiers modifiés et diff : jalon J1.</p>
+        {#if detailError}
+          <p class="err">{detailError}</p>
+        {:else if detail}
+          <span class="label">
+            Fichiers modifiés · {detail.files.length}{current.parents.length > 1 ? ' (par rapport au premier parent)' : ''}
+          </span>
+          {#if detail.files.length}
+            <div class="files">
+              <FileList files={detail.files} active={openFile?.key.startsWith('c:') ? openFile.key.slice(2) : null} onopen={openCommitDiff} />
+            </div>
+          {:else}
+            <p class="muted">Ce commit ne modifie aucun fichier.</p>
+          {/if}
+        {:else}
+          <p class="muted">Chargement des fichiers…</p>
+        {/if}
       {:else}
         <span class="label">Détail</span>
         <p class="muted">Clique un commit, ou utilise les flèches du clavier dans la liste.</p>
+        {#if wipCount > 0}
+          <button class="btn" type="button" onclick={() => { selected = 0; reveal(0); }}>
+            Voir les {wipCount} fichier{wipCount > 1 ? 's' : ''} modifié{wipCount > 1 ? 's' : ''}
+          </button>
+        {/if}
       {/if}
     </aside>
   </div>
 
   <footer class="status">
     <span class="mono branch">{result?.branch ? `⑂ ${result.branch}` : ''}</span>
-    <button class="journal-btn mono" type="button" aria-expanded={showJournal} onclick={() => (showJournal = !showJournal)} disabled={!result}>
+    <button class="journal-btn mono" type="button" aria-expanded={showJournal} onclick={() => (showJournal = !showJournal)} disabled={!journal.length}>
       {lastCommand ? `$ ${lastCommand.command}` : 'Journal des commandes'}
     </button>
+    <div class="stats" aria-live="polite">
+      {#if loading}
+        <span>Chargement…</span>
+      {:else if result}
+        {@const count = commits.length - (commits[0]?.wip ? 1 : 0)}
+        <span><b>{numFmt.format(count)}</b> commit{count > 1 ? 's' : ''}{result.truncated ? ' (tronqué)' : ''}</span>
+        <span>git {ms(result.timings.gitMs)}</span>
+        <span>lanes {ms(result.timings.layoutMs)}</span>
+        <span>affiché en <b>{ms(perf.paint)}</b></span>
+        {#if frames}
+          <span title="Temps moyen entre deux images pendant le dernier défilement, et pire image (99e centile). 16,7 ms = 60 images par seconde.">
+            défilement <b>{frames.avg.toFixed(1)} ms</b>/image, pire {frames.worst.toFixed(0)} ms
+          </span>
+        {/if}
+      {/if}
+    </div>
     {#if showJournal && result}
       <div class="journal">
         <span class="label">Journal des commandes</span>
-        {#each result.commands as entry, i (i)}
+        {#each [...journal].reverse() as entry, i (i)}
           <div class="entry mono" class:failed={!entry.ok}>
             <span>{ms(entry.ms)}</span><span>$ {entry.command}</span>
           </div>
@@ -420,7 +796,7 @@
 <style>
   .view {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) 26px;
+    grid-template-rows: auto auto minmax(0, 1fr) 26px;
     height: 100%;
   }
   .toolbar {
@@ -459,15 +835,52 @@
   .limit select {
     width: auto;
   }
+  .sync {
+    display: flex;
+    gap: 6px;
+    padding-left: 10px;
+    border-left: 1px solid var(--line);
+  }
+  .pill {
+    margin-left: 6px;
+    padding: 0 5px;
+    border-radius: 8px;
+    background: var(--sel);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .notice {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--sel);
+    min-width: 0;
+  }
+  .notice.bad {
+    background: var(--bad-soft);
+  }
+  .notice div {
+    min-width: 0;
+  }
+  .notice pre {
+    margin: 4px 0 0;
+    font-size: 11.5px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 140px;
+    overflow: auto;
+  }
   .stats {
     margin-left: auto;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 2px 14px;
+    gap: 14px;
     color: var(--muted);
-    font-size: 12px;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
     min-width: 0;
   }
   .stats b {
@@ -475,10 +888,17 @@
     font-weight: 600;
   }
 
+  .limit {
+    margin-left: auto;
+  }
   .body {
+    grid-row: 3;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 330px;
     min-height: 0;
+  }
+  .status {
+    grid-row: 4;
   }
   .graph {
     display: grid;
@@ -631,6 +1051,24 @@
   }
   .detail p {
     margin: 0;
+  }
+  .detail.working {
+    align-items: stretch;
+    overflow: hidden;
+  }
+  .message {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--muted);
+  }
+  .files {
+    width: calc(100% + 12px);
+    margin: -4px -6px 0;
+  }
+  .err {
+    color: var(--bad);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
   .title {
     font-size: 14px;

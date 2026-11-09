@@ -3,21 +3,35 @@
 Client Git graphique et client SSH/SFTP dans la même fenêtre, pour Windows et Ubuntu.
 Libre (MIT), local, sans compte.
 
-**État : prototype J0.** Il sert à valider deux choses sur les deux systèmes : le graphe reste
-fluide sur un gros historique, et le terminal SSH répond sans latence.
+**État : jalon J1.** Le prototype J0 a validé le graphe et le terminal SSH sur Windows et
+Ubuntu ; J1 ajoute le travail quotidien sur un dépôt : indexer, commiter, synchroniser.
 
-## Ce que fait le prototype
+## Ce que fait Ramure aujourd'hui
 
 - **Graphe** : ouvre un dépôt, lance `git log`, calcule les lanes en Rust et dessine le graphe
-  sur un canvas. Seules les lignes visibles existent dans la page. La barre d'outils affiche les
+  sur un canvas. Seules les lignes visibles existent dans la page. La barre d'état affiche les
   temps (git, lanes, affichage) et la fluidité du dernier défilement.
+- **Modifications en cours** : la ligne « WIP » en tête du graphe ouvre le panneau d'index.
+  Fichiers non indexés et indexés, indexation et retrait fichier par fichier ou en bloc,
+  abandon des modifications (avec confirmation), message et commit (Ctrl + Entrée).
+- **Diff** : un clic sur un fichier affiche son diff, pour le répertoire de travail, l'index
+  ou n'importe quel commit de l'historique.
+- **Détail d'un commit** : message complet et fichiers modifiés.
+- **Synchronisation** : Récupérer (`git fetch --all`), Tirer (`git pull`, selon ta configuration
+  git), Pousser (`git push`, ou publication de la branche si elle n'a pas encore d'amont), avec
+  le nombre de commits en avance et en retard.
 - **Terminal SSH** : connexion via russh, vérification de l'empreinte contre `known_hosts`,
   authentification par agent SSH, fichier de clé ou mot de passe, commande au démarrage,
   terminal xterm.js. L'en-tête affiche le délai d'écho.
 - **Journal des commandes** : chaque commande git lancée, avec sa durée.
 
-Pas encore là : index et commit, branches, stash, SFTP, tunnels, carnet d'hôtes. Voir la
-feuille de route dans la spécification.
+L'authentification des dépôts distants passe par ce que git utilise déjà : assistant
+d'identifiants (Git Credential Manager) ou agent SSH. Ramure ne demande pas encore lui-même
+de mot de passe ou de phrase secrète.
+
+Pas encore là : indexation par bloc ou par ligne, modification du dernier commit, branches,
+stash, cherry-pick, résolution de conflits, SFTP, tunnels, carnet d'hôtes. Voir la feuille de
+route dans la spécification.
 
 ## Prérequis
 

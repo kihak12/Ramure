@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use serde::Serialize;
 
-use super::{graph, run};
+use super::{CommandLog, graph, ms, step, text};
 
 /// Champs séparés par 0x1f, commits terminés par 0x1e : aucun de ces octets n'apparaît dans un sujet.
 const FORMAT: &str = "--format=%H%x1f%P%x1f%an%x1f%at%x1f%D%x1f%s%x1e";
@@ -31,14 +31,6 @@ pub struct CommitRow {
     pub edges: Vec<[u16; 3]>,
     /// Ligne « modifications en cours », placée en tête quand le répertoire de travail n'est pas propre.
     pub wip: bool,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CommandLog {
-    pub command: String,
-    pub ms: f64,
-    pub ok: bool,
 }
 
 #[derive(Serialize)]
@@ -74,26 +66,6 @@ struct Meta {
     time: i64,
     refs: Vec<RefLabel>,
     subject: String,
-}
-
-fn ms(since: Instant) -> f64 {
-    since.elapsed().as_secs_f64() * 1000.0
-}
-
-/// Lance git et consigne la commande dans le journal.
-fn step(journal: &mut Vec<CommandLog>, dir: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
-    let start = Instant::now();
-    let result = run(dir, args);
-    journal.push(CommandLog {
-        command: format!("git {}", args.join(" ")),
-        ms: ms(start),
-        ok: result.is_ok(),
-    });
-    result
-}
-
-fn text(bytes: &[u8]) -> String {
-    String::from_utf8_lossy(bytes).trim().to_string()
 }
 
 /// Décorations au format `--decorate=full` :
@@ -227,7 +199,7 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
     }
     let parse_ms = ms(start);
 
-    let wip_files = step(&mut journal, root, &["status", "--porcelain", "-z"])
+    let wip_files = step(&mut journal, root, &["status", "--porcelain", "-z", "--untracked-files=all"])
         .map(|out| count_changes(&out))
         .unwrap_or(0);
     let wip_parent = head.as_deref().filter(|_| wip_files > 0);
