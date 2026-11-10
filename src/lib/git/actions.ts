@@ -2,12 +2,10 @@
 // nécessaires (nom, confirmation), puis délèguent au dépôt.
 
 import { dialogs } from '../ui/dialogs.svelte';
-import { keys } from '../ui/keys.svelte';
 import type { MenuItem } from '../ui/menu.svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { refName } from './drag.svelte';
 import { bare, type Label } from './labels';
-import type { Settings } from './prefs.svelte';
 import type { Repo } from './repo.svelte';
 import type { CommitRow, FileChange, Relation, ResetMode, Stash } from './types';
 
@@ -285,70 +283,6 @@ export async function discardFiles(repo: Repo, files: FileChange[]) {
     danger: true,
   });
   if (confirmed) await repo.discard(files);
-}
-
-export async function editSettings(repo: Repo) {
-  const current = repo.settings;
-  const answers = await dialogs.ask({
-    title: 'Réglages',
-    fields: [
-      {
-        name: 'autoFetch',
-        label: 'Fetch automatique, en minutes',
-        type: 'number',
-        value: current.autoFetch,
-        min: 0,
-        max: 60,
-        hint: 'De 1 à 60 minutes ; 0 le désactive.',
-      },
-      {
-        name: 'pullMode',
-        label: 'Tirer (pull)',
-        type: 'select',
-        value: current.pullMode,
-        options: [
-          { value: 'ff-only', label: 'Avance rapide seulement' },
-          { value: 'rebase', label: 'Rebaser mes commits' },
-          { value: 'merge', label: 'Fusionner la branche distante' },
-        ],
-        hint: 'En avance rapide, le pull est refusé si ta branche et la branche distante ont divergé.',
-      },
-      {
-        name: 'graphStyle',
-        label: 'Style du graphe',
-        type: 'select',
-        value: current.graphStyle,
-        options: [
-          { value: 'ribbon', label: 'Ruban : pastilles d’auteur et messages en capsule' },
-          { value: 'classic', label: 'Classique : points et courbes, plus compact' },
-        ],
-      },
-      {
-        name: 'limit',
-        label: 'Commits chargés dans le graphe',
-        type: 'select',
-        value: current.limit,
-        options: [
-          { value: 1000, label: '1 000' },
-          { value: 10000, label: '10 000' },
-          { value: 50000, label: '50 000' },
-          { value: 0, label: 'Tout l’historique' },
-        ],
-      },
-    ],
-    confirmLabel: 'Enregistrer',
-    extra: { label: 'Raccourcis clavier…', run: () => (keys.editing = true) },
-  });
-  if (!answers) return;
-  const minutes = Math.round(Number(answers.autoFetch) || 0);
-  const next: Settings = {
-    ...current,
-    autoFetch: Math.max(0, Math.min(60, minutes)),
-    pullMode: answers.pullMode as Settings['pullMode'],
-    graphStyle: answers.graphStyle as Settings['graphStyle'],
-    limit: Number(answers.limit),
-  };
-  repo.saveSettings(next);
 }
 
 async function copy(text: string, what: string) {

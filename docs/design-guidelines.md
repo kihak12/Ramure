@@ -142,7 +142,8 @@ Every theme must meet them, in light and in dark.
 
 ### 2.5 Colour themes
 
-- The application follows the system's light or dark setting.
+- Light or dark is a setting: "Système" (the default) follows the system, "Clair" and "Sombre"
+  hold one whatever the system says. The choice applies at once, to the whole window.
 - A colour theme redefines the tokens of sections 2.1 and 2.2, in light and in dark, and nothing
   else: no shape, no font, no size, no shadow. It does not change the colours of the logo either
   (section 13).
@@ -221,7 +222,7 @@ From left to right and from top to bottom:
 
 | Area | Dimension | Background |
 |---|---|---|
-| Module rail (Git, SSH) | 48 px wide | `--side` |
+| Module rail (Git, SSH); at its foot, the search and the settings | 48 px wide | `--side` |
 | Tab bar | tabs 30 px high | `--side` |
 | Toolbar | full width | `--side` |
 | Three cards: sidebar, centre, detail | 8 px apart; the two side cards can be resized (9.16) and hidden (9.17) | `--panel` |
@@ -231,6 +232,7 @@ From left to right and from top to bottom:
 - The window is at least 1000 × 600 px; no area may overflow at that size.
 - When a side card is hidden, the gap of its handle goes with it: the centre card sits 8 px from
   the edge of the window.
+- The settings page takes the place of the module, to the right of the rail (9.18).
 
 ### 4.3 Heights
 
@@ -486,7 +488,7 @@ Sidebar, file lists, graph, palette results.
 
 - To confirm a destructive action, to enter a few values, or to offer a way through when an
   action would be refused ("Remiser et basculer"). Never for plain information: that is the role
-  of a notification.
+  of a notification. Never for a setting: settings have their page (9.18).
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow, 460 px
   wide at most.
 - A 15 px title, weight 650: the name of the action ("Nouvelle branche", new branch).
@@ -594,6 +596,52 @@ the graph on the whole width.
 - What a hidden card holds is out of the tab order and out of the reach of screen readers. If
   the focus was in the card, it moves to the graph.
 
+### 9.18 Settings page
+
+Every setting of the application is on one page. It takes the place of the module, to the right
+of the rail; the modules stay alive behind it, and an SSH session is not cut.
+
+**Getting there and back.** The "Réglages" button at the foot of the rail, which behaves like a
+module button (pressed while the page is shown); Ctrl + , ; the palette; and "Réglages" in the
+toolbar of a repository, a shortcut that opens the page on its "Git" section. The same button,
+the same shortcut, a module button or Escape bring back the module and the tab that were shown.
+
+**Structure.** On `--side`, two cards 8 px apart and 8 px from the edges.
+
+- On the left, the navigation: 220 px, not resizable. Its entries are rows (9.6), 28 px high;
+  the current one is in `--sel`, weight 650. Up and down arrows move from one section to the
+  next, and the section shows at once.
+- On the right, the content, which scrolls on its own. Its column is 640 px wide at most and
+  has an inner margin of 24 px.
+- A section appears in the navigation when it holds its first setting: "Général", "Git",
+  "Raccourcis clavier". No tabs at the top of the page: tabs are repositories.
+
+**A section.** Its title in 15 px, weight 650, with "Tout réinitialiser" on the right, a small
+ghost button, disabled while nothing differs from the defaults. Under it, groups, each with a
+12 px title, weight 650, in `--muted`.
+
+**A setting** is a row: its name in 13.5 px, `--ink`, a help text under it in 11.5 px,
+`--muted`, and its control on the right, 240 px wide. 12 px between two rows. The name is a
+noun, not a verb. The controls are those of section 9.3.
+
+**A setting applies at once.** A list, as soon as the choice changes; a number, when the field
+is left or on Enter.
+
+- No "Enregistrer", no "Annuler", no main button on the page, and no notification to say that
+  a setting was saved: the control shows the state.
+- A value that is not valid is not applied: the field takes the error state of section 9.3,
+  with its message under it.
+- When applying takes time, the waiting ring (8) appears under the control, with words that say
+  what is happening.
+
+**Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
+keys (9.12), and a button that restores the default.
+
+- A click on the combination starts recording: the row takes an `--accent-soft` background and
+  says "Appuie sur les touches…". Backspace removes the shortcut, Escape cancels.
+- When the new combination belonged to another action, a warning box says so under the row.
+- A filter field above the list searches the names, the groups and the combinations.
+
 ## 10. Commit graph
 
 ### 10.1 Columns
@@ -658,6 +706,8 @@ The interface is written in French. These rules apply to that French text.
 - **Buttons** are verbs in the infinitive: "Créer la branche", "Tout indexer". Never "OK" or
   "Oui".
 - **Titles** name the action: "Nouvelle branche".
+- **The name of a setting** is a noun, not a verb: "Récupération automatique", "Style du
+  graphe". Its help text follows the rules above.
 - **An error** says what happened, then what to do. The output of git follows, as it is. No
   "Oups", no exclamation mark, no blame.
 - **A destructive action** says what will be lost, and whether it can be recovered.
@@ -669,7 +719,7 @@ recalled in brackets where it helps.
 
 | Git | In the interface |
 |---|---|
-| fetch | Récupérer |
+| fetch | Récupérer; la récupération |
 | pull | Tirer |
 | push | Pousser |
 | stash, stash pop | Remiser, dépiler; une remise |

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { theme as appTheme } from '../settings/theme.svelte';
   import { Channel, invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { FitAddon } from '@xterm/addon-fit';
@@ -196,9 +197,13 @@
     });
     if (termEl) observer.observe(termEl);
 
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onTheme = () => (terminal.options.theme = theme());
-    media.addEventListener('change', onTheme);
+    // Le terminal lit ses couleurs dans les jetons : il les relit quand le thème change.
+    const stopTheme = $effect.root(() => {
+      $effect(() => {
+        void appTheme.dark;
+        terminal.options.theme = theme();
+      });
+    });
 
     const unlisten = listen<Closed>('ssh-closed', (event) => {
       if (event.payload.id !== sessionId) return;
@@ -220,7 +225,7 @@
 
     return () => {
       observer.disconnect();
-      media.removeEventListener('change', onTheme);
+      stopTheme();
       void unlisten.then((stop) => stop());
       if (sessionId !== null) void invoke('ssh_close', { id: sessionId }).catch(() => {});
       terminal.dispose();

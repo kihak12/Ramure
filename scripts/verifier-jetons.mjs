@@ -43,6 +43,26 @@ for (const file of walk(source)) {
   });
 }
 
+// Le thème sombre est écrit deux fois dans src/app.css : pour qui suit le système, et pour qui a
+// choisi « Sombre » dans les réglages. Les deux blocs doivent donner les mêmes valeurs.
+{
+  const css = readFileSync(tokens, 'utf8');
+  const declarations = (selector) => {
+    const start = css.indexOf(selector);
+    if (start < 0) return null;
+    const body = css.slice(css.indexOf('{', start) + 1, css.indexOf('}', start));
+    return body
+      .split(';')
+      .map((d) => d.trim())
+      .filter(Boolean)
+      .join(';\n');
+  };
+  const system = declarations(":root:not([data-theme='light'])");
+  const chosen = declarations(":root[data-theme='dark']");
+  if (system === null || chosen === null) findings.push('src/app.css  un des deux blocs du thème sombre est introuvable');
+  else if (system !== chosen) findings.push('src/app.css  les deux blocs du thème sombre ne donnent pas les mêmes valeurs');
+}
+
 if (findings.length > 0) {
   console.error(`Jetons : ${findings.length} valeur(s) écrite(s) en dur.\n`);
   console.error(findings.join('\n'));

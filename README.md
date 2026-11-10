@@ -112,10 +112,14 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   the system file dialog in `~/.ssh`.
 - A password or a passphrase is asked for at connection time and is never stored.
 
-### Shortcuts and command log
+### Settings, shortcuts and command log
 
-- **Configurable keyboard shortcuts**: in the settings, under "Raccourcis clavier". In a
-  terminal, only shortcuts with Shift, Alt or a function key are active.
+- **Settings page**: the button at the foot of the rail, or Ctrl + , . Every setting applies at
+  once; there is nothing to save. "Réglages" in the toolbar of a repository opens the same page
+  on its "Git" section.
+- **Light or dark**: "Système" follows the system, "Clair" and "Sombre" hold one.
+- **Configurable keyboard shortcuts**: in the settings, under "Raccourcis clavier", with a
+  filter. In a terminal, only shortcuts with Shift, Alt or a function key are active.
 - **Command log**: every git command that was run, with its duration, from the status bar.
 
 ### Not there yet
@@ -163,7 +167,8 @@ npm run check
 ```
 
 This command checks the types, then rejects any colour, text size, weight, radius or duration
-hard-coded in a component: those values come from the tokens in `src/app.css`. Last, it rejects
+hard-coded in a component: those values come from the tokens in `src/app.css`, where the two
+copies of the dark theme must stay identical. Last, it rejects
 two files of `src/` whose names differ only by case, such as `Toasts.svelte` and
 `toasts.svelte.ts`: on Windows an import of one loads the other, and the window stays blank.
 
@@ -181,7 +186,7 @@ cd src-tauri && RAMURE_TEST_REPO=/path/to/repository cargo test real_repo -- --n
 
 | Folder | Content |
 | --- | --- |
-| `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/ui/`; the design tokens are in `app.css` |
+| `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/settings/`, `lib/ui/`; the design tokens are in `app.css` |
 | `docs/` | The [design guidelines](docs/design-guidelines.md), the logo in `logo/`, and the design decisions in `design/` |
 | `scripts/` | Checks run by `npm run check`, and the tool that derives the application icons from the logo |
 | `src-tauri/src/git/` | Running git, the log parser, lane computation |

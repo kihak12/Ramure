@@ -6,6 +6,7 @@
   import { accepts, drag, isBranch } from './drag.svelte';
   import { bare, labelsOf, type Label } from './labels';
   import { revealDetail } from './layout.svelte';
+  import { theme } from '../settings/theme.svelte';
   import { prefs } from './prefs.svelte';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
@@ -28,7 +29,8 @@
 
   let scrollTop = $state(0);
   let viewH = $state(600);
-  let dark = $state(false);
+  // Le canvas lit ses couleurs dans les jetons : il se redessine quand le thème change.
+  const dark = $derived(theme.dark);
   let fontsReady = $state(false); // le canevas doit se redessiner quand la police embarquée est chargée
   // Vrai juste après une ouverture : les lignes entrent en cascade.
   let fresh = $state(false);
@@ -339,10 +341,6 @@
   }
 
   onMount(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    dark = media.matches;
-    const onTheme = () => (dark = media.matches);
-    media.addEventListener('change', onTheme);
     void document.fonts.ready.then(() => (fontsReady = true));
 
     const observer = new ResizeObserver(() => {
@@ -357,7 +355,6 @@
     };
 
     return () => {
-      media.removeEventListener('change', onTheme);
       observer.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };

@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { revealDetail } from './layout.svelte';
-import { prefs, savePrefs, type Settings } from './prefs.svelte';
+import { prefs, type Settings } from './prefs.svelte';
 import type {
   CommandLog,
   CommitDetail,
@@ -248,12 +248,6 @@ export class Repo {
     } catch {
       /* la barre latérale garde sa dernière liste ; l'erreur est dans le journal */
     }
-  }
-
-  saveSettings(next: Settings) {
-    const reloadNeeded = next.limit !== prefs.limit;
-    savePrefs(next);
-    if (reloadNeeded && this.result) void this.load(this.result.repo, false);
   }
 
   /** Sélectionne le commit `sha` et l'amène à l'écran, s'il est chargé. */
