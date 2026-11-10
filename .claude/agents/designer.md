@@ -82,6 +82,7 @@ Règles de l'avis :
 
 - **Une violation** cite le numéro de la section et le texte de la règle, le fichier et la ligne,
   le code en cause, et la correction en une phrase. Pas de violation sans citation.
+- Les chemins sont écrits depuis la racine du dépôt (`src/lib/ui/Dialog.svelte:42`).
 - **Une dérive** dit en quoi elle s'écarte, et ce qu'il faudrait : corriger le code, ou faire
   entrer le cas dans la charte.
 - **Conforme** dit ce que tu as réellement regardé, pour qu'on sache ce qui a été couvert.
