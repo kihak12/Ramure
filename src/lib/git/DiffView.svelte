@@ -182,14 +182,36 @@
   }
 
   const split = $derived(prefs.diffMode === 'split');
-  const pairs = $derived(split && parsed ? pairUp(parsed.lines) : []);
+  const allPairs = $derived(parsed ? pairUp(parsed.lines) : []);
+  const pairs = $derived(split ? allPairs : []);
+
+  // Une ligne modifiée, c'est une suppression et un ajout qui vont ensemble. N'en choisir qu'une
+  // moitié laisse l'ancienne version à côté de la nouvelle, ou retire la ligne sans la remplacer.
+  // Ne comptent que les paires dont les deux lignes se ressemblent : les autres sont deux
+  // changements distincts que le hasard a placés côte à côte.
+  const halves = $derived.by(() => {
+    const missing: number[] = [];
+    if (!canSelect || !selected.size) return missing;
+    for (const pair of allPairs) {
+      if (!pair.inline || !pair.left || !pair.right) continue;
+      const old = selected.has(pair.left.index);
+      if (old !== selected.has(pair.right.index)) missing.push(old ? pair.right.index : pair.left.index);
+    }
+    return missing;
+  });
+  let root = $state<HTMLElement>();
+  const pickHalves = () => {
+    for (const index of halves) selected.add(index);
+    // Le bouton disparaît avec l'avertissement : le focus retourne dans les lignes.
+    root?.querySelector<HTMLElement>('.lines')?.focus();
+  };
   const setMode = (mode: DiffMode) => savePrefs({ ...prefs, diffMode: mode });
 
   const applySelection = () => onapply?.([...selected]);
   const applyHunk = (hunk: number) => onapply?.(changes.filter((l) => l.hunk === hunk).map((l) => l.index));
 </script>
 
-<section class="diff" aria-label="Diff de {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
+<section class="diff" bind:this={root} aria-label="Diff de {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <div class="names">
       <b class="mono">{title}</b>
@@ -307,16 +329,54 @@
       {/if}
     </div>
   {/if}
+
+  <!-- Sous les lignes, pour ne pas les déplacer sous le pointeur au moment où on les choisit. -->
+  {#if halves.length}
+    <p class="lonely" role="status">
+      <Icon name="warning" size={14} />
+      <span>
+        Tu n’as choisi qu’une moitié {halves.length > 1 ? `de ${halves.length} lignes modifiées` : 'd’une ligne modifiée'} : l’ancienne version et
+        la nouvelle ne seront pas {selectable === 'unstage' ? 'retirées' : 'indexées'} ensemble.
+      </span>
+      <button class="btn small" type="button" onclick={pickHalves}>Choisir l’autre moitié</button>
+    </p>
+  {/if}
 </section>
 
 <style>
+  .diff > .lonely {
+    grid-row: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 12px;
+    padding: 6px 8px;
+    border-radius: var(--radius-s);
+    background: var(--warn-soft);
+    font-size: var(--fs-small);
+  }
+  .lonely :global(svg) {
+    flex: none;
+    color: var(--warn);
+  }
+  .lonely span {
+    flex: 1;
+    min-width: 0;
+  }
   .diff {
     position: absolute;
     inset: 0;
     z-index: 3;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    /* L'en-tête, les lignes, qui prennent la place, puis l'avertissement quand il y en a un. */
+    grid-template-rows: auto minmax(0, 1fr) auto;
     background: var(--panel);
+  }
+  .diff > :global(*) {
+    grid-row: 2;
+  }
+  .diff > header {
+    grid-row: 1;
   }
   header {
     display: flex;
