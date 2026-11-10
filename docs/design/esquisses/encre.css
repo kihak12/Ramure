@@ -1,0 +1,46 @@
+/* Encre : technique. Tout est plat, dense et net ; la couleur n'appartient qu'au graphe. */
+:root { --f-ui: 'Inter Variable', system-ui, sans-serif; --f-mono: 'JetBrains Mono Variable', monospace; }
+:root body { font-size: 12.5px; }
+:root .btn { border-radius: 4px; padding: 3px 10px; box-shadow: none; }
+:root .field { border-radius: 4px; padding: 4px 8px; }
+:root .chip { border-radius: 3px; }
+:root dialog { border-radius: 8px; }
+:root .rail button { border-radius: 5px; }
+
+/* Onglets : du texte, et un trait sous l'onglet actif. */
+:root .tabs { padding: 0 6px; gap: 0; align-items: stretch; background: var(--panel); }
+:root .tabs .tab { margin: 0; border: 0; border-radius: 0; flex: 0 1 auto; min-width: 0; background: none; }
+:root .tabs .tab .open { padding: 9px 6px 9px 10px; }
+:root .tabs .tab::before { top: auto; bottom: 0; left: 0; right: 0; height: 2px; border-radius: 0; }
+:root .tabs .tab.current { background: none; border: 0; }
+:root .tabs .add { margin: 0 0 0 2px; align-self: center; border-radius: 4px; }
+
+/* Barre d'outils : une seule ligne compacte, icône et libellé côte à côte. */
+:root .toolbar { padding: 3px 8px 3px 4px; gap: 2px; }
+:root .toolbar .crumb { flex-direction: row; align-items: baseline; gap: 6px; min-width: 0; padding: 4px 8px; border-radius: 4px; }
+:root .toolbar .crumb .small { text-transform: uppercase; letter-spacing: 0.07em; font-size: 9.5px; }
+:root .toolbar .crumb b { font-size: 12.5px; }
+:root .toolbar .tools { margin-left: 6px; padding-left: 6px; gap: 0; }
+:root .toolbar .tools.right { margin-left: auto; border-left: 0; }
+:root .toolbar .tool { flex-direction: row; gap: 6px; min-width: 0; padding: 5px 8px; border-radius: 4px; }
+:root .toolbar .tool .text { font-size: 12px; color: var(--ink); }
+:root .toolbar .tool .glyph { display: inline-flex; align-items: center; gap: 4px; }
+:root .toolbar .tool .glyph svg { width: 15px; height: 15px; }
+:root .toolbar .tool .badge { position: static; border-radius: 3px; }
+
+:root .sidebar .heading { padding: 6px 10px 4px 8px; font-size: 10px; }
+:root .sidebar .item { padding: 2px 6px; border-radius: 3px; }
+:root .sidebar .item.current { background: none; box-shadow: inset 2px 0 0 var(--accent); color: var(--accent); }
+:root .sidebar .search { border-radius: 4px; }
+
+/* Graphe : des points et des traits fins à angles nets ; étiquettes en style de code. */
+:root .graph .head { font-size: 9.5px; }
+:root .graph .ref { border-radius: 3px; background: transparent; border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); border-left: 3px solid var(--c); font-family: var(--f-mono); font-size: 10.5px; line-height: 16px; padding: 0 6px; font-weight: 500; }
+:root .graph .ref.k-head { background: var(--c); color: var(--on-accent); border-color: var(--c); }
+:root .graph .ref.k-remote { border-style: dashed; border-left-style: solid; }
+:root .graph .wire { height: 1px; }
+:root .graph .avatar { border-radius: 3px; width: 16px; height: 16px; }
+
+:root .files li { border-radius: 3px; }
+:root .files .kind { border-radius: 2px; }
+:root .modes, :root .modes button { border-radius: 4px; }
