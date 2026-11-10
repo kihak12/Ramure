@@ -464,8 +464,9 @@ Sidebar, file lists, graph, palette results.
 
 ### 9.10 Dialogs
 
-- To confirm a destructive action or to enter a few values. Never for plain information: that is
-  the role of a notification.
+- To confirm a destructive action, to enter a few values, or to offer a way through when an
+  action would be refused ("Remiser et basculer"). Never for plain information: that is the role
+  of a notification.
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow, 460 px
   wide at most.
 - A 15 px title, weight 650: the name of the action ("Nouvelle branche", new branch).

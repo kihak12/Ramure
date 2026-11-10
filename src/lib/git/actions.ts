@@ -42,7 +42,7 @@ async function stashFirst(repo: Repo, name: string, remote: boolean, label = nam
     title: `Basculer sur ${label} ?`,
     body:
       `Tes modifications de ${what} seraient écrasées par ce basculement, et git le refuserait.\n\n` +
-      'Remise-les d’abord : tu pourras les dépiler ensuite, sur la branche de ton choix.',
+      'Remise d’abord toutes tes modifications en cours : tu pourras les dépiler ensuite, sur la branche de ton choix.',
     confirmLabel: 'Remiser et basculer',
   });
   if (!sure) return false;
@@ -72,7 +72,7 @@ export async function switchToRemote(repo: Repo, remote: string) {
   if (relation.local === null || ahead === 0 || behind === 0) {
     let done = `Basculé sur ${local}`;
     if (relation.local !== null && behind > 0) done += `, mise à jour avec ${remote} (${commits(behind)})`;
-    else if (ahead > 0) done += `, qui a ${commits(ahead)} d'avance sur ${remote}`;
+    else if (ahead > 0) done += `, qui a ${commits(ahead)} d’avance sur ${remote}`;
     // La destination est la branche distante quand la locale n'existe pas ou sera avancée jusqu'à elle.
     const viaRemote = relation.local === null || behind > 0;
     if (await stashFirst(repo, viaRemote ? remote : local, viaRemote, local)) {
@@ -83,9 +83,9 @@ export async function switchToRemote(repo: Repo, remote: string) {
 
   const stay = () => void switchBranch(repo, local, `Basculé sur ${local}, sans la mettre à jour`);
   const rebase = await dialogs.confirm({
-    title: `Mettre à jour ${local} ?`,
+    title: `Mettre à jour ${local} ?`,
     body:
-      `${local} et ${remote} ont divergé : ${commits(ahead)} de ${local} ne ${ahead > 1 ? 'sont' : 'est'} pas sur ${remote}, ` +
+      `${local} et ${remote} ont divergé : ${commits(ahead)} de ${local} ne ${ahead > 1 ? 'sont' : 'est'} pas sur ${remote}, ` +
       `et ${commits(behind)} de ${remote} ${behind > 1 ? 'manquent' : 'manque'} à ${local}.\n\n` +
       `Rebaser rejoue tes commits par-dessus ${remote}. Une sauvegarde de la branche est gardée.`,
     confirmLabel: 'Basculer et rebaser',
@@ -123,7 +123,7 @@ export async function renameBranch(repo: Repo, name: string) {
 
 export async function deleteBranch(repo: Repo, name: string) {
   const answers = await dialogs.ask({
-    title: `Supprimer la branche ${name} ?`,
+    title: `Supprimer la branche ${name} ?`,
     body: 'Seule la branche locale est supprimée. Ses commits restent accessibles tant qu’une autre branche ou un tag les contient.',
     fields: [{ name: 'force', label: 'Supprimer même si elle n’est pas fusionnée', type: 'checkbox', value: false }],
     confirmLabel: 'Supprimer',
@@ -135,7 +135,7 @@ export async function deleteBranch(repo: Repo, name: string) {
 
 export async function deleteRemoteBranch(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer ${name} sur le dépôt distant ?`,
+    title: `Supprimer ${name} sur le dépôt distant ?`,
     warning: 'La branche disparaît pour tout le monde. Cette action ne s’annule pas depuis Ramure.',
     confirmLabel: 'Supprimer sur le dépôt distant',
     danger: true,
@@ -164,7 +164,7 @@ export async function createTag(repo: Repo, sha: string) {
 
 export async function deleteTag(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer le tag ${name} ?`,
+    title: `Supprimer le tag ${name} ?`,
     body: 'Le tag est supprimé sur cette machine seulement.',
     confirmLabel: 'Supprimer',
     danger: true,
@@ -174,7 +174,7 @@ export async function deleteTag(repo: Repo, name: string) {
 
 export async function deleteRemoteTag(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer le tag ${name} sur le dépôt distant ?`,
+    title: `Supprimer le tag ${name} sur le dépôt distant ?`,
     warning: 'Le tag disparaît pour tout le monde.',
     confirmLabel: 'Supprimer sur le dépôt distant',
     danger: true,
@@ -196,7 +196,7 @@ export async function stashChanges(repo: Repo) {
 
 export async function dropStash(repo: Repo, stash: Stash) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer la remise ${stash.index} ?`,
+    title: `Supprimer la remise ${stash.index} ?`,
     body: stash.message,
     warning: 'Les modifications qu’elle contient seront perdues.',
     confirmLabel: 'Supprimer la remise',
@@ -216,7 +216,7 @@ const REWRITE_WARNING =
 export async function rebaseOnto(repo: Repo, onto: string) {
   const branch = repo.branch ?? 'HEAD';
   const confirmed = await dialogs.confirm({
-    title: `Rebaser ${branch} sur ${onto} ?`,
+    title: `Rebaser ${branch} sur ${onto} ?`,
     body: `Les commits de ${branch} absents de ${onto} sont rejoués un par un au-dessus de ${onto}. La position actuelle est sauvegardée dans refs/ramure/backup.`,
     warning: headIsPushed(repo) ? REWRITE_WARNING : undefined,
     confirmLabel: 'Rebaser',
@@ -263,7 +263,7 @@ export async function resetTo(repo: Repo, commit: CommitRow) {
 
 export async function forcePush(repo: Repo) {
   const confirmed = await dialogs.confirm({
-    title: `Pousser ${repo.branch ?? ''} en forçant ?`,
+    title: `Pousser ${repo.branch ?? ''} en forçant ?`,
     body: 'La branche distante est remplacée par la tienne (git push --force-with-lease). Le push est refusé si quelqu’un a poussé entre-temps un travail que tu n’as pas récupéré.',
     warning: 'Les commits distants absents de ta branche seront perdus.',
     confirmLabel: 'Pousser en forçant',
@@ -277,9 +277,9 @@ export async function discardFiles(repo: Repo, files: FileChange[]) {
   const what = files.length === 1 ? `« ${files[0].path} »` : `${files.length} fichiers`;
   const onlyNew = files.every((f) => f.kind === 'untracked');
   const confirmed = await dialogs.confirm({
-    title: onlyNew ? `Supprimer ${what} ?` : `Abandonner les modifications de ${what} ?`,
+    title: onlyNew ? `Supprimer ${what} ?` : `Abandonner les modifications de ${what} ?`,
     warning: onlyNew
-      ? 'Ces fichiers sont nouveaux : git ne pourra pas les restaurer.'
+      ? 'Ces fichiers sont nouveaux : git ne pourra pas les restaurer.'
       : 'Les modifications non indexées seront perdues définitivement.',
     confirmLabel: onlyNew ? 'Supprimer' : 'Abandonner',
     danger: true,
