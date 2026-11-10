@@ -38,6 +38,11 @@
   --l6: #0f808a;
   --l7: #5d6b17;
 
+  /* Couleurs de la marque (section 13) : celles de l'icône. Elles ne changent ni en sombre, ni avec
+     le thème de couleurs. */
+  --brand: #2b6fdb;
+  --on-brand: #ffffff;
+
   /* Ombres (section 6) : neutres, elles ne prennent pas la teinte du thème. */
   --shadow-soft: 0 1px 2px rgb(18 22 30 / 0.06);
   --shadow-pop: 0 18px 44px -14px rgb(18 22 30 / 0.3), 0 2px 6px rgb(18 22 30 / 0.08);
