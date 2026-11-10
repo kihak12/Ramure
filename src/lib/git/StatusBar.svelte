@@ -40,9 +40,9 @@
   <div class="stats" aria-live="polite">
     {#if repo.busy}
       {@const doing = repo.switching ? `Basculement sur ${repo.switching}…` : 'Opération en cours…'}
-      <span class="busy" title={doing}><span class="spinner"></span><span class="doing">{doing}</span></span>
+      <span class="busy" title={doing}><span class="spinner" aria-hidden="true"></span><span class="doing">{doing}</span></span>
     {/if}
-    {#if fetchText}<span class:bad={repo.lastFetch?.ok === false}>{fetchText}</span>{/if}
+    {#if fetchText}<span class="fetch" class:bad={repo.lastFetch?.ok === false} title={fetchText}>{fetchText}</span>{/if}
     {#if repo.loading}
       <span>Chargement…</span>
     {:else if result}
@@ -124,8 +124,12 @@
     gap: 6px;
     /* Pendant l'opération, c'est ce message qui compte : il ne cède pas sa place aux durées. */
     flex: none;
-    color: var(--ink);
-    --spinner: var(--muted);
+  }
+  /* Quand la place manque, c'est ce texte qui se coupe, avec une ellipse. */
+  .fetch {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   /* Un nom de branche long ne doit pas chasser le reste de la barre. */
   .doing {

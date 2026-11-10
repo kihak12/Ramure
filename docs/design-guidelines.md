@@ -335,7 +335,9 @@ graph: a ring that widens and fades, in 2.4 s.
 
 The waiting ring is 12 px, in `--accent` or in the colour of the text around it, and it appears
 where the user asked for the operation: on the tab of the repository, on the label or the row of
-the branch being switched to, in the status bar.
+the branch being switched to, in the status bar. It is the shared class `.spinner` of
+`src/app.css`, whose `--spinner` property gives it another colour. Words always say the state
+beside it, so the ring itself is hidden from screen readers.
 
 **When a repository is opened** or after a full reload, the rows of the graph come in one after
 the other, once. Never on scroll.

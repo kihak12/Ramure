@@ -361,7 +361,6 @@
     class="ref k-{label.kind}"
     class:local={label.local !== null}
     class:drop={dropOn === labelKey(label, commit)}
-    aria-busy={waiting}
     style:--c="var(--l{commit.lane % 8})"
     title="{label.title} — double-clic pour basculer, clic droit pour les actions, glisser sur une autre branche pour fusionner ou rebaser"
     draggable={isBranch(label) ? 'true' : undefined}
@@ -390,8 +389,8 @@
     {#if label.kind === 'head'}<Icon name="check" size={12} />{/if}
     <span class="ref-name">{label.name}</span>
     <!-- Pendant le basculement, l'anneau prend la place d'une icône : l'étiquette garde sa taille. -->
-    {#if label.local}{#if waiting}<span class="spinner"></span>{:else}<Icon name="laptop" size={12} />{/if}{/if}
-    {#if label.remotes.length}{#if waiting && !label.local}<span class="spinner"></span>{:else}<Icon name="cloud" size={12} />{/if}{/if}
+    {#if label.local}{#if waiting}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="laptop" size={12} />{/if}{/if}
+    {#if label.remotes.length}{#if waiting && !label.local}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="cloud" size={12} />{/if}{/if}
     {#if label.tag}<Icon name="tag" size={12} />{/if}
   </span>
 {/snippet}
