@@ -340,8 +340,8 @@
 </section>
 
 <style>
-  .lonely {
-    flex: none;
+  .diff > .lonely {
+    grid-row: 2;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -364,8 +364,15 @@
     inset: 0;
     z-index: 3;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    /* L'en-tête, l'avertissement quand il y en a un, puis les lignes, qui prennent le reste. */
+    grid-template-rows: auto auto minmax(0, 1fr);
     background: var(--panel);
+  }
+  .diff > :global(*) {
+    grid-row: 3;
+  }
+  .diff > header {
+    grid-row: 1;
   }
   header {
     display: flex;
