@@ -8,8 +8,8 @@ Le choix de cette direction est raconté dans [`design/directions.md`](design/di
 - **Règle du jeu :** quand le code et la charte divergent, la charte a raison. On change la
   charte d'abord, par une PR, et le code ensuite.
 
-Le code ne suit pas encore cette charte. Trois issues l'y amènent : l'alignement des jetons (#5),
-l'application de Clairière à l'interface (#10) et la revue des écrans (#6).
+Les jetons du code suivent cette charte (issue #5). L'interface, elle, n'a pas encore la forme
+de Clairière : c'est l'objet de l'issue #10, puis de la revue des écrans (#6).
 
 | Sombre | Clair |
 |---|---|
@@ -64,6 +64,10 @@ Ce qu'elle s'interdit :
 
 Toutes les couleurs passent par des jetons, définis dans `src/app.css`. Les valeurs ci-dessous
 sont celles du thème par défaut, **Ardoise**.
+
+Cela vaut pour tous les jetons de cette charte : couleurs, tailles et graisses de texte, rayons
+et durées. `src/app.css` est le seul fichier qui écrit ces valeurs, et `npm run check` refuse un
+composant qui en écrit une en dur.
 
 ### 2.1 Jetons
 
@@ -158,19 +162,21 @@ Chaque thème doit les respecter, en clair et en sombre.
   barre d'outils.
 - Dans une liste de fichiers, le chemin est en police d'interface : le dossier en `--muted`, le
   nom du fichier en `--ink`.
+- DM Mono s'arrête à la graisse 500. Un texte de code appuyé est rendu en 500 ; le navigateur ne
+  fabrique pas de faux gras.
 
 ### 3.2 Tailles
 
-| Nom | Taille | Usage |
+| Jeton | Taille | Usage |
 |---|---|---|
-| Micro | 10,5 px | Compteurs, badges, touches de raccourci. |
-| Petit | 11,5 px | Légendes, libellés de la barre d'outils, barre d'état, étiquettes du graphe, métadonnées. |
-| Libellé | 12 px | Libellés de champ, en-têtes de colonne, titres de section. |
-| Courant | 13,5 px | Texte, lignes de liste, boutons, menus. |
-| Titre | 15 px | Titre d'une boîte de dialogue ou d'un panneau, saisie de la palette de commandes. |
-| Grand titre | 24 px | Page d'accueil seulement. |
-| Code | 12 px | Diff, éditeur de conflits, SHA. |
-| Terminal | 13 px | Terminal : une taille entière, pour que la grille de caractères reste nette. |
+| `--fs-micro` | 10,5 px | Compteurs, badges, touches de raccourci. |
+| `--fs-small` | 11,5 px | Légendes, libellés de la barre d'outils, barre d'état, étiquettes du graphe, métadonnées. |
+| `--fs-label` | 12 px | Libellés de champ, en-têtes de colonne, titres de section, colonnes secondaires d'une liste (auteur, date). |
+| `--fs-body` | 13,5 px | Texte, lignes de liste, boutons, menus. |
+| `--fs-title` | 15 px | Titre d'une boîte de dialogue ou d'un panneau, saisie de la palette de commandes. |
+| `--fs-display` | 24 px | Page d'accueil seulement. |
+| `--fs-code` | 12 px | Diff, éditeur de conflits, SHA. |
+| `--fs-term` | 13 px | Terminal : une taille entière, pour que la grille de caractères reste nette. |
 
 - Aucune autre taille. Aucun texte sous 10,5 px.
 - Interligne : 1,35 pour l'interface.
@@ -179,10 +185,10 @@ Chaque thème doit les respecter, en clair et en sombre.
 
 Deux graisses, pas plus.
 
-| Graisse | Usage |
-|---|---|
-| 400 | Texte courant. |
-| 650 | Titres, libellés, bouton principal, élément courant (onglet actif, branche courante), étiquette d'une branche locale. |
+| Jeton | Graisse | Usage |
+|---|---|---|
+| `--fw-regular` | 400 | Texte courant. |
+| `--fw-strong` | 650 | Titres, libellés, bouton principal, élément courant (onglet actif, branche courante), étiquette d'une branche locale. |
 
 ### 3.4 Règles
 
@@ -240,6 +246,7 @@ De gauche à droite et de haut en bas :
 
 | Jeton | Rayon | Pour |
 |---|---|---|
+| `--radius-xs` | 4 px | Petits repères : touche de raccourci, lettre d'état d'un fichier, surlignage dans une ligne de diff. |
 | `--radius-s` | 6 px | Ce qui se clique : boutons, champs, étiquettes de branche et de tag, éléments de menu, cases. |
 | `--radius` | 8 px | Lignes sélectionnables, onglets, notifications, boutons du rail. |
 | `--radius-l` | 12 px | Ce qui flotte : boîtes de dialogue, menus, palette de commandes. |
@@ -298,10 +305,16 @@ L'interface a quatre niveaux. Chacun se reconnaît à son fond.
 
 | Jeton | Valeur | Usage |
 |---|---|---|
-| `--ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | La seule courbe de l'application. |
-| `--t-fast` | 110 ms | Survol, pression, focus, changement de couleur. |
+| `--ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | La seule courbe de l'application. Seuls une rotation et un défilement continus sont linéaires. |
+| `--t-fast` | 110 ms | Survol, pression, focus, changement de couleur, disparition. |
 | `--t-med` | 200 ms | Apparition d'un menu ou d'une boîte de dialogue, repli d'une section. |
 | `--t-slow` | 340 ms | Déplacement long : repère du rail, réorganisation d'une liste. |
+| `--t-step` | 14 ms | Décalage entre deux éléments d'une entrée en cascade. |
+| `--t-spin` | 800 ms | Un tour de l'indicateur de chargement. |
+| `--t-wait` | 1,1 s | Un cycle d'une barre ou d'un point d'attente. |
+| `--t-halo` | 2,4 s | Un cycle du halo du commit courant. |
+
+Les transitions écrites en script lisent ces mêmes jetons, par `src/lib/ui/motion.ts`.
 
 **Ce qui s'anime.** L'opacité, la position (`transform`) et les couleurs. Une apparition vient
 de près : 6 à 10 px de décalage au plus.
@@ -317,8 +330,9 @@ les boutons de la barre d'outils et ceux du rail, et pour rien d'autre.
 - Le déplacement de la sélection au clavier : il est immédiat.
 - Le texte d'un diff ou d'un terminal.
 
-**Les deux seules boucles.** L'indicateur de chargement, tant que dure l'opération. Le halo du
-commit courant dans le graphe : un anneau qui s'élargit et s'efface, en 2,4 s.
+**Les deux seules boucles.** L'indicateur d'attente, tant que dure l'opération ou l'attente :
+une icône qui tourne, une barre, un point qui clignote. Le halo du commit courant dans le
+graphe : un anneau qui s'élargit et s'efface, en 2,4 s.
 
 **À l'ouverture d'un dépôt** ou après un rechargement complet, les lignes du graphe entrent en
 cascade, une fois. Jamais au défilement.
@@ -600,5 +614,8 @@ Typographie :
   suivante.
 - Avant de créer un composant, on cherche celui qui existe. S'il en faut un nouveau, il entre
   dans la section 9 avec ses états.
-- Un nouveau jeton entre dans la section concernée, avec son rôle et ses deux valeurs.
+- Un nouveau jeton entre dans la section concernée, avec son rôle et ses deux valeurs, puis dans
+  `src/app.css`.
+- `npm run check` refuse une couleur, une taille de texte, une graisse, un rayon ou une durée
+  écrits en dur dans un composant.
 - Chaque PR qui touche à l'interface est relue contre cette charte.
