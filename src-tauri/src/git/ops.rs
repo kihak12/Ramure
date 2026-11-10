@@ -199,6 +199,21 @@ pub fn relation(journal: &mut Vec<CommandLog>, repo: &Path, remote: &str) -> Res
     Ok(Relation { local: Some(local.to_string()), ahead, behind })
 }
 
+/// Fichiers modifiés qui empêcheraient de basculer sur une branche : ceux que le dossier de
+/// travail ou l'index a touchés, et qui diffèrent entre HEAD et cette branche. Git refuse alors le
+/// basculement, pour ne pas écraser ces modifications. `remote` : `name` est une branche distante.
+pub fn switch_blockers(journal: &mut Vec<CommandLog>, repo: &Path, name: &str, remote: bool) -> Result<Vec<String>, String> {
+    check_name(name)?;
+    let target = format!("refs/{}/{name}", if remote { "remotes" } else { "heads" });
+    let touched = text(&step(journal, repo, &["diff", "--name-only", "-z", "HEAD"])?);
+    if touched.is_empty() {
+        return Ok(Vec::new());
+    }
+    let differ = text(&step(journal, repo, &["diff", "--name-only", "-z", "HEAD", &target])?);
+    let differ: Vec<&str> = differ.split('\0').collect();
+    Ok(touched.split('\0').filter(|path| !path.is_empty() && differ.contains(path)).map(str::to_string).collect())
+}
+
 pub fn ref_op(journal: &mut Vec<CommandLog>, repo: &Path, op: &RefOp) -> Result<String, String> {
     let git = |journal: &mut Vec<CommandLog>, args: &[&str]| -> Result<String, String> {
         step_with(journal, repo, args, Opts::default()).map(|out| report(&out))
@@ -618,6 +633,11 @@ pub async fn git_remote_relation(repo: String, remote: String) -> Reply<Relation
 }
 
 #[tauri::command]
+pub async fn git_switch_blockers(repo: String, name: String, remote: bool) -> Reply<Vec<String>> {
+    blocking(move |j| switch_blockers(j, Path::new(&repo), &name, remote)).await
+}
+
+#[tauri::command]
 pub async fn git_ref_op(repo: String, op: RefOp) -> Reply<String> {
     blocking(move |j| ref_op(j, Path::new(&repo), &op)).await
 }
@@ -706,6 +726,33 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
             commit(&mut j, &repo.0, message, false).unwrap();
         }
         repo
+    }
+
+    #[test]
+    fn local_changes_that_block_a_switch_are_listed() {
+        let repo = three_commits("bloque");
+        let dir = repo.0.as_path();
+        let mut j = Vec::new();
+        repo.git(&["branch", "avant", "HEAD~1"]);
+        repo.git(&["branch", "ici"]);
+        repo.write("b.txt", "autre\n");
+        stage(&mut j, dir, &["b.txt".into()]).unwrap();
+        commit(&mut j, dir, "quatre", false).unwrap();
+
+        // Rien de modifié : rien n'empêche de basculer.
+        assert!(switch_blockers(&mut j, dir, "avant", false).unwrap().is_empty());
+
+        // « b.txt » est modifié, et il diffère entre HEAD et les deux branches : il bloque.
+        repo.write("b.txt", "en cours\n");
+        assert_eq!(switch_blockers(&mut j, dir, "ici", false).unwrap(), vec!["b.txt".to_string()]);
+        assert!(ref_op(&mut j, dir, &RefOp::Switch { name: "ici".into() }).is_err());
+
+        // « a.txt » est modifié, mais identique entre HEAD et « ici » : git l'emporte avec lui.
+        repo.git(&["checkout", "--", "b.txt"]);
+        repo.write("a.txt", "1\n2\n3\nen cours\n");
+        assert!(switch_blockers(&mut j, dir, "ici", false).unwrap().is_empty());
+        assert_eq!(switch_blockers(&mut j, dir, "avant", false).unwrap(), vec!["a.txt".to_string()]);
+        assert!(ref_op(&mut j, dir, &RefOp::Switch { name: "ici".into() }).is_ok());
     }
 
     #[test]

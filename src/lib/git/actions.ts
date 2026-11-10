@@ -23,10 +23,43 @@ const commits = (count: number) => `${count} commit${count > 1 ? 's' : ''}`;
  * - Branche locale en avance : rien à récupérer, on bascule seulement.
  * - Branches divergées : on demande avant de rebaser, car un rebase réécrit les commits locaux.
  */
+/**
+ * Avant un basculement : si des modifications en cours seraient écrasées, git refuserait. On
+ * propose alors de les remiser. Renvoie `false` quand l'utilisateur renonce, ou que la remise échoue.
+ * `label` : le nom à montrer, quand `name` est une branche distante.
+ */
+async function stashFirst(repo: Repo, name: string, remote: boolean, label = name): Promise<boolean> {
+  let blockers: string[];
+  try {
+    blockers = await repo.git<string[]>('git_switch_blockers', { name, remote });
+  } catch {
+    // La vérification n'a pas pu se faire : le basculement dira lui-même ce qui ne va pas.
+    return true;
+  }
+  if (!blockers.length) return true;
+  const what = blockers.length > 1 ? `${blockers.length} fichiers` : blockers[0];
+  const sure = await dialogs.confirm({
+    title: `Basculer sur ${label} ?`,
+    body:
+      `Tes modifications de ${what} seraient écrasées par ce basculement, et git le refuserait.\n\n` +
+      'Remise d’abord toutes tes modifications en cours : tu pourras les dépiler ensuite, sur la branche de ton choix.',
+    confirmLabel: 'Remiser et basculer',
+  });
+  if (!sure) return false;
+  return repo.refOp({ op: 'stash-push', message: `Avant de basculer sur ${label}` }, 'Modifications remisées', 'Impossible de remiser les modifications');
+}
+
+/** Bascule sur une branche locale, en proposant de remiser les modifications qui l'empêcheraient. */
+export async function switchBranch(repo: Repo, name: string, done = `Basculé sur ${name}`): Promise<boolean> {
+  if (repo.locked || name === repo.branch) return false;
+  if (!(await stashFirst(repo, name, false))) return false;
+  return repo.refOp({ op: 'switch', name }, done, `Impossible de basculer sur ${name}`);
+}
+
 export async function switchToRemote(repo: Repo, remote: string) {
   if (repo.locked) return;
   const local = bare(remote);
-  const failed = 'Impossible de basculer';
+  const failed = `Impossible de basculer sur ${local}`;
   let relation: Relation;
   try {
     relation = await repo.git<Relation>('git_remote_relation', { remote });
@@ -39,25 +72,27 @@ export async function switchToRemote(repo: Repo, remote: string) {
   if (relation.local === null || ahead === 0 || behind === 0) {
     let done = `Basculé sur ${local}`;
     if (relation.local !== null && behind > 0) done += `, mise à jour avec ${remote} (${commits(behind)})`;
-    else if (ahead > 0) done += `, qui a ${commits(ahead)} d'avance sur ${remote}`;
-    await repo.refOp({ op: 'switch-remote', name: remote }, done, failed);
+    else if (ahead > 0) done += `, qui a ${commits(ahead)} d’avance sur ${remote}`;
+    // La destination est la branche distante quand la locale n'existe pas ou sera avancée jusqu'à elle.
+    const viaRemote = relation.local === null || behind > 0;
+    if (await stashFirst(repo, viaRemote ? remote : local, viaRemote, local)) {
+      await repo.refOp({ op: 'switch-remote', name: remote }, done, failed);
+    }
     return;
   }
 
-  const stay = () => {
-    if (repo.branch !== local) void repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}, sans la mettre à jour`, failed);
-  };
+  const stay = () => void switchBranch(repo, local, `Basculé sur ${local}, sans la mettre à jour`);
   const rebase = await dialogs.confirm({
-    title: `Mettre à jour ${local} ?`,
+    title: `Mettre à jour ${local} ?`,
     body:
-      `${local} et ${remote} ont divergé : ${commits(ahead)} de ${local} ne ${ahead > 1 ? 'sont' : 'est'} pas sur ${remote}, ` +
+      `${local} et ${remote} ont divergé : ${commits(ahead)} de ${local} ne ${ahead > 1 ? 'sont' : 'est'} pas sur ${remote}, ` +
       `et ${commits(behind)} de ${remote} ${behind > 1 ? 'manquent' : 'manque'} à ${local}.\n\n` +
       `Rebaser rejoue tes commits par-dessus ${remote}. Une sauvegarde de la branche est gardée.`,
     confirmLabel: 'Basculer et rebaser',
     extra: { label: 'Basculer sans mettre à jour', run: stay },
   });
   if (!rebase) return;
-  if (repo.branch !== local && !(await repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}`, failed))) return;
+  if (repo.branch !== local && !(await switchBranch(repo, local))) return;
   await repo.history({ op: 'rebase', onto: remote }, `${local} rebasée sur ${remote}`, 'Le rebase a échoué');
 }
 
@@ -88,7 +123,7 @@ export async function renameBranch(repo: Repo, name: string) {
 
 export async function deleteBranch(repo: Repo, name: string) {
   const answers = await dialogs.ask({
-    title: `Supprimer la branche ${name} ?`,
+    title: `Supprimer la branche ${name} ?`,
     body: 'Seule la branche locale est supprimée. Ses commits restent accessibles tant qu’une autre branche ou un tag les contient.',
     fields: [{ name: 'force', label: 'Supprimer même si elle n’est pas fusionnée', type: 'checkbox', value: false }],
     confirmLabel: 'Supprimer',
@@ -100,7 +135,7 @@ export async function deleteBranch(repo: Repo, name: string) {
 
 export async function deleteRemoteBranch(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer ${name} sur le dépôt distant ?`,
+    title: `Supprimer ${name} sur le dépôt distant ?`,
     warning: 'La branche disparaît pour tout le monde. Cette action ne s’annule pas depuis Ramure.',
     confirmLabel: 'Supprimer sur le dépôt distant',
     danger: true,
@@ -129,7 +164,7 @@ export async function createTag(repo: Repo, sha: string) {
 
 export async function deleteTag(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer le tag ${name} ?`,
+    title: `Supprimer le tag ${name} ?`,
     body: 'Le tag est supprimé sur cette machine seulement.',
     confirmLabel: 'Supprimer',
     danger: true,
@@ -139,7 +174,7 @@ export async function deleteTag(repo: Repo, name: string) {
 
 export async function deleteRemoteTag(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer le tag ${name} sur le dépôt distant ?`,
+    title: `Supprimer le tag ${name} sur le dépôt distant ?`,
     warning: 'Le tag disparaît pour tout le monde.',
     confirmLabel: 'Supprimer sur le dépôt distant',
     danger: true,
@@ -161,7 +196,7 @@ export async function stashChanges(repo: Repo) {
 
 export async function dropStash(repo: Repo, stash: Stash) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer la remise ${stash.index} ?`,
+    title: `Supprimer la remise ${stash.index} ?`,
     body: stash.message,
     warning: 'Les modifications qu’elle contient seront perdues.',
     confirmLabel: 'Supprimer la remise',
@@ -181,7 +216,7 @@ const REWRITE_WARNING =
 export async function rebaseOnto(repo: Repo, onto: string) {
   const branch = repo.branch ?? 'HEAD';
   const confirmed = await dialogs.confirm({
-    title: `Rebaser ${branch} sur ${onto} ?`,
+    title: `Rebaser ${branch} sur ${onto} ?`,
     body: `Les commits de ${branch} absents de ${onto} sont rejoués un par un au-dessus de ${onto}. La position actuelle est sauvegardée dans refs/ramure/backup.`,
     warning: headIsPushed(repo) ? REWRITE_WARNING : undefined,
     confirmLabel: 'Rebaser',
@@ -228,7 +263,7 @@ export async function resetTo(repo: Repo, commit: CommitRow) {
 
 export async function forcePush(repo: Repo) {
   const confirmed = await dialogs.confirm({
-    title: `Pousser ${repo.branch ?? ''} en forçant ?`,
+    title: `Pousser ${repo.branch ?? ''} en forçant ?`,
     body: 'La branche distante est remplacée par la tienne (git push --force-with-lease). Le push est refusé si quelqu’un a poussé entre-temps un travail que tu n’as pas récupéré.',
     warning: 'Les commits distants absents de ta branche seront perdus.',
     confirmLabel: 'Pousser en forçant',
@@ -242,9 +277,9 @@ export async function discardFiles(repo: Repo, files: FileChange[]) {
   const what = files.length === 1 ? `« ${files[0].path} »` : `${files.length} fichiers`;
   const onlyNew = files.every((f) => f.kind === 'untracked');
   const confirmed = await dialogs.confirm({
-    title: onlyNew ? `Supprimer ${what} ?` : `Abandonner les modifications de ${what} ?`,
+    title: onlyNew ? `Supprimer ${what} ?` : `Abandonner les modifications de ${what} ?`,
     warning: onlyNew
-      ? 'Ces fichiers sont nouveaux : git ne pourra pas les restaurer.'
+      ? 'Ces fichiers sont nouveaux : git ne pourra pas les restaurer.'
       : 'Les modifications non indexées seront perdues définitivement.',
     confirmLabel: onlyNew ? 'Supprimer' : 'Abandonner',
     danger: true,
@@ -421,7 +456,7 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
             ? `Bascule sur la branche locale et la met à jour avec ${target}`
             : 'Crée la branche locale qui suit cette branche distante',
         run: () =>
-          void (local ? repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}`, 'Impossible de basculer') : switchToRemote(repo, target)),
+          void (local ? switchBranch(repo, local) : switchToRemote(repo, target)),
       },
       { separator: true },
       {
@@ -452,7 +487,7 @@ export function dropMenu(repo: Repo, source: Label, target: Label): MenuItem[] {
   const [from, onto] = [refName(source), refName(target)];
   const current = repo.branch;
   const switchThen = async (name: string, next: () => Promise<unknown>) => {
-    if (await repo.refOp({ op: 'switch', name }, `Basculé sur ${name}`, 'Impossible de basculer')) await next();
+    if (await switchBranch(repo, name)) await next();
   };
   const merge = () => repo.history({ op: 'merge', target: from }, `${from} fusionnée dans ${onto}`, 'La fusion a échoué');
 
