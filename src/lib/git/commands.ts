@@ -38,7 +38,7 @@ export function gitCommands(): Command[] {
     // Le titre dit ce que la commande fera : il suit l'état de la carte.
     add({ id: 'toggle-sidebar', group: 'Affichage', icon: 'panel-left', title: layout.sidebarHidden ? 'Afficher la liste des branches' : 'Masquer la liste des branches', keywords: 'panneau barre laterale replier', run: () => toggleSide('sidebar') });
     add({ id: 'toggle-detail', group: 'Affichage', icon: 'panel-right', title: layout.detailHidden ? 'Afficher le panneau de détail' : 'Masquer le panneau de détail', keywords: 'panneau commit replier', run: () => toggleSide('detail') });
-    add({ id: 'toggle-sides', group: 'Affichage', icon: 'panel-left', title: layout.sidebarHidden && layout.detailHidden ? 'Réafficher les panneaux latéraux' : 'Masquer les panneaux latéraux', keywords: 'graphe en grand replier', run: toggleSides });
+    add({ id: 'toggle-sides', group: 'Affichage', icon: 'panels', title: layout.sidebarHidden && layout.detailHidden ? 'Réafficher les panneaux latéraux' : 'Masquer les panneaux latéraux', keywords: 'graphe en grand replier', run: toggleSides });
   }
   add({ id: 'open', group: 'Actions', icon: 'folder', title: 'Ouvrir un dépôt…', run: () => void workspace.pick() });
   add({ id: 'clone', group: 'Actions', icon: 'cloud', title: 'Cloner un dépôt…', keywords: 'clone', run: () => (workspace.cloning = true) });

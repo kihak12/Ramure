@@ -87,7 +87,7 @@ component that hard-codes one.
 | `--hover` | Background of a hovered element. | `#eef0f4` | `#1e222a` |
 | `--sel` | Background of a selected element. | `#e1ecfb` | `#1d3252` |
 | `--accent` | Main action, focus, active element, link. | `#2b6fdb` | `#6aa5f8` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail. | `#e4eefc` | `#182b45` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed view button of the toolbar. | `#e4eefc` | `#182b45` |
 | `--on-accent` | Text placed on the accent or on a branch colour. | `#ffffff` | `#08131f` |
 | `--ok` / `--ok-soft` | Success, added line. | `#1f7a45` / `#e2f3e8` | `#5cc48d` / `#12301f` |
 | `--warn` / `--warn-soft` | Warning, pending operation. | `#8f5708` / `#fbf0dc` | `#f0a94f` / `#3a2b14` |
@@ -392,8 +392,14 @@ States are the same everywhere:
   two widths only yield to a narrow window, down to 70 px. The full name is always in a tooltip.
 - Two view buttons close the toolbar, one at each end, each above the card it shows and hides:
   the branch list on the left, the detail panel on the right (9.17). They are an 18 px icon
-  alone, in a 30 × 30 px button. Pressed means that the card is shown: an `--accent-soft`
-  background and the icon in `--accent`.
+  alone, in a 30 × 30 px button.
+  - Pressed means that the card is shown: an `--accent-soft` background and the icon in
+    `--accent`, like the active module in the rail. Released, the icon is in `--muted`.
+  - The tint is not alone to say the state: the card itself is there or not, right under the
+    button, the tooltip names what a click will do, and `aria-pressed` says it to screen readers.
+  - Hover: a `--hover` background and the icon in `--ink`; on a pressed button, the tint gets a
+    little stronger (12% of `--accent` over `--accent-soft`). Disabled, when no repository is
+    open: 45%.
 
 ### 9.3 Fields
 
@@ -580,8 +586,8 @@ the graph on the whole width.
   "Panneau de détail".
 - Hiding is immediate, and so is showing (8). The card comes back at the width it had.
 - **Hiding is the user's choice: only a request to see the detail undoes it.** The detail panel
-  comes back on "Voir les modifications en cours", on a click on the "WIP" row, and on Enter or
-  a double-click on a commit. It does not come back when the selection moves, by a click or from
+  comes back on "Voir les modifications en cours", on "Voir les fichiers" in the banner of a
+  stopped operation, on a click on the "WIP" row, and on Enter or a double-click on a commit. It does not come back when the selection moves, by a click or from
   the keyboard, nor when an operation stops on its own. Nothing brings the branch list back but
   its own commands.
 - The choice is shared by all the tabs and restored at the next launch, like the widths.
