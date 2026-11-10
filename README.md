@@ -18,6 +18,9 @@ listé plus bas.
   des dépôts récents.
 - **Cloner** (`git clone --progress`) : progression en direct, interruption possible. Un clonage
   qui échoue ne laisse pas de dossier derrière lui.
+- **Cartes redimensionnables** : la liste des branches, à gauche, et le détail, à droite, se
+  règlent en glissant la poignée qui les sépare du graphe, ou au clavier. Les largeurs sont
+  gardées d'un lancement à l'autre ; un double-clic revient à la largeur par défaut.
 
 ### Graphe
 
