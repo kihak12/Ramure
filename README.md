@@ -179,7 +179,7 @@ cd src-tauri && RAMURE_TEST_REPO=/path/to/repository cargo test real_repo -- --n
 | `scripts/` | Checks run by `npm run check`, and the tool that derives the application icons from the logo |
 | `src-tauri/src/git/` | Running git, the log parser, lane computation |
 | `src-tauri/src/ssh/` | russh sessions, reading `~/.ssh/config`, the host book and keys |
-| `.claude/` | For Claude Code: the `designer` subagent, which reviews interface changes against the design guidelines, and the test that measures it |
+| `.claude/` | For Claude Code: the `design-reviewer` subagent, which reviews interface changes against the design guidelines, and the test that measures it |
 
 The interface touches neither the disk nor the network: it calls the commands of the Rust core.
 

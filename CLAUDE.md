@@ -13,9 +13,11 @@ Tauri 2, Rust, Svelte 5.
 - `docs/design-guidelines.md` is the reference. When the code and the guidelines disagree, the
   guidelines are right; a rule changes in the guidelines first.
 - Whenever a component, a style, a token, an icon or a piece of interface text changes, have the
-  change reviewed by the `designer` subagent before proposing it. Give it the list of changed
-  files: it is read-only and cannot run `git`. Fix the violations it reports, and settle its
-  drifts with whoever asked for the change.
+  change reviewed by the `design-reviewer` subagent before proposing it. Give it the list of
+  changed files: it is read-only and cannot run `git`. Give it screenshots of the change too, in
+  light and in dark, whenever you can take them: without them it only judges the code. Fix the
+  violations it reports, the most severe first, and settle its drifts with whoever asked for
+  the change.
 
 ## Conventions
 

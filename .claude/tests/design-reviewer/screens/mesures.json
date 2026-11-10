@@ -1,0 +1,532 @@
+{
+  "01-repos-clair.png": {
+    "viewport": {
+      "w": 760,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 744,
+      "h": 436.1
+    },
+    "fetchButton": {
+      "x": 649,
+      "y": 20,
+      "w": 50.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 708,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 78,
+      "w": 720,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 120,
+      "w": 495,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 128,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 467,
+      "y": 402,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 540,
+      "y": 120,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 1,
+    "countsWrapped": 0,
+    "listScrolls": true,
+    "confirmation": null,
+    "confirmationOverFooter": null,
+    "confirmationOverList": null,
+    "confirmationOverSummary": null,
+    "selectedBackground": "rgb(225, 236, 251)",
+    "hoveredBackground": "rgb(225, 236, 251)",
+    "focused": "correctif/focus-du-graphe 9f3c"
+  },
+  "02-confirmation-clair.png": {
+    "viewport": {
+      "w": 760,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 744,
+      "h": 436.1
+    },
+    "fetchButton": {
+      "x": 649,
+      "y": 20,
+      "w": 50.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 708,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 78,
+      "w": 720,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 120,
+      "w": 495,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 128,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 467,
+      "y": 402,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 540,
+      "y": 120,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 1,
+    "countsWrapped": 0,
+    "listScrolls": true,
+    "confirmation": {
+      "x": 380,
+      "y": 265,
+      "w": 360,
+      "h": 122.7
+    },
+    "confirmationOverFooter": false,
+    "confirmationOverList": true,
+    "confirmationOverSummary": true,
+    "selectedBackground": "rgb(225, 236, 251)",
+    "hoveredBackground": null,
+    "focused": "Supprimer la sélection"
+  },
+  "03-erreur-clair.png": {
+    "viewport": {
+      "w": 760,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 744,
+      "h": 480.4
+    },
+    "fetchButton": {
+      "x": 629,
+      "y": 20,
+      "w": 70.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 708,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 78,
+      "w": 720,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 120,
+      "w": 495,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 128,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 467,
+      "y": 446,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 540,
+      "y": 120,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 1,
+    "countsWrapped": 0,
+    "listScrolls": true,
+    "confirmation": null,
+    "confirmationOverFooter": null,
+    "confirmationOverList": null,
+    "confirmationOverSummary": null,
+    "selectedBackground": null,
+    "hoveredBackground": null,
+    "focused": "Branches fusionnées 11  Fetch "
+  },
+  "04-etroit-clair.png": {
+    "viewport": {
+      "w": 440,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 424,
+      "h": 451.7
+    },
+    "fetchButton": {
+      "x": 329,
+      "y": 20,
+      "w": 50.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 388,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 93,
+      "w": 400,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 135,
+      "w": 175,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 143,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 147,
+      "y": 417,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 220,
+      "y": 135,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 11,
+    "countsWrapped": 7,
+    "listScrolls": true,
+    "confirmation": null,
+    "confirmationOverFooter": null,
+    "confirmationOverList": null,
+    "confirmationOverSummary": null,
+    "selectedBackground": "rgb(225, 236, 251)",
+    "hoveredBackground": "rgb(225, 236, 251)",
+    "focused": "correctif/focus-du-graphe 9f3c"
+  },
+  "01-repos-sombre.png": {
+    "viewport": {
+      "w": 760,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 744,
+      "h": 436.1
+    },
+    "fetchButton": {
+      "x": 649,
+      "y": 20,
+      "w": 50.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 708,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 78,
+      "w": 720,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 120,
+      "w": 495,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 128,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 467,
+      "y": 402,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 540,
+      "y": 120,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 1,
+    "countsWrapped": 0,
+    "listScrolls": true,
+    "confirmation": null,
+    "confirmationOverFooter": null,
+    "confirmationOverList": null,
+    "confirmationOverSummary": null,
+    "selectedBackground": "rgb(29, 50, 82)",
+    "hoveredBackground": "rgb(29, 50, 82)",
+    "focused": "correctif/focus-du-graphe 9f3c"
+  },
+  "02-confirmation-sombre.png": {
+    "viewport": {
+      "w": 760,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 744,
+      "h": 436.1
+    },
+    "fetchButton": {
+      "x": 649,
+      "y": 20,
+      "w": 50.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 708,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 78,
+      "w": 720,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 120,
+      "w": 495,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 128,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 467,
+      "y": 402,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 540,
+      "y": 120,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 1,
+    "countsWrapped": 0,
+    "listScrolls": true,
+    "confirmation": {
+      "x": 380,
+      "y": 265,
+      "w": 360,
+      "h": 122.7
+    },
+    "confirmationOverFooter": false,
+    "confirmationOverList": true,
+    "confirmationOverSummary": true,
+    "selectedBackground": "rgb(29, 50, 82)",
+    "hoveredBackground": null,
+    "focused": "Supprimer la sélection"
+  },
+  "03-erreur-sombre.png": {
+    "viewport": {
+      "w": 760,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 744,
+      "h": 480.4
+    },
+    "fetchButton": {
+      "x": 629,
+      "y": 20,
+      "w": 70.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 708,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 78,
+      "w": 720,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 120,
+      "w": 495,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 128,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 467,
+      "y": 446,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 540,
+      "y": 120,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 1,
+    "countsWrapped": 0,
+    "listScrolls": true,
+    "confirmation": null,
+    "confirmationOverFooter": null,
+    "confirmationOverList": null,
+    "confirmationOverSummary": null,
+    "selectedBackground": null,
+    "hoveredBackground": null,
+    "focused": "Branches fusionnées 11  Fetch "
+  },
+  "04-etroit-sombre.png": {
+    "viewport": {
+      "w": 440,
+      "h": 600
+    },
+    "pageOverflows": false,
+    "panel": {
+      "x": 8,
+      "y": 8,
+      "w": 424,
+      "h": 451.7
+    },
+    "fetchButton": {
+      "x": 329,
+      "y": 20,
+      "w": 50.9,
+      "h": 22.2
+    },
+    "closeButton": {
+      "x": 388,
+      "y": 21,
+      "w": 32,
+      "h": 20
+    },
+    "filter": {
+      "x": 20,
+      "y": 93,
+      "w": 400,
+      "h": 32.2
+    },
+    "row": {
+      "x": 20,
+      "y": 135,
+      "w": 175,
+      "h": 28
+    },
+    "checkbox": {
+      "x": 28,
+      "y": 143,
+      "w": 12,
+      "h": 12
+    },
+    "footerButton": {
+      "x": 147,
+      "y": 417,
+      "w": 70.3,
+      "h": 30.2
+    },
+    "summary": {
+      "x": 220,
+      "y": 135,
+      "w": 200,
+      "h": 260
+    },
+    "namesCut": 11,
+    "countsWrapped": 7,
+    "listScrolls": true,
+    "confirmation": null,
+    "confirmationOverFooter": null,
+    "confirmationOverList": null,
+    "confirmationOverSummary": null,
+    "selectedBackground": "rgb(29, 50, 82)",
+    "hoveredBackground": "rgb(29, 50, 82)",
+    "focused": "correctif/focus-du-graphe 9f3c"
+  }
+}
