@@ -2,8 +2,10 @@
 // nécessaires (nom, confirmation), puis délèguent au dépôt.
 
 import { dialogs } from '../ui/dialogs.svelte';
+import { keys } from '../ui/keys.svelte';
 import type { MenuItem } from '../ui/menu.svelte';
 import { toasts } from '../ui/toasts.svelte';
+import { refName } from './drag.svelte';
 import { bare, type Label } from './labels';
 import type { Settings } from './prefs.svelte';
 import type { Repo } from './repo.svelte';
@@ -254,6 +256,7 @@ export async function editSettings(repo: Repo) {
       },
     ],
     confirmLabel: 'Enregistrer',
+    extra: { label: 'Raccourcis clavier…', run: () => (keys.editing = true) },
   });
   if (!answers) return;
   const minutes = Math.round(Number(answers.autoFetch) || 0);
@@ -388,6 +391,37 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
   }
   for (const name of label.remotes) {
     items.push({ label: `Supprimer ${name} sur le dépôt distant…`, icon: 'trash', danger: true, run: () => void deleteRemoteBranch(repo, name) });
+  }
+  return items;
+}
+
+/**
+ * Menu proposé quand on dépose la branche `source` sur la branche `target`.
+ * git ne fusionne que dans la branche courante, et ne rebase que la branche courante :
+ * quand il faut d'abord basculer, le libellé le dit.
+ */
+export function dropMenu(repo: Repo, source: Label, target: Label): MenuItem[] {
+  const [from, onto] = [refName(source), refName(target)];
+  const current = repo.branch;
+  const switchThen = async (name: string, next: () => Promise<unknown>) => {
+    if (await repo.refOp({ op: 'switch', name }, `Basculé sur ${name}`, 'Impossible de basculer')) await next();
+  };
+  const merge = () => repo.history({ op: 'merge', target: from }, `${from} fusionnée dans ${onto}`, 'La fusion a échoué');
+
+  const items: MenuItem[] = [];
+  if (target.local === null) {
+    items.push({ label: `Fusionner ${from} dans ${onto}`, icon: 'merge', disabled: true, hint: 'On ne fusionne que dans une branche locale', run: () => {} });
+  } else if (target.local === current) {
+    items.push({ label: `Fusionner ${from} dans ${onto}`, icon: 'merge', run: () => void merge() });
+  } else {
+    items.push({ label: `Basculer sur ${onto}, puis y fusionner ${from}`, icon: 'merge', run: () => void switchThen(onto, merge) });
+  }
+  if (source.local === null) {
+    items.push({ label: `Rebaser ${from} sur ${onto}`, icon: 'branch', disabled: true, hint: 'On ne rebase qu\u2019une branche locale', run: () => {} });
+  } else if (source.local === current) {
+    items.push({ label: `Rebaser ${from} sur ${onto}…`, icon: 'branch', run: () => void rebaseOnto(repo, onto) });
+  } else {
+    items.push({ label: `Basculer sur ${from}, puis la rebaser sur ${onto}…`, icon: 'branch', run: () => void switchThen(from, () => rebaseOnto(repo, onto)) });
   }
   return items;
 }

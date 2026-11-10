@@ -127,6 +127,7 @@
             <span class="glyph">{#if command.icon}<Icon name={command.icon} size={15} />{/if}</span>
             <span class="title">{command.title}</span>
             {#if command.hint}<span class="hint">{command.hint}</span>{/if}
+            {#if command.shortcut}<span class="keys">{#each command.shortcut.split(' + ') as part, n (n)}<kbd>{part}</kbd>{/each}</span>{/if}
           </div>
         {:else}
           <p class="none">Rien ne correspond à « {query} ».</p>
@@ -256,6 +257,15 @@
     text-align: right;
     color: var(--muted);
     font-size: 11.5px;
+  }
+  .keys {
+    flex: none;
+    display: inline-flex;
+    gap: 3px;
+    margin-left: auto;
+  }
+  .hint + .keys {
+    margin-left: 8px;
   }
   .none {
     margin: 0;

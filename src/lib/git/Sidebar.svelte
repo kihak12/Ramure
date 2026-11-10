@@ -2,7 +2,8 @@
   import { slide } from 'svelte/transition';
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
-  import { labelMenu, stashMenu } from './actions';
+  import { dropMenu, labelMenu, stashMenu } from './actions';
+  import { accepts, drag } from './drag.svelte';
   import { bare, type Label } from './labels';
   import type { Repo } from './repo.svelte';
 
@@ -55,6 +56,38 @@
   const remoteLabel = (name: string): Label => ({ name, kind: 'remote', local: null, remotes: [name], tag: null, title: name });
   const tagLabel = (name: string): Label => ({ name, kind: 'tag', local: null, remotes: [], tag: name, title: name });
 
+  // Branche de la barre latérale survolée pendant un glissement.
+  let dropOn = $state('');
+
+  /** Gestionnaires de glisser-déposer d'une entrée de branche. */
+  function dnd(label: Label) {
+    return {
+      draggable: true,
+      ondragstart: (e: DragEvent) => {
+        drag.label = label;
+        e.dataTransfer?.setData('text/plain', label.name);
+      },
+      ondragend: () => {
+        drag.label = null;
+        dropOn = '';
+      },
+      ondragover: (e: DragEvent) => {
+        if (!accepts(label)) return;
+        e.preventDefault();
+        dropOn = label.name;
+      },
+      ondragleave: () => (dropOn = ''),
+      ondrop: (e: DragEvent) => {
+        const source = drag.label;
+        dropOn = '';
+        drag.label = null;
+        if (!source) return;
+        e.preventDefault();
+        menu.open(e, dropMenu(repo, source, label));
+      },
+    };
+  }
+
   function switchLocal(name: string) {
     if (!repo.locked && name !== repo.branch) void repo.refOp({ op: 'switch', name }, `Basculé sur ${name}`, 'Impossible de basculer');
   }
@@ -94,7 +127,9 @@
               type="button"
               class="item"
               class:current={branch.current}
-              title="{branch.name}{branch.upstream ? ` → ${branch.upstream}` : ' (jamais publiée)'} — double-clic pour basculer"
+              class:drop={dropOn === branch.name}
+              {...dnd(localLabel(branch.name, branch.current))}
+              title="{branch.name}{branch.upstream ? ` → ${branch.upstream}` : ' (jamais publiée)'} — double-clic pour basculer, glisser sur une autre branche pour fusionner ou rebaser"
               onclick={() => repo.selectSha(branch.sha)}
               ondblclick={() => switchLocal(branch.name)}
               oncontextmenu={(e) => menu.open(e, labelMenu(repo, localLabel(branch.name, branch.current), branch.sha))}
@@ -121,6 +156,8 @@
             <button
               type="button"
               class="item"
+              class:drop={dropOn === remote.name}
+              {...dnd(remoteLabel(remote.name))}
               title="{remote.name} — double-clic pour basculer sur la branche locale correspondante"
               onclick={() => repo.selectSha(remote.sha)}
               ondblclick={() => switchRemote(remote.name)}
@@ -286,6 +323,11 @@
   .item.current {
     background: var(--sel);
     font-weight: 600;
+  }
+  .item.drop {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: var(--accent-soft);
   }
   .mark {
     flex: none;

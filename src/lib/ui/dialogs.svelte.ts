@@ -28,6 +28,8 @@ export interface DialogSpec {
   cancelLabel?: string;
   /** Action destructrice : le bouton de confirmation passe en rouge. */
   danger?: boolean;
+  /** Action annexe, à gauche des boutons : la boîte se ferme, puis l'action s'exécute. */
+  extra?: { label: string; run: () => void };
 }
 
 export type Answers = Record<string, FieldValue>;

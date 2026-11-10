@@ -92,6 +92,17 @@
       {/each}
 
       <footer>
+        {#if spec.extra}
+          {@const extra = spec.extra}
+          <button
+            class="btn ghost extra"
+            type="button"
+            onclick={() => {
+              dialogs.close(null);
+              extra.run();
+            }}>{extra.label}</button
+          >
+        {/if}
         <button class="btn" type="button" onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Annuler'}</button>
         <!-- svelte-ignore a11y_autofocus -->
         <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid} autofocus={fields.length === 0}>
@@ -179,5 +190,9 @@
     justify-content: flex-end;
     gap: 8px;
     margin-top: 4px;
+  }
+  .extra {
+    margin-right: auto;
+    color: var(--accent);
   }
 </style>

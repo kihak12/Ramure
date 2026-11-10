@@ -38,8 +38,12 @@ export function gitCommands(): Command[] {
   add({ id: 'open', group: 'Actions', icon: 'folder', title: 'Ouvrir un dépôt…', run: () => void workspace.pick() });
   add({ id: 'clone', group: 'Actions', icon: 'cloud', title: 'Cloner un dépôt…', keywords: 'clone', run: () => (workspace.cloning = true) });
   add({ id: 'init', group: 'Actions', icon: 'plus', title: 'Initialiser un dépôt…', keywords: 'init nouveau', run: () => void workspace.init() });
-  add({ id: 'tab-new', group: 'Actions', icon: 'plus', title: 'Nouvel onglet', hint: 'Ctrl + T', run: () => workspace.newTab() });
-  if (tab) add({ id: 'tab-close', group: 'Actions', icon: 'x', title: "Fermer l'onglet", hint: 'Ctrl + W', run: () => workspace.closeTab(tab.id) });
+  add({ id: 'tab-new', group: 'Actions', icon: 'plus', title: 'Nouvel onglet', run: () => workspace.newTab() });
+  if (tab) add({ id: 'tab-close', group: 'Actions', icon: 'x', title: "Fermer l'onglet", run: () => workspace.closeTab(tab.id) });
+  if (workspace.tabs.length > 1) {
+    add({ id: 'tab-next', group: 'Actions', icon: 'chevron', title: 'Onglet suivant', run: () => workspace.cycle(1) });
+    add({ id: 'tab-prev', group: 'Actions', icon: 'chevron', title: 'Onglet précédent', run: () => workspace.cycle(-1) });
+  }
   if (repo) add({ id: 'settings', group: 'Actions', icon: 'settings', title: 'Réglages…', keywords: 'preferences options style graphe', run: () => void editSettings(repo) });
 
   if (repo && open && repo.refs) {

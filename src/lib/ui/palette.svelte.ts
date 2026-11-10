@@ -9,6 +9,8 @@ export interface Command {
   icon?: IconName;
   /** Précision affichée à droite : raccourci clavier, chemin, état. */
   hint?: string;
+  /** Raccourci clavier attaché à la commande, déjà mis en forme (`Ctrl + Maj + F`). */
+  shortcut?: string;
   /** Mots supplémentaires pour la recherche (le nom git d'une action, par exemple). */
   keywords?: string;
   disabled?: boolean;

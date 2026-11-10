@@ -6,26 +6,9 @@
   import RepoView from './RepoView.svelte';
   import { workspace } from './workspace.svelte';
 
-  /** Vrai quand le module Git est à l'écran : ses raccourcis clavier ne valent qu'alors. */
+  /** Vrai quand le module Git est à l'écran. */
   let { active = true }: { active?: boolean } = $props();
-
-  function onKey(e: KeyboardEvent) {
-    if (!active || !(e.ctrlKey || e.metaKey) || e.altKey) return;
-    const key = e.key.toLowerCase();
-    if (key === 't') {
-      e.preventDefault();
-      workspace.newTab();
-    } else if (key === 'w') {
-      e.preventDefault();
-      workspace.closeTab(workspace.activeId);
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      workspace.cycle(e.shiftKey ? -1 : 1);
-    }
-  }
 </script>
-
-<svelte:window onkeydown={onKey} />
 
 <div class="workspace">
   <div class="tabs" role="tablist" aria-label="Dépôts ouverts">
@@ -53,12 +36,12 @@
           {/if}
           <span class="name">{workspace.title(tab)}</span>
         </button>
-        <button class="close" type="button" aria-label="Fermer l'onglet {workspace.title(tab)}" title="Fermer (Ctrl + W)" onclick={() => workspace.closeTab(tab.id)}>
+        <button class="close" type="button" aria-label="Fermer l'onglet {workspace.title(tab)}" title="Fermer l'onglet" onclick={() => workspace.closeTab(tab.id)}>
           <Icon name="x" size={12} />
         </button>
       </div>
     {/each}
-    <button class="add" type="button" aria-label="Nouvel onglet" title="Nouvel onglet (Ctrl + T)" onclick={() => workspace.newTab()}>
+    <button class="add" type="button" aria-label="Nouvel onglet" title="Nouvel onglet" onclick={() => workspace.newTab()}>
       <Icon name="plus" size={15} />
     </button>
   </div>

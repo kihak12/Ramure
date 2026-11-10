@@ -5,33 +5,52 @@
   import ContextMenu from './lib/ui/ContextMenu.svelte';
   import Dialog from './lib/ui/Dialog.svelte';
   import Icon from './lib/ui/Icon.svelte';
+  import { allowedInTerminal, comboOf, display, keys } from './lib/ui/keys.svelte';
   import Palette from './lib/ui/Palette.svelte';
+  import ShortcutsDialog from './lib/ui/ShortcutsDialog.svelte';
   import { palette, type Command } from './lib/ui/palette.svelte';
   import Toasts from './lib/ui/Toasts.svelte';
 
   type View = 'git' | 'ssh';
   let view = $state<View>('git');
 
-  function openPalette() {
-    const views: Command[] = [
+  /** Toutes les commandes disponibles maintenant, avec leur raccourci. */
+  function commands(): Command[] {
+    const general: Command[] = [
       { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Afficher les dépôts', disabled: view === 'git', run: () => (view = 'git') },
       { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Afficher le terminal SSH', disabled: view === 'ssh', run: () => (view = 'ssh') },
+      { id: 'shortcuts', group: 'Modules', icon: 'settings', title: 'Raccourcis clavier…', keywords: 'touches clavier', run: () => (keys.editing = true) },
     ];
     // Les actions Git n'ont de sens que devant un dépôt.
-    palette.show(view === 'git' ? [...gitCommands(), ...views] : views);
+    const all = view === 'git' ? [...gitCommands(), ...general] : general;
+    return all.map((command) => {
+      const combo = keys.binding(command.id);
+      return combo ? { ...command, shortcut: display(combo) } : command;
+    });
   }
 
+  const openPalette = () => palette.show(commands());
+
   function onKey(e: KeyboardEvent) {
-    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-    const key = e.key.toLowerCase();
-    // Dans un terminal, Ctrl + K efface la fin de la ligne : on le lui laisse.
+    const combo = comboOf(e);
+    if (!combo) return;
+    // Ctrl + Maj + P ouvre toujours la palette, quel que soit le raccourci choisi pour elle.
+    const id = combo === 'Ctrl+Shift+P' ? 'palette' : keys.find(combo);
+    if (!id) return;
     const inTerminal = e.target instanceof Element && e.target.closest('.xterm') !== null;
-    if ((key === 'k' && !e.shiftKey && !inTerminal) || (key === 'p' && e.shiftKey)) {
-      e.preventDefault();
-      e.stopPropagation();
+    if (inTerminal && !allowedInTerminal(combo)) return;
+    // Une boîte de dialogue ouverte garde le clavier ; seule la palette se referme par son raccourci.
+    const modal = document.querySelector('dialog[open]') !== null;
+    if (modal && !(id === 'palette' && palette.commands)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (id === 'palette') {
       if (palette.commands) palette.hide();
       else openPalette();
+      return;
     }
+    const command = commands().find((c) => c.id === id);
+    if (command && !command.disabled) command.run();
   }
 </script>
 
@@ -45,7 +64,7 @@
     <button type="button" aria-pressed={view === 'ssh'} title="Terminal SSH" aria-label="Terminal SSH" onclick={() => (view = 'ssh')}>
       <Icon name="terminal" size={19} />
     </button>
-    <button class="last" type="button" title="Palette de commandes (Ctrl + K)" aria-label="Palette de commandes" onclick={openPalette}>
+    <button class="last" type="button" title="Palette de commandes{keys.binding('palette') ? ` (${display(keys.binding('palette'))})` : ''}" aria-label="Palette de commandes" onclick={openPalette}>
       <Icon name="search" size={18} />
     </button>
   </nav>
@@ -59,6 +78,7 @@
 
 <!-- Couches communes à toute l'application. -->
 <Palette />
+<ShortcutsDialog />
 <Dialog />
 <ContextMenu />
 <Toasts />

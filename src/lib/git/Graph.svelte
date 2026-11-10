@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
-  import { commitMenu, labelMenu } from './actions';
+  import { commitMenu, dropMenu, labelMenu } from './actions';
+  import { accepts, drag, isBranch } from './drag.svelte';
   import { bare, labelsOf, type Label } from './labels';
   import { prefs } from './prefs.svelte';
   import type { Repo } from './repo.svelte';
@@ -307,6 +308,19 @@
     }
   }
 
+  // Étiquette survolée pendant un glissement, pour la mettre en évidence.
+  let dropOn = $state('');
+  const labelKey = (label: Label, commit: CommitRow) => `${commit.sha}:${label.kind}:${label.name}`;
+
+  function onDrop(event: DragEvent, target: Label) {
+    const source = drag.label;
+    dropOn = '';
+    drag.label = null;
+    if (!source || !isBranch(target)) return;
+    event.preventDefault();
+    menu.open(event, dropMenu(repo, source, target));
+  }
+
   function openCommitMenu(event: MouseEvent, commit: CommitRow, index: number) {
     repo.selected = index;
     menu.open(event, commitMenu(repo, commit));
@@ -342,8 +356,26 @@
   <span
     class="ref k-{label.kind}"
     class:local={label.local !== null}
+    class:drop={dropOn === labelKey(label, commit)}
     style:--c="var(--l{commit.lane % 8})"
-    title="{label.title} — double-clic pour basculer, clic droit pour les actions"
+    title="{label.title} — double-clic pour basculer, clic droit pour les actions, glisser sur une autre branche pour fusionner ou rebaser"
+    draggable={isBranch(label) ? 'true' : undefined}
+    ondragstart={(e) => {
+      drag.label = label;
+      e.dataTransfer?.setData('text/plain', label.name);
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'link';
+    }}
+    ondragend={() => {
+      drag.label = null;
+      dropOn = '';
+    }}
+    ondragover={(e) => {
+      if (!accepts(label)) return;
+      e.preventDefault();
+      dropOn = labelKey(label, commit);
+    }}
+    ondragleave={() => (dropOn = '')}
+    ondrop={(e) => onDrop(e, label)}
     ondblclick={(e) => {
       e.stopPropagation();
       switchTo(label);
@@ -676,6 +708,16 @@
   }
   .ref:active {
     transform: scale(0.97);
+  }
+  .ref[draggable='true'] {
+    cursor: grab;
+  }
+  /* Branche sur laquelle on s'apprête à déposer celle qu'on glisse. */
+  .ref.drop,
+  .ribbon .ref.drop {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    transform: scale(1.06);
   }
   .ref-name {
     overflow: hidden;
