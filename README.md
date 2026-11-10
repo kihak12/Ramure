@@ -176,10 +176,10 @@ cd src-tauri && RAMURE_TEST_REPO=/path/to/repository cargo test real_repo -- --n
 | --- | --- |
 | `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/ui/`; the design tokens are in `app.css` |
 | `docs/` | The [design guidelines](docs/design-guidelines.md), the logo in `logo/`, and the design decisions in `design/` |
-| `scripts/` | Checks run by `npm run check`, and the tool that derives the application icons from the logo |
+| `scripts/` | Checks run by `npm run check`, the tool that derives the application icons from the logo, and the one that takes screenshots of the application on Linux |
 | `src-tauri/src/git/` | Running git, the log parser, lane computation |
 | `src-tauri/src/ssh/` | russh sessions, reading `~/.ssh/config`, the host book and keys |
-| `.claude/` | For Claude Code: the `design-reviewer` subagent, which reviews interface changes against the design guidelines, and the test that measures it |
+| `.claude/` | For Claude Code: the `design-reviewer` subagent, which reviews interface changes against the design guidelines, the `ux-designer` subagent, which proposes improvements to a screen, and the trials that measure them |
 
 The interface touches neither the disk nor the network: it calls the commands of the Rust core.
 
