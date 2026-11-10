@@ -109,6 +109,8 @@ export class Repo {
       ? new Set([...this.status.staged, ...this.status.unstaged].map((f) => f.path)).size
       : (this.result?.wipFiles ?? 0),
   );
+  /** Libellé du bouton qui mène aux modifications en cours. */
+  wipText = $derived(this.wipCount > 1 ? `Voir les ${this.wipCount} fichiers modifiés` : 'Voir le fichier modifié');
   conflicts = $derived(this.status?.unstaged.filter((f) => f.kind === 'conflict') ?? []);
   /** Commit sur lequel se trouve HEAD. */
   head = $derived(

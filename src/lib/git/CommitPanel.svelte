@@ -21,7 +21,16 @@
   }
 </script>
 
-<span class="label">Commit</span>
+<header class="head">
+  <span class="label">Commit</span>
+  <!-- Les modifications en cours restent à un clic, même quand on regarde un autre commit. -->
+  {#if repo.wipCount > 0}
+    <button class="btn small" type="button" onclick={() => repo.showWip()}>
+      <Icon name="pencil" size={14} />
+      {repo.wipText}
+    </button>
+  {/if}
+</header>
 <p class="title">{commit.subject}</p>
 {#if body}<p class="message">{body}</p>{/if}
 <dl>
@@ -70,6 +79,16 @@
 {/if}
 
 <style>
+  .head {
+    /* Toute la largeur de la carte : le bouton va au bord droit. La hauteur est celle d'un petit
+       bouton, pour que le titre du commit ne bouge pas quand le bouton apparaît. */
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 24px;
+  }
   p {
     margin: 0;
   }
