@@ -4,7 +4,7 @@ Client Git graphique et client SSH/SFTP dans la même fenêtre, pour Windows et 
 Libre (MIT), local, sans compte.
 
 **État : jalons J1 et J2 presque complets.** Le prototype J0 a validé le graphe et le terminal
-SSH sur Windows et Ubuntu. Le Git du quotidien (J1) et le Git avancé (J2) sont là, à trois
+SSH sur Windows et Ubuntu. Le Git du quotidien (J1) et le Git avancé (J2) sont là, à deux
 fonctions près, listées plus bas.
 
 ## Ce que fait Ramure aujourd'hui
@@ -22,12 +22,19 @@ fonctions près, listées plus bas.
 
 - **Graphe** : `git log`, lanes calculées en Rust, dessin sur un canvas. Seules les lignes
   visibles existent dans la page ; 50 000 commits défilent sans saccade.
+- **Deux rendus**, au choix dans les réglages. « Ruban » (par défaut) : une pastille aux
+  initiales de l'auteur sur chaque commit, des tracés arrondis façon plan de métro, une bande
+  de la couleur de la branche qui relie le commit à son message, un halo animé sur le commit
+  courant. « Classique » : points et courbes, plus compact.
 - **Colonne « Branche / Tag »** à gauche du graphe, reliée au commit par un trait. Une icône
   ordinateur marque le dernier commit local d'une branche, un nuage le dernier commit distant ;
   au même commit, ils partagent une étiquette. Les étiquettes en surnombre se déplient au survol.
 - **Barre latérale** : branches locales avec leur avance et leur retard, branches distantes,
   tags, remises, et un filtre.
 - **Détail d'un commit** : message complet, fichiers modifiés, diff de chaque fichier.
+- **Diff** unifié ou côte à côte ; côte à côte, la partie modifiée d'une ligne est surlignée.
+- **Palette de commandes** (Ctrl + K, ou la loupe en bas à gauche) : une recherche unique sur
+  les actions, les branches, les tags, les onglets et les dépôts récents.
 
 ### Travail en cours
 
@@ -77,7 +84,7 @@ passe ou de phrase secrète.
 
 ### Pas encore là
 
-- Du jalon J1 : palette de commandes (Ctrl K), diff côte à côte.
+- Du jalon J1 : raccourcis clavier configurables.
 - Du jalon J2 : fusion ou rebase en glissant une branche sur une autre.
 - Jalons J3 et J4 : carnet d'hôtes, clés, trousseau, terminal local, SFTP, tunnels,
   installeurs et mises à jour.

@@ -2,6 +2,7 @@
   import { SvelteSet } from 'svelte/reactivity';
   import { fly } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
+  import { prefs, savePrefs, type DiffMode } from './prefs.svelte';
   import type { Diff } from './types';
 
   let {
@@ -111,6 +112,78 @@
     anchor = line.index;
   }
 
+  // --- Affichage côte à côte ----------------------------------------------------------------
+
+  /** Une ligne du tableau à deux colonnes : ancien à gauche, nouveau à droite. */
+  interface Pair {
+    key: number;
+    /** En-tête de fichier ou de bloc, sur toute la largeur. */
+    full: Line | null;
+    left: Line | null;
+    right: Line | null;
+    /** Partie réellement modifiée de chaque côté, quand les deux lignes se ressemblent. */
+    inline: { pre: string; old: string; new: string; post: string } | null;
+  }
+
+  /** Ce qui change entre deux lignes : leur début et leur fin communs encadrent la différence. */
+  function inlineChange(before: string, after: string): Pair['inline'] {
+    let pre = 0;
+    const max = Math.min(before.length, after.length);
+    while (pre < max && before[pre] === after[pre]) pre++;
+    let post = 0;
+    while (post < max - pre && before[before.length - 1 - post] === after[after.length - 1 - post]) post++;
+    // Trop peu en commun : surligner presque toute la ligne n'apprendrait rien.
+    if (pre + post < Math.min(before.length, after.length) * 0.3) return null;
+    return {
+      pre: before.slice(0, pre),
+      old: before.slice(pre, before.length - post),
+      new: after.slice(pre, after.length - post),
+      post: before.slice(before.length - post),
+    };
+  }
+
+  /** Aligne suppressions et ajouts d'un même changement sur les mêmes lignes du tableau. */
+  function pairUp(lines: Line[]): Pair[] {
+    const out: Pair[] = [];
+    let removed: Line[] = [];
+    let added: Line[] = [];
+    const flush = () => {
+      const count = Math.max(removed.length, added.length);
+      for (let k = 0; k < count; k++) {
+        const left = removed[k] ?? null;
+        const right = added[k] ?? null;
+        out.push({
+          key: (left ?? right)!.index,
+          full: null,
+          left,
+          right,
+          inline: left && right ? inlineChange(left.text, right.text) : null,
+        });
+      }
+      removed = [];
+      added = [];
+    };
+    for (const line of lines) {
+      if (line.type === 'del') {
+        // Une suppression après des ajouts ouvre un nouveau changement.
+        if (added.length) flush();
+        removed.push(line);
+      } else if (line.type === 'add') {
+        added.push(line);
+      } else {
+        flush();
+        if (line.type === 'ctx') out.push({ key: line.index, full: null, left: line, right: line, inline: null });
+        else out.push({ key: line.index, full: line, left: null, right: null, inline: null });
+      }
+    }
+    flush();
+    return out;
+  }
+
+  const split = $derived(prefs.diffMode === 'split');
+  const pairs = $derived(split && parsed ? pairUp(parsed.lines) : []);
+  const setMode = (mode: DiffMode) => savePrefs({ ...prefs, diffMode: mode });
+
   const applySelection = () => onapply?.([...selected]);
   const applyHunk = (hunk: number) => onapply?.(changes.filter((l) => l.hunk === hunk).map((l) => l.index));
 </script>
@@ -132,6 +205,10 @@
     {#if parsed && (parsed.added || parsed.removed)}
       <span class="count mono"><span class="plus">+{parsed.added}</span> <span class="minus">−{parsed.removed}</span></span>
     {/if}
+    <div class="modes" role="group" aria-label="Disposition du diff">
+      <button type="button" aria-pressed={!split} onclick={() => setMode('unified')} title="Une seule colonne">Unifié</button>
+      <button type="button" aria-pressed={split} onclick={() => setMode('split')} title="Ancien à gauche, nouveau à droite">Côte à côte</button>
+    </div>
     <button class="btn" type="button" onclick={onclose} title="Fermer le diff (Échap)"><Icon name="x" size={14} /> Fermer</button>
   </header>
 
@@ -141,6 +218,62 @@
     <p class="note">Chargement du diff…</p>
   {:else if parsed && parsed.lines.length === 0}
     <p class="note">Aucune différence de contenu à afficher (fichier vide, ou seul le mode a changé).</p>
+  {:else if parsed && split}
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div class="lines mono" tabindex="0">
+      <table class="split">
+        <colgroup><col class="c-no" /><col class="c-sign" /><col /><col class="c-no" /><col class="c-sign" /><col /></colgroup>
+        <tbody>
+          {#each pairs as pair (pair.key)}
+            {#if pair.full}
+              <tr class="t-{pair.full.type}">
+                <td class="code" colspan="6">
+                  {pair.full.text}{#if canSelect && pair.full.type === 'hunk'}
+                    <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(pair.full!.hunk)}>{verb} ce bloc</button>
+                  {/if}
+                </td>
+              </tr>
+            {:else}
+              {@const left = pair.left}
+              {@const right = pair.right}
+              {@const leftPick = canSelect && left?.type === 'del'}
+              {@const rightPick = canSelect && right?.type === 'add'}
+              <tr>
+                <td class="no">{left?.old ?? ''}</td>
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <td
+                  class="half"
+                  colspan="2"
+                  class:c-del={left?.type === 'del'}
+                  class:c-void={!left}
+                  class:pickable={leftPick}
+                  class:picked={left ? selected.has(left.index) : false}
+                  onclick={(e) => left && toggle(left, e)}
+                >
+                  <span class="sign">{#if left && selected.has(left.index)}✓{:else if left?.type === 'del'}−{/if}</span>{#if left}{#if pair.inline && left.type === 'del'}{pair.inline.pre}<mark>{pair.inline.old}</mark>{pair.inline.post}{:else}{left.text}{/if}{/if}
+                </td>
+                <td class="no">{right?.new ?? ''}</td>
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <td
+                  class="half"
+                  colspan="2"
+                  class:c-add={right?.type === 'add'}
+                  class:c-void={!right}
+                  class:pickable={rightPick}
+                  class:picked={right ? selected.has(right.index) : false}
+                  onclick={(e) => right && toggle(right, e)}
+                >
+                  <span class="sign">{#if right && selected.has(right.index)}✓{:else if right?.type === 'add'}+{/if}</span>{#if right}{#if pair.inline && right.type === 'add'}{pair.inline.pre}<mark>{pair.inline.new}</mark>{pair.inline.post}{:else}{right.text}{/if}{/if}
+                </td>
+              </tr>
+            {/if}
+          {/each}
+        </tbody>
+      </table>
+      {#if parsed.cut || diff?.truncated}
+        <p class="note">Diff trop long : seul le début est affiché.</p>
+      {/if}
+    </div>
   {:else if parsed}
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div class="lines mono" class:selectable={canSelect} tabindex="0">
@@ -221,6 +354,36 @@
     font-size: 12px;
     white-space: nowrap;
   }
+  /* Bascule entre les deux dispositions */
+  .modes {
+    display: flex;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--bg);
+  }
+  .modes button {
+    padding: 2px 9px;
+    border: 0;
+    border-radius: 5px;
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease);
+  }
+  .modes button:hover {
+    color: var(--ink);
+  }
+  .modes button[aria-pressed='true'] {
+    background: var(--raised);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: var(--shadow-soft);
+  }
   .plus {
     color: var(--ok);
   }
@@ -294,6 +457,76 @@
   .t-meta .code {
     padding-left: 4px;
   }
+  /* Côte à côte : deux moitiés de largeur égale, les longues lignes passent à la ligne. */
+  .split {
+    width: 100%;
+    table-layout: fixed;
+  }
+  .split .c-no {
+    width: 46px;
+  }
+  .split .c-sign {
+    width: 18px;
+  }
+  .split .half {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding-right: 10px;
+    border-right: 1px solid var(--line-soft);
+  }
+  .split .half .sign {
+    display: inline-block;
+    width: 18px;
+    text-align: center;
+  }
+  .split .no {
+    width: auto;
+    min-width: 0;
+    padding: 0 6px;
+  }
+  .c-del {
+    background: color-mix(in srgb, var(--bad) 13%, transparent);
+  }
+  .c-del .sign {
+    color: var(--bad);
+  }
+  .c-add {
+    background: color-mix(in srgb, var(--ok) 14%, transparent);
+  }
+  .c-add .sign {
+    color: var(--ok);
+  }
+  /* Côté sans ligne correspondante. */
+  .c-void {
+    background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--muted) 9%, transparent) 6px 12px);
+  }
+  mark {
+    border-radius: 3px;
+    color: inherit;
+  }
+  .c-del mark {
+    background: color-mix(in srgb, var(--bad) 34%, transparent);
+  }
+  .c-add mark {
+    background: color-mix(in srgb, var(--ok) 36%, transparent);
+  }
+  .c-del.pickable:hover {
+    background: color-mix(in srgb, var(--bad) 22%, transparent);
+  }
+  .c-add.pickable:hover {
+    background: color-mix(in srgb, var(--ok) 24%, transparent);
+  }
+  .c-del.picked,
+  .c-del.picked:hover {
+    background: color-mix(in srgb, var(--bad) 34%, transparent);
+    box-shadow: inset 3px 0 0 var(--bad);
+  }
+  .c-add.picked,
+  .c-add.picked:hover {
+    background: color-mix(in srgb, var(--ok) 38%, transparent);
+    box-shadow: inset 3px 0 0 var(--ok);
+  }
+
   /* Sélection de lignes */
   .pickable {
     cursor: pointer;

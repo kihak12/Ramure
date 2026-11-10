@@ -231,6 +231,16 @@ export async function editSettings(repo: Repo) {
         hint: 'En avance rapide, le pull est refusé si ta branche et la branche distante ont divergé.',
       },
       {
+        name: 'graphStyle',
+        label: 'Style du graphe',
+        type: 'select',
+        value: current.graphStyle,
+        options: [
+          { value: 'ribbon', label: 'Ruban : pastilles d’auteur et bandes de couleur' },
+          { value: 'classic', label: 'Classique : points et courbes, plus compact' },
+        ],
+      },
+      {
         name: 'limit',
         label: 'Commits chargés dans le graphe',
         type: 'select',
@@ -248,8 +258,10 @@ export async function editSettings(repo: Repo) {
   if (!answers) return;
   const minutes = Math.round(Number(answers.autoFetch) || 0);
   const next: Settings = {
+    ...current,
     autoFetch: Math.max(0, Math.min(60, minutes)),
     pullMode: answers.pullMode as Settings['pullMode'],
+    graphStyle: answers.graphStyle as Settings['graphStyle'],
     limit: Number(answers.limit),
   };
   repo.saveSettings(next);

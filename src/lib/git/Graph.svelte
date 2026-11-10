@@ -4,18 +4,25 @@
   import { menu } from '../ui/menu.svelte';
   import { commitMenu, labelMenu } from './actions';
   import { bare, labelsOf, type Label } from './labels';
+  import { prefs } from './prefs.svelte';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
 
   let { repo }: { repo: Repo } = $props();
 
-  const ROW = 28; // hauteur d'une ligne
-  const LANE = 16; // largeur d'une lane
-  const PAD = 14; // marge gauche du graphe
+  // Deux rendus du graphe, au choix dans les réglages.
+  // « Ruban » : pastilles d'auteur sur le graphe, tracés arrondis, bande de couleur qui relie
+  // chaque commit à son message. « Classique » : points et courbes, plus compact.
+  const STYLES = {
+    ribbon: { row: 32, lane: 22, pad: 18, node: 9.5, merge: 4.5, line: 2.5, max: 400 },
+    classic: { row: 28, lane: 16, pad: 14, node: 5, merge: 4, line: 2, max: 340 },
+  } as const;
+
   const LABELS = 164; // largeur de la colonne des branches et des tags
   const BUFFER = 24; // lignes rendues au-dessus et au-dessous de la zone visible
   const STEP = 12; // la fenêtre de rendu ne se déplace que par paliers de 12 lignes
-  const MAX_GRAPH = 340; // largeur maximale de la colonne du graphe
+  const BAND = 22; // hauteur du ruban qui relie un commit à son message
+  const BAND_ALPHA = 0.13; // même opacité que le dégradé CSS qui le prolonge dans la colonne du message
 
   let scrollTop = $state(0);
   let viewH = $state(600);
@@ -26,13 +33,21 @@
   let scroller = $state<HTMLDivElement>();
   let canvas = $state<HTMLCanvasElement>();
 
+  const ribbon = $derived(prefs.graphStyle !== 'classic');
+  const metrics = $derived(STYLES[ribbon ? 'ribbon' : 'classic']);
+  const ROW = $derived(metrics.row);
+
   const commits = $derived(repo.commits);
   // Jamais plus étroit que son en-tête de colonne.
-  const graphW = $derived(Math.max(72, Math.min(MAX_GRAPH, PAD * 2 + Math.max(0, (repo.result?.maxLanes ?? 1) - 1) * LANE + 6)));
+  const graphW = $derived(
+    Math.max(72, Math.min(metrics.max, metrics.pad * 2 + Math.max(0, (repo.result?.maxLanes ?? 1) - 1) * metrics.lane + 6)),
+  );
   // Fenêtre de rendu : seules ces lignes existent dans le DOM et sur le canvas.
   const winStart = $derived(Math.max(0, Math.floor((scrollTop / ROW - BUFFER) / STEP) * STEP));
   const winEnd = $derived(Math.min(commits.length, winStart + Math.ceil(viewH / ROW) + 2 * BUFFER + STEP));
   const rows = $derived(commits.slice(winStart, winEnd));
+  // Ligne du commit courant, pour l'halo animé posé sur son nœud.
+  const headIndex = $derived(repo.head ? commits.indexOf(repo.head) : -1);
 
   // Répartition des modifications en cours, pour la ligne WIP.
   const wip = $derived.by(() => {
@@ -58,7 +73,7 @@
       .slice(0, 2)
       .map((word) => word[0]!.toUpperCase())
       .join('');
-  /** Couleur d'un auteur : toujours la même, prise dans la palette des lanes. */
+  /** Couleur d'un auteur dans le rendu classique : toujours la même, prise dans la palette des lanes. */
   const hue = (author: string) => [...author].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 8;
 
   // --- Dessin du graphe -------------------------------------------------------------------
@@ -68,11 +83,14 @@
     const css = getComputedStyle(document.documentElement);
     const palette = Array.from({ length: 8 }, (_, i) => css.getPropertyValue(`--l${i}`).trim());
     const background = css.getPropertyValue('--bg').trim();
+    const onColor = css.getPropertyValue('--on-accent').trim();
+    const family = getComputedStyle(document.body).fontFamily;
     const color = (lane: number) => palette[lane % palette.length];
+    const { row, lane: laneW, pad, node, merge, line } = metrics;
 
     const dpr = window.devicePixelRatio || 1;
     const width = graphW;
-    const height = Math.max(1, (winEnd - winStart) * ROW);
+    const height = Math.max(1, (winEnd - winStart) * row);
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     const ctx = canvas.getContext('2d');
@@ -80,72 +98,129 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-    const x = (lane: number) => PAD + lane * LANE;
-    const y = (index: number) => (index - winStart) * ROW + ROW / 2;
+    const x = (lane: number) => pad + lane * laneW;
+    const y = (index: number) => (index - winStart) * row + row / 2;
+
+    // Ruban : une bande de la couleur de la branche part du commit et file vers son message.
+    if (ribbon) {
+      ctx.globalAlpha = BAND_ALPHA;
+      for (let i = winStart; i < winEnd; i++) {
+        const commit = commits[i];
+        const cx = x(commit.lane);
+        if (cx >= width) continue;
+        ctx.fillStyle = color(commit.lane);
+        ctx.fillRect(cx, y(i) - BAND / 2, width - cx, BAND);
+      }
+      ctx.globalAlpha = 1;
+    }
 
     // Trait qui relie une étiquette, dans la colonne de gauche, au commit qu'elle désigne.
-    ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.45;
+    ctx.lineWidth = ribbon ? 2 : 1.5;
+    ctx.globalAlpha = ribbon ? 0.6 : 0.45;
     for (let i = winStart; i < winEnd; i++) {
       const commit = commits[i];
       if (!commit.refs.length) continue;
       ctx.strokeStyle = color(commit.lane);
       ctx.beginPath();
       ctx.moveTo(0, y(i));
-      ctx.lineTo(x(commit.lane) - 8, y(i));
+      ctx.lineTo(x(commit.lane) - node - 3, y(i));
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
 
     // Segments : de la ligne i vers la ligne i + 1. On part d'une ligne plus haut pour
     // tracer aussi ce qui entre dans la fenêtre par le dessus.
-    ctx.lineWidth = 2;
+    ctx.lineWidth = line;
     for (let i = Math.max(0, winStart - 1); i < winEnd; i++) {
       const commit = commits[i];
+      const next = commits[i + 1];
       const y1 = y(i);
-      const y2 = y1 + ROW;
+      const y2 = y1 + row;
       for (const [from, to, lane] of commit.edges) {
+        const [x1, x2] = [x(from), x(to)];
         ctx.strokeStyle = color(lane);
         ctx.setLineDash(commit.wip && lane === commit.lane ? [3, 3] : []);
         ctx.beginPath();
-        ctx.moveTo(x(from), y1);
-        if (from === to) ctx.lineTo(x(to), y2);
-        else ctx.bezierCurveTo(x(from), y1 + ROW * 0.6, x(to), y2 - ROW * 0.6, x(to), y2);
+        ctx.moveTo(x1, y1);
+        if (from === to) {
+          ctx.lineTo(x2, y2);
+        } else if (!ribbon) {
+          ctx.bezierCurveTo(x1, y1 + row * 0.6, x2, y2 - row * 0.6, x2, y2);
+        } else {
+          // Tracé « plan de métro » : un angle arrondi plutôt qu'une courbe en S.
+          const radius = Math.min(10, Math.abs(x2 - x1), row / 2);
+          if (from === commit.lane && lane !== commit.lane) {
+            // Second parent d'une fusion : la ligne sort du nœud par le côté, puis descend dans
+            // sa propre colonne. Descendre d'abord recouvrirait la ligne du premier parent.
+            ctx.arcTo(x2, y1, x2, y2, radius);
+          } else if (next && to === next.lane) {
+            // La ligne rejoint le commit du dessous : elle descend dans sa colonne, puis entre
+            // dans le nœud par le côté.
+            ctx.arcTo(x1, y2, x2, y2, radius);
+          } else {
+            // Simple changement de colonne d'une ligne qui passe.
+            ctx.bezierCurveTo(x1, y1 + row * 0.55, x2, y2 - row * 0.55, x2, y2);
+            ctx.stroke();
+            continue;
+          }
+          ctx.lineTo(x2, y2);
+        }
         ctx.stroke();
       }
     }
     ctx.setLineDash([]);
 
     // Nœuds, par-dessus les segments.
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     for (let i = winStart; i < winEnd; i++) {
       const commit = commits[i];
       const cx = x(commit.lane);
       const cy = y(i);
+      const tint = color(commit.lane);
       const isHead = commit.refs.some((r) => r.kind === 'head' || r.kind === 'detached');
+      const isMerge = commit.parents.length > 1;
+      const radius = isMerge ? merge : node;
+
       if (isHead) {
         ctx.beginPath();
-        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-        ctx.strokeStyle = color(commit.lane);
-        ctx.globalAlpha = 0.5;
+        ctx.arc(cx, cy, radius + 3.5, 0, Math.PI * 2);
+        ctx.strokeStyle = tint;
+        ctx.globalAlpha = 0.55;
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.globalAlpha = 1;
       }
+
       ctx.beginPath();
-      ctx.arc(cx, cy, commit.parents.length > 1 ? 4 : 5, 0, Math.PI * 2);
+      ctx.arc(cx, cy, commit.wip ? node - 1.5 : radius, 0, Math.PI * 2);
       ctx.lineWidth = 2;
-      ctx.strokeStyle = commit.wip ? color(commit.lane) : background;
-      ctx.fillStyle = commit.wip ? background : color(commit.lane);
-      if (commit.wip) ctx.setLineDash([2.5, 2]);
+      if (commit.wip) {
+        ctx.fillStyle = background;
+        ctx.strokeStyle = tint;
+        ctx.setLineDash([2.5, 2]);
+      } else {
+        ctx.fillStyle = tint;
+        ctx.strokeStyle = background;
+      }
       ctx.fill();
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // Initiales de l'auteur dans la pastille.
+      if (ribbon && !commit.wip && !isMerge) {
+        const letters = initials(commit.author);
+        ctx.fillStyle = onColor;
+        ctx.font = `700 ${letters.length > 1 ? 8 : 10}px ${family}`;
+        ctx.fillText(letters, cx, cy + 0.5);
+      }
     }
   }
 
   $effect(() => {
-    // Redessine quand la fenêtre, les données, la largeur ou le thème changent.
+    // Redessine quand la fenêtre, les données, la largeur, le style ou le thème changent.
     void dark;
     draw();
   });
@@ -266,6 +341,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <span
     class="ref k-{label.kind}"
+    class:local={label.local !== null}
     style:--c="var(--l{commit.lane % 8})"
     title="{label.title} — double-clic pour basculer, clic droit pour les actions"
     ondblclick={(e) => {
@@ -282,7 +358,7 @@
   </span>
 {/snippet}
 
-<div class="graph" style:--labels="{LABELS}px" style:--graph="{graphW}px">
+<div class="graph" class:ribbon style:--labels="{LABELS}px" style:--graph="{graphW}px" style:--row="{ROW}px" style:--band="{BAND}px">
   <div class="head">
     <span>Branche / Tag</span><span>Graphe</span><span>Message</span><span>Auteur</span><span>Date</span><span>SHA</span>
   </div>
@@ -314,6 +390,16 @@
         style:height="{(winEnd - winStart) * ROW}px"
         aria-hidden="true"
       ></canvas>
+      {#if ribbon && headIndex >= winStart && headIndex < winEnd && repo.head}
+        <!-- Halo animé sur le commit courant : un élément CSS, pour ne pas redessiner le canvas à chaque image. -->
+        <span
+          class="pulse"
+          aria-hidden="true"
+          style:top="{headIndex * ROW + ROW / 2}px"
+          style:left="{LABELS + metrics.pad + repo.head.lane * metrics.lane}px"
+          style:--c="var(--l{repo.head.lane % 8})"
+        ></span>
+      {/if}
       {#each rows as commit, i (commit.sha)}
         {@const index = winStart + i}
         {@const labels = commit.wip ? [] : labelsOf(commit, repo.shortRemotes)}
@@ -327,10 +413,11 @@
           aria-selected={index === repo.selected}
           style:top="{index * ROW}px"
           style:--i={Math.min(i, 30)}
+          style:--c="var(--l{commit.lane % 8})"
           onclick={() => (repo.selected = index)}
           oncontextmenu={(e) => openCommitMenu(e, commit, index)}
         >
-          <span class="labels" style:--c="var(--l{commit.lane % 8})">
+          <span class="labels">
             {#if labels.length}
               {@render chip(labels[0], commit)}
               {#if labels.length > 1}
@@ -360,7 +447,9 @@
           </span>
           <span class="author">
             {#if !commit.wip}
-              <span class="avatar" style:--c="var(--l{hue(commit.author)})" aria-hidden="true">{initials(commit.author)}</span>
+              {#if !ribbon}
+                <span class="avatar" style:--c="var(--l{hue(commit.author)})" aria-hidden="true">{initials(commit.author)}</span>
+              {/if}
               <span class="who">{commit.author}</span>
             {/if}
           </span>
@@ -411,11 +500,22 @@
     .who {
       display: none;
     }
+    /* Le rendu « Ruban » montre déjà l'auteur sur le graphe : sa colonne disparaît entièrement. */
+    .ribbon .head,
+    .ribbon .row {
+      grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 0 92px;
+    }
   }
   @container (max-width: 600px) {
     .head,
-    .row {
+    .row,
+    .ribbon .head,
+    .ribbon .row {
       grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 34px;
+    }
+    .ribbon .head,
+    .ribbon .row {
+      grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 0;
     }
     .head span:nth-child(5),
     .date {
@@ -465,7 +565,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    height: 28px;
+    height: var(--row);
     padding-right: 10px;
     cursor: pointer;
     white-space: nowrap;
@@ -508,6 +608,30 @@
     }
   }
 
+  /* Halo du commit courant */
+  .pulse {
+    position: absolute;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border-radius: 50%;
+    border: 2px solid var(--c);
+    pointer-events: none;
+    animation: pulse 2.4s var(--ease) infinite;
+  }
+  @keyframes pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    70%,
+    to {
+      transform: scale(2.3);
+      opacity: 0;
+    }
+  }
+
   /* Colonne des branches et des tags */
   .labels {
     position: relative;
@@ -525,6 +649,10 @@
     background: var(--c);
     opacity: 0.45;
   }
+  .ribbon .wire {
+    height: 2px;
+    opacity: 0.6;
+  }
   .ref {
     flex: 0 1 auto;
     display: inline-flex;
@@ -540,6 +668,7 @@
     font-weight: 500;
     transition:
       background var(--t-fast) var(--ease),
+      filter var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
   .ref:hover {
@@ -566,6 +695,24 @@
     --c: var(--muted);
     border-radius: 10px;
     font-weight: 400;
+  }
+  /* Rendu « Ruban » : une branche locale est une pastille pleine, de la couleur de sa ligne. */
+  .ribbon .ref {
+    line-height: 20px;
+    border-radius: 6px;
+  }
+  .ribbon .ref.local {
+    background: var(--c);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+  .ribbon .ref.local:hover {
+    background: var(--c);
+    filter: brightness(1.12);
+  }
+  .ribbon .ref.k-head {
+    font-weight: 700;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent);
   }
   .more {
     flex: none;
@@ -608,6 +755,11 @@
     overflow: hidden;
     padding-left: 10px;
   }
+  /* Le ruban dessiné sur le canvas se prolonge ici, puis s'estompe sous le texte. */
+  .ribbon .msg {
+    height: var(--band);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 13%, transparent), transparent min(420px, 85%));
+  }
   .subject {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -645,6 +797,7 @@
     padding-left: 10px;
     color: var(--muted);
     font-size: 12px;
+    overflow: hidden;
   }
   .who {
     overflow: hidden;

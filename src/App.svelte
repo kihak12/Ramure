@@ -1,14 +1,41 @@
 <script lang="ts">
+  import { gitCommands } from './lib/git/commands';
   import GitWorkspace from './lib/git/GitWorkspace.svelte';
   import SshView from './lib/ssh/SshView.svelte';
   import ContextMenu from './lib/ui/ContextMenu.svelte';
   import Dialog from './lib/ui/Dialog.svelte';
   import Icon from './lib/ui/Icon.svelte';
+  import Palette from './lib/ui/Palette.svelte';
+  import { palette, type Command } from './lib/ui/palette.svelte';
   import Toasts from './lib/ui/Toasts.svelte';
 
   type View = 'git' | 'ssh';
   let view = $state<View>('git');
+
+  function openPalette() {
+    const views: Command[] = [
+      { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Afficher les dépôts', disabled: view === 'git', run: () => (view = 'git') },
+      { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Afficher le terminal SSH', disabled: view === 'ssh', run: () => (view = 'ssh') },
+    ];
+    // Les actions Git n'ont de sens que devant un dépôt.
+    palette.show(view === 'git' ? [...gitCommands(), ...views] : views);
+  }
+
+  function onKey(e: KeyboardEvent) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const key = e.key.toLowerCase();
+    // Dans un terminal, Ctrl + K efface la fin de la ligne : on le lui laisse.
+    const inTerminal = e.target instanceof Element && e.target.closest('.xterm') !== null;
+    if ((key === 'k' && !e.shiftKey && !inTerminal) || (key === 'p' && e.shiftKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (palette.commands) palette.hide();
+      else openPalette();
+    }
+  }
 </script>
+
+<svelte:window onkeydowncapture={onKey} />
 
 <div class="shell">
   <nav class="rail" aria-label="Modules">
@@ -17,6 +44,9 @@
     </button>
     <button type="button" aria-pressed={view === 'ssh'} title="Terminal SSH" aria-label="Terminal SSH" onclick={() => (view = 'ssh')}>
       <Icon name="terminal" size={19} />
+    </button>
+    <button class="last" type="button" title="Palette de commandes (Ctrl + K)" aria-label="Palette de commandes" onclick={openPalette}>
+      <Icon name="search" size={18} />
     </button>
   </nav>
 
@@ -28,6 +58,7 @@
 </div>
 
 <!-- Couches communes à toute l'application. -->
+<Palette />
 <Dialog />
 <ContextMenu />
 <Toasts />
@@ -66,6 +97,9 @@
   .rail button:hover {
     background: var(--hover);
     color: var(--ink);
+  }
+  .rail .last {
+    margin-top: auto;
   }
   .rail button:active {
     transform: scale(0.93);
