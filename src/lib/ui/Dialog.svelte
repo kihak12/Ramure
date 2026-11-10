@@ -82,7 +82,7 @@
                 placeholder={field.placeholder}
                 spellcheck="false"
                 autocomplete="off"
-                autofocus={i === 0}
+                autofocus={i === 0 && !spec.danger}
                 bind:value={values[field.name]}
               />
             {/if}
@@ -98,14 +98,18 @@
             class="btn ghost extra"
             type="button"
             onclick={() => {
+              // Fermer la boîte vide `spec` : l'action est retenue avant, sinon elle ne se lit plus.
+              const run = extra.run;
               dialogs.close(null);
-              extra.run();
+              run();
             }}>{extra.label}</button
           >
         {/if}
-        <button class="btn" type="button" onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Annuler'}</button>
+        <!-- Action destructive : le focus arrive sur « Annuler », pour qu'Entrée ne détruise rien (charte, 9.10). -->
         <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid} autofocus={fields.length === 0}>
+        <button class="btn" type="button" autofocus={!!spec.danger} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Annuler'}</button>
+        <!-- svelte-ignore a11y_autofocus -->
+        <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid} autofocus={fields.length === 0 && !spec.danger}>
           {spec.confirmLabel ?? 'Valider'}
         </button>
       </footer>
@@ -135,7 +139,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 18px 20px 16px;
+    padding: 16px 20px;
   }
   h2 {
     margin: 0;
@@ -163,7 +167,7 @@
   .row {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
   }
   .row small {
     color: var(--muted);
