@@ -388,8 +388,8 @@
     {#if label.kind === 'head'}<Icon name="check" size={14} />{/if}
     <span class="ref-name">{label.name}</span>
     <!-- Pendant le basculement, l'anneau prend la place d'une icône : l'étiquette garde sa taille. -->
-    {#if label.local}{#if waiting}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="laptop" size={14} />{/if}{/if}
-    {#if label.remotes.length}{#if waiting && !label.local}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="cloud" size={14} />{/if}{/if}
+    {#if label.local}{#if waiting}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="laptop" size={14} />{/if}{/if}
+    {#if label.remotes.length}{#if waiting && !label.local}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="cloud" size={14} />{/if}{/if}
     {#if label.tag}<Icon name="tag" size={14} />{/if}
   </span>
 {/snippet}
@@ -720,16 +720,22 @@
     height: 2px;
     opacity: 0.6;
   }
-  /* L'anneau de 12 px occupe la boîte de 14 px de l'icône qu'il remplace. */
+  /* L'anneau de 12 px est centré dans la boîte de 14 px de l'icône qu'il remplace. */
+  .ref .wait {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+  }
   .ref .spinner {
     --spinner: currentColor;
-    margin: 0 1px;
   }
   .ref {
     flex: 0 1 auto;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
     font-size: var(--fs-small);
     line-height: 20px;
@@ -866,10 +872,14 @@
   .stat {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 6px;
     font-size: var(--fs-label);
     font-variant-numeric: tabular-nums;
     color: var(--c);
+  }
+  /* Deux compteurs sont plus écartés que l'icône ne l'est de son chiffre. */
+  .stat + .stat {
+    margin-left: 4px;
   }
   .stat.ok {
     --c: var(--ok);

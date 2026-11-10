@@ -571,7 +571,7 @@ centre card.
 In order: Branche / Tag (220 px), Graphe (420 px at most), Message, Auteur, Date, and SHA when
 the width allows it.
 
-The message comes first when room is short. When it would be less than 200 px wide, the
+The message comes first when room is short. When it would be less than about 200 px wide, the
 "Branche / Tag" column gives its width back to it, down to 164 px.
 
 ### 10.2 Drawing
