@@ -122,7 +122,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-width: 0;
+    /* Pendant l'opération, c'est ce message qui compte : il ne cède pas sa place aux durées. */
+    flex: none;
     color: var(--ink);
     --spinner: var(--muted);
   }
