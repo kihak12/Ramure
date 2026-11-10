@@ -61,6 +61,8 @@ export class Repo {
   loading = $state(false);
   /** Opération en cours (`fetch`, `commit`, `index`…) ; vide quand le dépôt est libre. */
   busy = $state('');
+  /** Branche visée par le basculement en cours, pour montrer l'attente là où il a été demandé. */
+  switching = $state<string | null>(null);
   error = $state('');
   selected = $state(-1);
   perf = $state({ ipc: 0, paint: 0 });
@@ -440,8 +442,14 @@ export class Repo {
     if (changed) await this.reload();
   }
 
-  refOp(op: RefOp, done: string, failed = "L'opération a échoué") {
-    return this.#task(op.op, failed, () => this.git<string>('git_ref_op', { op }), done);
+  async refOp(op: RefOp, done: string, failed = "L'opération a échoué") {
+    if (this.busy) return false;
+    if (op.op === 'switch' || op.op === 'switch-remote') this.switching = op.name;
+    try {
+      return await this.#task(op.op, failed, () => this.git<string>('git_ref_op', { op }), done);
+    } finally {
+      this.switching = null;
+    }
   }
 
   history(op: HistoryOp, done: string, failed = "L'opération a échoué") {

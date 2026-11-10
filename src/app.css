@@ -306,6 +306,23 @@ dialog:focus-visible {
   stroke-linejoin: round;
 }
 
+/* Indicateur d'attente : un anneau qui tourne tant que dure l'opération (charte, section 8). */
+.spinner {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  border: 2px solid color-mix(in srgb, var(--spinner, var(--accent)) 30%, transparent);
+  border-top-color: var(--spinner, var(--accent));
+  animation: spinner var(--t-spin) linear infinite;
+}
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Apparitions partagées. */
 @keyframes pop-in {
   from {

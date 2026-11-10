@@ -153,19 +153,7 @@
     color: var(--ink);
   }
   .spinner {
-    flex: none;
-    width: 12px;
-    height: 12px;
     margin: 1px;
-    border-radius: 50%;
-    border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
-    border-top-color: var(--accent);
-    animation: spin var(--t-spin) linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
   .alert {
     display: grid;

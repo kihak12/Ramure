@@ -38,6 +38,9 @@
     {last ? `$ ${last.command}` : 'Journal des commandes'}
   </button>
   <div class="stats" aria-live="polite">
+    {#if repo.busy}
+      <span class="busy"><span class="spinner"></span>{repo.switching ? `Basculement sur ${repo.switching}…` : 'Opération en cours…'}</span>
+    {/if}
     {#if fetchText}<span class:bad={repo.lastFetch?.ok === false}>{fetchText}</span>{/if}
     {#if repo.loading}
       <span>Chargement…</span>
@@ -113,6 +116,13 @@
     white-space: nowrap;
     overflow: hidden;
     min-width: 0;
+  }
+  .busy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink);
+    --spinner: var(--muted);
   }
   .stats b {
     color: var(--ink);
