@@ -46,11 +46,28 @@
     }
   }
 
-  function reset() {
-    const limit = prefs.limit;
-    savePrefs({ autoFetch: DEFAULTS.autoFetch, pullMode: DEFAULTS.pullMode, graphStyle: DEFAULTS.graphStyle, diffMode: DEFAULTS.diffMode });
+  type GitSettings = Pick<Settings, (typeof FIELDS)[number]>;
+  /** Les réglages de cette section, et eux seuls. */
+  const own = (all: Settings): GitSettings => ({
+    autoFetch: all.autoFetch,
+    pullMode: all.pullMode,
+    graphStyle: all.graphStyle,
+    limit: all.limit,
+    diffMode: all.diffMode,
+  });
+
+  /** Applique d'un coup les réglages de la section, et relit les dépôts si leur taille change. */
+  function apply({ limit, ...rest }: GitSettings) {
+    savePrefs(rest);
     minutesError = '';
-    if (limit !== DEFAULTS.limit) setLimit(DEFAULTS.limit);
+    setLimit(limit);
+  }
+
+  /** Revient aux valeurs par défaut, et rend de quoi retrouver les réglages d'avant. */
+  function reset() {
+    const before = own(prefs);
+    apply(own(DEFAULTS));
+    return () => apply(before);
   }
 </script>
 

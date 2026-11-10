@@ -518,9 +518,12 @@ Sidebar, file lists, graph, palette results.
   is in a tooltip, and it is what a screen reader reads. This is the one place where a text is
   not cut on the right. A title that is still too long runs over a second line.
 
+- A notification may carry one action, a small button before its close button: it undoes what
+  was just done ("Annuler"). A click runs the action and closes the notification.
+
 | Type | Duration |
 |---|---|
-| Success | 4.5 s |
+| Success | 4.5 s; 9 s when it carries an action |
 | Warning | 9 s |
 | Error | Stays until it is closed. |
 
@@ -637,6 +640,9 @@ is left or on Enter.
 
 - No "Enregistrer", no "Annuler", no main button on the page, and no notification to say that
   a setting was saved: the control shows the state.
+- "Tout réinitialiser" changes several settings at once, some of them not in view. It applies
+  at once too, and a notification follows, the only one of the page: it names the section and
+  offers "Annuler" for 9 s, which brings every setting of the section back.
 - A value that is not valid is not applied: the field takes the error state of section 9.3,
   with its message under it.
 - When applying takes time, the waiting ring (8) appears under the control, with words that say

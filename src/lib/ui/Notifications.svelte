@@ -39,6 +39,19 @@
         {/if}
         {#if toast.body}<pre class="mono">{toast.body}</pre>{/if}
       </div>
+      {#if toast.action}
+        {@const action = toast.action}
+        <button
+          class="btn small action"
+          type="button"
+          onclick={() => {
+            toasts.dismiss(toast.id);
+            action.run();
+          }}
+        >
+          {action.label}
+        </button>
+      {/if}
       <button class="close" type="button" aria-label="Fermer la notification" onclick={() => toasts.dismiss(toast.id)}>
         <Icon name="x" size={14} />
       </button>
@@ -64,6 +77,7 @@
     pointer-events: auto;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-auto-flow: column;
     gap: 10px;
     align-items: start;
     padding: 10px 10px 10px 12px;
@@ -113,6 +127,9 @@
     overflow-wrap: anywhere;
     max-height: 180px;
     overflow: auto;
+  }
+  .action {
+    min-height: 24px;
   }
   .close {
     display: grid;

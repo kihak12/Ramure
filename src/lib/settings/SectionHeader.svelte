@@ -1,6 +1,17 @@
 <script lang="ts">
-  /** En-tête d'une section de réglages : son titre, et le retour aux valeurs par défaut. */
-  let { title, note = '', changed, onreset }: { title: string; note?: string; changed: boolean; onreset: () => void } = $props();
+  import { toasts } from '../ui/toasts.svelte';
+
+  /**
+   * En-tête d'une section de réglages : son titre, et le retour aux valeurs par défaut.
+   * `onreset` réinitialise la section et rend de quoi revenir en arrière : la notification qui
+   * suit propose « Annuler » (charte, section 9.18).
+   */
+  let { title, note = '', changed, onreset }: { title: string; note?: string; changed: boolean; onreset: () => () => void } = $props();
+
+  function reset() {
+    const undo = onreset();
+    toasts.ok(`« ${title} » : valeurs par défaut rétablies`, '', { label: 'Annuler', run: undo });
+  }
 </script>
 
 <header>
@@ -13,7 +24,7 @@
     type="button"
     disabled={!changed}
     title={changed ? 'Revenir aux valeurs par défaut de cette section' : 'Cette section est déjà aux valeurs par défaut'}
-    onclick={onreset}
+    onclick={reset}
   >
     Tout réinitialiser
   </button>

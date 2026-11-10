@@ -142,6 +142,11 @@ class Keys {
     this.#save({});
   }
 
+  /** Remet des raccourcis personnalisés tels qu'ils étaient, après un « Tout réinitialiser » annulé. */
+  restore(overrides: Record<string, string>) {
+    this.#save({ ...overrides });
+  }
+
   #save(next: Record<string, string>) {
     // Une valeur égale au défaut n'est pas une personnalisation.
     for (const [id, combo] of Object.entries(next)) if (combo === DEFAULTS.get(id)) delete next[id];

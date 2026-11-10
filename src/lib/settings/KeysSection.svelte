@@ -80,8 +80,10 @@
   note="Clique une combinaison, puis tape la nouvelle. Retour arrière la retire, Échap annule."
   changed={custom}
   onreset={() => {
+    const before = { ...keys.overrides };
     keys.resetAll();
     notice = null;
+    return () => keys.restore(before);
   }}
 />
 

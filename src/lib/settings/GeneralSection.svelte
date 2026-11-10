@@ -12,7 +12,15 @@
   }
 </script>
 
-<SectionHeader title="Général" {changed} onreset={() => setTheme(DEFAULTS.theme)} />
+<SectionHeader
+  title="Général"
+  {changed}
+  onreset={() => {
+    const before = prefs.theme;
+    setTheme(DEFAULTS.theme);
+    return () => setTheme(before);
+  }}
+/>
 
 <section class="group" aria-labelledby="group-look">
   <h3 id="group-look">Apparence</h3>
