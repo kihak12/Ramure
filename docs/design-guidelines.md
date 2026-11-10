@@ -198,7 +198,7 @@ Two weights, no more.
 - Numbers that line up or that change (counters, dates, columns) use tabular figures
   (`font-variant-numeric: tabular-nums`).
 - Text that is too long is cut on the right with an ellipsis, and its full value appears in a
-  tooltip.
+  tooltip. The title of a notification is the one exception (section 9.11).
 
 ## 4. Spacing and dimensions
 
@@ -477,9 +477,10 @@ Sidebar, file lists, graph, palette results.
   coloured bar on the edge.
 - A short title, then the detail. The output of git is shown as it is, in the code font at
   11.5 px.
-- In the title, a name of more than 36 characters, such as a branch or a path, is cut in its
-  middle: its start and its end stay readable, and the full title is in a tooltip. This is the
-  one place where a text is not cut on the right.
+- In the title, a word of more than 36 characters, such as the name of a branch or a path, is
+  cut inside: its first 24 characters and its last 10 stay, around an ellipsis. The full title
+  is in a tooltip, and it is what a screen reader reads. This is the one place where a text is
+  not cut on the right. A title that is still too long runs over a second line.
 
 | Type | Duration |
 |---|---|
