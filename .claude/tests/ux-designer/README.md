@@ -124,3 +124,17 @@ All on 10 November 2026, one run per row, with the definition as it was first wr
   names Sonnet at `high`, and the call can name another model for a screen that deserves it.
 - One run per row: this trial shows that the three models can do the work, not which one is
   better by a small margin.
+
+## What it sees depends on what the screenshots show
+
+Two more runs, the same day, on the graph and the task "find where the branches are, then
+switch to one". Both with Sonnet at `high`, after a step was added to the method: put real
+content in the screen, since screenshots are often taken on tidy data.
+
+| Screenshots | What the answer said of long branch names |
+| --- | --- |
+| The repository of the trial, with short names | Nothing was cut on screen. The fixed width of the label column, 164 px, came up only as a caution inside another proposal. |
+| A repository with names like `fonctionnalite/PROJ-1482-…`, and the notification of a switch | A proposal on the names cut in the sidebar, in the labels and in the toolbar, and one on the notification, whose title runs over two lines and whose body repeats the name. It also measured that the toolbar shifts by 150 px when the name of the branch changes. |
+
+The added step is not enough on its own: the subagent reports what it is shown. Give it
+screenshots taken on real data, with long names, many rows and the states that go wrong.
