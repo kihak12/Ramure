@@ -29,7 +29,8 @@ Les jetons du code suivent cette charte (issue #5) et l'interface a la forme de 
 10. [Graphe des commits](#10-graphe-des-commits)
 11. [Accessibilité](#11-accessibilité)
 12. [Ton des textes](#12-ton-des-textes)
-13. [Faire évoluer la charte](#13-faire-évoluer-la-charte)
+13. [Logo](#13-logo)
+14. [Faire évoluer la charte](#14-faire-évoluer-la-charte)
 
 ## 1. Principes
 
@@ -143,7 +144,8 @@ Chaque thème doit les respecter, en clair et en sombre.
 
 - L'application suit le réglage clair ou sombre du système.
 - Un thème de couleurs redéfinit les jetons des sections 2.1 et 2.2, en clair et en sombre, et
-  rien d'autre : ni forme, ni police, ni taille, ni ombre.
+  rien d'autre : ni forme, ni police, ni taille, ni ombre. Il ne change pas non plus les
+  couleurs du logo (section 13).
 - Quatre thèmes sont prévus : Ardoise (par défaut), Encre, Sous-bois et Braise. Leurs valeurs
   sont dans [`design/themes.css`](design/themes.css) ; leur mise en œuvre est l'issue #9.
 
@@ -611,7 +613,69 @@ Typographie :
 - les pluriels sont accordés : « 1 commit », « 10 commits » ;
 - une date courte s'écrit « 9 nov. 2026 », une date complète « lundi 9 novembre 2026 à 23:35 ».
 
-## 13. Faire évoluer la charte
+## 13. Logo
+
+Le logo de Ramure est une tête de cerf dessinée d'un seul trait. Le museau est une pastille de
+commit ; deux traits en partent, longent la tête, s'écartent et deviennent les bois. On y voit un
+cerf, et un commit d'où partent deux branches. Le choix est raconté dans
+[`design/logo.md`](design/logo.md).
+
+![Le logo, l'icône, le symbole et leurs tailles](logo/planche.png)
+
+### 13.1 Versions
+
+| Version | Fichier | Usage |
+|---|---|---|
+| Icône | [`logo/ramure-icone.svg`](logo/ramure-icone.svg) | L'application : barre des tâches, fenêtre, page d'accueil. Le symbole en blanc sur une tuile bleue. |
+| Icône, petites tailles | [`logo/ramure-icone-petit.svg`](logo/ramure-icone-petit.svg) | La même, en dessous de 40 px. Le dessin est simplifié : un andouiller par côté, un trait plus épais. |
+| Logo | [`logo/ramure-logo.svg`](logo/ramure-logo.svg), [`logo/ramure-logo-sombre.svg`](logo/ramure-logo-sombre.svg) | L'icône suivie du nom. La version « sombre » a le nom en clair, pour un fond sombre. |
+| Symbole | [`logo/ramure-symbole.svg`](logo/ramure-symbole.svg), [`logo/ramure-symbole-petit.svg`](logo/ramure-symbole-petit.svg) | Le dessin seul, d'une seule couleur, quand la tuile ne convient pas. |
+
+### 13.2 Couleurs
+
+| Jeton | Valeur | Rôle |
+|---|---|---|
+| `--brand` | `#2b6fdb` | La tuile. |
+| `--on-brand` | `#ffffff` | Le symbole sur la tuile. |
+
+- Ces deux couleurs sont fixes : elles ne changent ni en thème sombre, ni avec le thème de
+  couleurs. L'icône est la même partout.
+- Le nom est en `#171a21` sur un fond clair, en `#e6e9ef` sur un fond sombre.
+- Le symbole seul prend la couleur du texte, le bleu de la tuile, ou le blanc. Aucune autre.
+
+### 13.3 Construction
+
+- **La tuile** est un carré dont les angles sont arrondis de 22 % du côté. Le symbole y est
+  centré, avec une marge de 16 % du côté (12 % pour le dessin simplifié).
+- **Le nom** est « Ramure », en DM Sans, graisse 650, approche de −0,01 em. Sa hauteur de
+  capitale fait 45 % de la hauteur de la tuile, et elle est centrée sur la tuile.
+- **L'écart** entre la tuile et le nom fait un quart de la hauteur de la tuile.
+- Dans les fichiers, le nom est en tracés : il s'affiche sans que la police soit installée.
+
+### 13.4 Tailles et marge
+
+- Le dessin complet à partir de 40 px ; le dessin simplifié de 16 à 39 px ; rien en dessous de
+  16 px.
+- Le logo avec le nom ne s'emploie pas à moins de 40 px de haut.
+- Autour du logo, une marge d'au moins un quart de la hauteur de la tuile reste vide.
+
+### 13.5 Ce qui est interdit
+
+- Déformer le logo, l'incliner ou le faire pivoter.
+- Changer la couleur de la tuile ou du symbole ; ajouter un dégradé, une ombre ou un contour.
+- Redessiner le symbole : ajouter ou retirer des andouillers, changer l'épaisseur du trait.
+- Employer le dessin complet en dessous de 40 px.
+- Poser le symbole seul sur une photo ou sur un fond chargé : c'est le rôle de la tuile.
+- Écrire le nom dans une autre police, ou changer son écart avec la tuile.
+
+### 13.6 Dans le code
+
+- `src/lib/ui/Logo.svelte` affiche le symbole. Il lit les fichiers de `docs/logo`, qui sont la
+  seule source du dessin.
+- Les icônes de `src-tauri/icons` sont tirées de ces mêmes fichiers par
+  `scripts/generer-icones.cjs`. Ce script n'est à relancer que si le dessin change.
+
+## 14. Faire évoluer la charte
 
 - Une règle change par une PR qui modifie ce fichier. Le code suit, dans la même PR ou dans la
   suivante.

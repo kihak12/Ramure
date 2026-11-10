@@ -1,9 +1,11 @@
 # Logo de Ramure
 
-Trois pistes à comparer, sur le thème des bois de cerf.
+Ce document garde la trace du choix du logo. Trois pistes ont été comparées, sur le thème des
+bois de cerf.
 
-**Décision : à prendre.** Une fois la piste choisie, elle est inscrite ici, puis viennent le logo
-définitif, l'icône de l'application et la section « Logo » de la charte (issue #13).
+**Décision : B. Cerf au trait, retenue le 10 novembre 2026,** avec le symbole en blanc sur une
+tuile bleue pour l'icône de l'application. Le logo définitif est dans [`../logo/`](../logo), et
+ses règles d'emploi dans la [charte graphique](../charte-graphique.md#13-logo).
 
 ## L'idée commune
 
@@ -87,25 +89,20 @@ Les petites tailles, agrandies six fois :
 
 ![Piste C, petites tailles agrandies](logo/piste-c-petit.png)
 
-## Recommandation
+## Ce qui a été retenu
 
-**B. Cerf au trait.** C'est la seule piste qui dit les deux choses à la fois : on voit un cerf,
-et le dessin reste un commit d'où partent deux branches. Elle est faite du même trait que le
-reste de l'interface.
+- **La piste B**, sans retouche : c'est la seule qui dit les deux choses à la fois. On voit un
+  cerf, et le dessin reste un commit d'où partent deux branches.
+- **La tuile bleue**, avec le symbole en blanc, pour l'icône de l'application.
+- **Le nom** « Ramure » en DM Sans, graisse 650, à droite de l'icône.
 
-A est le bon choix si tu préfères un signe plus abstrait. C est le bon choix si la lisibilité à
-16 px passe avant tout.
-
-## Ce qui se décide après
-
-Ces points ne dépendent pas de la piste. Ils sont montrés dans chaque planche pour pouvoir en
-juger :
-
-- **La tuile de l'icône.** Bleue avec le symbole en blanc, ou sombre avec le symbole en bleu.
-- **Le nom.** « Ramure » en DM Sans, graisse 650, à droite du symbole.
-- **Les retouches.** Nombre d'andouillers, épaisseur du trait, pastilles aux pointes.
+Les planches ci-dessus montrent aussi la tuile sombre et le symbole posé seul à côté du nom :
+ces deux variantes n'ont pas été retenues.
 
 ## Fichiers
+
+Le logo définitif est dans [`../logo/`](../logo). Les fichiers ci-dessous sont ceux des pistes,
+gardés pour mémoire.
 
 - [`logo/piste-a.svg`](logo/piste-a.svg), [`logo/piste-b.svg`](logo/piste-b.svg),
   [`logo/piste-c.svg`](logo/piste-c.svg) : les dessins complets.
