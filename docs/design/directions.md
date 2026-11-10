@@ -1,10 +1,10 @@
 # Direction visuelle de Ramure
 
-Ce document sert à choisir la direction visuelle de Ramure, avant d'écrire la charte graphique.
-Tout est montré sur l'application réelle.
+Ce document garde la trace du choix de la direction visuelle de Ramure. Tout est montré sur
+l'application réelle.
 
-**Décision : à prendre.** La proposition en cours est **D. Clairière**. Une fois validée (ou
-corrigée), elle est inscrite ici et sert de base à la charte.
+**Décision : D. Clairière, retenue le 10 novembre 2026,** avec le thème de couleurs Ardoise par
+défaut. Elle sert de base à la charte graphique (#4).
 
 ## Où on en est
 
@@ -14,8 +14,11 @@ corrigée), elle est inscrite ici et sert de base à la charte.
    bordure autour de la carte des commits.
 3. **D. Clairière** reprend ce qui a plu et corrige le reste. Elle ajoute des
    [thèmes de couleurs](#thèmes-de-couleurs) au choix.
+4. Clairière est retenue, avec un dernier ajustement : dans la liste des commits, les étiquettes
+   de branches et de tags sont des rectangles légèrement arrondis, comme les boutons, et ne
+   rétrécissent pas au clic.
 
-## D. Clairière, la proposition en cours
+## D. Clairière, la direction retenue
 
 **Intention.** Une clairière, c'est le sous-bois ouvert. On garde les cartes et le graphe de
 Sous-bois, on retire les bordures, on reprend les boutons de l'interface actuelle, et les
@@ -30,6 +33,7 @@ couleurs par défaut redeviennent neutres.
 | Les couleurs tirent trop sur le vert. | Le thème par défaut, Ardoise, est fait de gris neutres, avec l'accent bleu actuel. Le vert ne dit plus que « succès » et « ligne ajoutée ». |
 | La bordure de la carte des commits gêne. | Aucune carte n'a de bordure. Le cadre de couleur qui entourait toute la liste quand on la parcourt au clavier est retiré : le repère est porté par le commit sélectionné. La sélection est un fond arrondi, en retrait des bords de la carte. |
 | Pouvoir changer les couleurs par la suite. | Voir [Thèmes de couleurs](#thèmes-de-couleurs). |
+| Dans la liste des commits, les étiquettes doivent avoir la forme des autres boutons, et ne pas rétrécir au clic. | Les étiquettes de branches et de tags sont des rectangles à angles de 6 px. Plus de pilule, plus de rétrécissement au clic. |
 
 ### Parti pris
 
@@ -42,7 +46,7 @@ couleurs par défaut redeviennent neutres.
 | Panneaux | Trois cartes à angles de 14 px, sans bordure, écartées de 8 px. | Sous-bois, sans la bordure |
 | Graphe | Pastilles à initiales, courbes souples de 3 px, message dans une capsule. Lignes de 34 px. | Sous-bois |
 | Sélection | Un fond arrondi sous la ligne, en retrait de 6 px. Aucun trait sur le bord. | nouveau |
-| Étiquettes | Pilules teintées ; la branche courante en pilule pleine. | Sous-bois |
+| Étiquettes | Rectangles à angles de 6 px, teintés de la couleur de la branche ; la branche courante est pleine. Pas de rétrécissement au clic. | interface actuelle pour la forme, Sous-bois pour les teintes |
 | Couleurs | Thème Ardoise : gris neutres, accent bleu. | nouveau |
 
 | Graphe, sombre | Graphe, clair |
@@ -53,15 +57,14 @@ couleurs par défaut redeviennent neutres.
 |---|---|
 | ![Clairière, modifications et diff](directions/clairiere-travail-sombre.png) | ![Clairière, boîte de dialogue](directions/clairiere-dialogue-clair.png) |
 
-### Ce qui reste ouvert
+### Validé avec la proposition
 
-Ces points viennent de Sous-bois ou sont nouveaux, et n'ont pas encore eu de retour :
+Ces points venaient de Sous-bois ou étaient nouveaux. Ils sont retenus tels que montrés :
 
-- **La police.** DM Sans est gardée. Revenir à la police du système, comme aujourd'hui, ne change
-  rien d'autre.
-- **Le graphe.** Courbes souples et messages en capsule, comme dans Sous-bois.
+- **La police.** DM Sans, et DM Mono pour le code.
+- **Le graphe.** Courbes souples et messages en capsule.
 - **Les onglets en cartes.**
-- **La densité.** 21 commits visibles sur un écran de 880 px, contre 23 aujourd'hui.
+- **La densité.** 21 commits visibles sur un écran de 880 px, contre 23 dans l'interface de départ.
 
 ## Thèmes de couleurs
 
@@ -98,11 +101,13 @@ défaut, n'a pas ce défaut.
 
 La mise en œuvre est suivie dans l'issue #9. Elle vient après l'alignement des jetons (#5).
 
-## Recommandation
+## Suite
 
-**Clairière, avec le thème Ardoise par défaut.** Elle garde ce qui donnait un visage à Sous-bois
-(les cartes, le graphe en capsules) et retire ce qui gênait. Les thèmes de couleurs laissent à
-chacun le choix de la teinte, sans toucher au reste.
+- La charte graphique fixe les règles de Clairière : issue #4.
+- Les jetons du code sont alignés sur la charte : issue #5.
+- La direction est appliquée à l'interface : issue #10. Les captures de ce document viennent d'un
+  aperçu temporaire ; le code de l'application n'a pas encore changé.
+- Le choix du thème de couleurs arrive dans les Réglages : issue #9.
 
 ## Premières directions
 

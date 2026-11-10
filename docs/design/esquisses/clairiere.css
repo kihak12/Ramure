@@ -30,7 +30,9 @@
 /* Graphe : message en capsule ; la sélection est un fond arrondi, sans trait sur le bord de la carte. */
 :root .graph .head { text-transform: none; letter-spacing: 0; font-size: 12px; background: transparent; border-bottom-color: var(--line-soft); }
 :root .graph.ribbon .msg { width: fit-content; max-width: 100%; padding-right: 14px; border-radius: 0 999px 999px 0; background: color-mix(in srgb, var(--c) 15%, transparent); }
-:root .graph .ref { border-radius: 999px; line-height: 20px; padding: 0 9px; }
+/* Étiquettes : des rectangles aux angles de 6 px, comme les boutons. Pas de rétrécissement au clic. */
+:root .graph .ref, :root .graph .ref.k-tag { border-radius: var(--radius-s); line-height: 20px; padding: 0 8px; }
+:root .graph .ref:active { transform: none; }
 :root .graph.ribbon .ref.local { background: color-mix(in srgb, var(--c) 24%, var(--panel)); color: var(--ink); border-color: color-mix(in srgb, var(--c) 55%, transparent); font-weight: 600; }
 :root .graph.ribbon .ref.k-head { background: var(--c); color: var(--on-accent); }
 :root .graph .row { isolation: isolate; }
