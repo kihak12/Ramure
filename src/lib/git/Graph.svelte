@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
-  import { commitMenu, dropMenu, labelMenu, switchToRemote } from './actions';
+  import { commitMenu, dropMenu, labelMenu, switchBranch, switchToRemote } from './actions';
   import { accepts, drag, isBranch } from './drag.svelte';
   import { bare, labelsOf, type Label } from './labels';
   import { prefs } from './prefs.svelte';
@@ -303,7 +303,7 @@
   function switchTo(label: Label) {
     if (repo.locked) return;
     if (label.local) {
-      if (label.local !== repo.branch) void repo.refOp({ op: 'switch', name: label.local }, `Basculé sur ${label.local}`, 'Impossible de basculer');
+      void switchBranch(repo, label.local);
     } else if (label.remotes[0]) {
       // Branche distante seule sur son commit : on bascule sur la branche locale et on la met à jour.
       void switchToRemote(repo, label.remotes[0]);

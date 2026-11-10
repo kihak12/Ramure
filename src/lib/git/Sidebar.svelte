@@ -2,7 +2,7 @@
   import { slide } from 'svelte/transition';
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
-  import { dropMenu, labelMenu, stashMenu, switchToRemote } from './actions';
+  import { dropMenu, labelMenu, stashMenu, switchBranch, switchToRemote } from './actions';
   import { accepts, drag } from './drag.svelte';
   import { bare, type Label } from './labels';
   import type { Repo } from './repo.svelte';
@@ -90,7 +90,7 @@
   }
 
   function switchLocal(name: string) {
-    if (!repo.locked && name !== repo.branch) void repo.refOp({ op: 'switch', name }, `Basculé sur ${name}`, 'Impossible de basculer');
+    void switchBranch(repo, name);
   }
   function switchRemote(name: string) {
     void switchToRemote(repo, name);

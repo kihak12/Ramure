@@ -23,10 +23,43 @@ const commits = (count: number) => `${count} commit${count > 1 ? 's' : ''}`;
  * - Branche locale en avance : rien à récupérer, on bascule seulement.
  * - Branches divergées : on demande avant de rebaser, car un rebase réécrit les commits locaux.
  */
+/**
+ * Avant un basculement : si des modifications en cours seraient écrasées, git refuserait. On
+ * propose alors de les remiser. Renvoie `false` quand l'utilisateur renonce, ou que la remise échoue.
+ * `label` : le nom à montrer, quand `name` est une branche distante.
+ */
+async function stashFirst(repo: Repo, name: string, remote: boolean, label = name): Promise<boolean> {
+  let blockers: string[];
+  try {
+    blockers = await repo.git<string[]>('git_switch_blockers', { name, remote });
+  } catch {
+    // La vérification n'a pas pu se faire : le basculement dira lui-même ce qui ne va pas.
+    return true;
+  }
+  if (!blockers.length) return true;
+  const what = blockers.length > 1 ? `${blockers.length} fichiers` : blockers[0];
+  const sure = await dialogs.confirm({
+    title: `Basculer sur ${label} ?`,
+    body:
+      `Tes modifications de ${what} seraient écrasées par ce basculement, et git le refuserait.\n\n` +
+      'Remise-les d’abord : tu pourras les dépiler ensuite, sur la branche de ton choix.',
+    confirmLabel: 'Remiser et basculer',
+  });
+  if (!sure) return false;
+  return repo.refOp({ op: 'stash-push', message: `Avant de basculer sur ${label}` }, 'Modifications remisées', 'Impossible de remiser les modifications');
+}
+
+/** Bascule sur une branche locale, en proposant de remiser les modifications qui l'empêcheraient. */
+export async function switchBranch(repo: Repo, name: string, done = `Basculé sur ${name}`): Promise<boolean> {
+  if (repo.locked || name === repo.branch) return false;
+  if (!(await stashFirst(repo, name, false))) return false;
+  return repo.refOp({ op: 'switch', name }, done, `Impossible de basculer sur ${name}`);
+}
+
 export async function switchToRemote(repo: Repo, remote: string) {
   if (repo.locked) return;
   const local = bare(remote);
-  const failed = 'Impossible de basculer';
+  const failed = `Impossible de basculer sur ${local}`;
   let relation: Relation;
   try {
     relation = await repo.git<Relation>('git_remote_relation', { remote });
@@ -40,13 +73,15 @@ export async function switchToRemote(repo: Repo, remote: string) {
     let done = `Basculé sur ${local}`;
     if (relation.local !== null && behind > 0) done += `, mise à jour avec ${remote} (${commits(behind)})`;
     else if (ahead > 0) done += `, qui a ${commits(ahead)} d'avance sur ${remote}`;
-    await repo.refOp({ op: 'switch-remote', name: remote }, done, failed);
+    // La destination est la branche distante quand la locale n'existe pas ou sera avancée jusqu'à elle.
+    const viaRemote = relation.local === null || behind > 0;
+    if (await stashFirst(repo, viaRemote ? remote : local, viaRemote, local)) {
+      await repo.refOp({ op: 'switch-remote', name: remote }, done, failed);
+    }
     return;
   }
 
-  const stay = () => {
-    if (repo.branch !== local) void repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}, sans la mettre à jour`, failed);
-  };
+  const stay = () => void switchBranch(repo, local, `Basculé sur ${local}, sans la mettre à jour`);
   const rebase = await dialogs.confirm({
     title: `Mettre à jour ${local} ?`,
     body:
@@ -57,7 +92,7 @@ export async function switchToRemote(repo: Repo, remote: string) {
     extra: { label: 'Basculer sans mettre à jour', run: stay },
   });
   if (!rebase) return;
-  if (repo.branch !== local && !(await repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}`, failed))) return;
+  if (repo.branch !== local && !(await switchBranch(repo, local))) return;
   await repo.history({ op: 'rebase', onto: remote }, `${local} rebasée sur ${remote}`, 'Le rebase a échoué');
 }
 
@@ -421,7 +456,7 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
             ? `Bascule sur la branche locale et la met à jour avec ${target}`
             : 'Crée la branche locale qui suit cette branche distante',
         run: () =>
-          void (local ? repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}`, 'Impossible de basculer') : switchToRemote(repo, target)),
+          void (local ? switchBranch(repo, local) : switchToRemote(repo, target)),
       },
       { separator: true },
       {
@@ -452,7 +487,7 @@ export function dropMenu(repo: Repo, source: Label, target: Label): MenuItem[] {
   const [from, onto] = [refName(source), refName(target)];
   const current = repo.branch;
   const switchThen = async (name: string, next: () => Promise<unknown>) => {
-    if (await repo.refOp({ op: 'switch', name }, `Basculé sur ${name}`, 'Impossible de basculer')) await next();
+    if (await switchBranch(repo, name)) await next();
   };
   const merge = () => repo.history({ op: 'merge', target: from }, `${from} fusionnée dans ${onto}`, 'La fusion a échoué');
 

@@ -54,6 +54,7 @@ pub fn run() {
             git::work::git_head_message,
             git::ops::git_refs,
             git::ops::git_remote_relation,
+            git::ops::git_switch_blockers,
             git::ops::git_ref_op,
             git::ops::git_stash_show,
             git::ops::git_history,
