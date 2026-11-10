@@ -4,6 +4,7 @@
   import Icon from '../ui/Icon.svelte';
   import { prefs, savePrefs, type DiffMode } from './prefs.svelte';
   import type { Diff } from './types';
+  import { motion } from '../ui/motion';
 
   let {
     title,
@@ -188,7 +189,7 @@
   const applyHunk = (hunk: number) => onapply?.(changes.filter((l) => l.hunk === hunk).map((l) => l.index));
 </script>
 
-<section class="diff" aria-label="Diff de {title}" in:fly={{ y: 14, duration: 200 }} out:fly={{ y: 10, duration: 120 }}>
+<section class="diff" aria-label="Diff de {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <div class="names">
       <b class="mono">{title}</b>
@@ -340,18 +341,18 @@
     white-space: nowrap;
   }
   .names b {
-    font-size: 12.5px;
+    font-size: var(--fs-body);
   }
   .names small,
   .hint {
     color: var(--muted);
-    font-size: 11px;
+    font-size: var(--fs-small);
   }
   .hint {
     white-space: nowrap;
   }
   .count {
-    font-size: 12px;
+    font-size: var(--fs-label);
     white-space: nowrap;
   }
   /* Bascule entre les deux dispositions */
@@ -359,16 +360,16 @@
     display: flex;
     padding: 2px;
     border: 1px solid var(--line);
-    border-radius: 7px;
+    border-radius: var(--radius);
     background: var(--bg);
   }
   .modes button {
     padding: 2px 9px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-label);
     cursor: pointer;
     white-space: nowrap;
     transition:
@@ -381,7 +382,7 @@
   .modes button[aria-pressed='true'] {
     background: var(--raised);
     color: var(--ink);
-    font-weight: 600;
+    font-weight: var(--fw-strong);
     box-shadow: var(--shadow-soft);
   }
   .plus {
@@ -401,7 +402,7 @@
   }
   .lines {
     overflow: auto;
-    font-size: 12px;
+    font-size: var(--fs-code);
     line-height: 18px;
     min-height: 0;
   }
@@ -501,7 +502,7 @@
     background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--muted) 9%, transparent) 6px 12px);
   }
   mark {
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     color: inherit;
   }
   .c-del mark {
@@ -549,14 +550,14 @@
     box-shadow: inset 3px 0 0 var(--bad);
   }
   .picked .sign {
-    font-weight: 700;
+    font-weight: var(--fw-strong);
   }
   .hunk-btn {
     margin-left: 12px;
     padding: 0 8px;
     line-height: 16px;
     font-family: var(--f-ui);
-    font-size: 11px;
+    font-size: var(--fs-small);
     vertical-align: top;
   }
 </style>

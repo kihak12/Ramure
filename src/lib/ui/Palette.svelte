@@ -149,7 +149,7 @@
     margin-top: 11vh;
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     color: var(--ink);
     box-shadow: var(--shadow-pop);
@@ -188,7 +188,7 @@
     border: 0;
     background: none;
     outline: none;
-    font-size: 15px;
+    font-size: var(--fs-title);
     color: var(--ink);
   }
   kbd {
@@ -197,10 +197,10 @@
     padding: 0 5px;
     border: 1px solid var(--line);
     border-bottom-width: 2px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: var(--bg);
     color: var(--muted);
-    font: 10.5px/16px var(--f-ui);
+    font: var(--fs-micro) / 16px var(--f-ui);
     text-align: center;
   }
   .results {
@@ -210,8 +210,8 @@
   }
   .group {
     padding: 8px 8px 4px;
-    font-size: 10.5px;
-    font-weight: 600;
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-strong);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--faint);
@@ -221,7 +221,7 @@
     align-items: center;
     gap: 9px;
     padding: 7px 8px;
-    border-radius: 7px;
+    border-radius: var(--radius);
     cursor: pointer;
   }
   .item[aria-selected='true'] {
@@ -256,7 +256,7 @@
     white-space: nowrap;
     text-align: right;
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   .keys {
     flex: none;
@@ -281,7 +281,7 @@
     border-top: 1px solid var(--line);
     background: var(--panel);
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   footer span {
     display: inline-flex;

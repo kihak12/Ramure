@@ -2,6 +2,7 @@
   import { slide } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
   import { OPERATION, type Repo } from './repo.svelte';
+  import { motion } from '../ui/motion';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -10,7 +11,7 @@
 </script>
 
 {#if operation}
-  <div class="banner" role="status" transition:slide={{ duration: 200 }}>
+  <div class="banner" role="status" transition:slide={{ duration: motion.med }}>
     <span class="glyph"><Icon name="warning" size={18} /></span>
     <div class="text">
       <b>{OPERATION[operation]} en cours</b>
@@ -61,6 +62,6 @@
   }
   .text span {
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
 </style>

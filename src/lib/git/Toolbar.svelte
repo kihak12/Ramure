@@ -108,11 +108,11 @@
     white-space: nowrap;
   }
   .crumb b {
-    font-size: 13.5px;
+    font-size: var(--fs-body);
   }
   .small {
     color: var(--muted);
-    font-size: 10.5px;
+    font-size: var(--fs-micro);
   }
   .sep {
     display: grid;
@@ -166,7 +166,7 @@
     transition: transform var(--t-med) var(--ease);
   }
   .glyph.spin :global(svg) {
-    animation: spin 0.9s linear infinite;
+    animation: spin var(--t-spin) linear infinite;
   }
   @keyframes spin {
     to {
@@ -174,7 +174,7 @@
     }
   }
   .text {
-    font-size: 11px;
+    font-size: var(--fs-small);
     color: var(--muted);
     white-space: nowrap;
   }
@@ -184,11 +184,11 @@
     left: 13px;
     min-width: 15px;
     padding: 0 4px;
-    border-radius: 8px;
+    border-radius: var(--radius-pill);
     background: var(--accent);
     color: var(--on-accent);
-    font-size: 9.5px;
-    font-weight: 700;
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-strong);
     line-height: 15px;
     font-variant-numeric: tabular-nums;
     animation: pop-in var(--t-med) var(--ease);

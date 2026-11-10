@@ -84,7 +84,7 @@
     max-width: 380px;
     padding: 5px;
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     box-shadow: var(--shadow-pop);
     transform-origin: top left;
@@ -100,7 +100,7 @@
     width: 100%;
     padding: 6px 10px 6px 6px;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-s);
     background: none;
     cursor: pointer;
     text-align: left;

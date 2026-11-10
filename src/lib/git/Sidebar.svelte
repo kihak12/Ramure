@@ -6,6 +6,7 @@
   import { accepts, drag } from './drag.svelte';
   import { bare, type Label } from './labels';
   import type { Repo } from './repo.svelte';
+  import { motion } from '../ui/motion';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -120,7 +121,7 @@
   <div class="scroll">
     {@render heading('local', 'laptop', 'Local', branches.length)}
     {#if isOpen('local')}
-      <ul transition:slide={{ duration: 180 }}>
+      <ul transition:slide={{ duration: motion.med }}>
         {#each branches.slice(0, MAX_ITEMS) as branch (branch.name)}
           <li>
             <button
@@ -150,7 +151,7 @@
 
     {@render heading('remote', 'cloud', 'Distant', remotes.length)}
     {#if isOpen('remote')}
-      <ul transition:slide={{ duration: 180 }}>
+      <ul transition:slide={{ duration: motion.med }}>
         {#each remotes.slice(0, MAX_ITEMS) as remote (remote.name)}
           <li>
             <button
@@ -176,7 +177,7 @@
 
     {@render heading('tags', 'tag', 'Tags', tags.length)}
     {#if isOpen('tags')}
-      <ul transition:slide={{ duration: 180 }}>
+      <ul transition:slide={{ duration: motion.med }}>
         {#each tags.slice(0, MAX_ITEMS) as tag (tag.name)}
           <li>
             <button
@@ -199,7 +200,7 @@
 
     {@render heading('stashes', 'stash', 'Remises', stashes.length)}
     {#if isOpen('stashes')}
-      <ul transition:slide={{ duration: 180 }}>
+      <ul transition:slide={{ duration: motion.med }}>
         {#each stashes as stash (stash.sha)}
           <li>
             <button
@@ -274,8 +275,8 @@
     background: none;
     cursor: pointer;
     color: var(--muted);
-    font-size: 10.5px;
-    font-weight: 600;
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-strong);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     transition: color var(--t-fast) var(--ease);
@@ -311,7 +312,7 @@
     width: 100%;
     padding: 4px 6px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius);
     background: none;
     cursor: pointer;
     text-align: left;
@@ -322,7 +323,7 @@
   }
   .item.current {
     background: var(--sel);
-    font-weight: 600;
+    font-weight: var(--fw-strong);
   }
   .item.drop {
     outline: 2px solid var(--accent);
@@ -335,7 +336,7 @@
     place-items: center;
     width: 16px;
     color: var(--accent);
-    font-size: 10.5px;
+    font-size: var(--fs-micro);
   }
   .name {
     flex: 1;
@@ -347,7 +348,7 @@
   .chip {
     background: var(--panel);
     border: 1px solid var(--line);
-    font-weight: 500;
+    font-weight: var(--fw-regular);
   }
   .gone {
     color: var(--warn);
@@ -355,6 +356,6 @@
   .none {
     padding: 3px 8px 3px 28px;
     color: var(--faint);
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
 </style>

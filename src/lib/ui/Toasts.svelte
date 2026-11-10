@@ -3,6 +3,7 @@
   import { fly } from 'svelte/transition';
   import Icon from './Icon.svelte';
   import { toasts } from './toasts.svelte';
+  import { motion } from './motion';
 
   const ICON = { ok: 'check', warn: 'warning', err: 'warning' } as const;
 </script>
@@ -12,9 +13,9 @@
     <div
       class="toast k-{toast.kind}"
       role={toast.kind === 'err' ? 'alert' : 'status'}
-      animate:flip={{ duration: 220 }}
-      in:fly={{ y: 24, duration: 260 }}
-      out:fly={{ y: 16, duration: 160 }}
+      animate:flip={{ duration: motion.med }}
+      in:fly={{ y: 24, duration: motion.med }}
+      out:fly={{ y: 16, duration: motion.fast }}
     >
       <span class="badge"><Icon name={ICON[toast.kind]} size={14} /></span>
       <div class="text">
@@ -77,7 +78,7 @@
   }
   pre {
     margin: 4px 0 0;
-    font-size: 11.5px;
+    font-size: var(--fs-small);
     color: var(--muted);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -90,7 +91,7 @@
     width: 22px;
     height: 22px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;

@@ -101,26 +101,20 @@
     place-items: center;
     width: 60px;
     height: 60px;
-    border-radius: 18px;
+    border-radius: var(--radius-card);
     color: var(--accent);
     background: var(--accent-soft);
-    animation: float 4s ease-in-out infinite;
-  }
-  @keyframes float {
-    50% {
-      transform: translateY(-4px);
-    }
   }
   h1 {
     margin: 0;
-    font-size: 24px;
-    font-weight: 700;
+    font-size: var(--fs-display);
+    font-weight: var(--fw-strong);
     letter-spacing: -0.01em;
   }
   header p {
     margin: 2px 0 0;
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--fs-body);
   }
   .error {
     display: flex;
@@ -147,7 +141,7 @@
     gap: 12px;
     padding: 14px;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     box-shadow: var(--shadow-soft);
     cursor: pointer;
@@ -171,7 +165,7 @@
     place-items: center;
     width: 38px;
     height: 38px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     color: var(--accent);
     background: var(--accent-soft);
   }
@@ -183,7 +177,7 @@
   }
   .words small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   section {
     display: grid;
@@ -194,15 +188,15 @@
     margin: 0;
     padding: 4px;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     background: var(--raised);
   }
   li {
     display: flex;
     align-items: center;
-    border-radius: 8px;
+    border-radius: var(--radius);
     animation: rise var(--t-slow) var(--ease) both;
-    animation-delay: calc(var(--i) * 30ms + 80ms);
+    animation-delay: calc(var(--i) * var(--t-step) + var(--t-fast));
     transition: background var(--t-fast) var(--ease);
   }
   li:hover,
@@ -239,12 +233,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   .when {
     flex: none;
     color: var(--faint);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   .forget {
     flex: none;
@@ -254,7 +248,7 @@
     height: 24px;
     margin-right: 6px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;

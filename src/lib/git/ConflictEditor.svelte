@@ -7,6 +7,7 @@
   import { locate, parseConflicts, splitLines, type ConflictBlock } from './conflicts';
   import type { Repo } from './repo.svelte';
   import type { ConflictFile, FileChange } from './types';
+  import { motion } from '../ui/motion';
 
   let { repo, file }: { repo: Repo; file: FileChange } = $props();
 
@@ -136,7 +137,7 @@
   const save = () => void repo.saveConflict(file, result?.getText() ?? text);
 </script>
 
-<section class="conflict" aria-label="Éditeur de conflits : {file.path}" in:fly={{ y: 16, duration: 220 }} out:fly={{ y: 10, duration: 120 }}>
+<section class="conflict" aria-label="Éditeur de conflits : {file.path}" in:fly={{ y: 16, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <span class="glyph"><Icon name="merge" size={18} /></span>
     <div class="names">
@@ -278,7 +279,7 @@
   }
   .names small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   .note {
     margin: 0;
@@ -345,7 +346,7 @@
     flex: 1;
     min-width: 0;
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

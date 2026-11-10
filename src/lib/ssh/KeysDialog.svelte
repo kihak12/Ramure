@@ -154,7 +154,7 @@
     max-height: calc(100vh - 80px);
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     color: var(--ink);
     box-shadow: var(--shadow-pop);
@@ -181,8 +181,8 @@
   }
   h2 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 650;
+    font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
   }
   p {
     margin: 0;
@@ -190,7 +190,7 @@
   }
   code {
     font-family: var(--f-mono);
-    font-size: 12px;
+    font-size: var(--fs-code);
   }
   .list {
     flex: 1 1 auto;
@@ -215,7 +215,7 @@
     place-items: center;
     width: 30px;
     height: 30px;
-    border-radius: 8px;
+    border-radius: var(--radius);
     color: var(--accent);
     background: var(--accent-soft);
   }
@@ -228,13 +228,13 @@
   }
   .text small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .print {
-    font-size: 11px !important;
+    font-size: var(--fs-small) !important;
   }
   .locked {
     color: var(--ok);
@@ -260,7 +260,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--muted);
   }
   .err {

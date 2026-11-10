@@ -169,7 +169,7 @@
 
     const terminal = new Terminal({
       fontFamily: v('--f-mono'),
-      fontSize: 13,
+      fontSize: parseFloat(v('--fs-term')),
       lineHeight: 1.2,
       cursorBlink: true,
       scrollback: 5000,
@@ -339,7 +339,7 @@
     border-bottom: 1px solid var(--line);
     background: var(--panel);
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-label);
     white-space: nowrap;
     overflow: hidden;
   }
@@ -362,7 +362,7 @@
   }
   .dot.s-connecting {
     background: var(--warn);
-    animation: blink 1s ease-in-out infinite;
+    animation: blink var(--t-wait) var(--ease) infinite;
   }
   @keyframes blink {
     50% {
@@ -394,7 +394,7 @@
     gap: 10px;
     padding: 18px 20px;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     box-shadow: var(--shadow-pop);
     animation: pop-in var(--t-med) var(--ease);
@@ -412,7 +412,7 @@
     align-items: center;
     gap: 8px;
     margin: 0;
-    font-size: 14.5px;
+    font-size: var(--fs-title);
   }
   p {
     margin: 0;
@@ -433,12 +433,12 @@
     border-radius: var(--radius-s);
     background: var(--bg);
     border: 1px solid var(--line);
-    font-size: 12px;
+    font-size: var(--fs-code);
     user-select: all;
   }
   code {
     font-family: var(--f-mono);
-    font-size: 12px;
+    font-size: var(--fs-code);
   }
   .row {
     display: flex;
@@ -453,7 +453,7 @@
     border-radius: 50%;
     border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
     border-top-color: var(--accent);
-    animation: spin 0.8s linear infinite;
+    animation: spin var(--t-spin) linear infinite;
   }
   @keyframes spin {
     to {

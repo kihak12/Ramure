@@ -38,7 +38,7 @@
 
   // Les couleurs viennent des jetons de l'application : le thème clair ou sombre suit tout seul.
   const theme = EditorView.theme({
-    '&': { height: '100%', fontSize: '12px', backgroundColor: 'var(--bg)', color: 'var(--ink)' },
+    '&': { height: '100%', fontSize: 'var(--fs-code)', backgroundColor: 'var(--bg)', color: 'var(--ink)' },
     '&.cm-focused': { outline: 'none' },
     '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px' },
     '.cm-content': { caretColor: 'var(--ink)' },
@@ -57,7 +57,7 @@
     '.cm-mark-ours': { backgroundColor: 'color-mix(in srgb, var(--l0) 18%, transparent)' },
     '.cm-mark-theirs': { backgroundColor: 'color-mix(in srgb, var(--l1) 18%, transparent)' },
     '.cm-mark-base': { backgroundColor: 'color-mix(in srgb, var(--muted) 14%, transparent)' },
-    '.cm-mark-marker': { backgroundColor: 'var(--warn-soft)', color: 'var(--warn)', fontWeight: '600' },
+    '.cm-mark-marker': { backgroundColor: 'var(--warn-soft)', color: 'var(--warn)', fontWeight: 'var(--fw-strong)' },
     '.cm-mark-focus': {
       backgroundColor: 'color-mix(in srgb, var(--c, var(--accent)) 22%, transparent)',
       boxShadow: 'inset 3px 0 0 var(--c, var(--accent))',
