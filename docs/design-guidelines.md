@@ -407,10 +407,12 @@ buttons.
 |---|---|
 | Local branch | Background: 24% of the branch colour over `--panel`. Border: the same colour at 55%. `--ink` text, weight 650. "Computer" icon. |
 | Current branch | Solid background in the branch colour, surrounded by a ring of the same colour. `--on-accent` text, weight 650, preceded by a check mark. |
-| Remote branch | Barely tinted background, dashed border, weight 400. "Cloud" icon. |
-| Tag | Barely tinted background, border in the branch colour, weight 400. "Tag" icon. |
+| Remote branch | The same background as a local branch. Dashed border in the branch colour, weight 400. "Cloud" icon. |
+| Tag | The same background as a local branch. Solid border in the branch colour, weight 400. "Tag" icon. |
 
 - A rectangle with 6 px corners, 22 px high, 11.5 px text. **Never a pill.**
+- Local branches, remote branches and tags share one background. The icon, the border and the
+  weight tell them apart, never the tint.
 - **A label never changes size**: not on click, not on hover, not when a branch is dragged onto
   it.
 - Hover: the tint of the background gets stronger.
@@ -563,8 +565,8 @@ centre card.
 
 ### 10.1 Columns
 
-In order: Branche / Tag (164 px), Graphe (420 px at most), Message, Auteur, Date, and SHA when
-the width allows it.
+In order: Branche / Tag (220 px, and 164 px when the card is 600 px wide or less), Graphe (420 px
+at most), Message, Auteur, Date, and SHA when the width allows it.
 
 ### 10.2 Drawing
 

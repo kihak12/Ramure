@@ -19,7 +19,13 @@
     classic: { row: 28, lane: 16, pad: 14, node: 5, merge: 4, line: 2, max: 340 },
   } as const;
 
-  const LABELS = 164; // largeur de la colonne des branches et des tags
+  // Largeur de la colonne des branches et des tags. Elle se resserre quand la carte est étroite,
+  // pour laisser sa place au message (charte, section 10.1).
+  const LABELS_WIDE = 220;
+  const LABELS_NARROW = 164;
+  const NARROW_CARD = 600;
+  let cardW = $state(0);
+  const labels = $derived(cardW > 0 && cardW <= NARROW_CARD ? LABELS_NARROW : LABELS_WIDE);
   const BUFFER = 24; // lignes rendues au-dessus et au-dessous de la zone visible
   const STEP = 12; // la fenêtre de rendu ne se déplace que par paliers de 12 lignes
   const BAND = 24; // hauteur de la bande qui relie un commit à la capsule de son message
@@ -395,7 +401,7 @@
   </span>
 {/snippet}
 
-<div class="graph" class:ribbon style:--labels="{LABELS}px" style:--graph="{graphW}px" style:--row="{ROW}px" style:--band="{BAND}px">
+<div class="graph" class:ribbon bind:clientWidth={cardW} style:--labels="{labels}px" style:--graph="{graphW}px" style:--row="{ROW}px" style:--band="{BAND}px">
   <div class="head">
     <span>Branche / Tag</span><span>Graphe</span><span>Message</span><span>Auteur</span><span>Date</span><span>SHA</span>
   </div>
@@ -434,7 +440,7 @@
           class="pulse"
           aria-hidden="true"
           style:top="{headIndex * ROW + ROW / 2}px"
-          style:left="{LABELS + metrics.pad + repo.head.lane * metrics.lane}px"
+          style:left="{labels + metrics.pad + repo.head.lane * metrics.lane}px"
           style:--c="var(--l{repo.head.lane % 8})"
         ></span>
       {/if}
@@ -745,15 +751,18 @@
   .ref.local {
     font-weight: var(--fw-strong);
   }
-  /* Rendu « Ruban » : une branche locale est teintée de la couleur de sa ligne ; la branche
-     courante est pleine. */
+  /* Rendu « Ruban » : toutes les étiquettes ont le même fond, teinté de la couleur de leur ligne.
+     L'icône, la bordure et la graisse disent si c'est une branche locale, distante ou un tag.
+     La branche courante est pleine. */
+  .ribbon .ref:not(.k-detached) {
+    background: color-mix(in srgb, var(--c, var(--line)) 24%, var(--panel));
+  }
+  .ribbon .ref:not(.k-detached):hover {
+    background: color-mix(in srgb, var(--c, var(--line)) 36%, var(--panel));
+  }
   .ribbon .ref.local {
-    background: color-mix(in srgb, var(--c) 24%, var(--panel));
     border-color: color-mix(in srgb, var(--c) 55%, transparent);
     font-weight: var(--fw-strong);
-  }
-  .ribbon .ref.local:hover {
-    background: color-mix(in srgb, var(--c) 36%, var(--panel));
   }
   .ribbon .ref.k-head {
     background: var(--c);
