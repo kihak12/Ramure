@@ -35,7 +35,8 @@ case ${1:-} in
       sleep 1
     fi
     # Les onglets à rouvrir sont lus dans le stockage local de la page : on y écrit les dépôts.
-    rm -rf "$home"
+    # On ne vide que les données de l'application : le reste du dossier peut être tenu par le système.
+    rm -rf "$home/.local/share/dev.ramure.app"
     mkdir -p "$home/.local/share/dev.ramure.app/localstorage"
     python3 - "$home/.local/share/dev.ramure.app/localstorage/tauri_localhost_0.localstorage" "$@" <<'P'
 import json, os, sqlite3, sys
@@ -52,7 +53,7 @@ P
       GTK_THEME=$gtk WEBKIT_DISABLE_DMABUF_RENDERER=1 \
       dbus-run-session -- "$bin" >"$home/ramure.log" 2>&1 &
     timeout 30 xdotool search --sync --onlyvisible --name '^Ramure$' >/dev/null
-    sleep 4 # le temps que la page charge les dépôts
+    sleep 9 # le temps que la page charge les dépôts : un premier chargement est plus long
     ;;
   capturer)
     out=${2:?fichier de sortie}
