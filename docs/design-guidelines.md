@@ -509,6 +509,9 @@ Sidebar, file lists, graph, palette results.
 - The sign is always there: colour alone never says whether a line is added or removed.
 - A line picked to be staged on its own has a stronger tint and its sign in bold. No coloured
   bar on its edge.
+- When only one half of a modified line is picked, the removed line or the added one, a warning
+  says so above the lines: a box on a `--warn-soft` background, with the warning icon and a
+  button that picks the other half.
 
 ### 9.15 Terminal
 

@@ -182,7 +182,26 @@
   }
 
   const split = $derived(prefs.diffMode === 'split');
-  const pairs = $derived(split && parsed ? pairUp(parsed.lines) : []);
+  const allPairs = $derived(parsed ? pairUp(parsed.lines) : []);
+  const pairs = $derived(split ? allPairs : []);
+
+  // Une ligne modifiée, c'est une suppression et un ajout qui vont ensemble. N'en choisir qu'une
+  // moitié laisse l'ancienne version à côté de la nouvelle, ou retire la ligne sans la remplacer.
+  // Ne comptent que les paires dont les deux lignes se ressemblent : les autres sont deux
+  // changements distincts que le hasard a placés côte à côte.
+  const halves = $derived.by(() => {
+    const missing: number[] = [];
+    if (!canSelect || !selected.size) return missing;
+    for (const pair of allPairs) {
+      if (!pair.inline || !pair.left || !pair.right) continue;
+      const old = selected.has(pair.left.index);
+      if (old !== selected.has(pair.right.index)) missing.push(old ? pair.right.index : pair.left.index);
+    }
+    return missing;
+  });
+  const pickHalves = () => {
+    for (const index of halves) selected.add(index);
+  };
   const setMode = (mode: DiffMode) => savePrefs({ ...prefs, diffMode: mode });
 
   const applySelection = () => onapply?.([...selected]);
@@ -212,6 +231,17 @@
     </div>
     <button class="btn" type="button" onclick={onclose} title="Fermer le diff (Échap)"><Icon name="x" size={14} /> Fermer</button>
   </header>
+
+  {#if halves.length}
+    <p class="half" role="status">
+      <Icon name="warning" size={14} />
+      <span>
+        {halves.length > 1 ? `${halves.length} lignes modifiées ne sont choisies` : 'Une ligne modifiée n’est choisie'} qu’à moitié : l’ancienne
+        version et la nouvelle ne seront pas {selectable === 'unstage' ? 'retirées' : 'indexées'} ensemble.
+      </span>
+      <button class="btn small" type="button" onclick={pickHalves}>Choisir l’autre moitié</button>
+    </p>
+  {/if}
 
   {#if error}
     <p class="note err">{error}</p>
@@ -310,6 +340,25 @@
 </section>
 
 <style>
+  .half {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 12px 0;
+    padding: 6px 8px;
+    border-radius: var(--radius-s);
+    background: var(--warn-soft);
+    font-size: var(--fs-small);
+  }
+  .half :global(svg) {
+    flex: none;
+    color: var(--warn);
+  }
+  .half span {
+    flex: 1;
+    min-width: 0;
+  }
   .diff {
     position: absolute;
     inset: 0;

@@ -696,4 +696,28 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
 
         assert!(apply_lines(&mut j, dir, &cached, &[], true).is_err());
     }
+
+    /// N'indexer que la moitié d'une ligne remplacée : l'index garde l'ancienne ligne et la nouvelle,
+    /// ou perd la ligne sans sa remplaçante. C'est ce dont l'interface avertit.
+    #[test]
+    fn staging_half_of_a_replaced_line_keeps_or_drops_it() {
+        let repo = Scratch::new("half");
+        let dir = repo.0.as_path();
+        let mut j = Vec::new();
+        repo.write("f.txt", "a\nb\nc\n");
+        stage(&mut j, dir, &["f.txt".into()]).unwrap();
+        commit(&mut j, dir, "init", false).unwrap();
+        repo.write("f.txt", "a\nB\nc\n");
+
+        // Seulement l'ajout : l'ancienne ligne reste à côté de la nouvelle.
+        let diff = diff_file(&mut j, dir, "f.txt", None, false, false).unwrap().text;
+        let at = |needle: &str| diff.split('\n').position(|l| l == needle).unwrap();
+        apply_lines(&mut j, dir, &diff, &[at("+B")], false).unwrap();
+        assert_eq!(repo.git(&["show", ":f.txt"]), "a\nb\nB\nc");
+
+        // Seulement la suppression : la ligne disparaît de l'index, sans sa remplaçante.
+        repo.git(&["reset", "-q"]);
+        apply_lines(&mut j, dir, &diff, &[at("-b")], false).unwrap();
+        assert_eq!(repo.git(&["show", ":f.txt"]), "a\nc");
+    }
 }
