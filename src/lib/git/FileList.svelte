@@ -72,7 +72,7 @@
           class:danger={action.danger}
           type="button"
           title={action.label}
-          aria-label="{action.label} : {file.path}"
+          aria-label="{action.label} : {file.path}"
           {disabled}
           onclick={() => action.run(file)}><Icon name={action.icon} size={14} /></button
         >

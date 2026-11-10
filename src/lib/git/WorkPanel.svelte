@@ -77,7 +77,7 @@
           ]}
         />
       </div>
-      <p class="muted small">Clique un fichier pour ouvrir l'éditeur de conflits, ou garde directement un côté avec les boutons de sa ligne.</p>
+      <p class="muted small">Clique un fichier pour ouvrir l’éditeur de conflits, ou garde directement un côté avec les boutons de sa ligne.</p>
     </section>
   {/if}
 
@@ -122,11 +122,11 @@
           active={activeIn('s:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, true)}
-          actions={[{ label: "Retirer de l'index", icon: 'minus', run: (f: FileChange) => void repo.unstage([f]) }]}
+          actions={[{ label: 'Retirer de l’index', icon: 'minus', run: (f: FileChange) => void repo.unstage([f]) }]}
         />
       </div>
     {:else}
-      <p class="muted">Indexe les fichiers à inclure dans le commit. Ouvre un fichier modifié pour n'indexer que certaines lignes.</p>
+      <p class="muted">Indexe les fichiers à inclure dans le commit. Ouvre un fichier modifié pour n’indexer que certaines lignes.</p>
     {/if}
   </section>
 
@@ -151,10 +151,16 @@
       disabled={busy}
     ></textarea>
     {#if blocker}
-      <p id="commit-blocker" class="why small" class:nudged aria-live="polite">{blocker}</p>
+      <!-- Ctrl + Entrée refusé : une icône s'ajoute à la couleur, et le texte, réinséré, est annoncé de nouveau. -->
+      <p id="commit-blocker" class="why small" class:nudged aria-live="polite">
+        {#key nudged}
+          {#if nudged}<Icon name="warning" size={14} />{/if}
+          <span>{blocker}</span>
+        {/key}
+      </p>
     {/if}
     <div class="send">
-      <small class="muted" class:long={subjectLength > 72} title="Longueur de la première ligne ; au-delà de 72 caractères, elle est tronquée dans beaucoup d'outils.">
+      <small class="muted" class:long={subjectLength > 72} title="Longueur de la première ligne ; au-delà de 72 caractères, elle est tronquée dans beaucoup d’outils.">
         {subjectLength} / 72
       </small>
       <button
@@ -252,6 +258,9 @@
     font-size: var(--fs-code);
   }
   .why {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin: 0;
     color: var(--muted);
     transition: color var(--t-fast) var(--ease);

@@ -201,7 +201,7 @@
         {verb} {selected.size} ligne{selected.size > 1 ? 's' : ''}
       </button>
     {:else if canSelect}
-      <small class="hint">Clique des lignes pour n'en {selectable === 'unstage' ? 'retirer' : 'indexer'} qu'une partie</small>
+      <small class="hint">Clique des lignes pour n’en {selectable === 'unstage' ? 'retirer' : 'indexer'} qu’une partie</small>
     {/if}
     {#if parsed && (parsed.added || parsed.removed)}
       <span class="count mono"><span class="plus">+{parsed.added}</span> <span class="minus">−{parsed.removed}</span></span>

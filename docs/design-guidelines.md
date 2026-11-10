@@ -366,6 +366,9 @@ States are the same everywhere:
 - Press: shrinks to 97%.
 - The label is a verb in the infinitive, with its object when the context does not give it:
   "Créer la branche" (create the branch), not "OK".
+- A disabled button whose reason is not plain to see says why: a sentence in `--muted` at
+  11.5 px next to it, repeated in its tooltip. If the user tries the action all the same, the
+  sentence turns to `--warn` and takes the warning icon.
 
 ### 9.2 Toolbar
 
@@ -427,6 +430,8 @@ Sidebar, file lists, graph, palette results.
   selected when it receives focus, the first one becomes selected.
 - The actions of a row (stage, discard) appear on hover and on focus, on the right.
 - The state of a file is a letter on a tinted background (M, A, D, R), never a colour alone.
+- A file that is only partly staged carries the words "en partie" after its name, in `--muted`
+  at 11.5 px, in both lists.
 
 ### 9.7 Tabs
 
