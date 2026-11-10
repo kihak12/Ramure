@@ -75,8 +75,6 @@
     align-items: center;
     gap: 12px;
     padding: 0 10px;
-    border-top: 1px solid var(--line);
-    background: var(--side);
     color: var(--muted);
     font-size: var(--fs-small);
     min-width: 0;

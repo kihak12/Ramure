@@ -241,13 +241,16 @@
 </section>
 
 <style>
+  /* Une seule carte, à la place des trois de la vue. */
   .conflict {
     position: absolute;
-    inset: 0;
+    inset: 0 8px 8px;
     z-index: 6;
     display: flex;
     flex-direction: column;
-    background: var(--bg);
+    overflow: hidden;
+    border-radius: var(--radius-card);
+    background: var(--panel);
     min-height: 0;
   }
   header {
@@ -256,8 +259,7 @@
     align-items: center;
     gap: 10px;
     padding: 7px 12px;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    border-bottom: 1px solid var(--line-soft);
     min-width: 0;
   }
   .glyph {
@@ -322,7 +324,7 @@
     --c: var(--muted);
   }
   .side + .side {
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--line-soft);
   }
   .ours {
     --c: var(--l0);
@@ -372,9 +374,8 @@
     flex-wrap: wrap;
     gap: 8px;
     padding: 6px 12px;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
   }
   .nav {
     display: flex;

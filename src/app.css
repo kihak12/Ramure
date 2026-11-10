@@ -144,7 +144,8 @@ body,
 }
 
 body {
-  background: var(--bg);
+  /* Le fond de la fenêtre : les cartes posées dessus sont plus claires, c'est lui qui les sépare. */
+  background: var(--side);
   color: var(--ink);
   font-family: var(--f-ui);
   font-size: var(--fs-body);
@@ -272,9 +273,7 @@ dialog:focus-visible {
 }
 
 .label {
-  font-size: var(--fs-micro);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-label);
   color: var(--muted);
   font-weight: var(--fw-strong);
 }

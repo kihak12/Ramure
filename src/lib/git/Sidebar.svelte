@@ -230,14 +230,15 @@
     grid-template-columns: minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
-    border-right: 1px solid var(--line);
-    background: var(--side);
+    overflow: hidden;
+    border-radius: var(--radius-card);
+    background: var(--panel);
   }
   .search {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 8px;
+    margin: 12px 12px 8px;
     padding: 0 8px;
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
@@ -270,19 +271,17 @@
     align-items: center;
     gap: 6px;
     width: 100%;
-    padding: 7px 10px 6px 8px;
+    padding: 8px 12px 6px;
     border: 0;
     background: none;
     cursor: pointer;
-    color: var(--muted);
-    font-size: var(--fs-micro);
+    color: var(--ink);
+    font-size: var(--fs-label);
     font-weight: var(--fw-strong);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     transition: color var(--t-fast) var(--ease);
   }
   .heading:hover {
-    color: var(--ink);
+    color: var(--accent);
   }
   .caret {
     display: grid;
@@ -297,8 +296,8 @@
   }
   .count {
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0;
-    color: var(--faint);
+    font-weight: var(--fw-regular);
+    color: var(--muted);
   }
   ul {
     list-style: none;
@@ -310,7 +309,7 @@
     align-items: center;
     gap: 5px;
     width: 100%;
-    padding: 4px 6px;
+    padding: 5px 10px 5px 6px;
     border: 0;
     border-radius: var(--radius);
     background: none;

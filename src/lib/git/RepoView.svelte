@@ -155,25 +155,31 @@
       transform: translateX(290%);
     }
   }
+  /* Barre latérale, centre et détail : trois cartes, séparées par le fond de la fenêtre. */
   .body {
     position: relative;
     flex: 1;
     display: grid;
     grid-template-columns: 204px minmax(0, 1fr) 324px;
+    gap: 8px;
+    padding: 0 8px 8px;
     min-height: 0;
   }
   .body.bare {
     grid-template-columns: minmax(0, 1fr);
   }
-  .center {
-    position: relative;
+  .center,
+  .detail {
     min-width: 0;
     min-height: 0;
+    border-radius: var(--radius-card);
+    background: var(--panel);
+  }
+  .center {
+    position: relative;
+    overflow: hidden;
   }
   .detail {
-    border-left: 1px solid var(--line);
-    background: var(--panel);
-    min-height: 0;
     overflow: auto;
   }
   .detail.working {
@@ -184,7 +190,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
-    padding: 14px;
+    padding: 12px;
     min-height: 100%;
   }
   .working .pane {

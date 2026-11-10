@@ -316,15 +316,14 @@
     z-index: 3;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    background: var(--bg);
+    background: var(--panel);
   }
   header {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 6px 10px 6px 14px;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    border-bottom: 1px solid var(--line-soft);
     min-width: 0;
   }
   .names {
@@ -520,15 +519,14 @@
   .c-del.picked,
   .c-del.picked:hover {
     background: color-mix(in srgb, var(--bad) 34%, transparent);
-    box-shadow: inset 3px 0 0 var(--bad);
   }
   .c-add.picked,
   .c-add.picked:hover {
     background: color-mix(in srgb, var(--ok) 38%, transparent);
-    box-shadow: inset 3px 0 0 var(--ok);
   }
 
-  /* Sélection de lignes */
+  /* Sélection de lignes : une ligne choisie se lit à sa teinte plus forte et à son signe en gras,
+     sans trait de couleur sur le bord. */
   .pickable {
     cursor: pointer;
     transition: background var(--t-fast) var(--ease);
@@ -542,12 +540,10 @@
   .picked.t-add,
   .picked.t-add:hover {
     background: color-mix(in srgb, var(--ok) 38%, transparent);
-    box-shadow: inset 3px 0 0 var(--ok);
   }
   .picked.t-del,
   .picked.t-del:hover {
     background: color-mix(in srgb, var(--bad) 34%, transparent);
-    box-shadow: inset 3px 0 0 var(--bad);
   }
   .picked .sign {
     font-weight: var(--fw-strong);

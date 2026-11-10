@@ -64,28 +64,23 @@
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     height: 100%;
+    background: var(--side);
   }
   .tabs {
     display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    padding: 5px 8px 0;
-    background: var(--side);
-    border-bottom: 1px solid var(--line);
+    align-items: center;
+    gap: 4px;
+    padding: 8px 8px 0;
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
   }
   .tab {
-    position: relative;
     flex: 0 1 190px;
     display: flex;
     align-items: center;
     min-width: 90px;
-    margin-bottom: -1px;
-    border: 1px solid transparent;
-    border-bottom: 0;
-    border-radius: var(--radius) var(--radius) 0 0;
+    border-radius: var(--radius);
     color: var(--muted);
     transition:
       background var(--t-fast) var(--ease),
@@ -95,26 +90,10 @@
     background: var(--hover);
     color: var(--ink);
   }
+  /* L'onglet actif est une petite carte, de la même matière que les panneaux : ni cadre ni trait. */
   .tab.current {
     background: var(--panel);
-    border-color: var(--line);
     color: var(--ink);
-  }
-  /* Filet de couleur sur l'onglet actif. */
-  .tab::before {
-    content: '';
-    position: absolute;
-    left: 8px;
-    right: 8px;
-    top: -1px;
-    height: 2px;
-    border-radius: 0 0 var(--radius-pill) var(--radius-pill);
-    background: var(--accent);
-    transform: scaleX(0);
-    transition: transform var(--t-med) var(--ease);
-  }
-  .tab.current::before {
-    transform: scaleX(1);
   }
   .open {
     flex: 1;
@@ -166,7 +145,7 @@
   .add {
     width: 28px;
     height: 28px;
-    margin: 0 0 3px 2px;
+    margin-left: 2px;
   }
   .close:hover,
   .add:hover {

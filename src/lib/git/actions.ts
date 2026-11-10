@@ -238,7 +238,7 @@ export async function editSettings(repo: Repo) {
         type: 'select',
         value: current.graphStyle,
         options: [
-          { value: 'ribbon', label: 'Ruban : pastilles d’auteur et bandes de couleur' },
+          { value: 'ribbon', label: 'Ruban : pastilles d’auteur et messages en capsule' },
           { value: 'classic', label: 'Classique : points et courbes, plus compact' },
         ],
       },
