@@ -130,7 +130,7 @@
                 {#if repo.wipCount > 0}
                   <button class="btn" type="button" onclick={() => repo.showWip()}>
                     <Icon name="pencil" size={14} />
-                    Voir les {repo.wipCount} fichier{repo.wipCount > 1 ? 's' : ''} modifié{repo.wipCount > 1 ? 's' : ''}
+                    {repo.wipText}
                   </button>
                 {/if}
               {/if}
