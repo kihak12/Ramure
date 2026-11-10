@@ -8,7 +8,13 @@
     <h2>{title}</h2>
     {#if note}<p>{note}</p>{/if}
   </div>
-  <button class="btn ghost small" type="button" disabled={!changed} title="Revenir aux valeurs par défaut de cette section" onclick={onreset}>
+  <button
+    class="btn ghost small"
+    type="button"
+    disabled={!changed}
+    title={changed ? 'Revenir aux valeurs par défaut de cette section' : 'Cette section est déjà aux valeurs par défaut'}
+    onclick={onreset}
+  >
     Tout réinitialiser
   </button>
 </header>

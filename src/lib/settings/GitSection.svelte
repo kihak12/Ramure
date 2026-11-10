@@ -8,7 +8,7 @@
   const changed = $derived(FIELDS.some((field) => prefs[field] !== DEFAULTS[field]));
 
   const PULL_HELP: Record<PullMode, string> = {
-    'ff-only': 'Le pull est refusé si ta branche et la branche distante ont divergé.',
+    'ff-only': 'Le tirage est refusé si ta branche et la branche distante ont divergé.',
     rebase: 'Tes commits sont rejoués au-dessus de ceux de la branche distante.',
     merge: 'La branche distante est fusionnée dans la tienne.',
   };
@@ -27,7 +27,8 @@
   function applyMinutes() {
     const value = Number(minutes.trim());
     if (minutes.trim() === '' || !Number.isInteger(value) || value < AUTO_FETCH.min || value > AUTO_FETCH.max) {
-      minutesError = `Entre un nombre entier de ${AUTO_FETCH.min} à ${AUTO_FETCH.max}.`;
+      // Ce qui s'est passé, puis quoi faire (charte, section 12).
+      minutesError = `« ${minutes.trim() || 'vide'} » n’est pas appliqué. Entre un nombre entier de ${AUTO_FETCH.min} à ${AUTO_FETCH.max}.`;
       return;
     }
     minutesError = '';
@@ -74,7 +75,7 @@
       <span aria-hidden="true">min</span>
     </span>
   </SettingRow>
-  <SettingRow id="set-pull" name="Tirer (pull)" help={PULL_HELP[prefs.pullMode]}>
+  <SettingRow id="set-pull" name="Tirage (pull)" help={PULL_HELP[prefs.pullMode]}>
     <select id="set-pull" class="field" aria-describedby="set-pull-help" value={prefs.pullMode} onchange={(e) => savePrefs({ pullMode: e.currentTarget.value as PullMode })}>
       <option value="ff-only">Avance rapide seulement</option>
       <option value="rebase">Rebaser mes commits</option>

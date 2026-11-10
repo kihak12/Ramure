@@ -53,7 +53,7 @@
     if (!combo) return; // touche de modification seule : on attend la suite
     const problem = refusal(combo);
     if (problem) {
-      notice = { id, text: `${display(combo)} : ${problem}` };
+      notice = { id, text: `${display(combo)} : ${problem}` };
       return;
     }
     const previous = keys.find(combo);
@@ -101,7 +101,9 @@
       <button
         class="combo"
         type="button"
-        aria-label="Raccourci de « {shortcut.title} » : {combo ? display(combo) : 'aucun'}. Cliquer pour le changer."
+        aria-label={recording === shortcut.id
+          ? `Raccourci de « ${shortcut.title} » : en attente de la nouvelle combinaison.`
+          : `Raccourci de « ${shortcut.title} » : ${combo ? display(combo) : 'aucun'}. Cliquer pour le changer.`}
         onclick={() => start(shortcut.id)}
       >
         {#if recording === shortcut.id}
@@ -134,14 +136,14 @@
   {/each}
 </div>
 
-<p class="foot">Dans un terminal, seuls les raccourcis avec Maj, Alt ou une touche de fonction sont actifs : les autres restent au shell.</p>
+<p class="foot">Dans un terminal, seuls les raccourcis avec Maj, Alt ou une touche de fonction sont actifs : les autres restent au shell.</p>
 
 <style>
   .search {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 8px;
+    padding: 0 9px;
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
     background: var(--bg);
@@ -149,6 +151,9 @@
     transition:
       border-color var(--t-fast) var(--ease),
       box-shadow var(--t-fast) var(--ease);
+  }
+  .search:hover:not(:focus-within) {
+    border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
   }
   .search:focus-within {
     border-color: var(--accent);
@@ -228,8 +233,8 @@
     color: var(--muted);
     font-size: var(--fs-label);
   }
+  /* En --ink : sur --accent-soft, l'accent n'a pas le contraste d'un texte courant en thème clair. */
   .wait {
-    color: var(--accent);
     font-size: var(--fs-label);
     font-weight: var(--fw-strong);
   }

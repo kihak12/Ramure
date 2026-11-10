@@ -87,7 +87,7 @@ component that hard-codes one.
 | `--hover` | Background of a hovered element. | `#eef0f4` | `#1e222a` |
 | `--sel` | Background of a selected element. | `#e1ecfb` | `#1d3252` |
 | `--accent` | Main action, focus, active element, link. | `#2b6fdb` | `#6aa5f8` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed view button of the toolbar. | `#e4eefc` | `#182b45` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed view button of the toolbar, row of a shortcut being recorded. | `#e4eefc` | `#182b45` |
 | `--on-accent` | Text placed on the accent or on a branch colour. | `#ffffff` | `#08131f` |
 | `--ok` / `--ok-soft` | Success, added line. | `#1f7a45` / `#e2f3e8` | `#5cc48d` / `#12301f` |
 | `--warn` / `--warn-soft` | Warning, pending operation. | `#8f5708` / `#fbf0dc` | `#f0a94f` / `#3a2b14` |
@@ -175,7 +175,7 @@ Every theme must meet them, in light and in dark.
 | `--fs-small` | 11.5 px | Captions, toolbar labels, status bar, graph labels, metadata. |
 | `--fs-label` | 12 px | Field labels, column headers, section titles, secondary columns of a list (author, date). |
 | `--fs-body` | 13.5 px | Text, list rows, buttons, menus. |
-| `--fs-title` | 15 px | Title of a dialog or of a panel, input of the command palette. |
+| `--fs-title` | 15 px | Title of a dialog, of a panel or of a section of the settings page, input of the command palette. |
 | `--fs-display` | 24 px | Start page only. |
 | `--fs-code` | 12 px | Diff, conflict editor, SHAs. |
 | `--fs-term` | 13 px | Terminal: a whole number, so that the character grid stays sharp. |
@@ -412,6 +412,11 @@ States are the same everywhere:
 - The label is above the field, in 12 px, weight 650, colour `--muted`. A hint inside the empty
   field never replaces the label.
 - A checkbox is 15 px, checked in `--accent`, and its text can be clicked too.
+- A list is the control of the system, 32 px high like a field. Its look, closed and open, is
+  the system's; replacing it by the application's own control is issue #58.
+- A filter field carries a 14 px magnifier on its left, in `--muted`; its hint names what it
+  filters, and so does its accessible name.
+- A unit follows the field it belongs to, 6 px away, in 12 px, `--muted`: "min".
 
 ### 9.4 Branch and tag labels
 
@@ -604,7 +609,8 @@ of the rail; the modules stay alive behind it, and an SSH session is not cut.
 **Getting there and back.** The "Réglages" button at the foot of the rail, which behaves like a
 module button (pressed while the page is shown); Ctrl + , ; the palette; and "Réglages" in the
 toolbar of a repository, a shortcut that opens the page on its "Git" section. The same button,
-the same shortcut, a module button or Escape bring back the module and the tab that were shown.
+the same shortcut, a module button or Escape bring back the module and the tab that were shown;
+after Escape, the focus is on the "Réglages" button of the rail.
 
 **Structure.** On `--side`, two cards 8 px apart and 8 px from the edges.
 
@@ -616,9 +622,11 @@ the same shortcut, a module button or Escape bring back the module and the tab t
 - A section appears in the navigation when it holds its first setting: "Général", "Git",
   "Raccourcis clavier". No tabs at the top of the page: tabs are repositories.
 
-**A section.** Its title in 15 px, weight 650, with "Tout réinitialiser" on the right, a small
-ghost button, disabled while nothing differs from the defaults. Under it, groups, each with a
-12 px title, weight 650, in `--muted`.
+**A section.** Its title in 15 px, weight 650, the one title of a section that is not in 12 px
+(9.8): it heads the whole card. A note may follow it, in 11.5 px, `--muted`. On the right,
+"Tout réinitialiser", a small ghost button, disabled while nothing differs from the defaults;
+its tooltip then says so. Under the title, groups, each with a 12 px title, weight 650, in
+`--muted`.
 
 **A setting** is a row: its name in 13.5 px, `--ink`, a help text under it in 11.5 px,
 `--muted`, and its control on the right, 240 px wide. 12 px between two rows. The name is a
@@ -638,7 +646,8 @@ is left or on Enter.
 keys (9.12), and a button that restores the default.
 
 - A click on the combination starts recording: the row takes an `--accent-soft` background and
-  says "Appuie sur les touches…". Backspace removes the shortcut, Escape cancels.
+  says "Appuie sur les touches…", in `--ink`, weight 650; the accessible name of the button says
+  that a combination is awaited. Backspace removes the shortcut, Escape cancels.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
 
@@ -720,7 +729,7 @@ recalled in brackets where it helps.
 | Git | In the interface |
 |---|---|
 | fetch | Récupérer; la récupération |
-| pull | Tirer |
+| pull | Tirer; le tirage |
 | push | Pousser |
 | stash, stash pop | Remiser, dépiler; une remise |
 | stage, unstage | Indexer, retirer |

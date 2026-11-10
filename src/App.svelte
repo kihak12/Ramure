@@ -17,6 +17,8 @@
   // La page de réglages prend la place du module ; en la quittant, on retrouve celui qu'on regardait.
   const shown = $derived(settingsPage.open ? 'settings' : view);
 
+  let settingsButton = $state<HTMLButtonElement>();
+
   function show(module: View) {
     view = module;
     settingsPage.hide();
@@ -49,6 +51,8 @@
       if (e.target instanceof HTMLInputElement && e.target.type === 'search' && e.target.value) return;
       e.preventDefault();
       settingsPage.hide();
+      // La page devient inerte : le focus revient sur le bouton qui l'ouvre, il ne se perd pas.
+      settingsButton?.focus();
       return;
     }
     const combo = comboOf(e);
@@ -86,6 +90,7 @@
       <Icon name="search" size={18} />
     </button>
     <button
+      bind:this={settingsButton}
       type="button"
       aria-pressed={settingsPage.open}
       title="Réglages{keys.binding('settings') ? ` (${display(keys.binding('settings'))})` : ''}"

@@ -98,7 +98,7 @@
   <div class="tools right">
     {@render tool('refresh', 'Recharger', 'Relire l’historique du dépôt', !ready, () => void repo.reload())}
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
-    {@render tool('settings', 'Réglages', 'Ouvrir les réglages de Git : récupération automatique, tirage, graphe, diff', false, () => settingsPage.show('git'))}
+    {@render tool('settings', 'Réglages', 'Ouvrir les réglages de Git : récupération automatique, tirage, graphe, diff', false, () => settingsPage.show('git'))}
   </div>
   {@render view('detail')}
 </header>
