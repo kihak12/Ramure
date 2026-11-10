@@ -93,6 +93,8 @@ passe ou de phrase secrète.
   l'inscrit dans `known_hosts`. Une empreinte qui a changé bloque la connexion.
 - **Clés** : liste des clés de `~/.ssh`, génération d'une clé ed25519 avec phrase secrète
   facultative, copie de la clé publique. Les clés restent dans `~/.ssh`.
+- **Clé d'un hôte** : dans sa fiche, le fichier de clé se saisit ou se choisit avec « Parcourir… »,
+  qui ouvre la fenêtre de fichiers du système dans `~/.ssh`.
 - Un mot de passe ou une phrase secrète est demandé à la connexion et n'est jamais enregistré.
 
 ### Raccourcis et journal
