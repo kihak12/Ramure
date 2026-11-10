@@ -5,6 +5,8 @@
 //! sur un canal Tauri.
 
 pub mod config;
+pub mod keyfiles;
+pub mod store;
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -55,6 +57,9 @@ pub struct ConnectParams {
     rows: u32,
     /// Empreinte que l'utilisateur vient d'accepter pour un serveur inconnu.
     accept_fingerprint: Option<String>,
+    /// Vrai pour inscrire cette empreinte dans `known_hosts` ; sinon elle ne vaut que pour cette session.
+    #[serde(default)]
+    remember_host: bool,
     /// Commande envoyée dans le terminal dès que le shell est prêt.
     startup_command: Option<String>,
 }
@@ -113,6 +118,7 @@ struct ClientHandler {
     host: String,
     port: u16,
     accepted: Option<String>,
+    remember: bool,
     verdict: Arc<Mutex<Option<HostVerdict>>>,
 }
 
@@ -133,7 +139,11 @@ impl client::Handler for ClientHandler {
             // Hôte inconnu, ou `known_hosts` absent ou illisible.
             Ok(false) | Err(_) => {
                 if self.accepted.as_deref() == Some(fingerprint.as_str()) {
-                    HostVerdict::AcceptedOnce(fingerprint)
+                    // L'utilisateur fait confiance à ce serveur : on l'inscrit dans known_hosts,
+                    // comme le fait OpenSSH. Si l'écriture échoue, la confiance vaut pour la session.
+                    let learned = self.remember
+                        && keys::known_hosts::learn_known_hosts(&self.host, self.port, &key).is_ok();
+                    if learned { HostVerdict::Trusted(fingerprint) } else { HostVerdict::AcceptedOnce(fingerprint) }
                 } else {
                     HostVerdict::Unknown { fingerprint, algorithm }
                 }
@@ -352,6 +362,7 @@ pub async fn ssh_connect(
         host: params.host.clone(),
         port: params.port,
         accepted: params.accept_fingerprint.clone(),
+        remember: params.remember_host,
         verdict: verdict.clone(),
     };
 

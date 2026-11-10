@@ -24,3 +24,6 @@ tauri-plugin-dialog = "2"
 # `ring` plutôt que `aws-lc-rs` : se compile sous Windows sans NASM ni CMake.
 russh = { version = "0.65.1", default-features = false, features = ["ring", "flate2", "rsa"] }
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "macros", "time", "net", "io-util"] }
+rusqlite = { version = "0.41.1", features = ["bundled"] }
+uuid = { version = "1.29.2", features = ["v4"] }
+rand = "0.10"

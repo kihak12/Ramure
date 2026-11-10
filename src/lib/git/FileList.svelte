@@ -1,10 +1,11 @@
 <script lang="ts">
+  import Icon, { type IconName } from '../ui/Icon.svelte';
   import type { ChangeKind, FileChange } from './types';
 
   interface Action {
     label: string;
-    /** Symbole affiché sur le bouton ; `label` reste le nom accessible. */
-    glyph: string;
+    /** Icône du bouton ; `label` reste le nom accessible. */
+    icon: IconName;
     run: (file: FileChange) => void;
     danger?: boolean;
   }
@@ -67,7 +68,7 @@
           title={action.label}
           aria-label="{action.label} : {file.path}"
           {disabled}
-          onclick={() => action.run(file)}>{action.glyph}</button
+          onclick={() => action.run(file)}><Icon name={action.icon} size={14} /></button
         >
       {/each}
     </li>
@@ -86,6 +87,7 @@
     align-items: center;
     border-radius: 5px;
     min-width: 0;
+    transition: background var(--t-fast) var(--ease);
   }
   li:hover,
   li:focus-within {
@@ -154,6 +156,8 @@
   }
   .act {
     flex: none;
+    display: grid;
+    place-items: center;
     width: 22px;
     height: 22px;
     margin-right: 2px;
@@ -162,9 +166,14 @@
     background: none;
     color: var(--muted);
     cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
     opacity: 0;
+    transition:
+      opacity var(--t-fast) var(--ease),
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  .act:active:not(:disabled) {
+    transform: scale(0.9);
   }
   li:hover .act,
   li:focus-within .act {

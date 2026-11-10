@@ -1,32 +1,87 @@
 <script lang="ts">
-  import GraphView from './lib/git/GraphView.svelte';
-  import SshView from './lib/ssh/SshView.svelte';
+  import { gitCommands } from './lib/git/commands';
+  import GitWorkspace from './lib/git/GitWorkspace.svelte';
+  import SshWorkspace from './lib/ssh/SshWorkspace.svelte';
+  import ContextMenu from './lib/ui/ContextMenu.svelte';
+  import Dialog from './lib/ui/Dialog.svelte';
+  import Icon from './lib/ui/Icon.svelte';
+  import { allowedInTerminal, comboOf, display, keys } from './lib/ui/keys.svelte';
+  import Palette from './lib/ui/Palette.svelte';
+  import ShortcutsDialog from './lib/ui/ShortcutsDialog.svelte';
+  import { palette, type Command } from './lib/ui/palette.svelte';
+  import Toasts from './lib/ui/Toasts.svelte';
 
   type View = 'git' | 'ssh';
   let view = $state<View>('git');
+
+  /** Toutes les commandes disponibles maintenant, avec leur raccourci. */
+  function commands(): Command[] {
+    const general: Command[] = [
+      { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Afficher les dépôts', disabled: view === 'git', run: () => (view = 'git') },
+      { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Afficher le terminal SSH', disabled: view === 'ssh', run: () => (view = 'ssh') },
+      { id: 'shortcuts', group: 'Modules', icon: 'settings', title: 'Raccourcis clavier…', keywords: 'touches clavier', run: () => (keys.editing = true) },
+    ];
+    // Les actions Git n'ont de sens que devant un dépôt.
+    const all = view === 'git' ? [...gitCommands(), ...general] : general;
+    return all.map((command) => {
+      const combo = keys.binding(command.id);
+      return combo ? { ...command, shortcut: display(combo) } : command;
+    });
+  }
+
+  const openPalette = () => palette.show(commands());
+
+  function onKey(e: KeyboardEvent) {
+    const combo = comboOf(e);
+    if (!combo) return;
+    // Ctrl + Maj + P ouvre toujours la palette, quel que soit le raccourci choisi pour elle.
+    const id = combo === 'Ctrl+Shift+P' ? 'palette' : keys.find(combo);
+    if (!id) return;
+    const inTerminal = e.target instanceof Element && e.target.closest('.xterm') !== null;
+    if (inTerminal && !allowedInTerminal(combo)) return;
+    // Une boîte de dialogue ouverte garde le clavier ; seule la palette se referme par son raccourci.
+    const modal = document.querySelector('dialog[open]') !== null;
+    if (modal && !(id === 'palette' && palette.commands)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (id === 'palette') {
+      if (palette.commands) palette.hide();
+      else openPalette();
+      return;
+    }
+    const command = commands().find((c) => c.id === id);
+    if (command && !command.disabled) command.run();
+  }
 </script>
+
+<svelte:window onkeydowncapture={onKey} />
 
 <div class="shell">
   <nav class="rail" aria-label="Modules">
     <button type="button" aria-pressed={view === 'git'} title="Dépôts" aria-label="Dépôts" onclick={() => (view = 'git')}>
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <circle cx="6" cy="4.5" r="2" /><circle cx="6" cy="15.5" r="2" /><circle cx="14" cy="6.5" r="2" />
-        <path d="M6 6.5v7M14 8.5c0 4-8 2.5-8 5" />
-      </svg>
+      <Icon name="branch" size={19} />
     </button>
     <button type="button" aria-pressed={view === 'ssh'} title="Terminal SSH" aria-label="Terminal SSH" onclick={() => (view = 'ssh')}>
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <rect x="2.5" y="3.5" width="15" height="13" rx="2" /><path d="m6 8 3 2-3 2M10.5 13H14" />
-      </svg>
+      <Icon name="terminal" size={19} />
+    </button>
+    <button class="last" type="button" title="Palette de commandes{keys.binding('palette') ? ` (${display(keys.binding('palette'))})` : ''}" aria-label="Palette de commandes" onclick={openPalette}>
+      <Icon name="search" size={18} />
     </button>
   </nav>
 
   <!-- Les deux vues restent montées : une session SSH survit au passage par le graphe. -->
   <main>
-    <section class="pane" hidden={view !== 'git'}><GraphView /></section>
-    <section class="pane" hidden={view !== 'ssh'}><SshView active={view === 'ssh'} /></section>
+    <section class="pane" class:hidden={view !== 'git'} inert={view !== 'git'}><GitWorkspace active={view === 'git'} /></section>
+    <section class="pane" class:hidden={view !== 'ssh'} inert={view !== 'ssh'}><SshWorkspace active={view === 'ssh'} /></section>
   </main>
 </div>
+
+<!-- Couches communes à toute l'application. -->
+<Palette />
+<ShortcutsDialog />
+<Dialog />
+<ContextMenu />
+<Toasts />
 
 <style>
   .shell {
@@ -44,42 +99,74 @@
     border-right: 1px solid var(--line);
   }
   .rail button {
+    position: relative;
     width: 36px;
     height: 36px;
-    border-radius: 8px;
+    border-radius: 9px;
     display: grid;
     place-items: center;
     color: var(--muted);
     background: none;
     border: 0;
     cursor: pointer;
+    transition:
+      background var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
   }
   .rail button:hover {
     background: var(--hover);
     color: var(--ink);
   }
-  .rail button[aria-pressed='true'] {
-    background: var(--sel);
-    color: var(--ink);
+  .rail .last {
+    margin-top: auto;
   }
-  .rail svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .rail button:active {
+    transform: scale(0.93);
+  }
+  .rail button[aria-pressed='true'] {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  /* Repère du module actif, qui glisse le long du rail. */
+  .rail button::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 9px;
+    bottom: 9px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform var(--t-med) var(--ease);
+  }
+  .rail button[aria-pressed='true']::before {
+    transform: scaleY(1);
   }
   main {
+    position: relative;
     min-width: 0;
     min-height: 0;
   }
+  /* Les vues sont superposées et se fondent l'une dans l'autre. */
   .pane {
-    height: 100%;
+    position: absolute;
+    inset: 0;
     min-height: 0;
+    transition:
+      opacity var(--t-med) var(--ease),
+      transform var(--t-med) var(--ease),
+      visibility 0s;
   }
-  .pane[hidden] {
-    display: none;
+  .pane.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    pointer-events: none;
+    transition:
+      opacity var(--t-med) var(--ease),
+      transform var(--t-med) var(--ease),
+      visibility 0s var(--t-med);
   }
 </style>

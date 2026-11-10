@@ -19,6 +19,8 @@ export interface CommitRow {
   /** Segments vers la ligne suivante : [colonne de départ, colonne d'arrivée, lane]. */
   edges: [number, number, number][];
   wip: boolean;
+  /** Commit absent de toute branche distante : pas encore poussé. */
+  localOnly: boolean;
 }
 
 export interface CommandLog {
@@ -57,6 +59,8 @@ export interface FileChange {
   kind: ChangeKind;
 }
 
+export type Operation = 'merge' | 'rebase' | 'cherry-pick' | 'revert';
+
 export interface Status {
   head: string | null;
   branch: string | null;
@@ -65,6 +69,8 @@ export interface Status {
   behind: number;
   staged: FileChange[];
   unstaged: FileChange[];
+  /** Opération en suspens, à continuer ou à abandonner. */
+  operation: Operation | null;
 }
 
 export interface Diff {
@@ -86,4 +92,95 @@ export interface Done<T> {
 export interface Failed {
   message: string;
   commands: CommandLog[];
+}
+
+// --- Références et historique (src-tauri/src/git/ops.rs) ----------------------------------
+
+export interface Branch {
+  name: string;
+  sha: string;
+  upstream: string | null;
+  ahead: number;
+  behind: number;
+  /** La branche distante suivie n'existe plus. */
+  gone: boolean;
+  current: boolean;
+}
+
+export interface NamedRef {
+  name: string;
+  sha: string;
+}
+
+export interface Stash {
+  index: number;
+  sha: string;
+  message: string;
+  time: number;
+}
+
+export interface Refs {
+  branches: Branch[];
+  remotes: NamedRef[];
+  tags: NamedRef[];
+  stashes: Stash[];
+  remoteNames: string[];
+}
+
+export type RefOp =
+  | { op: 'switch'; name: string }
+  | { op: 'switch-remote'; name: string }
+  | { op: 'detach'; sha: string }
+  | { op: 'branch-create'; name: string; start: string; switch: boolean }
+  | { op: 'branch-rename'; name: string; newName: string }
+  | { op: 'branch-delete'; name: string; force: boolean }
+  | { op: 'remote-branch-delete'; name: string }
+  | { op: 'tag-create'; name: string; sha: string; message: string }
+  | { op: 'tag-delete'; name: string }
+  | { op: 'tag-push'; name: string }
+  | { op: 'tag-delete-remote'; name: string }
+  | { op: 'stash-push'; message: string }
+  | { op: 'stash-pop'; index: number }
+  | { op: 'stash-apply'; index: number }
+  | { op: 'stash-drop'; index: number };
+
+export type ResetMode = 'soft' | 'mixed' | 'hard';
+
+export type HistoryOp =
+  | { op: 'merge'; target: string }
+  | { op: 'rebase'; onto: string }
+  | { op: 'cherry-pick'; sha: string; mainline: boolean }
+  | { op: 'revert'; sha: string; mainline: boolean }
+  | { op: 'reset'; sha: string; mode: ResetMode };
+
+/** Résultat d'une opération qui peut s'arrêter sur un conflit. */
+export interface Outcome {
+  output: string;
+  stopped: Operation | null;
+}
+
+export interface RebasePlan {
+  base: string | null;
+  /** Du plus ancien au plus récent. */
+  commits: { sha: string; subject: string; message: string }[];
+  pushed: boolean;
+}
+
+export type TodoAction = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop';
+
+export interface TodoItem {
+  action: TodoAction;
+  sha: string;
+  message?: string;
+}
+
+/** Versions d'un fichier en conflit (src-tauri/src/git/conflict.rs). */
+export interface ConflictFile {
+  base: string | null;
+  ours: string | null;
+  theirs: string | null;
+  /** Fichier du répertoire de travail, avec les marqueurs de conflit. */
+  merged: string | null;
+  /** Une version n'est pas du texte, ou est trop volumineuse pour l'éditeur. */
+  binary: boolean;
 }

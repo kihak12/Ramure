@@ -1,5 +1,5 @@
-//! Lecture minimale de `~/.ssh/config`, pour préremplir le formulaire de connexion.
-//! L'import complet (et l'export) arrive au jalon J3.
+//! Lecture de `~/.ssh/config`, pour importer ses hôtes dans le carnet : Host, HostName,
+//! User, Port, IdentityFile, et la présence d'un rebond par bastion.
 
 use std::path::PathBuf;
 

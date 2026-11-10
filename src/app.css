@@ -1,58 +1,82 @@
-/* Jetons de couleur de Ramure. Chaque composant passe par ces variables : pas de couleur en dur. */
+/* Jetons de Ramure. Chaque composant passe par ces variables : pas de couleur en dur. */
 :root {
   color-scheme: light;
-  --bg: #f7f9f8;
+  --bg: #f6f8f7;
   --panel: #ffffff;
-  --side: #ecf0ee;
-  --line: #d7dfdb;
-  --ink: #1a2520;
-  --muted: #66756e;
-  --sel: #e2ecf8;
-  --hover: #eff3f1;
-  --accent: #2f6fd0;
+  --side: #eef2f0;
+  --raised: #ffffff;
+  --line: #dbe2de;
+  --line-soft: #e8edea;
+  --ink: #17211c;
+  --muted: #64736c;
+  --faint: #93a099;
+  --sel: #e1ecfb;
+  --hover: #edf2ef;
+  --accent: #2b6fdb;
+  --accent-soft: #e4eefc;
   --on-accent: #ffffff;
-  --ok: #2c7a4b;
+  --ok: #23804a;
+  --ok-soft: #e2f3e8;
   --warn: #9a5b0b;
   --warn-soft: #fbf0dc;
   --bad: #b42318;
   --bad-soft: #fbe5e2;
   --term-bg: #fbfcfb;
   --term-ink: #1e2a24;
+  --scrim: rgb(20 30 25 / 0.32);
+  --shadow-pop: 0 18px 44px -14px rgb(15 30 22 / 0.3), 0 2px 6px rgb(15 30 22 / 0.08);
+  --shadow-soft: 0 1px 2px rgb(15 30 22 / 0.06);
   /* Couleurs des lanes du graphe */
-  --l0: #2f6fd0;
+  --l0: #2b6fdb;
   --l1: #c2410c;
-  --l2: #2b8c5b;
-  --l3: #8a4cc4;
+  --l2: #1f8a5b;
+  --l3: #8447c7;
   --l4: #a87c00;
   --l5: #c33a6f;
-  --l6: #11808a;
+  --l6: #0f808a;
   --l7: #66751c;
 
-  --f-ui: 'Segoe UI', Ubuntu, system-ui, sans-serif;
+  --f-ui: 'Segoe UI Variable Text', 'Segoe UI', Ubuntu, system-ui, sans-serif;
   --f-mono: 'Cascadia Mono', 'Ubuntu Mono', Consolas, 'DejaVu Sans Mono', monospace;
+
+  /* Mouvement : une seule courbe et trois durées pour toute l'application. */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 110ms;
+  --t-med: 200ms;
+  --t-slow: 340ms;
+  --radius: 8px;
+  --radius-s: 6px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #121916;
-    --panel: #161f1b;
-    --side: #0f1513;
-    --line: #25302b;
-    --ink: #dce5e0;
-    --muted: #879790;
-    --sel: #1d3245;
-    --hover: #1a2420;
-    --accent: #62a0f5;
-    --on-accent: #0b1622;
-    --ok: #5bc08a;
-    --warn: #f0a44b;
+    --bg: #101614;
+    --panel: #151d1a;
+    --side: #0d1311;
+    --raised: #1b2521;
+    --line: #25312c;
+    --line-soft: #1c2622;
+    --ink: #dfe8e3;
+    --muted: #8a9a93;
+    --faint: #5d6c66;
+    --sel: #1b3147;
+    --hover: #19231f;
+    --accent: #66a5f7;
+    --accent-soft: #162a40;
+    --on-accent: #0a1420;
+    --ok: #5cc48d;
+    --ok-soft: #12301f;
+    --warn: #f0a94f;
     --warn-soft: #3a2b14;
-    --bad: #f07167;
+    --bad: #f2776d;
     --bad-soft: #3a1715;
-    --term-bg: #0b100e;
+    --term-bg: #0a0f0d;
     --term-ink: #cfe0d7;
-    --l0: #62a0f5;
+    --scrim: rgb(0 0 0 / 0.55);
+    --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
+    --l0: #66a5f7;
     --l1: #f2844e;
     --l2: #55c68b;
     --l3: #b98aeb;
@@ -60,6 +84,21 @@
     --l5: #ee79a2;
     --l6: #3fc4cc;
     --l7: #b0c25a;
+  }
+}
+
+/* Qui a demandé moins d'animations n'en reçoit presque plus : les états changent sans transition. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 1ms;
+    --t-med: 1ms;
+    --t-slow: 1ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
@@ -99,42 +138,106 @@ textarea {
   outline-offset: 1px;
 }
 
+/* Une boîte de dialogue reçoit le focus à l'ouverture : ce sont ses champs qui le montrent. */
+dialog:focus-visible {
+  outline: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Barres de défilement fines, dans les tons de l'interface. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;
+}
+
 .mono {
   font-family: var(--f-mono);
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px solid var(--line);
-  background: var(--panel);
-  border-radius: 6px;
+  background: var(--raised);
+  border-radius: var(--radius-s);
   padding: 5px 12px;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: var(--shadow-soft);
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease),
+    filter var(--t-fast) var(--ease),
+    opacity var(--t-fast) var(--ease);
 }
 .btn:hover:not(:disabled) {
   background: var(--hover);
+  border-color: color-mix(in srgb, var(--muted) 45%, var(--line));
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
+  box-shadow: none;
 }
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);
+  font-weight: 600;
 }
 .btn.primary:hover:not(:disabled) {
   background: var(--accent);
-  filter: brightness(1.08);
+  border-color: var(--accent);
+  filter: brightness(1.1);
+}
+.btn.danger {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.btn.danger:hover:not(:disabled) {
+  background: var(--bad);
+  border-color: var(--bad);
+  filter: brightness(1.1);
+}
+.btn.ghost {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+.btn.small {
+  padding: 2px 8px;
+  font-size: 12px;
 }
 
 .field {
   border: 1px solid var(--line);
   background: var(--bg);
-  border-radius: 6px;
-  padding: 5px 8px;
+  border-radius: var(--radius-s);
+  padding: 6px 9px;
   width: 100%;
   min-width: 0;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+.field:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
+}
+.field:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .label {
@@ -143,4 +246,46 @@ textarea {
   text-transform: uppercase;
   color: var(--muted);
   font-weight: 600;
+}
+
+/* Petite pastille : compteur, nombre de commits en avance ou en retard. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--sel);
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Apparitions partagées. */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
 }
