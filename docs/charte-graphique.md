@@ -8,8 +8,8 @@ Le choix de cette direction est raconté dans [`design/directions.md`](design/di
 - **Règle du jeu :** quand le code et la charte divergent, la charte a raison. On change la
   charte d'abord, par une PR, et le code ensuite.
 
-Les jetons du code suivent cette charte (issue #5). L'interface, elle, n'a pas encore la forme
-de Clairière : c'est l'objet de l'issue #10, puis de la revue des écrans (#6).
+Les jetons du code suivent cette charte (issue #5) et l'interface a la forme de Clairière
+(issue #10). La revue des écrans, règle par règle, est l'objet de l'issue #6.
 
 | Sombre | Clair |
 |---|---|
@@ -427,7 +427,8 @@ Barre latérale, listes de fichiers, graphe, résultats de la palette.
   la carte.
 - **Pas de trait de couleur sur le bord** pour marquer la sélection.
 - Focus au clavier : un liseré intérieur de 1,5 px en `--accent` sur la ligne sélectionnée.
-  **Jamais de contour autour de toute la liste.**
+  **Jamais de contour autour de toute la liste.** Le focus reste sur la liste, qui gère les
+  flèches ; si aucune ligne n'est sélectionnée quand elle le reçoit, la première le devient.
 - Les actions d'une ligne (indexer, annuler) apparaissent au survol et au focus, à droite.
 - L'état d'un fichier est une lettre sur fond teinté (M, A, D, R), jamais une couleur seule.
 
@@ -509,6 +510,8 @@ Barre latérale, listes de fichiers, graphe, résultats de la palette.
   `--bad`, signe « − » en `--bad`.
 - Le signe est toujours présent : la couleur ne dit jamais seule si une ligne est ajoutée ou
   retirée.
+- Une ligne choisie pour être indexée seule a une teinte plus forte et son signe en gras. Pas
+  de trait de couleur sur son bord.
 
 ### 9.15 Terminal
 
