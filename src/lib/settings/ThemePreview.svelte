@@ -70,10 +70,11 @@
   .main i:nth-child(even) {
     width: 60%;
   }
+  /* Une ligne en accent, une en texte : ce que le thème change le plus. */
   .main .a {
-    background: var(--l0);
+    background: var(--accent);
   }
   .main .b {
-    background: var(--l1);
+    background: var(--muted);
   }
 </style>

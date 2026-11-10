@@ -113,7 +113,7 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
 
 - `--l0` is the accent colour: the first column and the accent echo each other.
 - Outside the graph, these colours are only used for a marker chosen by the user, such as the
-  colour of an SSH host.
+  colour of an SSH host, and for the preview of the graph in the settings (9.19).
 
 ### 2.3 Rules of use
 
@@ -674,7 +674,8 @@ diff. Nothing has to be opened to compare them.
 - **Rows**: one option per row, its name in 13.5 px, and under it what it entails, in 11.5 px,
   `--muted`.
 - **Tiles**: the options side by side, each with a preview 64 px high above its name. For what
-  is seen rather than read. A tile has a `--line` border.
+  is seen rather than read. A tile has a `--line` border: it is a control, at the level of a
+  button or a field (6), not a card, and neither is its preview.
 - An option has 8 px corners and is at least 28 px high. Hover: a `--hover` background.
 - The chosen option: a `--sel` background, its name in weight 650, and a check mark in
   `--accent` on its right. Never the colour alone, never a coloured bar on an edge. The place
@@ -683,6 +684,9 @@ diff. Nothing has to be opened to compare them.
 - A preview is drawn with the tokens, never with colours of its own. A preview of a theme
   carries `data-theme`, which gives it the tokens of that theme whatever the theme of the
   window.
+- A preview is a sketch, not the component it shows: a few bars and dots, with no text. It is
+  hidden from screen readers, and the name of the option says what it is. The preview of the
+  graph is the one place outside the graph where the branch colours are used (2.2).
 
 ## 10. Commit graph
 

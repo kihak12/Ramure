@@ -30,9 +30,11 @@
   } = $props();
 
   // L'anneau de focus ne se montre qu'au clavier. On le suit ici : `:focus-visible` ne répond pas
-  // sur un bouton radio atteint par les flèches dans tous les moteurs.
+  // sur un bouton radio atteint par les flèches dans tous les moteurs. Un focus qui arrive juste
+  // après un appui de la souris vient d'elle ; tout autre vient du clavier.
+  const POINTER_WINDOW = 500; // ms entre l'appui de la souris et le focus qu'il donne
   let keyboard = $state(false);
-  let pointer = false;
+  let pointerAt = -Infinity;
 </script>
 
 <!-- Le groupe ne prend pas le focus lui-même : ce sont ses boutons radio qui le prennent. -->
@@ -45,13 +47,10 @@
   aria-describedby={describedby}
   style:--count={options.length}
   onpointerdown={() => {
-    pointer = true;
+    pointerAt = performance.now();
     keyboard = false;
   }}
-  onfocusin={() => {
-    keyboard = !pointer;
-    pointer = false;
-  }}
+  onfocusin={() => (keyboard = performance.now() - pointerAt > POINTER_WINDOW)}
   onkeydown={() => (keyboard = true)}
 >
   {#each options as option (option.value)}

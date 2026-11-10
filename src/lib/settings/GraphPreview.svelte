@@ -55,10 +55,10 @@
     fill: var(--l1);
   }
   .band.c0 {
-    fill: color-mix(in srgb, var(--l0) 18%, transparent);
+    fill: color-mix(in srgb, var(--l0) 15%, transparent);
   }
   .band.c1 {
-    fill: color-mix(in srgb, var(--l1) 18%, transparent);
+    fill: color-mix(in srgb, var(--l1) 15%, transparent);
   }
   .text {
     stroke: var(--line);
