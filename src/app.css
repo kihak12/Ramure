@@ -138,6 +138,11 @@ textarea {
   outline-offset: 1px;
 }
 
+/* Une boîte de dialogue reçoit le focus à l'ouverture : ce sont ses champs qui le montrent. */
+dialog:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background: color-mix(in srgb, var(--accent) 30%, transparent);
 }

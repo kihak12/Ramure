@@ -3,9 +3,10 @@
 Client Git graphique et client SSH/SFTP dans la même fenêtre, pour Windows et Ubuntu.
 Libre (MIT), local, sans compte.
 
-**État : jalons J1 et J2 presque complets.** Le prototype J0 a validé le graphe et le terminal
-SSH sur Windows et Ubuntu. Le Git du quotidien (J1) et le Git avancé (J2) sont là, à deux
-fonctions près, listées plus bas.
+**État : J1 et J2 terminés, J3 commencé.** Le prototype J0 a validé le graphe et le terminal
+SSH sur Windows et Ubuntu. Le Git du quotidien (J1) et le Git avancé (J2) sont complets. Du
+jalon SSH (J3), le carnet d'hôtes, les terminaux en onglets et les clés sont là ; le reste est
+listé plus bas.
 
 ## Ce que fait Ramure aujourd'hui
 
@@ -59,6 +60,8 @@ Tout passe par le clic droit sur un commit ou sur une étiquette, et par la barr
   conflit, prends un côté ou les deux ; le résultat reste modifiable à la main, et l'ancêtre
   commun s'affiche à la demande. Un fichier supprimé d'un côté, ou binaire, se résout en
   gardant un côté.
+- **Glisser une branche sur une autre** (dans le graphe ou la barre latérale) propose de la
+  fusionner ou de la rebaser.
 - **Rebase interactif** : réordonner à la souris, reformuler, fusionner, supprimer des commits.
   git relance Ramure comme « éditeur de séquence » : aucun outil extérieur n'est nécessaire.
 - **Garde-fous** : avant un reset, un rebase ou un rebase interactif, la position de la branche
@@ -76,18 +79,35 @@ L'authentification des dépôts distants passe par ce que git utilise déjà : a
 d'identifiants (Git Credential Manager) ou agent SSH. Ramure ne demande pas lui-même de mot de
 passe ou de phrase secrète.
 
-### Terminal SSH et journal
+### SSH
 
-- **Terminal SSH** : connexion via russh, vérification de l'empreinte contre `known_hosts`,
-  authentification par agent SSH, fichier de clé ou mot de passe, commande au démarrage.
+- **Carnet d'hôtes** : nom, adresse, port, utilisateur, authentification (agent et clés par
+  défaut, fichier de clé, ou mot de passe), groupe, tags, couleur, commande au démarrage.
+  Il est enregistré dans un fichier SQLite (`%APPDATA%\Ramure` ou `~/.config/ramure`), sans
+  aucun secret.
+- **Import de `~/.ssh/config`** : Host, HostName, User, Port, IdentityFile. Un hôte qui passe
+  par un bastion (ProxyJump) est importé, mais pas encore connectable.
+- **Terminaux en onglets** : un double-clic sur un hôte ouvre un terminal ; « Reconnecter »
+  relance une session terminée, commande au démarrage comprise.
+- **Empreintes** : à la première connexion, l'empreinte du serveur est affichée ; l'accepter
+  l'inscrit dans `known_hosts`. Une empreinte qui a changé bloque la connexion.
+- **Clés** : liste des clés de `~/.ssh`, génération d'une clé ed25519 avec phrase secrète
+  facultative, copie de la clé publique. Les clés restent dans `~/.ssh`.
+- Un mot de passe ou une phrase secrète est demandé à la connexion et n'est jamais enregistré.
+
+### Raccourcis et journal
+
+- **Raccourcis clavier configurables** : Réglages → Raccourcis clavier. Dans un terminal,
+  seuls les raccourcis avec Maj, Alt ou une touche de fonction sont actifs.
 - **Journal des commandes** : chaque commande git lancée, avec sa durée, depuis la barre d'état.
 
 ### Pas encore là
 
-- Du jalon J1 : raccourcis clavier configurables.
-- Du jalon J2 : fusion ou rebase en glissant une branche sur une autre.
-- Jalons J3 et J4 : carnet d'hôtes, clés, trousseau, terminal local, SFTP, tunnels,
-  installeurs et mises à jour.
+- Du jalon J3 : secrets dans le trousseau du système, terminal local, journal des sessions,
+  reconnexion automatique, recherche et thèmes du terminal, export vers `~/.ssh/config`,
+  import d'une clé existante.
+- Jalon J4 : SFTP, tunnels, installeurs et mises à jour.
+- L'interface n'existe qu'en français.
 
 ## Prérequis
 

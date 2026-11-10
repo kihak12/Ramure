@@ -1,0 +1,463 @@
+<script lang="ts">
+  import { Channel, invoke } from '@tauri-apps/api/core';
+  import { listen } from '@tauri-apps/api/event';
+  import { FitAddon } from '@xterm/addon-fit';
+  import { Terminal } from '@xterm/xterm';
+  import '@xterm/xterm/css/xterm.css';
+  import { onMount } from 'svelte';
+  import Icon from '../ui/Icon.svelte';
+  import type { Session } from './ssh.svelte';
+  import type { Closed, Connected, SshError } from './types';
+
+  let { session, active, onclose }: { session: Session; active: boolean; onclose: () => void } = $props();
+
+  /** Ce que la session attend de l'utilisateur, ou son état. */
+  type Phase =
+    | { step: 'connecting' }
+    | { step: 'connected' }
+    | { step: 'hostKey'; fingerprint: string; algorithm: string }
+    | { step: 'hostKeyChanged'; fingerprint: string; line: number }
+    | { step: 'passphrase'; path: string; error: string }
+    | { step: 'password'; error: string }
+    | { step: 'error'; message: string }
+    | { step: 'closed'; message: string };
+
+  /** Ce qu'on sait déjà pour cette tentative : rien n'est conservé une fois la session ouverte. */
+  interface Attempt {
+    accept?: string;
+    remember?: boolean;
+    keyPath?: string;
+    passphrase?: string;
+    password?: string;
+  }
+
+  let phase = $state<Phase>({ step: 'connecting' });
+  let info = $state.raw<Connected | null>(null);
+  let echo = $state<number | null>(null);
+  let secret = $state('');
+
+  let termEl = $state<HTMLDivElement>();
+  let term: Terminal | undefined;
+  let fit: FitAddon | undefined;
+  // Hors réactivité : lus dans les rappels du terminal, à chaque frappe.
+  let sessionId: number | null = null;
+  let lastKey = 0;
+  let echoes: number[] = [];
+  let attempt: Attempt = {};
+
+  const host = $derived(session.host);
+  const target = $derived(`${host.user}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`);
+
+  function median(values: number[]) {
+    const sorted = [...values].sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length / 2)];
+  }
+
+  function normalize(e: unknown): SshError {
+    if (e && typeof e === 'object' && 'kind' in e) return e as SshError;
+    return { kind: 'other', message: typeof e === 'string' ? e : String(e) };
+  }
+
+  async function connect(next: Attempt = {}) {
+    if (!term || !fit) return;
+    attempt = { ...attempt, ...next };
+    if (host.proxyJump) {
+      phase = { step: 'error', message: 'Cet hôte passe par un bastion (ProxyJump). Le rebond par bastion n’est pas encore pris en charge.' };
+      session.status = 'closed';
+      return;
+    }
+    if (!host.user) {
+      phase = { step: 'error', message: 'Cet hôte n’a pas d’utilisateur : ajoute-le dans sa fiche.' };
+      session.status = 'closed';
+      return;
+    }
+    // Un mot de passe n'est jamais enregistré : il est demandé à chaque connexion.
+    if (host.auth === 'password' && !attempt.password) {
+      phase = { step: 'password', error: '' };
+      return;
+    }
+
+    phase = { step: 'connecting' };
+    session.status = 'connecting';
+    secret = '';
+    fit.fit();
+    echoes = [];
+    echo = null;
+
+    const onData = new Channel<ArrayBuffer | number[]>();
+    onData.onmessage = (chunk) => {
+      if (lastKey) {
+        echoes.push(performance.now() - lastKey);
+        lastKey = 0;
+        if (echoes.length > 40) echoes.shift();
+        echo = median(echoes);
+      }
+      term?.write(new Uint8Array(chunk));
+    };
+
+    const keyPath = attempt.keyPath ?? (host.auth === 'keyFile' ? host.keyPath : '');
+    const auth =
+      host.auth === 'password'
+        ? { kind: 'password', password: attempt.password }
+        : keyPath
+          ? { kind: 'keyFile', path: keyPath, passphrase: attempt.passphrase ?? null }
+          : { kind: 'auto' };
+
+    try {
+      const connected = await invoke<Connected>('ssh_connect', {
+        params: {
+          host: host.hostname,
+          port: host.port || 22,
+          user: host.user,
+          auth,
+          cols: term.cols,
+          rows: term.rows,
+          acceptFingerprint: attempt.accept ?? null,
+          rememberHost: attempt.remember ?? false,
+          startupCommand: host.startupCommand.trim() || null,
+        },
+        onData,
+      });
+      info = connected;
+      sessionId = connected.id;
+      phase = { step: 'connected' };
+      session.status = 'connected';
+      // Les secrets ne survivent pas à l'ouverture de la session.
+      attempt = {};
+      term.focus();
+    } catch (e) {
+      const problem = normalize(e);
+      session.status = 'closed';
+      if (problem.kind === 'hostKeyUnknown') {
+        phase = { step: 'hostKey', fingerprint: problem.fingerprint, algorithm: problem.algorithm };
+      } else if (problem.kind === 'hostKeyChanged') {
+        phase = { step: 'hostKeyChanged', fingerprint: problem.fingerprint, line: problem.line };
+      } else if (problem.kind === 'needPassphrase') {
+        const wrong = attempt.passphrase !== undefined;
+        attempt.passphrase = undefined;
+        phase = { step: 'passphrase', path: problem.path, error: wrong ? 'Cette phrase secrète ne déverrouille pas la clé.' : '' };
+      } else if (problem.kind === 'auth' && host.auth === 'password') {
+        attempt.password = undefined;
+        phase = { step: 'password', error: problem.message };
+      } else {
+        phase = { step: 'error', message: problem.message };
+      }
+    }
+  }
+
+  function submitSecret(e: SubmitEvent) {
+    e.preventDefault();
+    if (phase.step === 'passphrase') void connect({ keyPath: phase.path, passphrase: secret });
+    else if (phase.step === 'password') void connect({ password: secret });
+  }
+
+  function reconnect() {
+    attempt = {};
+    term?.reset();
+    void connect();
+  }
+
+  onMount(() => {
+    const css = getComputedStyle(document.documentElement);
+    const v = (name: string) => css.getPropertyValue(name).trim();
+    const theme = () => ({
+      background: v('--term-bg'),
+      foreground: v('--term-ink'),
+      cursor: v('--accent'),
+      selectionBackground: v('--sel'),
+    });
+
+    const terminal = new Terminal({
+      fontFamily: v('--f-mono'),
+      fontSize: 13,
+      lineHeight: 1.2,
+      cursorBlink: true,
+      scrollback: 5000,
+      theme: theme(),
+    });
+    const fitAddon = new FitAddon();
+    terminal.loadAddon(fitAddon);
+    if (termEl) terminal.open(termEl);
+    term = terminal;
+    fit = fitAddon;
+
+    terminal.onData((data) => {
+      if (sessionId === null) return;
+      if (!lastKey) lastKey = performance.now();
+      void invoke('ssh_write', { id: sessionId, data }).catch(() => {});
+    });
+    terminal.onResize(({ cols, rows }) => {
+      if (sessionId !== null) void invoke('ssh_resize', { id: sessionId, cols, rows }).catch(() => {});
+    });
+
+    const observer = new ResizeObserver(() => {
+      // Onglet masqué : la taille est nulle, on ne recalcule rien.
+      if (termEl && termEl.offsetParent !== null && termEl.clientWidth > 0) fitAddon.fit();
+    });
+    if (termEl) observer.observe(termEl);
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onTheme = () => (terminal.options.theme = theme());
+    media.addEventListener('change', onTheme);
+
+    const unlisten = listen<Closed>('ssh-closed', (event) => {
+      if (event.payload.id !== sessionId) return;
+      sessionId = null;
+      info = null;
+      session.status = 'closed';
+      const { exitStatus, reason } = event.payload;
+      phase = {
+        step: 'closed',
+        message: reason
+          ? `Connexion interrompue : ${reason}`
+          : exitStatus === null || exitStatus === 0
+            ? 'Session terminée.'
+            : `Session terminée (code de sortie ${exitStatus}).`,
+      };
+    });
+
+    void connect();
+
+    return () => {
+      observer.disconnect();
+      media.removeEventListener('change', onTheme);
+      void unlisten.then((stop) => stop());
+      if (sessionId !== null) void invoke('ssh_close', { id: sessionId }).catch(() => {});
+      terminal.dispose();
+    };
+  });
+
+  $effect(() => {
+    // À l'affichage de l'onglet : la taille du terminal a pu changer pendant qu'il était masqué.
+    if (!active) return;
+    const connected = phase.step === 'connected';
+    requestAnimationFrame(() => {
+      fit?.fit();
+      if (connected) term?.focus();
+    });
+  });
+</script>
+
+<div class="session">
+  <header>
+    <span class="dot s-{session.status}"></span>
+    <b class="mono">{target}</b>
+    {#if phase.step === 'connected' && info}
+      <span>{info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session'}</span>
+      <span>{info.authMethod}</span>
+      <span>connexion en {Math.round(info.connectMs)} ms</span>
+      {#if echo !== null}<span title="Délai médian entre une frappe et son affichage">écho {Math.round(echo)} ms</span>{/if}
+      <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke('ssh_close', { id: sessionId })}>Déconnecter</button>
+    {:else if phase.step === 'connecting'}
+      <span>connexion…</span>
+    {/if}
+  </header>
+
+  <div class="stage">
+    <div class="term" bind:this={termEl}></div>
+
+    {#if phase.step !== 'connected'}
+      <div class="veil">
+        <div class="card" class:bad={phase.step === 'hostKeyChanged'}>
+          {#if phase.step === 'connecting'}
+            <span class="spinner" aria-hidden="true"></span>
+            <p class="lead">Connexion à <b class="mono">{target}</b>…</p>
+          {:else if phase.step === 'hostKey'}
+            <h3><Icon name="warning" /> Serveur inconnu</h3>
+            <p>
+              <b class="mono">{host.hostname}</b> n'est pas dans <code>known_hosts</code>. Vérifie que cette empreinte
+              {phase.algorithm} est bien celle du serveur avant de lui faire confiance :
+            </p>
+            <p class="print mono">{phase.fingerprint}</p>
+            <div class="row">
+              <button class="btn primary" type="button" onclick={() => void connect({ accept: phase.step === 'hostKey' ? phase.fingerprint : undefined, remember: true })}>
+                Faire confiance et mémoriser
+              </button>
+              <button class="btn" type="button" onclick={() => void connect({ accept: phase.step === 'hostKey' ? phase.fingerprint : undefined, remember: false })}>
+                Cette fois seulement
+              </button>
+              <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
+            </div>
+          {:else if phase.step === 'hostKeyChanged'}
+            <h3><Icon name="warning" /> L'empreinte du serveur a changé</h3>
+            <p>
+              L'empreinte présentée par <b class="mono">{host.hostname}</b> ne correspond plus à celle enregistrée à la ligne
+              {phase.line} de <code>known_hosts</code>. La connexion est bloquée : le serveur a peut-être été réinstallé, ou
+              quelqu'un s'interpose entre toi et lui.
+            </p>
+            <p class="print mono">{phase.fingerprint}</p>
+            <p class="muted">Si le changement est légitime, retire l'ancienne ligne de <code>known_hosts</code>, puis reconnecte-toi.</p>
+            <div class="row">
+              <button class="btn" type="button" onclick={reconnect}>Réessayer</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Fermer l'onglet</button>
+            </div>
+          {:else if phase.step === 'passphrase' || phase.step === 'password'}
+            <form onsubmit={submitSecret}>
+              <h3>{phase.step === 'passphrase' ? 'Phrase secrète de la clé' : `Mot de passe de ${host.user}`}</h3>
+              <p class="muted">
+                {#if phase.step === 'passphrase'}
+                  La clé <span class="mono">{phase.path}</span> est protégée.
+                {:else}
+                  Pour <span class="mono">{target}</span>. Il n'est pas enregistré.
+                {/if}
+              </p>
+              {#if phase.error}<p class="err">{phase.error}</p>{/if}
+              <!-- svelte-ignore a11y_autofocus -->
+              <input class="field" type="password" autocomplete="off" autofocus aria-label={phase.step === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'} bind:value={secret} />
+              <div class="row">
+                <button class="btn primary" type="submit" disabled={!secret}>Se connecter</button>
+                <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
+              </div>
+            </form>
+          {:else}
+            <h3>{phase.step === 'error' ? 'Connexion impossible' : 'Session terminée'}</h3>
+            <p class:err={phase.step === 'error'}>{phase.message}</p>
+            <div class="row">
+              <button class="btn primary" type="button" onclick={reconnect}><Icon name="refresh" size={14} /> Reconnecter</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Fermer l'onglet</button>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
+  </div>
+</div>
+
+<style>
+  .session {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 5px 12px;
+    min-height: 34px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  header b {
+    color: var(--ink);
+  }
+  header .btn {
+    margin-left: auto;
+  }
+  .dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--faint);
+  }
+  .dot.s-connected {
+    background: var(--ok);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent);
+  }
+  .dot.s-connecting {
+    background: var(--warn);
+    animation: blink 1s ease-in-out infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0.35;
+    }
+  }
+  .stage {
+    position: relative;
+    min-height: 0;
+    background: var(--term-bg);
+  }
+  .term {
+    position: absolute;
+    inset: 8px 4px 4px 10px;
+  }
+  .veil {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: color-mix(in srgb, var(--term-bg) 82%, transparent);
+    backdrop-filter: blur(1.5px);
+    animation: fade-in var(--t-med) var(--ease);
+  }
+  .card {
+    width: min(520px, 100%);
+    display: grid;
+    gap: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--raised);
+    box-shadow: var(--shadow-pop);
+    animation: pop-in var(--t-med) var(--ease);
+  }
+  .card.bad {
+    border-color: var(--bad);
+    background: var(--bad-soft);
+  }
+  .card form {
+    display: grid;
+    gap: 10px;
+  }
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14.5px;
+  }
+  p {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .lead {
+    text-align: center;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .err {
+    color: var(--bad);
+    white-space: pre-wrap;
+  }
+  .print {
+    padding: 8px 10px;
+    border-radius: var(--radius-s);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    font-size: 12px;
+    user-select: all;
+  }
+  code {
+    font-family: var(--f-mono);
+    font-size: 12px;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .spinner {
+    justify-self: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
