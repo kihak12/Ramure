@@ -103,7 +103,7 @@ La mise en œuvre est suivie dans l'issue #9. Elle vient après l'alignement des
 
 ## Suite
 
-- La charte graphique fixe les règles de Clairière : issue #4.
+- La [charte graphique](../charte-graphique.md) fixe les règles de Clairière : issue #4.
 - Les jetons du code sont alignés sur la charte : issue #5.
 - La direction est appliquée à l'interface : issue #10. Les captures de ce document viennent d'un
   aperçu temporaire ; le code de l'application n'a pas encore changé.
