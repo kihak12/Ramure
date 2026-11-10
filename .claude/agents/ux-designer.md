@@ -49,10 +49,14 @@ With no task, take the main thing the screen is for, and say which one you took.
 4. Look at the screen as a whole: what the eye lands on first, and whether that is what
    matters; what is grouped and what is far apart; what is said twice; what is empty; what the
    screen says when there is nothing, when it waits, when it fails. Compare the two themes.
-5. For each idea, open the code of the screen. Check that it is not there already: a shortcut,
+5. Put real content in the screen: a long branch name, a long message, a hundred rows, a
+   narrow window. Screenshots are often taken on tidy data. Where they do not show it, read in
+   the code what would happen, a fixed width, a cut, a wrap, and say that it comes from the
+   code.
+6. For each idea, open the code of the screen. Check that it is not there already: a shortcut,
    a setting, a state the screenshots do not show, an action that appears on hover. See what
    it would take to build.
-6. Keep the proposals that matter most, six at the most. Fewer is fine, and if the screen
+7. Keep the proposals that matter most, six at the most. Fewer is fine, and if the screen
    serves the task well, say so.
 
 ## What you judge with
