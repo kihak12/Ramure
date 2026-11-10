@@ -2,7 +2,7 @@
 // courant, branches, tags, onglets ouverts et dépôts récents.
 
 import type { Command } from '../ui/palette.svelte';
-import { createBranch, editSettings, forcePush, stashChanges } from './actions';
+import { createBranch, editSettings, forcePush, stashChanges, switchToRemote } from './actions';
 import { bare } from './labels';
 import { OPERATION } from './repo.svelte';
 import { workspace } from './workspace.svelte';
@@ -69,9 +69,9 @@ export function gitCommands(): Command[] {
         icon: 'cloud',
         title: `Basculer sur ${r.name}`,
         keywords: 'checkout switch distant',
-        hint: 'crée la branche locale',
+        hint: repo.refs.branches.some((b) => b.name === bare(r.name)) ? 'met à jour la branche locale' : 'crée la branche locale',
         disabled: !idle,
-        run: () => void repo.refOp({ op: 'switch-remote', name: r.name }, `Basculé sur ${bare(r.name)}`, 'Impossible de basculer'),
+        run: () => void switchToRemote(repo, r.name),
       });
     }
     for (const t of [...repo.refs.tags].reverse()) {

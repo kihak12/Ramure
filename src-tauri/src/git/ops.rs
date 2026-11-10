@@ -169,6 +169,36 @@ fn split_remote(name: &str) -> Result<(&str, &str), String> {
         .ok_or_else(|| format!("branche distante invalide : « {name} »"))
 }
 
+/// Position de la branche locale qui porte le nom d'une branche distante, par rapport à elle.
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Relation {
+    /// Nom de la branche locale ; `None` si elle n'existe pas encore.
+    pub local: Option<String>,
+    /// Commits de la branche locale absents de la branche distante.
+    pub ahead: u32,
+    /// Commits de la branche distante absents de la branche locale.
+    pub behind: u32,
+}
+
+fn local_exists(repo: &Path, local: &str) -> bool {
+    run(repo, &["show-ref", "--verify", "--quiet", &format!("refs/heads/{local}")]).is_ok()
+}
+
+/// Compare la branche distante `remote` (`origin/main`) à la branche locale de même nom.
+pub fn relation(journal: &mut Vec<CommandLog>, repo: &Path, remote: &str) -> Result<Relation, String> {
+    check_name(remote)?;
+    let (_, local) = split_remote(remote)?;
+    if !local_exists(repo, local) {
+        return Ok(Relation { local: None, ahead: 0, behind: 0 });
+    }
+    let range = format!("refs/heads/{local}...refs/remotes/{remote}");
+    let out = text(&step(journal, repo, &["rev-list", "--left-right", "--count", &range])?);
+    let mut counts = out.split_whitespace().map(|n| n.parse::<u32>().unwrap_or(0));
+    let (ahead, behind) = (counts.next().unwrap_or(0), counts.next().unwrap_or(0));
+    Ok(Relation { local: Some(local.to_string()), ahead, behind })
+}
+
 pub fn ref_op(journal: &mut Vec<CommandLog>, repo: &Path, op: &RefOp) -> Result<String, String> {
     let git = |journal: &mut Vec<CommandLog>, args: &[&str]| -> Result<String, String> {
         step_with(journal, repo, args, Opts::default()).map(|out| report(&out))
@@ -181,8 +211,18 @@ pub fn ref_op(journal: &mut Vec<CommandLog>, repo: &Path, op: &RefOp) -> Result<
         RefOp::SwitchRemote { name } => {
             check_name(name)?;
             let (_, local) = split_remote(name)?;
-            let exists = run(repo, &["show-ref", "--verify", "--quiet", &format!("refs/heads/{local}")]).is_ok();
-            if exists { git(journal, &["switch", local]) } else { git(journal, &["switch", "--track", name]) }
+            if !local_exists(repo, local) {
+                return git(journal, &["switch", "--track", name]);
+            }
+            let switched = git(journal, &["switch", local])?;
+            // La branche locale est en retard sur la branche distante, sans commit à elle : on
+            // l'avance. Si elle a divergé, on n'y touche pas : c'est à l'utilisateur de décider.
+            let behind = relation(journal, repo, name)?;
+            if behind.ahead == 0 && behind.behind > 0 {
+                let target = format!("refs/remotes/{name}");
+                return git(journal, &["merge", "--ff-only", &target]);
+            }
+            Ok(switched)
         }
         RefOp::Detach { sha } => {
             check_sha(sha)?;
@@ -573,6 +613,11 @@ pub async fn git_refs(repo: String) -> Reply<Refs> {
 }
 
 #[tauri::command]
+pub async fn git_remote_relation(repo: String, remote: String) -> Reply<Relation> {
+    blocking(move |j| relation(j, Path::new(&repo), &remote)).await
+}
+
+#[tauri::command]
 pub async fn git_ref_op(repo: String, op: RefOp) -> Reply<String> {
     blocking(move |j| ref_op(j, Path::new(&repo), &op)).await
 }
@@ -661,6 +706,48 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
             commit(&mut j, &repo.0, message, false).unwrap();
         }
         repo
+    }
+
+    #[test]
+    fn switching_to_a_remote_branch_updates_the_local_one() {
+        let repo = three_commits("suivi");
+        let dir = repo.0.as_path();
+        let mut j = Vec::new();
+        let third = repo.git(&["rev-parse", "HEAD"]);
+        let second = repo.git(&["rev-parse", "HEAD~1"]);
+        let origin = |sha: &str| repo.git(&["update-ref", "refs/remotes/origin/main", sha]);
+        let switch = RefOp::SwitchRemote { name: "origin/main".into() };
+
+        // Pas de branche locale de ce nom : rien à comparer.
+        repo.git(&["update-ref", "refs/remotes/origin/autre", &third]);
+        assert_eq!(relation(&mut j, dir, "origin/autre").unwrap(), Relation { local: None, ahead: 0, behind: 0 });
+
+        // Branche locale en retard d'un commit : basculer l'avance jusqu'à la branche distante.
+        origin(&third);
+        repo.git(&["reset", "-q", "--hard", &second]);
+        repo.git(&["switch", "-q", "-c", "ailleurs"]);
+        let late = Relation { local: Some("main".into()), ahead: 0, behind: 1 };
+        assert_eq!(relation(&mut j, dir, "origin/main").unwrap(), late);
+        ref_op(&mut j, dir, &switch).unwrap();
+        assert_eq!(repo.git(&["rev-parse", "--abbrev-ref", "HEAD"]), "main");
+        assert_eq!(repo.git(&["rev-parse", "HEAD"]), third);
+
+        // Branche locale en avance : on bascule sans y toucher.
+        origin(&second);
+        assert_eq!(relation(&mut j, dir, "origin/main").unwrap(), Relation { local: Some("main".into()), ahead: 1, behind: 0 });
+        ref_op(&mut j, dir, &switch).unwrap();
+        assert_eq!(repo.git(&["rev-parse", "HEAD"]), third);
+
+        // Branches divergées : on bascule, mais c'est à l'utilisateur de choisir comment les réunir.
+        repo.git(&["switch", "-q", "--detach", &second]);
+        repo.write("b.txt", "distant\n");
+        stage(&mut j, dir, &["b.txt".into()]).unwrap();
+        commit(&mut j, dir, "distant", false).unwrap();
+        origin(&repo.git(&["rev-parse", "HEAD"]));
+        assert_eq!(relation(&mut j, dir, "origin/main").unwrap(), Relation { local: Some("main".into()), ahead: 1, behind: 1 });
+        ref_op(&mut j, dir, &switch).unwrap();
+        assert_eq!(repo.git(&["rev-parse", "--abbrev-ref", "HEAD"]), "main");
+        assert_eq!(repo.git(&["rev-parse", "HEAD"]), third);
     }
 
     #[test]
