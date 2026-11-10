@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/ramure-logo-sombre.svg">
+    <img src="docs/logo/ramure-logo.svg" alt="Ramure" height="72">
+  </picture>
+</p>
+
 # Ramure
 
 Client Git graphique et client SSH/SFTP dans la même fenêtre, pour Windows et Ubuntu.
@@ -171,8 +178,8 @@ cd src-tauri && RAMURE_TEST_REPO=/chemin/du/depot cargo test real_repo -- --noca
 | Dossier | Contenu |
 | --- | --- |
 | `src/` | Interface Svelte 5 : `lib/git/`, `lib/ssh/`, `lib/ui/` ; les jetons du design sont dans `app.css` |
-| `docs/` | La [charte graphique](docs/charte-graphique.md), et le choix de la direction visuelle dans `design/` |
-| `scripts/` | Contrôles lancés par `npm run check` |
+| `docs/` | La [charte graphique](docs/charte-graphique.md), le logo dans `logo/`, et les choix de design dans `design/` |
+| `scripts/` | Contrôles lancés par `npm run check`, et l'outil qui tire les icônes de l'application du logo |
 | `src-tauri/src/git/` | Exécution de git, parseur du log, calcul des lanes |
 | `src-tauri/src/ssh/` | Sessions russh, lecture de `~/.ssh/config` |
 

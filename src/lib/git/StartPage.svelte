@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon, { type IconName } from '../ui/Icon.svelte';
+  import Logo from '../ui/Logo.svelte';
   import type { Repo } from './repo.svelte';
   import { workspace } from './workspace.svelte';
 
@@ -27,7 +28,7 @@
 <div class="start">
   <div class="inner">
     <header>
-      <span class="mark"><Icon name="branch" size={30} /></span>
+      <span class="mark"><Logo size={42} /></span>
       <div>
         <h1>Ramure</h1>
         <p>Ouvre un dépôt pour afficher son graphe.</p>
@@ -96,14 +97,15 @@
     align-items: center;
     gap: 16px;
   }
+  /* L'icône de l'application : le symbole en blanc sur sa tuile bleue. */
   .mark {
     display: grid;
     place-items: center;
-    width: 60px;
-    height: 60px;
+    width: 62px;
+    height: 62px;
     border-radius: var(--radius-card);
-    color: var(--accent);
-    background: var(--accent-soft);
+    color: var(--on-brand);
+    background: var(--brand);
   }
   h1 {
     margin: 0;
