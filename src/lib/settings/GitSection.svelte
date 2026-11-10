@@ -1,21 +1,29 @@
 <script lang="ts">
   import { AUTO_FETCH, DEFAULTS, prefs, savePrefs, type DiffMode, type GraphStyle, type PullMode, type Settings } from '../git/prefs.svelte';
   import { workspace } from '../git/workspace.svelte';
+  import Choice from '../ui/Choice.svelte';
+  import DiffPreview from './DiffPreview.svelte';
+  import GraphPreview from './GraphPreview.svelte';
   import SectionHeader from './SectionHeader.svelte';
   import SettingRow from './SettingRow.svelte';
 
   const FIELDS = ['autoFetch', 'pullMode', 'graphStyle', 'limit', 'diffMode'] as const satisfies readonly (keyof Settings)[];
   const changed = $derived(FIELDS.some((field) => prefs[field] !== DEFAULTS[field]));
 
-  const PULL_HELP: Record<PullMode, string> = {
-    'ff-only': 'Le tirage est refusé si ta branche et la branche distante ont divergé.',
-    rebase: 'Tes commits sont rejoués au-dessus de ceux de la branche distante.',
-    merge: 'La branche distante est fusionnée dans la tienne.',
-  };
-  const STYLE_HELP: Record<GraphStyle, string> = {
-    ribbon: 'Pastilles d’auteur sur le graphe, messages en capsule.',
-    classic: 'Points et courbes, plus compact.',
-  };
+  // Chaque option dit ce qu'elle entraîne : on compare sans rien ouvrir (charte, section 9.19).
+  const PULL_MODES = [
+    { value: 'ff-only', label: 'Avance rapide seulement', help: 'Le tirage est refusé si ta branche et la branche distante ont divergé.' },
+    { value: 'rebase', label: 'Rebaser mes commits', help: 'Tes commits sont rejoués au-dessus de ceux de la branche distante.' },
+    { value: 'merge', label: 'Fusionner la branche distante', help: 'La branche distante est fusionnée dans la tienne.' },
+  ] as const satisfies readonly { value: PullMode; label: string; help: string }[];
+  const GRAPH_STYLES = [
+    { value: 'ribbon', label: 'Ruban', help: 'Pastilles d’auteur, messages en capsule.' },
+    { value: 'classic', label: 'Classique', help: 'Points et courbes, plus compact.' },
+  ] as const satisfies readonly { value: GraphStyle; label: string; help: string }[];
+  const DIFF_MODES = [
+    { value: 'unified', label: 'Unifié', help: 'Sur une colonne.' },
+    { value: 'split', label: 'Côte à côte', help: 'L’ancien à gauche, le nouveau à droite.' },
+  ] as const satisfies readonly { value: DiffMode; label: string; help: string }[];
 
   // Récupération automatique : le champ garde ce qu'on y tape ; la valeur n'est appliquée que valide.
   let minutes = $state(String(prefs.autoFetch));
@@ -92,22 +100,17 @@
       <span aria-hidden="true">min</span>
     </span>
   </SettingRow>
-  <SettingRow id="set-pull" name="Tirage (pull)" help={PULL_HELP[prefs.pullMode]}>
-    <select id="set-pull" class="field" aria-describedby="set-pull-help" value={prefs.pullMode} onchange={(e) => savePrefs({ pullMode: e.currentTarget.value as PullMode })}>
-      <option value="ff-only">Avance rapide seulement</option>
-      <option value="rebase">Rebaser mes commits</option>
-      <option value="merge">Fusionner la branche distante</option>
-    </select>
+  <SettingRow id="set-pull" name="Tirage (pull)" group>
+    <Choice name="set-pull" labelledby="set-pull-name" value={prefs.pullMode} options={PULL_MODES} onchange={(pullMode) => savePrefs({ pullMode })} />
   </SettingRow>
 </section>
 
 <section class="group" aria-labelledby="group-graph">
   <h3 id="group-graph">Graphe</h3>
-  <SettingRow id="set-style" name="Style du graphe" help={STYLE_HELP[prefs.graphStyle]}>
-    <select id="set-style" class="field" aria-describedby="set-style-help" value={prefs.graphStyle} onchange={(e) => savePrefs({ graphStyle: e.currentTarget.value as GraphStyle })}>
-      <option value="ribbon">Ruban</option>
-      <option value="classic">Classique</option>
-    </select>
+  <SettingRow id="set-style" name="Style du graphe" group>
+    <Choice name="set-style" layout="tiles" labelledby="set-style-name" value={prefs.graphStyle} options={GRAPH_STYLES} onchange={(graphStyle) => savePrefs({ graphStyle })}>
+      {#snippet preview(style: GraphStyle)}<GraphPreview {style} />{/snippet}
+    </Choice>
   </SettingRow>
   <SettingRow
     id="set-limit"
@@ -126,11 +129,10 @@
 
 <section class="group" aria-labelledby="group-diff">
   <h3 id="group-diff">Diff</h3>
-  <SettingRow id="set-diff" name="Affichage du diff" help="Se change aussi depuis le diff lui-même.">
-    <select id="set-diff" class="field" aria-describedby="set-diff-help" value={prefs.diffMode} onchange={(e) => savePrefs({ diffMode: e.currentTarget.value as DiffMode })}>
-      <option value="unified">Unifié</option>
-      <option value="split">Côte à côte</option>
-    </select>
+  <SettingRow id="set-diff" name="Affichage du diff" help="Se change aussi depuis le diff lui-même." group>
+    <Choice name="set-diff" layout="tiles" labelledby="set-diff-name" describedby="set-diff-help" value={prefs.diffMode} options={DIFF_MODES} onchange={(diffMode) => savePrefs({ diffMode })}>
+      {#snippet preview(mode: DiffMode)}<DiffPreview {mode} />{/snippet}
+    </Choice>
   </SettingRow>
 </section>
 

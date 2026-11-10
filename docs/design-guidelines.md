@@ -413,7 +413,8 @@ States are the same everywhere:
   field never replaces the label.
 - A checkbox is 15 px, checked in `--accent`, and its text can be clicked too.
 - A list is the control of the system, 32 px high like a field. Its look, closed and open, is
-  the system's; replacing it by the application's own control is issue #58.
+  the system's. It is for options that are many, or that are plain values; a few options that
+  need a word of explanation are a choice (9.19).
 - A filter field carries a 14 px magnifier on its left, in `--muted`; its hint names what it
   filters, and so does its accessible name.
 - A unit follows the field it belongs to, 6 px away, in 12 px, `--muted`: "min".
@@ -633,7 +634,8 @@ its tooltip then says so. Under the title, groups, each with a 12 px title, weig
 
 **A setting** is a row: its name in 13.5 px, `--ink`, a help text under it in 11.5 px,
 `--muted`, and its control on the right, 240 px wide. 12 px between two rows. The name is a
-noun, not a verb. The controls are those of section 9.3.
+noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice sits
+under the name of its setting, on the whole width of the column.
 
 **A setting applies at once.** A list, as soon as the choice changes; a number, when the field
 is left or on Enter.
@@ -656,6 +658,27 @@ keys (9.12), and a button that restores the default.
   that a combination is awaited. Backspace removes the shortcut, Escape cancels.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
+
+### 9.19 Choice
+
+A few options, all in view, for a setting whose options need a word of explanation or are
+better seen than named: the theme, the way to pull, the style of the graph, the layout of the
+diff. Nothing has to be opened to compare them.
+
+- It is a group of radio buttons: one option is always chosen. Tab enters and leaves the group;
+  the arrows move the choice, which applies at once.
+- **Rows**: one option per row, its name in 13.5 px, and under it what it entails, in 11.5 px,
+  `--muted`.
+- **Tiles**: the options side by side, each with a preview 64 px high above its name. For what
+  is seen rather than read. A tile has a `--line` border.
+- An option has 8 px corners and is at least 28 px high. Hover: a `--hover` background.
+- The chosen option: a `--sel` background, its name in weight 650, and a check mark in
+  `--accent` on its right. Never the colour alone, never a coloured bar on an edge. The place
+  of the check mark is kept on the other options: an option never changes size.
+- Keyboard focus: a 1.5 px inner ring in `--accent` on the chosen option, as on a row (9.6).
+- A preview is drawn with the tokens, never with colours of its own. A preview of a theme
+  carries `data-theme`, which gives it the tokens of that theme whatever the theme of the
+  window.
 
 ## 10. Commit graph
 
