@@ -1,23 +1,24 @@
 # Ramure
 
-Client Git graphique et client SSH dans la même fenêtre, pour Windows et Ubuntu.
+A graphical Git client and an SSH client in one window, for Windows and Ubuntu.
 Tauri 2, Rust, Svelte 5.
 
-## Vérifier
+## Check
 
-- `npm run check` : types, puis jetons de design (aucune valeur de style en dur dans un composant).
+- `npm run check`: types, then design tokens (no hard-coded style value in a component).
 - `cd src-tauri && cargo test`.
 
 ## Design
 
-- `docs/charte-graphique.md` est la référence. Quand le code et la charte divergent, la charte a
-  raison ; une règle change d'abord dans la charte.
-- Dès qu'un composant, un style, un jeton, une icône ou un texte d'interface change, fais relire
-  le changement par le subagent `designer` avant de le proposer. Donne-lui la liste des fichiers
-  modifiés : il est en lecture seule et ne peut pas lancer `git`. Corrige les violations qu'il
-  relève, et tranche ses dérives avec l'auteur de la demande.
+- `docs/design-guidelines.md` is the reference. When the code and the guidelines disagree, the
+  guidelines are right; a rule changes in the guidelines first.
+- Whenever a component, a style, a token, an icon or a piece of interface text changes, have the
+  change reviewed by the `designer` subagent before proposing it. Give it the list of changed
+  files: it is read-only and cannot run `git`. Fix the violations it reports, and settle its
+  drifts with whoever asked for the change.
 
 ## Conventions
 
-- L'interface, les commentaires, les commits et les PR sont en français.
-- Une issue simple, puis une PR dédiée.
+- Documentation (every Markdown file) is written in English.
+- The interface, code comments, commits and pull requests are in French.
+- One simple issue, then a dedicated pull request.

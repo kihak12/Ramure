@@ -1,5 +1,5 @@
 // Vérifie qu'aucun composant n'écrit en dur une valeur qui a un jeton dans src/app.css :
-// couleur, taille ou graisse de texte, rayon, durée (docs/charte-graphique.md).
+// couleur, taille ou graisse de texte, rayon, durée (docs/design-guidelines.md).
 // Lancé par `npm run check`. Sort avec le code 1 et la liste des écarts s'il en trouve.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';

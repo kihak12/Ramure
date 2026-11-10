@@ -7,138 +7,135 @@
 
 # Ramure
 
-Client Git graphique et client SSH/SFTP dans la même fenêtre, pour Windows et Ubuntu.
-Libre (MIT), local, sans compte.
+A graphical Git client and an SSH/SFTP client in one window, for Windows and Ubuntu.
+Free software (MIT), local, no account.
 
-**État : J1 et J2 terminés, J3 commencé.** Le prototype J0 a validé le graphe et le terminal
-SSH sur Windows et Ubuntu. Le Git du quotidien (J1) et le Git avancé (J2) sont complets. Du
-jalon SSH (J3), le carnet d'hôtes, les terminaux en onglets et les clés sont là ; le reste est
-listé plus bas.
+**Status: milestones J1 and J2 are done, J3 has started.** The J0 prototype validated the graph
+and the SSH terminal on Windows and Ubuntu. Everyday Git (J1) and advanced Git (J2) are complete.
+From the SSH milestone (J3), the host book, tabbed terminals and keys are in; the rest is listed
+below.
 
-## Ce que fait Ramure aujourd'hui
+The interface is in French for now. Where it helps to find something on screen, this page gives
+the French label in quotes.
 
-### Dépôts
+## What Ramure does today
 
-- **Onglets** : un dépôt par onglet, rouverts au démarrage. Ctrl + T ouvre un onglet,
-  Ctrl + W le ferme, Ctrl + Tab passe au suivant ; un clic du milieu ferme aussi.
-- **Page d'accueil** d'un onglet neuf : ouvrir un dossier, cloner, initialiser, et la liste
-  des dépôts récents.
-- **Cloner** (`git clone --progress`) : progression en direct, interruption possible. Un clonage
-  qui échoue ne laisse pas de dossier derrière lui.
-- **Cartes redimensionnables** : la liste des branches, à gauche, et le détail, à droite, se
-  règlent en glissant la poignée qui les sépare du graphe, ou au clavier. Les largeurs sont
-  gardées d'un lancement à l'autre ; un double-clic revient à la largeur par défaut.
+### Repositories
 
-### Graphe
+- **Tabs**: one repository per tab, reopened at startup. Ctrl + T opens a tab, Ctrl + W closes
+  it, Ctrl + Tab moves to the next one; a middle click closes a tab too.
+- **Start page** of a new tab: open a folder, clone, initialise, and the list of recent
+  repositories.
+- **Clone** (`git clone --progress`): live progress, can be cancelled. A clone that fails leaves
+  no folder behind.
+- **Resizable cards**: the branch list on the left and the detail panel on the right are resized
+  by dragging the handle between them and the graph, or from the keyboard. Widths are kept from
+  one launch to the next; a double-click restores the default width.
 
-- **Graphe** : `git log`, lanes calculées en Rust, dessin sur un canvas. Seules les lignes
-  visibles existent dans la page ; 50 000 commits défilent sans saccade.
-- **Deux rendus**, au choix dans les réglages. « Ruban » (par défaut) : une pastille aux
-  initiales de l'auteur sur chaque commit, des courbes souples, le message dans une capsule de
-  la couleur de la branche, un halo animé sur le commit courant. « Classique » : points et
-  courbes, plus compact.
-- **Colonne « Branche / Tag »** à gauche du graphe, reliée au commit par un trait. Une icône
-  ordinateur marque le dernier commit local d'une branche, un nuage le dernier commit distant ;
-  au même commit, ils partagent une étiquette. Les étiquettes en surnombre se déplient au survol.
-- **Barre latérale** : branches locales avec leur avance et leur retard, branches distantes,
-  tags, remises, et un filtre.
-- **Détail d'un commit** : message complet, fichiers modifiés, diff de chaque fichier.
-- **Diff** unifié ou côte à côte ; côte à côte, la partie modifiée d'une ligne est surlignée.
-- **Palette de commandes** (Ctrl + K, ou la loupe en bas à gauche) : une recherche unique sur
-  les actions, les branches, les tags, les onglets et les dépôts récents.
+### Graph
 
-### Travail en cours
+- **Graph**: `git log`, lanes computed in Rust, drawn on a canvas. Only the visible rows exist in
+  the page; 50,000 commits scroll smoothly.
+- **Two styles**, chosen in the settings. "Ruban" (the default): a dot with the author's
+  initials on each commit, soft curves, the message in a capsule of the branch colour, an
+  animated halo on the current commit. "Classique": points and curves, more compact.
+- **A "Branche / Tag" column** on the left of the graph, linked to its commit by a line. A
+  computer icon marks the last local commit of a branch, a cloud the last remote one; on the same
+  commit they share one label. Extra labels unfold on hover.
+- **Sidebar**: local branches with their ahead and behind counts, remote branches, tags, stashes,
+  and a filter.
+- **Commit detail**: full message, changed files, the diff of each file.
+- **Diff**, unified or side by side; side by side, the changed part of a line is highlighted.
+- **Command palette** (Ctrl + K, or the magnifier at the bottom left): one search across actions,
+  branches, tags, tabs and recent repositories.
 
-- **Index** : la ligne « WIP » ouvre le panneau des modifications. Indexer et retirer par
-  fichier ou en bloc, abandonner après confirmation.
-- **Indexation par bloc ou par ligne** : dans le diff d'un fichier modifié, clique les lignes
-  à indexer (Maj + clic pour une plage), ou indexe un bloc entier.
-- **Commit** : message, Ctrl + Entrée, et « Modifier le dernier commit » (amend).
-- **Remises** : remiser avec les fichiers non suivis, dépiler, appliquer, supprimer, voir le contenu.
+### Work in progress
 
-### Branches, tags et historique
+- **Index**: the "WIP" row opens the changes panel. Stage and unstage by file or all at once,
+  discard after confirmation.
+- **Staging by hunk or by line**: in the diff of a changed file, click the lines to stage
+  (Shift + click for a range), or stage a whole hunk.
+- **Commit**: message, Ctrl + Enter, and "Modifier le dernier commit" (amend).
+- **Stashes**: stash with untracked files, pop, apply, drop, view the content.
 
-Tout passe par le clic droit sur un commit ou sur une étiquette, et par la barre d'outils.
+### Branches, tags and history
 
-- **Branches** : basculer par double-clic, créer depuis un commit, renommer, supprimer en local
-  et sur le dépôt distant, suivre une branche distante.
-- **Double-clic sur une branche distante** : bascule sur la branche locale et la met à jour. En
-  retard, elle est avancée ; si les deux ont divergé, Ramure demande avant de rebaser.
-- **Tags** : léger ou annoté, pousser, supprimer en local et sur le dépôt distant.
-- **Fusion, rebase, cherry-pick, revert, reset** (soft, mixed, hard).
-- **Conflits** : quand une opération s'arrête, un bandeau propose Continuer, Passer et
-  Abandonner. Un clic sur un fichier en conflit ouvre l'**éditeur à trois voies** : les deux
-  versions en haut, avec le passage en conflit surligné, et le résultat en bas. Pour chaque
-  conflit, prends un côté ou les deux ; le résultat reste modifiable à la main, et l'ancêtre
-  commun s'affiche à la demande. Un fichier supprimé d'un côté, ou binaire, se résout en
-  gardant un côté.
-- **Glisser une branche sur une autre** (dans le graphe ou la barre latérale) propose de la
-  fusionner ou de la rebaser.
-- **Rebase interactif** : réordonner à la souris, reformuler, fusionner, supprimer des commits.
-  git relance Ramure comme « éditeur de séquence » : aucun outil extérieur n'est nécessaire.
-- **Garde-fous** : avant un reset, un rebase ou un rebase interactif, la position de la branche
-  est gardée dans `refs/ramure/backup/<branche>-<date>` (`git reset --hard <cette référence>`
-  y revient). Réécrire des commits déjà poussés affiche un avertissement.
+Everything goes through a right-click on a commit or on a label, and through the toolbar.
+
+- **Branches**: switch with a double-click, create from a commit, rename, delete locally and on
+  the remote, track a remote branch.
+- **Double-click on a remote branch**: switches to the local branch and brings it up to date. If
+  it is behind, it is fast-forwarded; if the two have diverged, Ramure asks before rebasing.
+- **Tags**: lightweight or annotated, push, delete locally and on the remote.
+- **Merge, rebase, cherry-pick, revert, reset** (soft, mixed, hard).
+- **Conflicts**: when an operation stops, a banner offers to continue, skip or abort. Clicking a
+  conflicted file opens the **three-way editor**: both versions at the top, with the conflicting
+  passage highlighted, and the result at the bottom. For each conflict, take one side or both;
+  the result can still be edited by hand, and the common ancestor is shown on demand. A file
+  deleted on one side, or a binary file, is resolved by keeping one side.
+- **Dragging a branch onto another** (in the graph or the sidebar) offers to merge or rebase it.
+- **Interactive rebase**: reorder with the mouse, reword, squash, drop commits. git launches
+  Ramure itself as the "sequence editor": no external tool is needed.
+- **Safety nets**: before a reset, a rebase or an interactive rebase, the position of the branch
+  is kept in `refs/ramure/backup/<branch>-<date>` (`git reset --hard <that ref>` goes back to
+  it). Rewriting commits that were already pushed shows a warning.
 
 ### Synchronisation
 
-- **Récupérer** (`git fetch --all --prune`), **Tirer** (avance rapide par défaut ; rebase ou
-  fusion au réglage), **Pousser** (publication automatique d'une branche sans amont), et
-  **push forcé** (`--force-with-lease`) après confirmation.
-- **Fetch automatique** toutes les 5 minutes, réglable de 1 à 60 ou désactivable.
+- **Fetch** ("Récupérer", `git fetch --all --prune`), **Pull** ("Tirer": fast-forward by
+  default; rebase or merge as a setting), **Push** ("Pousser": a branch without an upstream is
+  published automatically), and **force push** (`--force-with-lease`) after confirmation.
+- **Automatic fetch** every 5 minutes, adjustable from 1 to 60 or turned off.
 
-L'authentification des dépôts distants passe par ce que git utilise déjà : assistant
-d'identifiants (Git Credential Manager) ou agent SSH. Ramure ne demande pas lui-même de mot de
-passe ou de phrase secrète.
+Authentication to remotes goes through what git already uses: a credential helper (Git Credential
+Manager) or the SSH agent. Ramure does not ask for a password or a passphrase itself.
 
 ### SSH
 
-- **Carnet d'hôtes** : nom, adresse, port, utilisateur, authentification (agent et clés par
-  défaut, fichier de clé, ou mot de passe), groupe, tags, couleur, commande au démarrage.
-  Il est enregistré dans un fichier SQLite (`%APPDATA%\Ramure` ou `~/.config/ramure`), sans
-  aucun secret.
-- **Import de `~/.ssh/config`** : Host, HostName, User, Port, IdentityFile. Un hôte qui passe
-  par un bastion (ProxyJump) est importé, mais pas encore connectable.
-- **Terminaux en onglets** : un double-clic sur un hôte ouvre un terminal ; « Reconnecter »
-  relance une session terminée, commande au démarrage comprise.
-- **Empreintes** : à la première connexion, l'empreinte du serveur est affichée ; l'accepter
-  l'inscrit dans `known_hosts`. Une empreinte qui a changé bloque la connexion.
-- **Clés** : liste des clés de `~/.ssh`, génération d'une clé ed25519 avec phrase secrète
-  facultative, copie de la clé publique. Les clés restent dans `~/.ssh`.
-- **Clé d'un hôte** : dans sa fiche, le fichier de clé se saisit ou se choisit avec « Parcourir… »,
-  qui ouvre la fenêtre de fichiers du système dans `~/.ssh`.
-- Un mot de passe ou une phrase secrète est demandé à la connexion et n'est jamais enregistré.
+- **Host book**: name, address, port, user, authentication (agent and default keys, key file, or
+  password), group, tags, colour, startup command. It is stored in a SQLite file
+  (`%APPDATA%\Ramure` or `~/.config/ramure`), with no secret in it.
+- **Import of `~/.ssh/config`**: Host, HostName, User, Port, IdentityFile. A host that goes
+  through a bastion (ProxyJump) is imported, but cannot be connected to yet.
+- **Tabbed terminals**: a double-click on a host opens a terminal; "Reconnecter" restarts a
+  session that has ended, startup command included.
+- **Fingerprints**: on the first connection, the server's fingerprint is shown; accepting it
+  writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
+- **Keys**: the list of keys in `~/.ssh`, generation of an ed25519 key with an optional
+  passphrase, copy of the public key. Keys stay in `~/.ssh`.
+- **A host's key**: in its form, the key file is typed or picked with "Parcourir…", which opens
+  the system file dialog in `~/.ssh`.
+- A password or a passphrase is asked for at connection time and is never stored.
 
-### Raccourcis et journal
+### Shortcuts and command log
 
-- **Raccourcis clavier configurables** : Réglages → Raccourcis clavier. Dans un terminal,
-  seuls les raccourcis avec Maj, Alt ou une touche de fonction sont actifs.
-- **Journal des commandes** : chaque commande git lancée, avec sa durée, depuis la barre d'état.
+- **Configurable keyboard shortcuts**: in the settings, under "Raccourcis clavier". In a
+  terminal, only shortcuts with Shift, Alt or a function key are active.
+- **Command log**: every git command that was run, with its duration, from the status bar.
 
-### Pas encore là
+### Not there yet
 
-- Du jalon J3 : secrets dans le trousseau du système, terminal local, journal des sessions,
-  reconnexion automatique, recherche et thèmes du terminal, export vers `~/.ssh/config`,
-  import d'une clé existante.
-- Jalon J4 : SFTP, tunnels, installeurs et mises à jour.
-- L'interface n'existe qu'en français.
+- From milestone J3: secrets in the system keyring, a local terminal, a session log, automatic
+  reconnection, terminal search and themes, export to `~/.ssh/config`, import of an existing key.
+- Milestone J4: SFTP, tunnels, installers and updates.
+- The interface exists in French only.
 
-## Prérequis
+## Requirements
 
-- Git 2.23 ou plus récent
-- Node.js 20 ou plus récent
-- Rust stable (https://rustup.rs)
+- Git 2.23 or later
+- Node.js 20 or later
+- Stable Rust (https://rustup.rs)
 
-Windows : les « Build Tools for Visual Studio » (charge de travail C++) et WebView2, déjà
-présent sur Windows 10 et 11 à jour.
+Windows: the "Build Tools for Visual Studio" (C++ workload) and WebView2, already present on an
+up-to-date Windows 10 or 11.
 
-Ubuntu 22.04 et 24.04 :
+Ubuntu 22.04 and 24.04:
 
 ```bash
 sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
-## Lancer
+## Run
 
 ```bash
 npm install
@@ -148,50 +145,47 @@ npm install
 npm run tauri dev
 ```
 
-Version optimisée, sans installeur (binaire dans `src-tauri/target/release/`) :
+Optimised build, without an installer (binary in `src-tauri/target/release/`):
 
 ```bash
 npm run tauri build -- --no-bundle
 ```
 
-## Vérifier
+## Check
 
 ```bash
 npm run check
 ```
 
-Cette commande vérifie les types, puis refuse toute couleur, taille de texte, graisse, rayon ou
-durée écrits en dur dans un composant : ces valeurs viennent des jetons de `src/app.css`.
+This command checks the types, then rejects any colour, text size, weight, radius or duration
+hard-coded in a component: those values come from the tokens in `src/app.css`.
 
 ```bash
 cd src-tauri && cargo test
 ```
 
-Mesurer le chargement d'un vrai dépôt, sans ouvrir l'interface :
+To measure how long a real repository takes to load, without opening the interface:
 
 ```bash
-cd src-tauri && RAMURE_TEST_REPO=/chemin/du/depot cargo test real_repo -- --nocapture
+cd src-tauri && RAMURE_TEST_REPO=/path/to/repository cargo test real_repo -- --nocapture
 ```
 
-## Organisation
+## Layout
 
-| Dossier | Contenu |
+| Folder | Content |
 | --- | --- |
-| `src/` | Interface Svelte 5 : `lib/git/`, `lib/ssh/`, `lib/ui/` ; les jetons du design sont dans `app.css` |
-| `docs/` | La [charte graphique](docs/charte-graphique.md), le logo dans `logo/`, et les choix de design dans `design/` |
-| `scripts/` | Contrôles lancés par `npm run check`, et l'outil qui tire les icônes de l'application du logo |
-| `src-tauri/src/git/` | Exécution de git, parseur du log, calcul des lanes |
-| `src-tauri/src/ssh/` | Sessions russh, lecture de `~/.ssh/config` |
+| `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/ui/`; the design tokens are in `app.css` |
+| `docs/` | The [design guidelines](docs/design-guidelines.md), the logo in `logo/`, and the design decisions in `design/` |
+| `scripts/` | Checks run by `npm run check`, and the tool that derives the application icons from the logo |
+| `src-tauri/src/git/` | Running git, the log parser, lane computation |
+| `src-tauri/src/ssh/` | russh sessions, reading `~/.ssh/config`, the host book and keys |
 
-L'interface ne touche ni au disque ni au réseau : elle appelle les commandes du cœur Rust.
+The interface touches neither the disk nor the network: it calls the commands of the Rust core.
 
-Les polices DM Sans et DM Mono sont embarquées dans l'application. Elles sont publiées sous la
-licence SIL Open Font License 1.1.
+The DM Sans and DM Mono fonts are embedded in the application. They are published under the SIL
+Open Font License 1.1.
 
-## Limites connues du prototype
+## Known limits
 
-- Un serveur inconnu peut être accepté pour la session, mais son empreinte n'est pas encore
-  écrite dans `known_hosts`.
-- Les hôtes qui passent par un bastion (`ProxyJump`) ne sont pas pris en charge.
-- Une seule session SSH à la fois.
-- La colonne du graphe est limitée à une vingtaine de lanes.
+- Hosts that go through a bastion (`ProxyJump`) are not supported.
+- The graph column is limited to about twenty lanes.

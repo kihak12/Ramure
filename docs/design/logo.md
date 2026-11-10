@@ -1,113 +1,112 @@
-# Logo de Ramure
+# Ramure's logo
 
-Ce document garde la trace du choix du logo. Trois pistes ont été comparées, sur le thème des
-bois de cerf.
+This document keeps the record of how the logo was chosen. Three options were compared, on the
+theme of a deer's antlers.
 
-**Décision : B. Cerf au trait, retenue le 10 novembre 2026,** avec le symbole en blanc sur une
-tuile bleue pour l'icône de l'application. Le logo définitif est dans [`../logo/`](../logo), et
-ses règles d'emploi dans la [charte graphique](../charte-graphique.md#13-logo).
+**Decision: B. Line-drawn deer, chosen on 10 November 2026,** with the symbol in white on a blue
+tile for the application icon. The final logo is in [`../logo/`](../logo), and its rules of use
+are in the [design guidelines](../design-guidelines.md#13-logo).
 
-## L'idée commune
+## The shared idea
 
-« Ramure » désigne à la fois les bois du cerf et les branches d'un arbre. Les trois pistes
-dessinent donc les bois comme des branches de Git, avec le vocabulaire de l'application :
+In French, "ramure" means both a deer's antlers and the branches of a tree. So all three options
+draw the antlers as Git branches, with the vocabulary of the application:
 
-- un tracé aux extrémités arrondies, comme les icônes ;
-- des courbes souples, comme le graphe ;
-- une pastille pour un commit ;
-- une seule couleur, sans dégradé.
+- a stroke with rounded ends, like the icons;
+- soft curves, like the graph;
+- a dot for a commit;
+- a single colour, no gradient.
 
-Chaque piste a deux dessins : le dessin complet, à partir de 48 px, et un dessin simplifié pour
-les petites tailles (un andouiller de moins par côté, un trait plus épais).
+Each option has two drawings: the full drawing, from 48 px up, and a simplified drawing for small
+sizes (one tine fewer on each side, a thicker stroke).
 
-Les dessins sont originaux, faits pour ce projet.
+The drawings are original, made for this project.
 
-## En un coup d'œil
+## At a glance
 
-![Les trois pistes côte à côte](logo/ensemble.png)
+![The three options side by side](logo/ensemble.png)
 
-| | A. Les bois | B. Cerf au trait | C. Cerf plein |
+| | A. Antlers | B. Line-drawn deer | C. Solid deer |
 |---|---|---|---|
-| Ce qu'on voit | Une paire de bois qui part d'un commit. | Une tête de cerf d'un seul trait : le museau est le premier commit, chaque côté de la tête une branche qui devient un bois. | Une tête de cerf pleine, de face. |
-| Lien avec Git | Le plus fort : c'est un graphe. | Fort : deux branches partent d'un commit. | Faible : seules les pastilles au bout des bois le rappellent. |
-| Lien avec le cerf | Par les bois seuls. | Net : museau, oreilles, bois. | Immédiat. |
-| À 16 px | Un « Y » à deux pointes. Lisible, mais peut passer pour une plante. | Un « V » ramifié. | La silhouette la plus reconnaissable. |
-| Singularité | Forte. | Forte. | Plus faible : la tête de cerf de face est un motif répandu. |
-| Accord avec l'interface | Le même tracé que les icônes. | Le même tracé que les icônes. | Une forme pleine, là où les icônes sont au trait. |
+| What you see | A pair of antlers growing from a commit. | A deer's head in a single stroke: the muzzle is the first commit, each side of the head a branch that becomes an antler. | A solid deer's head, seen from the front. |
+| Link with Git | The strongest: it is a graph. | Strong: two branches start from a commit. | Weak: only the dots at the tips of the antlers recall it. |
+| Link with the deer | Through the antlers alone. | Clear: muzzle, ears, antlers. | Immediate. |
+| At 16 px | A "Y" with two prongs. Readable, but can pass for a plant. | A branching "V". | The most recognisable outline. |
+| Distinctiveness | Strong. | Strong. | Weaker: a deer's head seen from the front is a common motif. |
+| Fit with the interface | The same stroke as the icons. | The same stroke as the icons. | A solid shape, where the icons are line-drawn. |
 
-## A. Les bois
+## A. Antlers
 
-Une paire de bois, et rien d'autre. Le tronc part d'un commit, se sépare en deux branches qui
-s'écartent et remontent, et chaque branche porte ses andouillers. C'est un graphe de Git qui a la
-forme d'une ramure.
+A pair of antlers, and nothing else. The trunk starts from a commit, splits into two branches
+that spread apart and rise, and each branch carries its tines. It is a Git graph in the shape of
+a set of antlers.
 
-**Ce qu'elle apporte.** La piste la plus abstraite, et celle qui dit le mieux « branches ». Elle
-se réduit bien : il reste un « Y » net.
+**What it brings.** The most abstract option, and the one that says "branches" best. It scales
+down well: a crisp "Y" remains.
 
-**Ce qu'elle coûte.** Sans tête, le cerf se devine plus qu'il ne se voit. En petit, la forme peut
-évoquer une plante ou une fourche.
+**What it costs.** Without a head, the deer is guessed rather than seen. Small, the shape can
+suggest a plant or a fork.
 
-![Piste A : symbole, icône et nom](logo/piste-a.png)
+![Option A: symbol, icon and name](logo/piste-a.png)
 
-Les petites tailles (32, 24 et 16 px), agrandies six fois :
+The small sizes (32, 24 and 16 px), enlarged six times:
 
-![Piste A, petites tailles agrandies](logo/piste-a-petit.png)
+![Option A, small sizes enlarged](logo/piste-a-petit.png)
 
-## B. Cerf au trait
+## B. Line-drawn deer
 
-La tête et les bois d'un seul tracé. Tout part du museau, qui est une pastille de commit : deux
-traits remontent le long de la tête, s'écartent et deviennent les bois. Deux traits courts font
-les oreilles.
+The head and the antlers in a single stroke. Everything starts from the muzzle, which is a commit
+dot: two lines run up along the head, spread apart and become the antlers. Two short strokes make
+the ears.
 
-**Ce qu'elle apporte.** On voit un cerf, et c'est encore un graphe : un commit, deux branches. Le
-dessin est fait du même trait que les icônes de l'application.
+**What it brings.** You see a deer, and it is still a graph: one commit, two branches. The
+drawing is made of the same stroke as the application's icons.
 
-**Ce qu'elle coûte.** C'est le dessin qui a le plus de traits. À 16 px, les oreilles se
-confondent avec les bois : il reste un « V » ramifié.
+**What it costs.** It is the drawing with the most strokes. At 16 px, the ears blend into the
+antlers: a branching "V" remains.
 
-![Piste B : symbole, icône et nom](logo/piste-b.png)
+![Option B: symbol, icon and name](logo/piste-b.png)
 
-Les petites tailles, agrandies six fois :
+The small sizes, enlarged six times:
 
-![Piste B, petites tailles agrandies](logo/piste-b-petit.png)
+![Option B, small sizes enlarged](logo/piste-b-petit.png)
 
-## C. Cerf plein
+## C. Solid deer
 
-Une tête de cerf de face, en forme pleine, surmontée de bois au trait. Les bois gardent une
-pastille à leur pointe.
+A deer's head seen from the front, as a solid shape, topped with line-drawn antlers. The antlers
+keep a dot at their tip.
 
-**Ce qu'elle apporte.** La plus lisible : on reconnaît un cerf à toutes les tailles, y compris à
-16 px.
+**What it brings.** The most readable: a deer is recognised at every size, including 16 px.
 
-**Ce qu'elle coûte.** La moins singulière. Une tête de cerf de face est un motif courant (chasse,
-plein air, boissons), et le lien avec Git est ténu. La forme pleine tranche avec les icônes au
-trait de l'interface.
+**What it costs.** The least distinctive. A deer's head seen from the front is a common motif
+(hunting, outdoors, drinks), and the link with Git is thin. The solid shape clashes with the
+line-drawn icons of the interface.
 
-![Piste C : symbole, icône et nom](logo/piste-c.png)
+![Option C: symbol, icon and name](logo/piste-c.png)
 
-Les petites tailles, agrandies six fois :
+The small sizes, enlarged six times:
 
-![Piste C, petites tailles agrandies](logo/piste-c-petit.png)
+![Option C, small sizes enlarged](logo/piste-c-petit.png)
 
-## Ce qui a été retenu
+## What was chosen
 
-- **La piste B**, sans retouche : c'est la seule qui dit les deux choses à la fois. On voit un
-  cerf, et le dessin reste un commit d'où partent deux branches.
-- **La tuile bleue**, avec le symbole en blanc, pour l'icône de l'application.
-- **Le nom** « Ramure » en DM Sans, graisse 650, à droite de l'icône.
+- **Option B**, untouched: it is the only one that says both things at once. You see a deer, and
+  the drawing remains a commit from which two branches start.
+- **The blue tile**, with the symbol in white, for the application icon.
+- **The name** "Ramure" in DM Sans, weight 650, to the right of the icon.
 
-Les planches ci-dessus montrent aussi la tuile sombre et le symbole posé seul à côté du nom :
-ces deux variantes n'ont pas été retenues.
+The sheets above also show the dark tile and the bare symbol next to the name: those two variants
+were not chosen.
 
-## Fichiers
+## Files
 
-Le logo définitif est dans [`../logo/`](../logo). Les fichiers ci-dessous sont ceux des pistes,
-gardés pour mémoire.
+The final logo is in [`../logo/`](../logo). The files below are those of the three options, kept
+for the record.
 
 - [`logo/piste-a.svg`](logo/piste-a.svg), [`logo/piste-b.svg`](logo/piste-b.svg),
-  [`logo/piste-c.svg`](logo/piste-c.svg) : les dessins complets.
+  [`logo/piste-c.svg`](logo/piste-c.svg): the full drawings.
 - [`logo/piste-a-petit.svg`](logo/piste-a-petit.svg),
   [`logo/piste-b-petit.svg`](logo/piste-b-petit.svg),
-  [`logo/piste-c-petit.svg`](logo/piste-c-petit.svg) : les dessins des petites tailles.
+  [`logo/piste-c-petit.svg`](logo/piste-c-petit.svg): the drawings for small sizes.
 
-Les SVG prennent la couleur du texte qui les entoure (`currentColor`).
+The SVG files take the colour of the surrounding text (`currentColor`).
