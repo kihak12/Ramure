@@ -477,6 +477,9 @@ Sidebar, file lists, graph, palette results.
   coloured bar on the edge.
 - A short title, then the detail. The output of git is shown as it is, in the code font at
   11.5 px.
+- In the title, a name of more than 36 characters, such as a branch or a path, is cut in its
+  middle: its start and its end stay readable, and the full title is in a tooltip. This is the
+  one place where a text is not cut on the right.
 
 | Type | Duration |
 |---|---|

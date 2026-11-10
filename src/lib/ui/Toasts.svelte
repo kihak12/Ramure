@@ -6,10 +6,23 @@
   import { motion } from './motion';
 
   const ICON = { ok: 'check', warn: 'warning', err: 'warning' } as const;
+
+  // Dans un titre, un nom trop long (une branche, un chemin) est coupé en son milieu : son début
+  // et sa fin restent lisibles, et le titre tient sur une ligne. Le titre complet est en infobulle.
+  const LONG = 36;
+  const HEAD = 24;
+  const TAIL = 10;
+  function clip(title: string) {
+    return title
+      .split(' ')
+      .map((word) => (word.length > LONG ? `${word.slice(0, HEAD)}…${word.slice(-TAIL)}` : word))
+      .join(' ');
+  }
 </script>
 
 <div class="toasts" aria-live="polite">
   {#each toasts.items as toast (toast.id)}
+    {@const title = clip(toast.title)}
     <div
       class="toast k-{toast.kind}"
       role={toast.kind === 'err' ? 'alert' : 'status'}
@@ -19,7 +32,7 @@
     >
       <span class="badge"><Icon name={ICON[toast.kind]} size={14} /></span>
       <div class="text">
-        <b>{toast.title}</b>
+        <b title={title === toast.title ? undefined : toast.title}>{title}</b>
         {#if toast.body}<pre class="mono">{toast.body}</pre>{/if}
       </div>
       <button class="close" type="button" aria-label="Fermer la notification" onclick={() => toasts.dismiss(toast.id)}>
