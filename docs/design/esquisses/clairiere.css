@@ -1,0 +1,48 @@
+/* Clairière : les sections en cartes de Sous-bois, sans bordure, avec les boutons actuels. */
+:root { --f-ui: 'DM Sans Variable', system-ui, sans-serif; --f-mono: 'DM Mono', monospace; }
+:root body { font-size: 13.5px; }
+:root .label { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 650; }
+
+/* Le fond de la fenêtre est plus sombre que les cartes : c'est lui qui les sépare. */
+:root .workspace, :root .view { background: var(--side); }
+
+/* Onglets : l'onglet actif est une petite carte, de la même matière que les panneaux. */
+:root .tabs { padding: 8px 8px 0; gap: 4px; align-items: center; border-bottom: 0; background: var(--side); }
+:root .tabs .tab { margin-bottom: 0; border: 0; border-radius: 9px; }
+:root .tabs .tab::before { display: none; }
+:root .tabs .tab.current { background: var(--panel); border: 0; }
+:root .tabs .add { margin: 0; }
+
+/* Barre d'outils : les boutons actuels, posés sur le fond. */
+:root .toolbar { background: var(--side); border-bottom: 0; padding: 6px 10px; }
+
+/* Panneaux : trois cartes arrondies, sans bordure. */
+:root .view > div.body { gap: 8px; padding: 0 8px 8px; background: var(--side); }
+:root .view > div.body > .sidebar,
+:root .view > div.body > .center,
+:root .view > div.body > .detail { border: 0; border-radius: 14px; overflow: hidden; background: var(--panel); }
+:root .view > .status { border-top: 0; background: var(--side); }
+
+:root .sidebar .heading { text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 650; color: var(--ink); padding: 9px 12px 5px; }
+:root .sidebar .item { border-radius: 8px; padding: 5px 10px; }
+:root .sidebar .search { margin: 10px; }
+
+/* Graphe : message en capsule ; la sélection est un fond arrondi, sans trait sur le bord de la carte. */
+:root .graph .head { text-transform: none; letter-spacing: 0; font-size: 12px; background: transparent; border-bottom-color: var(--line-soft); }
+:root .graph.ribbon .msg { width: fit-content; max-width: 100%; padding-right: 14px; border-radius: 0 999px 999px 0; background: color-mix(in srgb, var(--c) 15%, transparent); }
+:root .graph .ref { border-radius: 999px; line-height: 20px; padding: 0 9px; }
+:root .graph.ribbon .ref.local { background: color-mix(in srgb, var(--c) 24%, var(--panel)); color: var(--ink); border-color: color-mix(in srgb, var(--c) 55%, transparent); font-weight: 600; }
+:root .graph.ribbon .ref.k-head { background: var(--c); color: var(--on-accent); }
+:root .graph .row { isolation: isolate; }
+:root .graph .row:hover { background: none; z-index: 5; }
+:root .graph .row.sel { background: none; }
+:root .graph .row::before { left: 6px; right: 6px; top: 1px; bottom: 1px; width: auto; border-radius: 9px; background: var(--hover); transform: none; opacity: 0; z-index: -1; transition: opacity var(--t-fast) var(--ease); }
+:root .graph .row:hover::before { opacity: 1; transform: none; }
+:root .graph .row.sel::before { opacity: 1; background: var(--sel); transform: none; }
+
+/* Au clavier, le focus se lit sur le commit sélectionné, pas par un cadre autour de toute la carte. */
+:root .graph .scroller:focus-visible { outline: none; }
+:root .graph .scroller:focus-visible .row.sel::before { box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+/* Tout flotte sur le même fond : le rail n'a plus besoin de trait. */
+:root .rail { border-right: 0; }

@@ -1,13 +1,116 @@
 # Direction visuelle de Ramure
 
-Trois directions à comparer, avant d'écrire la charte graphique. Chacune est un parti pris
-complet : police, onglets, barre d'outils, boutons, panneaux, dessin du graphe et couleurs.
-Elles sont montrées sur l'application réelle, avec l'interface actuelle comme repère.
+Ce document sert à choisir la direction visuelle de Ramure, avant d'écrire la charte graphique.
+Tout est montré sur l'application réelle.
 
-**Décision : à prendre.** Une fois la direction choisie (ou un mélange précis), elle est inscrite
-ici et sert de base à la charte.
+**Décision : à prendre.** La proposition en cours est **D. Clairière**. Une fois validée (ou
+corrigée), elle est inscrite ici et sert de base à la charte.
 
-## En un coup d'œil
+## Où on en est
+
+1. Trois directions complètes ont été comparées : A. Sous-bois, B. Encre, C. Braise. Elles sont
+   gardées [plus bas](#premières-directions).
+2. Premier retour : les cartes de Sous-bois plaisent, mais pas ses boutons, ni son vert, ni la
+   bordure autour de la carte des commits.
+3. **D. Clairière** reprend ce qui a plu et corrige le reste. Elle ajoute des
+   [thèmes de couleurs](#thèmes-de-couleurs) au choix.
+
+## D. Clairière, la proposition en cours
+
+**Intention.** Une clairière, c'est le sous-bois ouvert. On garde les cartes et le graphe de
+Sous-bois, on retire les bordures, on reprend les boutons de l'interface actuelle, et les
+couleurs par défaut redeviennent neutres.
+
+### Retours pris en compte
+
+| Retour | Réponse |
+|---|---|
+| Les sections en cartes de Sous-bois plaisent. | Gardées : la barre latérale, le graphe et le détail sont trois cartes arrondies, séparées par le fond de la fenêtre. |
+| Les boutons de l'interface actuelle sont préférés. | Boutons, champs, boîtes de dialogue et barre d'outils sont ceux de l'interface actuelle : angles de 6 px, icône au-dessus du libellé. Plus aucun bouton en pilule. |
+| Les couleurs tirent trop sur le vert. | Le thème par défaut, Ardoise, est fait de gris neutres, avec l'accent bleu actuel. Le vert ne dit plus que « succès » et « ligne ajoutée ». |
+| La bordure de la carte des commits gêne. | Aucune carte n'a de bordure. Le cadre de couleur qui entourait toute la liste quand on la parcourt au clavier est retiré : le repère est porté par le commit sélectionné. La sélection est un fond arrondi, en retrait des bords de la carte. |
+| Pouvoir changer les couleurs par la suite. | Voir [Thèmes de couleurs](#thèmes-de-couleurs). |
+
+### Parti pris
+
+| Élément | Parti pris | Vient de |
+|---|---|---|
+| Police | DM Sans, 13,5 px ; DM Mono pour le code. Titres de section en minuscules. | Sous-bois |
+| Onglets | L'onglet actif est une petite carte, de la même matière que les panneaux. Pas de cadre. | nouveau |
+| Barre d'outils | Icône au-dessus du libellé, posée sur le fond de la fenêtre. | interface actuelle |
+| Boutons et champs | Angles de 6 px, comme aujourd'hui. Boîtes de dialogue inchangées. | interface actuelle |
+| Panneaux | Trois cartes à angles de 14 px, sans bordure, écartées de 8 px. | Sous-bois, sans la bordure |
+| Graphe | Pastilles à initiales, courbes souples de 3 px, message dans une capsule. Lignes de 34 px. | Sous-bois |
+| Sélection | Un fond arrondi sous la ligne, en retrait de 6 px. Aucun trait sur le bord. | nouveau |
+| Étiquettes | Pilules teintées ; la branche courante en pilule pleine. | Sous-bois |
+| Couleurs | Thème Ardoise : gris neutres, accent bleu. | nouveau |
+
+| Graphe, sombre | Graphe, clair |
+|---|---|
+| ![Clairière, graphe, thème sombre](directions/clairiere-graphe-sombre.png) | ![Clairière, graphe, thème clair](directions/clairiere-graphe-clair.png) |
+
+| Modifications et diff | Boîte de dialogue |
+|---|---|
+| ![Clairière, modifications et diff](directions/clairiere-travail-sombre.png) | ![Clairière, boîte de dialogue](directions/clairiere-dialogue-clair.png) |
+
+### Ce qui reste ouvert
+
+Ces points viennent de Sous-bois ou sont nouveaux, et n'ont pas encore eu de retour :
+
+- **La police.** DM Sans est gardée. Revenir à la police du système, comme aujourd'hui, ne change
+  rien d'autre.
+- **Le graphe.** Courbes souples et messages en capsule, comme dans Sous-bois.
+- **Les onglets en cartes.**
+- **La densité.** 21 commits visibles sur un écran de 880 px, contre 23 aujourd'hui.
+
+## Thèmes de couleurs
+
+Un thème de couleurs ne change que les couleurs : fonds, textes, traits, accent, couleurs d'état,
+couleurs des branches et du terminal. La disposition, les formes, la police et les tailles ne
+bougent pas. Chaque thème existe en clair et en sombre.
+
+| Thème | Fonds | Accent |
+|---|---|---|
+| **Ardoise** (par défaut) | gris neutres | bleu |
+| Encre | gris presque noirs, ou blancs | indigo |
+| Sous-bois | verts très sombres, ou papier chaud | vert mousse |
+| Braise | charbon, ou crème | ambre |
+
+Ardoise est montré dans les captures de Clairière ci-dessus. Les trois autres, sur le même écran :
+
+| | Sombre | Clair |
+|---|---|---|
+| Encre | ![Thème Encre, sombre](directions/theme-encre-sombre.png) | ![Thème Encre, clair](directions/theme-encre-clair.png) |
+| Sous-bois | ![Thème Sous-bois, sombre](directions/theme-sous-bois-sombre.png) | ![Thème Sous-bois, clair](directions/theme-sous-bois-clair.png) |
+| Braise | ![Thème Braise, sombre](directions/theme-braise-sombre.png) | ![Thème Braise, clair](directions/theme-braise-clair.png) |
+
+**Comment cela marcherait.**
+
+- Un réglage « Thème de couleurs » dans les Réglages. Le changement est immédiat et mémorisé.
+- Un thème est un bloc de jetons de couleur ([`themes.css`](themes.css)), choisi par un attribut
+  sur la racine de la page. C'est possible parce que les composants passent déjà par ces jetons.
+- Un thème n'entre dans l'application que s'il respecte les contrastes fixés par la charte. Les
+  quatre proposés les respectent.
+
+**À savoir.** Dans le thème Sous-bois, l'accent est aussi la couleur du succès ; dans Braise, il
+est voisin de la couleur d'avertissement. Ce sont des thèmes au choix : Ardoise, le thème par
+défaut, n'a pas ce défaut.
+
+La mise en œuvre est suivie dans l'issue #9. Elle vient après l'alignement des jetons (#5).
+
+## Recommandation
+
+**Clairière, avec le thème Ardoise par défaut.** Elle garde ce qui donnait un visage à Sous-bois
+(les cartes, le graphe en capsules) et retire ce qui gênait. Les thèmes de couleurs laissent à
+chacun le choix de la teinte, sans toucher au reste.
+
+## Premières directions
+
+Les trois directions comparées au départ. Chacune est un parti pris complet : police, onglets,
+barre d'outils, boutons, panneaux, dessin du graphe et couleurs. Leurs couleurs sont devenues les
+thèmes Sous-bois, Encre et Braise.
+
+### En un coup d'œil
 
 | | Actuelle | A. Sous-bois | B. Encre | C. Braise |
 |---|---|---|---|---|
@@ -28,13 +131,13 @@ Ce qui ne change pas d'une direction à l'autre : l'organisation de l'écran, le
 fonctions. Le mouvement (durées, courbes d'animation) n'est pas montré par des captures ; il sera
 réglé dans la charte.
 
-## Repère : l'interface actuelle
+### Repère : l'interface actuelle
 
 | Sombre | Clair |
 |---|---|
 | ![Interface actuelle, thème sombre](directions/actuelle-graphe-sombre.png) | ![Interface actuelle, thème clair](directions/actuelle-graphe-clair.png) |
 
-## A. Sous-bois
+### A. Sous-bois
 
 **Intention.** Tirer l'identité du nom : une ramure, ce sont des branches. Tout est arrondi et
 souple, les panneaux flottent sur le fond comme des cartes, et chaque message de commit est une
@@ -66,7 +169,7 @@ aussi la couleur du succès et des lignes ajoutées dans un diff.
 |---|---|
 | ![Sous-bois, modifications et diff](directions/sous-bois-travail-sombre.png) | ![Sous-bois, boîte de dialogue](directions/sous-bois-dialogue-clair.png) |
 
-## B. Encre
+### B. Encre
 
 **Intention.** Un outil d'abord. Tout est plat, dense et net, dans des gris presque sans teinte :
 les seules couleurs vives de l'écran sont celles des branches.
@@ -97,7 +200,7 @@ graphe est précis, mais discret.
 |---|---|
 | ![Encre, modifications et diff](directions/encre-travail-sombre.png) | ![Encre, boîte de dialogue](directions/encre-dialogue-clair.png) |
 
-## C. Braise
+### C. Braise
 
 **Intention.** Une interface chaude et tactile : formes généreuses, groupes pleins, gros traits.
 L'ambre évoque le bois sans reprendre le vert attendu.
@@ -128,7 +231,7 @@ lignes teintées peuvent charger l'écran.
 |---|---|
 | ![Braise, modifications et diff](directions/braise-travail-sombre.png) | ![Braise, boîte de dialogue](directions/braise-dialogue-clair.png) |
 
-## Recommandation
+### Recommandation d'origine
 
 **Sous-bois**, pour la structure et les formes. C'est la seule direction qui donne à Ramure un
 visage à lui, et la capsule est la meilleure réponse au défaut de départ : le lien entre un
@@ -145,23 +248,25 @@ Encre reste le bon choix si la priorité est l'efficacité plutôt que l'identit
 
 ## Fichiers
 
-- [`directions.css`](directions.css) : les couleurs et les rayons de chaque direction.
+- [`themes.css`](themes.css) : les quatre thèmes de couleurs.
+- [`directions.css`](directions.css) : les couleurs et les rayons des trois premières directions.
 - [`esquisses/`](esquisses) : les règles d'interface qui ont servi aux captures (police, onglets,
   barre d'outils, panneaux, étiquettes). Ce sont des esquisses, pas du code à reprendre tel quel.
 - Dessin du graphe, par direction :
 
-| | Sous-bois | Encre | Braise |
-|---|---|---|---|
-| Hauteur de ligne | 34 px | 26 px | 36 px |
-| Largeur d'une colonne | 24 px | 14 px | 26 px |
-| Rayon d'un commit | 10 px | 4,5 px | 11,5 px |
-| Épaisseur du trait | 3 px | 2 px | 3,5 px |
-| Changement de colonne | courbe | angle de 5 px | angle de 14 px |
-| Bande derrière le commit | 24 px, opacité 15 % | aucune | 26 px, opacité 20 % |
+| | Clairière | Sous-bois | Encre | Braise |
+|---|---|---|---|---|
+| Hauteur de ligne | 34 px | 34 px | 26 px | 36 px |
+| Largeur d'une colonne | 24 px | 24 px | 14 px | 26 px |
+| Rayon d'un commit | 10 px | 10 px | 4,5 px | 11,5 px |
+| Épaisseur du trait | 3 px | 3 px | 2 px | 3,5 px |
+| Changement de colonne | courbe | courbe | angle de 5 px | angle de 14 px |
+| Bande derrière le commit | 24 px, opacité 15 % | 24 px, opacité 15 % | aucune | 26 px, opacité 20 % |
 
 ## Notes
 
 - Toutes les couleurs respectent les contrastes WCAG : 7:1 pour le texte courant, 4,5:1 pour le
-  texte secondaire et le texte posé sur une couleur, 3:1 pour les traits du graphe.
-- Les six polices sont libres (SIL Open Font License) et seraient embarquées dans l'application.
+  texte secondaire et le texte posé sur une couleur, 3:1 pour les traits du graphe. Pour
+  Clairière, ils sont aussi vérifiés sur le fond des cartes, sur la sélection et dans les capsules.
+- Les polices proposées sont libres (SIL Open Font License) et seraient embarquées dans l'application.
 - Les captures viennent de l'interface de la PR #2, sous Ubuntu.
