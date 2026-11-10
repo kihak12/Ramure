@@ -12,7 +12,7 @@ is in the [README](README.md).
 
 ## Planted violations (25)
 
-Five are "bloquantes", thirteen "majeures", seven "mineures".
+Five are "bloquantes", fifteen "majeures", five "mineures".
 
 ### Interface text
 
@@ -43,7 +43,7 @@ Five are "bloquantes", thirteen "majeures", seven "mineures".
 | S1 | P:151 | A shadow on a card (1, 6, 9.8). | 7 |
 | S2 | P:303-310 | A card inside a card, `.resume` (6). | 7 |
 | S3 | P:227 | An 8 px button inside a 6 px field; what can be clicked is 6 px (5). | 2 |
-| S4 | P:273-274 | A 12 px checkbox instead of 15 px (9.3). | 2 |
+| S4 | P:273-274 | A 12 px checkbox instead of 15 px, which is not checked in `--accent` (9.3). | 4 |
 | S5 | P:336-350 | A dialog without the `--scrim` veil (6, 9.10). | 6 |
 
 ### Typography
@@ -51,7 +51,7 @@ Five are "bloquantes", thirteen "majeures", seven "mineures".
 | | Where | What | Sev. |
 |---|---|---|---|
 | Y1 | P:294-297 | A SHA that is not in the code font (3.1). | 4 |
-| Y2 | P:172-177 | A counter at 11.5 px instead of 10.5 px, without tabular figures (9.5, 3.4). | 2 |
+| Y2 | P:172-177 | A counter at 11.5 px instead of 10.5 px, without tabular figures, which writes the shared `.chip` again (9.5, 3.4, 14). | 6 |
 
 ### Motion
 

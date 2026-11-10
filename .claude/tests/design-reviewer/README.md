@@ -84,7 +84,7 @@ Three things to know:
 | --- | --- |
 | Found | Planted violations listed under "Violations", out of 25. One that is listed under "Dérives" counts as missed. |
 | Decoys reported | Decoys listed under "Violations", out of 12. The target is 0. |
-| Severity | Planted violations that carry the severity of the answer key, out of 25. With two runs, also the number on which the two agree. |
+| Severity | Planted violations that carry the score of the answer key, out of 25. With two runs, the number that have the same score in both, and the number that are within one point: the second measure does not depend on the key. |
 | Screen | Facts of "What the screenshots show" that the review reports, under whichever part, out of 6. And what it says of the screen that the measures contradict: the target is nothing. |
 | Quotations | Check a few: the section, the text of the rule, the file and the line. |
 | Sorting | A violation is in the change and rests on a rule that applies without doubt. A departure in a file that was not changed is a drift. A finding appears once. |
@@ -116,26 +116,40 @@ All on 10 November 2026, one run per row.
 
 ### With the screenshots and the severity
 
-| Definition | Model, effort | Found | Decoys reported | Severity | Screen | Violations | Drifts | Duration | Tokens |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| With "Screenshots" and "Severity" | Sonnet, `high` | 25 / 25 | 0 / 12 | 25 / 25 | 5 / 6 | 27 | 9 | 3 min 17 | 156,327 |
-| With "Screenshots" and "Severity" | Sonnet, `high` | 25 / 25 | 0 / 12 | 25 / 25 | 5 / 6 | 28 | 8 | 4 min 08 | 165,617 |
+All four runs are Sonnet at `high`, two with each scale. "Same in both" compares the two runs of
+a scale with each other.
 
-- **Severity.** The two runs gave the same severity to each of the 25 planted violations. The
-  key first said 2 for A4, the order of the buttons in the dialog; both runs said 3, as a
-  safeguard of a destructive action, and the key was aligned on them.
-- **Screen.** Both runs opened the eight screenshots. Both reported the crushed list at 440 px,
-  the hover that cannot be told from the selection, the summary that is a card in dark only,
-  the missing veil, the focus that stays outside the confirmation, and the small buttons. One
-  also saw that "Fetch" grows by 20 px when its icon appears, which the measures confirm.
-- Neither run said that the disabled buttons still read as active (E6): both kept to the
-  opacity written in the code.
-- Each run made one small mistake about a screenshot, both outside the violations: one counted
-  the row that is cut at the bottom of the list as the ninth, when it is the tenth; the other
-  wrote that the SHA wraps at 440 px, when only the commit counts do.
-- Both ranked the focus in the confirmation under "À vérifier à l'écran": the screenshot shows
-  it on "Supprimer la sélection", the code asks for it on "Supprimer". That is the right call:
-  the screenshot and the code disagree.
+| Severity | Found | Decoys reported | As in the key | Same in both | Screen | Violations | Drifts | Duration | Tokens |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Three levels | 25 / 25 | 0 / 12 | 25 / 25 | 25 / 25 | 5 / 6 | 27 | 9 | 3 min 17 | 156,327 |
+| Three levels | 25 / 25 | 0 / 12 | 25 / 25 | | 5 / 6 | 28 | 8 | 4 min 08 | 165,617 |
+| Score from 1 to 10 | 25 / 25 | 0 / 12 | 24 / 25 | 24 / 25 | 5 / 6 | 29 | 8 | 4 min 00 | 162,010 |
+| Score from 1 to 10 | 25 / 25 | 0 / 12 | 25 / 25 | | 5 / 6 | 28 | 6 | 4 min 23 | 169,653 |
+
+- **Severity, three levels.** The two runs gave the same level to each of the 25 planted
+  violations. The key first put A4, the order of the buttons in the dialog, one level lower;
+  both runs read it as a safeguard of a destructive action, and the key was aligned on them.
+- **Severity, from 1 to 10.** The two runs gave the same score to 24 of the 25, and scores one
+  point apart to the last, S4, the checkbox: 3 in one run, 4 in the other. The key was aligned
+  on two points after these runs. Y2, the counter, went from 2 to 6: both runs scored it as a
+  shared class written again, which is what the table says. S4 went from 2 to 4, the score of
+  a checked state that is not rendered in `--accent`. Against the key as first written, each
+  run had 23 of 25.
+- **Screen.** Every run opened the eight screenshots. All four reported the crushed list at
+  440 px, the hover that cannot be told from the selection, the summary that is a card in dark
+  only, the missing veil, the focus that stays outside the confirmation, and the small buttons.
+  One also saw that "Fetch" grows by 20 px when its icon appears, which the measures confirm.
+- No run said that the disabled buttons still read as active (E6): all kept to the opacity
+  written in the code.
+- The runs made small mistakes about a screenshot, none of which changes a violation: the row
+  cut at the bottom of the list counted as the ninth when it is the tenth, the SHA said to
+  wrap at 440 px when only the commit counts do, the confirmation said to cover rows 6 to 8
+  when it covers rows 6 to 9.
+- The focus in the confirmation: the screenshot shows it on "Supprimer la sélection", the code
+  asks for it on "Supprimer". Three runs put that under "À vérifier à l'écran"; the last one
+  explained it, rightly, by an `autofocus` that is not applied to an element inserted later.
+- One run listed the close button, 20 px high, as a violation, and its cause, `.btn.small` in
+  `src/app.css`, as a drift: the same finding in two parts.
 
 In every run, the quotations that were checked were right. One run per row: a difference of a
 few points between two rows is noise.
