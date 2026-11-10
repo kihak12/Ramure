@@ -1,7 +1,7 @@
 // Prend les captures de l'essai de relecture : le panneau monté seul, en clair et en sombre,
 // dans quatre états, avec les mesures prises dans la page.
 //
-//   node .claude/tests/designer/capture/capture.cjs <dossier de sortie>
+//   node .claude/tests/design-reviewer/capture/capture.cjs <dossier de sortie>
 //
 // À lancer une fois le changement copié dans src/lib/git/ (voir le README de l'essai).
 // Outil ponctuel, hors des dépendances du projet : il lui faut Playwright et son Chromium.
@@ -13,7 +13,7 @@ const { chromium } = require('playwright');
 const root = resolve(__dirname, '../../../..');
 const out = resolve(process.argv[2] ?? 'screens');
 const PORT = 5199;
-const PAGE = `http://localhost:${PORT}/.claude/tests/designer/capture/index.html`;
+const PAGE = `http://localhost:${PORT}/.claude/tests/design-reviewer/capture/index.html`;
 
 /** Attend que le serveur de développement réponde. */
 async function ready() {

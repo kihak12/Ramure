@@ -1,7 +1,7 @@
-# Review test for the `designer` subagent
+# Review test for the `design-reviewer` subagent
 
 A change that breaks the design guidelines on purpose, with a written answer key. It measures
-what the `designer` subagent ([`.claude/agents/designer.md`](../../agents/designer.md)) finds,
+what the `design-reviewer` subagent ([`.claude/agents/design-reviewer.md`](../../agents/design-reviewer.md)) finds,
 what it misses and what it reports wrongly.
 
 Replay it when the definition of the subagent, its model or its effort level changes, and when
@@ -23,11 +23,11 @@ two files are kept out of `src/`, so nothing builds or checks them where they ar
 1. Copy the change where a real one would be, and keep the copies out of Git:
 
    ```bash
-   cp .claude/tests/designer/change/* src/lib/git/
+   cp .claude/tests/design-reviewer/change/* src/lib/git/
    printf 'src/lib/git/CleanupPanel.svelte\nsrc/lib/git/cleanup.ts\n' >> .git/info/exclude
    ```
 
-2. Ask the `designer` subagent for a review, with this request and nothing else. The request
+2. Ask the `design-reviewer` subagent for a review, with this request and nothing else. The request
    must not say that this is a test, and must not name this folder.
 
    ```text
@@ -54,7 +54,7 @@ Three things to know:
 
 - A session that is already open can keep the definition it loaded when it started. After a
   change to the definition, run the test from a new session. Or ask a general-purpose agent to
-  read `.claude/agents/designer.md` and to follow it with reading tools only: that is how the
+  read `.claude/agents/design-reviewer.md` and to follow it with reading tools only: that is how the
   last two runs below were made.
 - To compare two models, give the model and the effort level in the call. A result does not say
   which model produced it.
@@ -85,7 +85,7 @@ All on 10 November 2026, one run per row.
 | With "Violation or drift" | Sonnet, `high` | 25 / 25 | 0 / 12 | 28 | 7 | 2 min 27 | 131,014 |
 | With "Violation or drift" | Haiku 5.5, `xhigh` | 25 / 25 | 0 / 12 | 26 | 14 | 6 min 40 | 213,000 |
 
-- The first two rows called the `designer` subagent. The last two went through a general-purpose
+- The first two rows called the `design-reviewer` subagent. The last two went through a general-purpose
   agent that read the definition: it carries a longer prompt of its own, so its tokens and its
   duration do not compare with the first two rows.
 - With the first version, the Haiku run listed as a violation a departure in `src/app.css`,
