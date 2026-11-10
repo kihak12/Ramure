@@ -80,10 +80,14 @@
 
 <style>
   .head {
+    /* Toute la largeur de la carte : le bouton va au bord droit. La hauteur est celle d'un petit
+       bouton, pour que le titre du commit ne bouge pas quand le bouton apparaît. */
+    align-self: stretch;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    min-height: 24px;
   }
   p {
     margin: 0;
