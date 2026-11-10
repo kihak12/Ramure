@@ -255,8 +255,8 @@ From left to right and from top to bottom:
 
 - **Everything that can be clicked is a slightly rounded rectangle.** The pill is reserved for
   what informs without being clicked.
-- The circle is reserved for the dot of a commit, the badge of a toolbar button and the icon of
-  a notification.
+- The circle is reserved for the dot of a commit, the badge of a toolbar button, the icon of a
+  notification and the waiting ring.
 - An element placed inside another never has a larger radius than the one that contains it.
 
 ## 6. Surfaces and shadows
@@ -330,8 +330,14 @@ toolbar buttons and rail buttons, and to nothing else.
 - The text of a diff or of a terminal.
 
 **The only two loops.** The waiting indicator, for as long as the operation or the wait lasts: a
-spinning icon, a bar, a blinking dot. The halo of the current commit in the graph: a ring that
-widens and fades, in 2.4 s.
+spinning icon, a spinning ring, a bar, a blinking dot. The halo of the current commit in the
+graph: a ring that widens and fades, in 2.4 s.
+
+The waiting ring is 12 px, in `--accent` or in the colour of the text around it, and it appears
+where the user asked for the operation: on the tab of the repository, on the label or the row of
+the branch being switched to, in the status bar. It is the shared class `.spinner` of
+`src/app.css`, whose `--spinner` property gives it another colour. Words always say the state
+beside it, so the ring itself is hidden from screen readers.
 
 **When a repository is opened** or after a full reload, the rows of the graph come in one after
 the other, once. Never on scroll.
@@ -413,6 +419,8 @@ buttons.
 - When a commit carries several labels, the first is shown and the others are counted in a
   "+N" pill.
 - Double-click: switch to the branch. Right-click: the branch menu.
+- During the switch, the waiting ring takes the place of the icon of the label, at the same
+  size.
 
 ### 9.5 Counters
 
@@ -506,6 +514,8 @@ Sidebar, file lists, graph, palette results.
 - 26 px high, 11.5 px text in `--muted`, on the window background.
 - On the left, the branch and the last git command, in the code font. On the right, the
   timings.
+- During an operation, the right side starts with the waiting ring and a few words:
+  "Basculement sur main…", or "Opération en cours…".
 
 ### 9.14 Diff
 

@@ -135,7 +135,7 @@
               ondblclick={() => switchLocal(branch.name)}
               oncontextmenu={(e) => menu.open(e, labelMenu(repo, localLabel(branch.name, branch.current), branch.sha))}
             >
-              <span class="mark">{#if branch.current}<Icon name="check" size={13} />{/if}</span>
+              <span class="mark">{#if repo.switching === branch.name}<span class="spinner" aria-hidden="true"></span>{:else if branch.current}<Icon name="check" size={13} />{/if}</span>
               <span class="name">{branch.name}</span>
               {#if branch.gone}<span class="chip gone" title="La branche distante suivie n'existe plus">orpheline</span>{/if}
               {#if branch.ahead}<span class="chip" title="{branch.ahead} commit(s) à pousser"><Icon name="up" size={10} />{branch.ahead}</span>{/if}
@@ -164,7 +164,7 @@
               ondblclick={() => switchRemote(remote.name)}
               oncontextmenu={(e) => menu.open(e, labelMenu(repo, remoteLabel(remote.name), remote.sha))}
             >
-              <span class="mark"></span>
+              <span class="mark">{#if repo.switching === remote.name}<span class="spinner" aria-hidden="true"></span>{/if}</span>
               <span class="name">{remote.name}</span>
             </button>
           </li>

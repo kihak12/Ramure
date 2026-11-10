@@ -355,6 +355,7 @@
 </script>
 
 {#snippet chip(label: Label, commit: CommitRow)}
+  {@const waiting = repo.switching !== null && (label.local === repo.switching || label.remotes.includes(repo.switching))}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <span
     class="ref k-{label.kind}"
@@ -387,8 +388,9 @@
   >
     {#if label.kind === 'head'}<Icon name="check" size={12} />{/if}
     <span class="ref-name">{label.name}</span>
-    {#if label.local}<Icon name="laptop" size={12} />{/if}
-    {#if label.remotes.length}<Icon name="cloud" size={12} />{/if}
+    <!-- Pendant le basculement, l'anneau prend la place d'une icône : l'étiquette garde sa taille. -->
+    {#if label.local}{#if waiting}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="laptop" size={12} />{/if}{/if}
+    {#if label.remotes.length}{#if waiting && !label.local}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="cloud" size={12} />{/if}{/if}
     {#if label.tag}<Icon name="tag" size={12} />{/if}
   </span>
 {/snippet}
@@ -689,6 +691,9 @@
   .ribbon .wire {
     height: 2px;
     opacity: 0.6;
+  }
+  .ref .spinner {
+    --spinner: currentColor;
   }
   .ref {
     flex: 0 1 auto;
