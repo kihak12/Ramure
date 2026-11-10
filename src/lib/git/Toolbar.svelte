@@ -75,9 +75,7 @@
     display: flex;
     align-items: stretch;
     gap: 4px;
-    padding: 4px 8px 4px 6px;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    padding: 6px 10px;
     min-width: 0;
   }
   .crumb {

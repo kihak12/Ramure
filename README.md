@@ -24,9 +24,9 @@ listé plus bas.
 - **Graphe** : `git log`, lanes calculées en Rust, dessin sur un canvas. Seules les lignes
   visibles existent dans la page ; 50 000 commits défilent sans saccade.
 - **Deux rendus**, au choix dans les réglages. « Ruban » (par défaut) : une pastille aux
-  initiales de l'auteur sur chaque commit, des tracés arrondis façon plan de métro, une bande
-  de la couleur de la branche qui relie le commit à son message, un halo animé sur le commit
-  courant. « Classique » : points et courbes, plus compact.
+  initiales de l'auteur sur chaque commit, des courbes souples, le message dans une capsule de
+  la couleur de la branche, un halo animé sur le commit courant. « Classique » : points et
+  courbes, plus compact.
 - **Colonne « Branche / Tag »** à gauche du graphe, reliée au commit par un trait. Une icône
   ordinateur marque le dernier commit local d'une branche, un nuage le dernier commit distant ;
   au même commit, ils partagent une étiquette. Les étiquettes en surnombre se déplient au survol.

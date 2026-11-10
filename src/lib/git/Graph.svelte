@@ -11,19 +11,19 @@
 
   let { repo }: { repo: Repo } = $props();
 
-  // Deux rendus du graphe, au choix dans les réglages.
-  // « Ruban » : pastilles d'auteur sur le graphe, tracés arrondis, bande de couleur qui relie
-  // chaque commit à son message. « Classique » : points et courbes, plus compact.
+  // Deux rendus du graphe, au choix dans les réglages (charte graphique, section 10).
+  // « Ruban » : pastilles d'auteur sur le graphe, courbes souples, message dans une capsule de
+  // la couleur de la branche. « Classique » : points et courbes, plus compact.
   const STYLES = {
-    ribbon: { row: 32, lane: 22, pad: 18, node: 9.5, merge: 4.5, line: 2.5, max: 400 },
+    ribbon: { row: 34, lane: 24, pad: 20, node: 10, merge: 5, line: 3, max: 420 },
     classic: { row: 28, lane: 16, pad: 14, node: 5, merge: 4, line: 2, max: 340 },
   } as const;
 
   const LABELS = 164; // largeur de la colonne des branches et des tags
   const BUFFER = 24; // lignes rendues au-dessus et au-dessous de la zone visible
   const STEP = 12; // la fenêtre de rendu ne se déplace que par paliers de 12 lignes
-  const BAND = 22; // hauteur du ruban qui relie un commit à son message
-  const BAND_ALPHA = 0.13; // même opacité que le dégradé CSS qui le prolonge dans la colonne du message
+  const BAND = 24; // hauteur de la bande qui relie un commit à la capsule de son message
+  const BAND_ALPHA = 0.15; // même opacité que la capsule CSS qui la prolonge dans la colonne du message
 
   let scrollTop = $state(0);
   let viewH = $state(600);
@@ -84,7 +84,7 @@
     if (!canvas) return;
     const css = getComputedStyle(document.documentElement);
     const palette = Array.from({ length: 8 }, (_, i) => css.getPropertyValue(`--l${i}`).trim());
-    const background = css.getPropertyValue('--bg').trim();
+    const background = css.getPropertyValue('--panel').trim(); // le graphe est posé sur une carte
     const onColor = css.getPropertyValue('--on-accent').trim();
     const family = getComputedStyle(document.body).fontFamily;
     const initialSize = parseFloat(css.getPropertyValue('--fs-micro'));
@@ -139,7 +139,6 @@
     ctx.lineWidth = line;
     for (let i = Math.max(0, winStart - 1); i < winEnd; i++) {
       const commit = commits[i];
-      const next = commits[i + 1];
       const y1 = y(i);
       const y2 = y1 + row;
       for (const [from, to, lane] of commit.edges) {
@@ -150,26 +149,9 @@
         ctx.moveTo(x1, y1);
         if (from === to) {
           ctx.lineTo(x2, y2);
-        } else if (!ribbon) {
-          ctx.bezierCurveTo(x1, y1 + row * 0.6, x2, y2 - row * 0.6, x2, y2);
         } else {
-          // Tracé « plan de métro » : un angle arrondi plutôt qu'une courbe en S.
-          const radius = Math.min(10, Math.abs(x2 - x1), row / 2);
-          if (from === commit.lane && lane !== commit.lane) {
-            // Second parent d'une fusion : la ligne sort du nœud par le côté, puis descend dans
-            // sa propre colonne. Descendre d'abord recouvrirait la ligne du premier parent.
-            ctx.arcTo(x2, y1, x2, y2, radius);
-          } else if (next && to === next.lane) {
-            // La ligne rejoint le commit du dessous : elle descend dans sa colonne, puis entre
-            // dans le nœud par le côté.
-            ctx.arcTo(x1, y2, x2, y2, radius);
-          } else {
-            // Simple changement de colonne d'une ligne qui passe.
-            ctx.bezierCurveTo(x1, y1 + row * 0.55, x2, y2 - row * 0.55, x2, y2);
-            ctx.stroke();
-            continue;
-          }
-          ctx.lineTo(x2, y2);
+          // Changement de colonne : une courbe souple, sans angle.
+          ctx.bezierCurveTo(x1, y1 + row * 0.6, x2, y2 - row * 0.6, x2, y2);
         }
         ctx.stroke();
       }
@@ -282,6 +264,20 @@
     const top = index * ROW;
     if (top < scroller.scrollTop) scroller.scrollTop = top;
     else if (top + ROW > scroller.scrollTop + viewH) scroller.scrollTop = top + ROW - viewH;
+  }
+
+  /** Clic sur une ligne : elle est sélectionnée, et le focus reste sur la liste, qui gère le clavier.
+   *  Une ligne qui garderait le focus le perdrait en sortant de la fenêtre de rendu. */
+  function select(index: number) {
+    repo.selected = index;
+    scroller?.focus({ preventScroll: true });
+  }
+
+  /** Focus au clavier : la liste a toujours un commit sélectionné et visible, c'est lui qui porte le repère. */
+  function onFocus() {
+    if (!commits.length || !scroller?.matches(':focus-visible')) return;
+    if (repo.selected < 0) repo.selected = 0;
+    reveal(repo.selected);
   }
 
   function onKey(e: KeyboardEvent) {
@@ -415,6 +411,7 @@
     bind:this={scroller}
     onscroll={onScroll}
     onkeydown={onKey}
+    onfocus={onFocus}
     tabindex="0"
     role="listbox"
     aria-label="Historique des commits"
@@ -453,7 +450,7 @@
           style:top="{index * ROW}px"
           style:--i={Math.min(i, 30)}
           style:--c="var(--l{commit.lane % 8})"
-          onclick={() => (repo.selected = index)}
+          onclick={() => select(index)}
           oncontextmenu={(e) => openCommitMenu(e, commit, index)}
         >
           <span class="labels">
@@ -562,11 +559,8 @@
     }
   }
   .head {
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
-    font-size: var(--fs-micro);
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: var(--fs-label);
     color: var(--muted);
     font-weight: var(--fw-strong);
     overflow: hidden;
@@ -588,8 +582,14 @@
     scrollbar-gutter: stable;
     min-height: 0;
   }
-  .scroller:focus-visible {
-    outline-offset: -2px;
+  /* Au clavier, le focus se lit sur le commit sélectionné, pas par un cadre autour de la liste. */
+  .scroller:focus-visible,
+  .row:focus-visible {
+    outline: none;
+  }
+  .scroller:focus-visible .row.sel::before,
+  .scroller:has(.row:focus-visible) .row.sel::before {
+    box-shadow: inset 0 0 0 1.5px var(--accent);
   }
   .spacer {
     position: relative;
@@ -610,28 +610,26 @@
     white-space: nowrap;
     /* Un double-clic bascule de branche : il ne doit pas sélectionner du texte au passage. */
     user-select: none;
-    transition: background var(--t-fast) var(--ease);
+    /* Le fond de survol et de sélection passe sous le contenu de la ligne. */
+    isolation: isolate;
   }
+  /* Survol et sélection : un fond arrondi, en retrait des bords de la carte. Pas de trait sur le bord. */
   .row::before {
     content: '';
     position: absolute;
-    left: 0;
-    top: 3px;
-    bottom: 3px;
-    width: 3px;
-    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
-    background: var(--accent);
-    transform: scaleY(0);
-    transition: transform var(--t-med) var(--ease);
-  }
-  .row:hover {
+    inset: 1px 6px;
+    z-index: -1;
+    border-radius: var(--radius);
     background: var(--hover);
+    opacity: 0;
+    transition: opacity var(--t-fast) var(--ease);
   }
-  .row.sel {
-    background: var(--sel);
+  .row:hover::before {
+    opacity: 1;
   }
   .row.sel::before {
-    transform: scaleY(1);
+    opacity: 1;
+    background: var(--sel);
   }
   .fresh .row {
     animation: row-in var(--t-slow) var(--ease) both;
@@ -699,22 +697,19 @@
     gap: 4px;
     min-width: 0;
     font-size: var(--fs-small);
-    line-height: 18px;
-    padding: 0 7px;
+    line-height: 20px;
+    padding: 0 8px;
     border-radius: var(--radius-s);
     border: 1px solid var(--c, var(--line));
-    background: color-mix(in srgb, var(--c, var(--line)) 16%, var(--bg));
+    background: color-mix(in srgb, var(--c, var(--line)) 16%, var(--panel));
     font-weight: var(--fw-regular);
+    /* Une étiquette ne change jamais de taille : ni au clic, ni au survol, ni au dépôt. */
     transition:
       background var(--t-fast) var(--ease),
-      filter var(--t-fast) var(--ease),
-      transform var(--t-fast) var(--ease);
+      filter var(--t-fast) var(--ease);
   }
   .ref:hover {
-    background: color-mix(in srgb, var(--c, var(--line)) 30%, var(--bg));
-  }
-  .ref:active {
-    transform: scale(0.97);
+    background: color-mix(in srgb, var(--c, var(--line)) 30%, var(--panel));
   }
   .ref[draggable='true'] {
     cursor: grab;
@@ -724,7 +719,6 @@
   .ribbon .ref.drop {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    transform: scale(1.06);
   }
   .ref-name {
     overflow: hidden;
@@ -734,34 +728,37 @@
   .ref.k-head,
   .ref.k-detached {
     font-weight: var(--fw-strong);
-    background: color-mix(in srgb, var(--c) 30%, var(--bg));
+    background: color-mix(in srgb, var(--c) 30%, var(--panel));
   }
   .ref.k-remote {
     border-style: dashed;
     font-weight: var(--fw-regular);
   }
   .ref.k-tag {
-    --c: var(--muted);
-    border-radius: var(--radius-s);
     font-weight: var(--fw-regular);
   }
-  /* Rendu « Ruban » : une branche locale est une pastille pleine, de la couleur de sa ligne. */
-  .ribbon .ref {
-    line-height: 20px;
-    border-radius: var(--radius-s);
+  .ref.local {
+    font-weight: var(--fw-strong);
   }
+  /* Rendu « Ruban » : une branche locale est teintée de la couleur de sa ligne ; la branche
+     courante est pleine. */
   .ribbon .ref.local {
-    background: var(--c);
-    color: var(--on-accent);
+    background: color-mix(in srgb, var(--c) 24%, var(--panel));
+    border-color: color-mix(in srgb, var(--c) 55%, transparent);
     font-weight: var(--fw-strong);
   }
   .ribbon .ref.local:hover {
-    background: var(--c);
-    filter: brightness(1.12);
+    background: color-mix(in srgb, var(--c) 36%, var(--panel));
   }
   .ribbon .ref.k-head {
-    font-weight: var(--fw-strong);
+    background: var(--c);
+    border-color: var(--c);
+    color: var(--on-accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent);
+  }
+  .ribbon .ref.k-head:hover {
+    background: var(--c);
+    filter: brightness(1.1);
   }
   .more {
     flex: none;
@@ -804,10 +801,14 @@
     overflow: hidden;
     padding-left: 10px;
   }
-  /* Le ruban dessiné sur le canvas se prolonge ici, puis s'estompe sous le texte. */
+  /* La bande dessinée sur le canvas se prolonge ici en capsule : large comme le texte, arrondie à droite. */
   .ribbon .msg {
+    width: fit-content;
+    max-width: 100%;
     height: var(--band);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 13%, transparent), transparent min(420px, 85%));
+    padding-right: 14px;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+    background: color-mix(in srgb, var(--c) 15%, transparent);
   }
   .subject {
     overflow: hidden;
@@ -863,7 +864,7 @@
     font-weight: var(--fw-strong);
     letter-spacing: -0.02em;
     color: var(--c);
-    background: color-mix(in srgb, var(--c) 20%, var(--bg));
+    background: color-mix(in srgb, var(--c) 20%, var(--panel));
     border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
   }
   .date {
@@ -892,7 +893,7 @@
     text-align: center;
     padding: 24px;
     z-index: 2;
-    background: var(--bg);
+    background: var(--panel);
     animation: fade-in var(--t-slow) var(--ease);
   }
   .empty p {

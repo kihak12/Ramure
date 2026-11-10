@@ -58,10 +58,8 @@
     '.cm-mark-theirs': { backgroundColor: 'color-mix(in srgb, var(--l1) 18%, transparent)' },
     '.cm-mark-base': { backgroundColor: 'color-mix(in srgb, var(--muted) 14%, transparent)' },
     '.cm-mark-marker': { backgroundColor: 'var(--warn-soft)', color: 'var(--warn)', fontWeight: 'var(--fw-strong)' },
-    '.cm-mark-focus': {
-      backgroundColor: 'color-mix(in srgb, var(--c, var(--accent)) 22%, transparent)',
-      boxShadow: 'inset 3px 0 0 var(--c, var(--accent))',
-    },
+    // Le conflit courant se lit à sa teinte plus forte, sans trait de couleur sur le bord de la ligne.
+    '.cm-mark-focus': { backgroundColor: 'color-mix(in srgb, var(--c, var(--accent)) 30%, transparent)' },
   });
 </script>
 

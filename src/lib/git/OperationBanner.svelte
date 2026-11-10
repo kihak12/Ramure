@@ -44,8 +44,9 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    margin: 0 8px 8px;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--line);
+    border-radius: var(--radius);
     background: var(--warn-soft);
     min-width: 0;
   }

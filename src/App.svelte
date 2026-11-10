@@ -96,7 +96,6 @@
     gap: 4px;
     padding: 8px 0;
     background: var(--side);
-    border-right: 1px solid var(--line);
   }
   .rail button {
     position: relative;
@@ -122,7 +121,7 @@
     margin-top: auto;
   }
   .rail button:active {
-    transform: scale(0.93);
+    transform: scale(0.97);
   }
   .rail button[aria-pressed='true'] {
     background: var(--accent-soft);

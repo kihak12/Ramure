@@ -51,8 +51,8 @@
     align-items: start;
     padding: 10px 10px 10px 12px;
     border-radius: var(--radius);
+    /* L'état est porté par l'icône, pas par un trait de couleur sur le bord. */
     border: 1px solid var(--line);
-    border-left: 3px solid var(--c);
     background: var(--raised);
     box-shadow: var(--shadow-pop);
     --c: var(--ok);

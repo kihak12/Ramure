@@ -336,8 +336,7 @@
     gap: 14px;
     padding: 5px 12px;
     min-height: 34px;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    border-bottom: 1px solid var(--line-soft);
     color: var(--muted);
     font-size: var(--fs-label);
     white-space: nowrap;

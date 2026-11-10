@@ -74,10 +74,10 @@
     overflow: auto;
     display: grid;
     place-items: start center;
+    margin: 8px;
     padding: 9vh 24px 32px;
-    background:
-      radial-gradient(900px 420px at 50% -80px, color-mix(in srgb, var(--accent) 13%, transparent), transparent 70%),
-      var(--bg);
+    border-radius: var(--radius-card);
+    background: var(--panel);
   }
   .inner {
     width: min(680px, 100%);
@@ -185,11 +185,8 @@
   }
   ul {
     list-style: none;
-    margin: 0;
-    padding: 4px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
-    background: var(--raised);
+    margin: 0 -6px;
+    padding: 0;
   }
   li {
     display: flex;

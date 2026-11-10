@@ -169,7 +169,6 @@
   }
   .conflicts {
     padding: 8px 10px;
-    border: 1px solid color-mix(in srgb, var(--bad) 35%, var(--line));
     border-radius: var(--radius);
     background: var(--bad-soft);
     max-height: 40%;

@@ -184,29 +184,33 @@
   .ssh {
     display: grid;
     grid-template-columns: 300px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
     height: 100%;
     min-height: 0;
+    background: var(--side);
   }
   .book {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto;
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
-    border-right: 1px solid var(--line);
-    background: var(--side);
+    overflow: hidden;
+    border-radius: var(--radius-card);
+    background: var(--panel);
   }
   .book header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 10px 10px 6px 12px;
+    padding: 12px 12px 6px;
   }
   .search {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 2px 10px 8px;
+    margin: 2px 12px 8px;
     padding: 0 8px;
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
@@ -235,12 +239,10 @@
     padding: 0 6px 8px;
   }
   .group {
-    padding: 10px 8px 4px;
-    font-size: var(--fs-micro);
+    padding: 10px 6px 4px;
+    font-size: var(--fs-label);
     font-weight: var(--fw-strong);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--faint);
+    color: var(--muted);
   }
   ul {
     list-style: none;
@@ -347,23 +349,21 @@
   .book footer {
     display: flex;
     gap: 6px;
-    padding: 8px 10px;
-    border-top: 1px solid var(--line);
+    padding: 8px 12px 12px;
+    border-top: 1px solid var(--line-soft);
   }
 
   .work {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px;
     min-width: 0;
     min-height: 0;
   }
   .tabs {
     display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    padding: 5px 8px 0;
-    background: var(--side);
-    border-bottom: 1px solid var(--line);
+    align-items: center;
+    gap: 4px;
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
@@ -373,10 +373,7 @@
     display: flex;
     align-items: center;
     min-width: 90px;
-    margin-bottom: -1px;
-    border: 1px solid transparent;
-    border-bottom: 0;
-    border-radius: var(--radius) var(--radius) 0 0;
+    border-radius: var(--radius);
     color: var(--muted);
     transition:
       background var(--t-fast) var(--ease),
@@ -388,7 +385,6 @@
   }
   .tab.current {
     background: var(--panel);
-    border-color: var(--line);
     color: var(--ink);
   }
   .open {
@@ -459,6 +455,9 @@
   .views {
     position: relative;
     min-height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-card);
+    background: var(--panel);
   }
   .view {
     position: absolute;
@@ -476,6 +475,8 @@
     gap: 14px;
     padding: 24px;
     text-align: center;
+    border-radius: var(--radius-card);
+    background: var(--panel);
     animation: fade-in var(--t-slow) var(--ease);
   }
   .empty p {
