@@ -10,7 +10,7 @@
   const stashes = $derived(repo.refs?.stashes.length ?? 0);
 
   function popStash() {
-    void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', "La remise n'a pas pu être appliquée");
+    void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', 'La remise n’a pas pu être appliquée');
   }
 </script>
 
@@ -46,7 +46,7 @@
     {@render tool(
       'pull',
       'Tirer',
-      status?.upstream ? `git pull depuis ${status.upstream}` : "Cette branche n'a pas de branche distante associée",
+      status?.upstream ? `git pull depuis ${status.upstream}` : 'Cette branche n’a pas de branche distante associée',
       !ready || !status?.upstream,
       () => void repo.sync('pull'),
       status?.behind ? String(status.behind) : undefined,
@@ -69,9 +69,9 @@
   </div>
 
   <div class="tools right">
-    {@render tool('refresh', 'Recharger', "Relire l'historique du dépôt", !ready, () => void repo.reload())}
+    {@render tool('refresh', 'Recharger', 'Relire l’historique du dépôt', !ready, () => void repo.reload())}
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
-    {@render tool('settings', 'Réglages', 'Fetch automatique, stratégie de pull, taille du graphe', false, () => void editSettings(repo))}
+    {@render tool('settings', 'Réglages', 'Récupération automatique, stratégie de tirage, taille du graphe', false, () => void editSettings(repo))}
   </div>
 </header>
 
@@ -91,7 +91,7 @@
     /* Largeur fixe : les actions gardent leur place, quel que soit le nom. Elle ne cède qu'à une fenêtre étroite. */
     flex: 0 1 140px;
     min-width: 70px;
-    padding: 3px 8px;
+    padding: 4px 8px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;
@@ -115,6 +115,7 @@
   }
   .crumb b {
     font-size: var(--fs-body);
+    font-weight: var(--fw-strong);
   }
   .small {
     color: var(--muted);
@@ -142,7 +143,7 @@
     align-items: center;
     gap: 2px;
     min-width: 58px;
-    padding: 4px 6px 3px;
+    padding: 4px 6px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;
@@ -160,10 +161,11 @@
     transform: translateY(-1px);
   }
   .tool:active:not(:disabled) {
-    transform: scale(0.95);
+    transform: scale(0.97);
   }
-  .tool:disabled {
-    opacity: 0.38;
+  .tool:disabled,
+  .crumb:disabled {
+    opacity: 0.45;
     cursor: not-allowed;
   }
   .glyph {

@@ -376,8 +376,8 @@ States are the same everywhere:
   icon.
 - During an operation, the icon spins and the button is disabled.
 - The repository and the current branch are on the left, the branch in the code font. Each has
-  a fixed width, 140 px and 200 px, so that the actions keep their place whatever the names. A
-  name that is cut gives its full text in a tooltip.
+  a fixed width, 140 px and 200 px, so that the actions keep their place whatever the names. The
+  two widths only yield to a narrow window, down to 70 px. The full name is always in a tooltip.
 
 ### 9.3 Fields
 
