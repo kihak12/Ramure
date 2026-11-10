@@ -224,7 +224,7 @@ De gauche à droite et de haut en bas :
 | Rail des modules (Git, SSH) | 48 px de large | `--side` |
 | Barre d'onglets | onglets de 30 px de haut | `--side` |
 | Barre d'outils | sur toute la largeur | `--side` |
-| Trois cartes : barre latérale, centre, détail | écartées de 8 px | `--panel` |
+| Trois cartes : barre latérale, centre, détail | écartées de 8 px ; les deux cartes latérales se règlent (9.16) | `--panel` |
 | Barre d'état | 26 px de haut | `--side` |
 
 - Aucun trait ne sépare ces zones : le fond et l'espace suffisent.
@@ -517,6 +517,24 @@ Barre latérale, listes de fichiers, graphe, résultats de la palette.
 
 - Fond `--term-bg`, texte `--term-ink`, police de code de 13 px.
 - Les onglets de terminal suivent la règle des onglets (9.7).
+
+### 9.16 Poignée de redimensionnement
+
+Entre deux cartes dont on règle la largeur : dans la vue d'un dépôt, de part et d'autre de la
+carte centrale.
+
+- La poignée occupe l'écart de 8 px entre les cartes. Au repos, elle ne se voit pas : le fond de
+  la fenêtre sépare déjà les cartes.
+- Survol : un repère vertical de 2 px en `--faint`, et le curseur de redimensionnement.
+- Pendant le geste et au focus : le même repère, en `--accent`. Pas de cadre autour de la
+  poignée.
+- Clavier : flèches gauche et droite par pas de 16 px, Début et Fin pour la largeur minimale et
+  maximale, Entrée pour la largeur par défaut.
+- Double-clic : largeur par défaut.
+- Chaque carte a une largeur minimale et une largeur maximale, et la carte centrale garde
+  toujours 360 px. Les largeurs choisies sont retrouvées au lancement suivant.
+- La poignée ne fait que 8 px de large : c'est la seule exception à la cible de 24 px, et le
+  clavier la compense.
 
 ## 10. Graphe des commits
 

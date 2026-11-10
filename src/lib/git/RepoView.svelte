@@ -6,6 +6,7 @@
   import ConflictEditor from './ConflictEditor.svelte';
   import DiffView from './DiffView.svelte';
   import Graph from './Graph.svelte';
+  import { SIDES, fit, layout, saveLayout } from './layout.svelte';
   import OperationBanner from './OperationBanner.svelte';
   import RebaseDialog from './RebaseDialog.svelte';
   import type { Repo } from './repo.svelte';
@@ -16,6 +17,7 @@
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
   import { motion } from '../ui/motion';
+  import Splitter from '../ui/Splitter.svelte';
 
   /** `active` : cet onglet est celui qu'on regarde. */
   let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
@@ -24,6 +26,11 @@
   // Onglet neuf, ou dossier qui n'a pas pu être ouvert : la page d'accueil remplace le graphe.
   const empty = $derived(!repo.result && !repo.loading);
   const pick = () => void workspace.pick();
+
+  // Largeurs des cartes latérales : celles qu'on a choisies, ramenées à ce que la fenêtre permet.
+  const GUTTERS = 32; // marges de la vue et les deux poignées
+  let bodyWidth = $state(0);
+  const sides = $derived(fit(bodyWidth, GUTTERS));
 
   // Le détail suit la sélection.
   $effect(() => {
@@ -64,8 +71,19 @@
     <div class="progress" class:on={repo.locked} aria-hidden="true"><span></span></div>
     <OperationBanner {repo} />
 
-    <div class="body" class:bare={!repo.result}>
-      {#if repo.result}<Sidebar {repo} />{/if}
+    <div class="body" class:bare={!repo.result} bind:clientWidth={bodyWidth} style:--sidebar="{sides.sidebar}px" style:--detail="{sides.detail}px">
+      {#if repo.result}
+        <Sidebar {repo} />
+        <Splitter
+          label="Largeur de la liste des branches"
+          value={sides.sidebar}
+          min={SIDES.sidebar.min}
+          max={sides.maxSidebar}
+          initial={SIDES.sidebar.initial}
+          onchange={(width) => (layout.sidebar = width)}
+          oncommit={saveLayout}
+        />
+      {/if}
 
       <div class="center">
         <Graph {repo} />
@@ -85,6 +103,16 @@
       </div>
 
       {#if repo.result}
+        <Splitter
+          label="Largeur du panneau de détail"
+          value={sides.detail}
+          min={SIDES.detail.min}
+          max={sides.maxDetail}
+          initial={SIDES.detail.initial}
+          direction={-1}
+          onchange={(width) => (layout.detail = width)}
+          oncommit={saveLayout}
+        />
         <aside class="detail" class:working={current?.wip}>
           {#key repo.currentKey}
             <div class="pane" in:fade={{ duration: motion.med }}>
@@ -160,8 +188,8 @@
     position: relative;
     flex: 1;
     display: grid;
-    grid-template-columns: 204px minmax(0, 1fr) 324px;
-    gap: 8px;
+    /* Entre les cartes, deux poignées de 8 px : elles tiennent lieu d'écart. */
+    grid-template-columns: var(--sidebar) 8px minmax(0, 1fr) 8px var(--detail);
     padding: 0 8px 8px;
     min-height: 0;
   }
