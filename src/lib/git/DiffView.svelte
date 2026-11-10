@@ -233,7 +233,7 @@
   </header>
 
   {#if halves.length}
-    <p class="half" role="status">
+    <p class="lonely" role="status">
       <Icon name="warning" size={14} />
       <span>
         {halves.length > 1 ? `${halves.length} lignes modifiées ne sont choisies` : 'Une ligne modifiée n’est choisie'} qu’à moitié : l’ancienne
@@ -340,7 +340,7 @@
 </section>
 
 <style>
-  .half {
+  .lonely {
     flex: none;
     display: flex;
     align-items: center;
@@ -351,11 +351,11 @@
     background: var(--warn-soft);
     font-size: var(--fs-small);
   }
-  .half :global(svg) {
+  .lonely :global(svg) {
     flex: none;
     color: var(--warn);
   }
-  .half span {
+  .lonely span {
     flex: 1;
     min-width: 0;
   }
