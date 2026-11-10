@@ -415,14 +415,17 @@ buttons.
   weight tell them apart, never the tint.
 - **A label never changes size**: not on click, not on hover, not when a branch is dragged onto
   it.
-- Hover: the tint of the background gets stronger.
+- Hover: the tint of the background gets stronger, 30% at most: beyond that, `--ink` falls
+  under 7:1 in the dark theme. The solid background of the current branch moves 10% towards
+  `--ink`, darker in light and lighter in dark, so that its text gains contrast in both themes.
+- The icons of a label are 14 px.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
 - A local branch and its remote branch on the same commit share one label, with both icons.
 - When a commit carries several labels, the first is shown and the others are counted in a
   "+N" pill.
 - Double-click: switch to the branch. Right-click: the branch menu.
-- During the switch, the waiting ring takes the place of the icon of the label, at the same
-  size.
+- During the switch, the waiting ring takes the place of the icon of the label, centred in the
+  same 14 px box.
 
 ### 9.5 Counters
 
@@ -565,8 +568,11 @@ centre card.
 
 ### 10.1 Columns
 
-In order: Branche / Tag (220 px, and 164 px when the card is 600 px wide or less), Graphe (420 px
-at most), Message, Auteur, Date, and SHA when the width allows it.
+In order: Branche / Tag (220 px), Graphe (420 px at most), Message, Auteur, Date, and SHA when
+the width allows it.
+
+The message comes first when room is short. When it would be less than 200 px wide, the
+"Branche / Tag" column gives its width back to it, down to 164 px.
 
 ### 10.2 Drawing
 
