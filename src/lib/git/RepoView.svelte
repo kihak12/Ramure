@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
   import CommitPanel from './CommitPanel.svelte';
@@ -28,9 +28,25 @@
   const pick = () => void workspace.pick();
 
   // Largeurs des cartes latérales : celles qu'on a choisies, ramenées à ce que la fenêtre permet.
-  const GUTTERS = 32; // marges de la vue et les deux poignées
   let bodyWidth = $state(0);
-  const sides = $derived(fit(bodyWidth, GUTTERS));
+  const sides = $derived(fit(bodyWidth));
+  // Une carte masquée n'a plus de colonne, ni sa poignée : le centre va jusqu'au bord de la vue.
+  const columns = $derived(
+    [layout.sidebarHidden ? '' : 'var(--sidebar) 8px', 'minmax(0, 1fr)', layout.detailHidden ? '' : '8px var(--detail)'].join(' ').trim(),
+  );
+
+  // Si le focus était dans la carte qu'on masque, il passe au graphe : il ne doit pas se perdre.
+  let sidebarEl = $state<HTMLElement>();
+  let detailEl = $state<HTMLElement>();
+  let centerEl = $state<HTMLElement>();
+  $effect.pre(() => {
+    const leaving = [layout.sidebarHidden ? sidebarEl : undefined, layout.detailHidden ? detailEl : undefined];
+    untrack(() => {
+      const focused = document.activeElement;
+      if (!active || !leaving.some((card) => card?.contains(focused))) return;
+      void tick().then(() => centerEl?.querySelector<HTMLElement>('[role="listbox"]')?.focus());
+    });
+  });
 
   // Le détail suit la sélection.
   $effect(() => {
@@ -71,21 +87,33 @@
     <div class="progress" class:on={repo.locked} aria-hidden="true"><span></span></div>
     <OperationBanner {repo} />
 
-    <div class="body" class:bare={!repo.result} bind:clientWidth={bodyWidth} style:--sidebar="{sides.sidebar}px" style:--detail="{sides.detail}px">
+    <div
+      class="body"
+      class:bare={!repo.result}
+      bind:clientWidth={bodyWidth}
+      style:--sidebar="{sides.sidebar}px"
+      style:--detail="{sides.detail}px"
+      style:--columns={columns}
+    >
       {#if repo.result}
-        <Sidebar {repo} />
-        <Splitter
-          label="Largeur de la liste des branches"
-          value={sides.sidebar}
-          min={SIDES.sidebar.min}
-          max={sides.maxSidebar}
-          initial={SIDES.sidebar.initial}
-          onchange={(width) => (layout.sidebar = width)}
-          oncommit={saveLayout}
-        />
+        <!-- Une carte masquée reste montée : son filtre, sa position et le message en cours sont gardés. -->
+        <div class="side" bind:this={sidebarEl} hidden={layout.sidebarHidden} inert={layout.sidebarHidden}>
+          <Sidebar {repo} />
+        </div>
+        {#if !layout.sidebarHidden}
+          <Splitter
+            label="Largeur de la liste des branches"
+            value={sides.sidebar}
+            min={SIDES.sidebar.min}
+            max={sides.maxSidebar}
+            initial={SIDES.sidebar.initial}
+            onchange={(width) => (layout.sidebar = width)}
+            oncommit={saveLayout}
+          />
+        {/if}
       {/if}
 
-      <div class="center">
+      <div class="center" bind:this={centerEl}>
         <Graph {repo} />
         {#if repo.openFile}
           <DiffView
@@ -103,17 +131,19 @@
       </div>
 
       {#if repo.result}
-        <Splitter
-          label="Largeur du panneau de détail"
-          value={sides.detail}
-          min={SIDES.detail.min}
-          max={sides.maxDetail}
-          initial={SIDES.detail.initial}
-          direction={-1}
-          onchange={(width) => (layout.detail = width)}
-          oncommit={saveLayout}
-        />
-        <aside class="detail" class:working={current?.wip}>
+        {#if !layout.detailHidden}
+          <Splitter
+            label="Largeur du panneau de détail"
+            value={sides.detail}
+            min={SIDES.detail.min}
+            max={sides.maxDetail}
+            initial={SIDES.detail.initial}
+            direction={-1}
+            onchange={(width) => (layout.detail = width)}
+            oncommit={saveLayout}
+          />
+        {/if}
+        <aside class="detail" class:working={current?.wip} bind:this={detailEl} hidden={layout.detailHidden} inert={layout.detailHidden}>
           {#key repo.currentKey}
             <div class="pane" in:fade={{ duration: motion.med }}>
               {#if current?.wip}
@@ -189,12 +219,22 @@
     flex: 1;
     display: grid;
     /* Entre les cartes, deux poignées de 8 px : elles tiennent lieu d'écart. */
-    grid-template-columns: var(--sidebar) 8px minmax(0, 1fr) 8px var(--detail);
+    grid-template-columns: var(--columns);
     padding: 0 8px 8px;
     min-height: 0;
   }
   .body.bare {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .side {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+  }
+  /* Une carte masquée ne prend plus de place ; `hidden` seul céderait à `display` ci-dessus. */
+  .side[hidden],
+  .detail[hidden] {
+    display: none;
   }
   .center,
   .detail {

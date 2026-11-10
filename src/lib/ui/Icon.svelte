@@ -43,6 +43,8 @@
     grip: '<path d="M6 4h.1M10 4h.1M6 8h.1M10 8h.1M6 12h.1M10 12h.1" stroke-width="2"/>',
     eye: '<path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="1.8"/>',
     refresh: '<path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5V5h-2.5"/>',
+    'panel-left': '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M6 3v10"/>',
+    'panel-right': '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M10 3v10"/>',
   } as const;
 
   export type IconName = keyof typeof PATHS;

@@ -4,6 +4,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
 import { toasts } from '../ui/toasts.svelte';
+import { revealDetail } from './layout.svelte';
 import { prefs, savePrefs, type Settings } from './prefs.svelte';
 import type {
   CommandLog,
@@ -266,10 +267,16 @@ export class Repo {
     this.reveal(index);
   }
 
-  showWip() {
+  /**
+   * Sélectionne les modifications en cours. C'est une demande de les voir : le panneau de détail
+   * revient s'il était masqué. `quiet` : l'appel ne vient pas de l'utilisateur, le panneau reste
+   * comme il l'a laissé (charte, section 9.17).
+   */
+  showWip(quiet = false) {
     if (this.commits[0]?.wip) {
       this.selected = 0;
       this.reveal(0);
+      if (!quiet) revealDetail();
     }
   }
 
@@ -409,7 +416,7 @@ export class Repo {
       this.busy = '';
     }
     await this.reload();
-    if (stopped) this.showWip();
+    if (stopped) this.showWip(true);
     return ok;
   }
 
