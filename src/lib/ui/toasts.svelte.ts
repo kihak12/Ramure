@@ -2,11 +2,18 @@
 
 export type ToastKind = 'ok' | 'warn' | 'err';
 
+/** L'action qu'une notification peut proposer : défaire ce qui vient d'être fait. */
+export interface ToastAction {
+  label: string;
+  run: () => void;
+}
+
 export interface Toast {
   id: number;
   kind: ToastKind;
   title: string;
   body: string;
+  action?: ToastAction;
 }
 
 /** Les sorties bavardes de git (push, fetch) sont réduites à leurs dernières lignes. */
@@ -16,17 +23,18 @@ class Toasts {
   items = $state<Toast[]>([]);
   #next = 1;
 
-  push(kind: ToastKind, title: string, body = '') {
+  push(kind: ToastKind, title: string, body = '', action?: ToastAction) {
     const id = this.#next++;
     const lines = body.trim().split('\n');
     const text = kind === 'ok' ? lines.slice(-MAX_LINES).join('\n') : lines.join('\n');
-    this.items = [...this.items, { id, kind, title, body: text }].slice(-5);
+    this.items = [...this.items, { id, kind, title, body: text, action }].slice(-5);
     // Une réussite s'efface seule ; un avertissement plus lentement ; une erreur reste jusqu'au clic.
-    if (kind !== 'err') window.setTimeout(() => this.dismiss(id), kind === 'ok' ? 4500 : 9000);
+    // Une notification qui propose une action laisse le temps de la lire et de cliquer.
+    if (kind !== 'err') window.setTimeout(() => this.dismiss(id), kind === 'ok' && !action ? 4500 : 9000);
   }
 
-  ok(title: string, body = '') {
-    this.push('ok', title, body);
+  ok(title: string, body = '', action?: ToastAction) {
+    this.push('ok', title, body, action);
   }
   warn(title: string, body = '') {
     this.push('warn', title, body);

@@ -268,7 +268,7 @@
     // Le bouton disparaît avec l'avertissement : le focus retourne dans les lignes.
     root?.querySelector<HTMLElement>('.lines')?.focus();
   };
-  const setMode = (mode: DiffMode) => savePrefs({ ...prefs, diffMode: mode });
+  const setMode = (mode: DiffMode) => savePrefs({ diffMode: mode });
 
   const applySelection = () => onapply?.([...selected]);
   const applyHunk = (hunk: number) => onapply?.(changes.filter((l) => l.hunk === hunk).map((l) => l.index));

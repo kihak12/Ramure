@@ -80,8 +80,12 @@
   --t-halo: 2.4s;
 }
 
+/* Thème sombre. Les mêmes valeurs sont écrites deux fois, CSS n'ayant pas de quoi les partager :
+   une fois pour qui suit le système, une fois pour qui a choisi « Sombre » dans les réglages
+   (`data-theme` sur la racine, posé par src/lib/settings/theme.svelte.ts). Les deux blocs
+   changent ensemble. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     color-scheme: dark;
     --side: #0c0d11;
     --panel: #181b21;
@@ -117,6 +121,42 @@
     --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
     --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
   }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --side: #0c0d11;
+  --panel: #181b21;
+  --bg: #111318;
+  --raised: #20242c;
+  --line: #2b303a;
+  --line-soft: #21252d;
+  --ink: #e6e9ef;
+  --muted: #959ca9;
+  --faint: #676e7b;
+  --hover: #1e222a;
+  --sel: #1d3252;
+  --accent: #6aa5f8;
+  --accent-soft: #182b45;
+  --on-accent: #08131f;
+  --ok: #5cc48d;
+  --ok-soft: #12301f;
+  --warn: #f0a94f;
+  --warn-soft: #3a2b14;
+  --bad: #f2776d;
+  --bad-soft: #3a1715;
+  --term-bg: #0b0c10;
+  --term-ink: #d5dae3;
+  --scrim: rgb(0 0 0 / 0.55);
+  --l0: #6aa5f8;
+  --l1: #f2844e;
+  --l2: #55c68b;
+  --l3: #b98aeb;
+  --l4: #e8be45;
+  --l5: #ee79a2;
+  --l6: #3fc4cc;
+  --l7: #b0c25a;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
 /* Qui a demandé moins d'animations n'en reçoit presque plus : les états changent sans transition. */

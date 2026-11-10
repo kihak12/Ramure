@@ -2,7 +2,7 @@
 // courant, branches, tags, onglets ouverts et dépôts récents.
 
 import type { Command } from '../ui/palette.svelte';
-import { createBranch, editSettings, forcePush, stashChanges, switchBranch, switchToRemote } from './actions';
+import { createBranch, forcePush, stashChanges, switchBranch, switchToRemote } from './actions';
 import { bare } from './labels';
 import { layout, toggleSide, toggleSides } from './layout.svelte';
 import { OPERATION } from './repo.svelte';
@@ -49,7 +49,6 @@ export function gitCommands(): Command[] {
     add({ id: 'tab-next', group: 'Actions', icon: 'chevron', title: 'Onglet suivant', run: () => workspace.cycle(1) });
     add({ id: 'tab-prev', group: 'Actions', icon: 'chevron', title: 'Onglet précédent', run: () => workspace.cycle(-1) });
   }
-  if (repo) add({ id: 'settings', group: 'Actions', icon: 'settings', title: 'Réglages…', keywords: 'preferences options style graphe', run: () => void editSettings(repo) });
 
   if (repo && open && repo.refs) {
     const locals = new Set(repo.refs.branches.map((b) => b.name));

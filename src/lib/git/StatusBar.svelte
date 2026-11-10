@@ -19,11 +19,11 @@
 
   const fetchText = $derived.by(() => {
     if (!result || !repo.refs?.remoteNames.length) return '';
-    if (!repo.settings.autoFetch) return 'Fetch auto désactivé';
-    if (!repo.lastFetch) return `Fetch auto toutes les ${repo.settings.autoFetch} min`;
+    if (!repo.settings.autoFetch) return 'Récupération auto désactivée';
+    if (!repo.lastFetch) return `Récupération auto toutes les ${repo.settings.autoFetch} min`;
     const minutes = Math.floor((now - repo.lastFetch.at) / 60_000);
     const when = minutes < 1 ? "à l'instant" : `il y a ${minutes} min`;
-    return repo.lastFetch.ok ? `Dernier fetch ${when}` : `Dernier fetch en échec, ${when}`;
+    return repo.lastFetch.ok ? `Dernière récupération ${when}` : `Dernière récupération en échec, ${when}`;
   });
 
   $effect(() => {

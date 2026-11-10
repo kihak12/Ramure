@@ -97,8 +97,8 @@ function read(): Record<string, string> {
 class Keys {
   /** Raccourcis modifiés par l'utilisateur ; une valeur vide retire le raccourci. */
   overrides = $state<Record<string, string>>(read());
-  /** Vrai tant que l'éditeur de raccourcis est ouvert. */
-  editing = $state(false);
+  /** Vrai tant qu'on tape une nouvelle combinaison dans les réglages : aucun raccourci ne se déclenche. */
+  recording = $state(false);
 
   binding(id: string): string {
     return this.overrides[id] ?? DEFAULTS.get(id) ?? '';
@@ -140,6 +140,11 @@ class Keys {
 
   resetAll() {
     this.#save({});
+  }
+
+  /** Remet des raccourcis personnalisés tels qu'ils étaient, après un « Tout réinitialiser » annulé. */
+  restore(overrides: Record<string, string>) {
+    this.#save({ ...overrides });
   }
 
   #save(next: Record<string, string>) {

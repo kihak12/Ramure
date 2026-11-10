@@ -1,4 +1,5 @@
-// Réglages de Ramure, communs à tous les dépôts ouverts.
+// Réglages de Ramure, communs à tous les dépôts ouverts. Ils se changent dans la page de réglages
+// (src/lib/settings/) et s'appliquent à l'instant.
 
 const STORAGE_KEY = 'ramure.settings';
 
@@ -6,6 +7,8 @@ export type PullMode = 'ff-only' | 'rebase' | 'merge';
 /** `ribbon` : pastilles d'auteur et rubans de couleur. `classic` : points et courbes, plus compact. */
 export type GraphStyle = 'ribbon' | 'classic';
 export type DiffMode = 'unified' | 'split';
+/** `system` : clair ou sombre, comme le système. */
+export type ThemeChoice = 'system' | 'light' | 'dark';
 
 export interface Settings {
   /** Commits chargés ; 0 pour tout l'historique. */
@@ -16,9 +19,13 @@ export interface Settings {
   graphStyle: GraphStyle;
   /** Diff sur une colonne, ou ancien et nouveau côte à côte. */
   diffMode: DiffMode;
+  theme: ThemeChoice;
 }
 
-const DEFAULTS: Settings = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified' };
+export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system' };
+
+/** Bornes de la récupération automatique, en minutes. */
+export const AUTO_FETCH = { min: 0, max: 60 } as const;
 
 function read(): Settings {
   try {
@@ -30,7 +37,8 @@ function read(): Settings {
 
 export const prefs = $state<Settings>(read());
 
-export function savePrefs(next: Settings) {
+/** Enregistre un ou plusieurs réglages. */
+export function savePrefs(next: Partial<Settings>) {
   Object.assign(prefs, next);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
