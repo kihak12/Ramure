@@ -203,7 +203,8 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
     if let Some(max_count) = &max_count {
         args.push(max_count);
     }
-    args.extend(["--exclude=refs/stash", "--all"]);
+    // Ni la remise, ni les sauvegardes que Ramure crée avant de réécrire l'historique.
+    args.extend(["--exclude=refs/stash", "--exclude=refs/ramure/*", "--all"]);
     if head.is_some() {
         args.push("HEAD");
     }

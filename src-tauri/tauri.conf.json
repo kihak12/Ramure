@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "Ramure",
-        "width": 1280,
-        "height": 800,
-        "minWidth": 900,
-        "minHeight": 560,
+        "width": 1440,
+        "height": 880,
+        "minWidth": 1000,
+        "minHeight": 600,
         "resizable": true,
         "fullscreen": false
       }

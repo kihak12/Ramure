@@ -1,6 +1,10 @@
 <script lang="ts">
-  import GraphView from './lib/git/GraphView.svelte';
+  import RepoView from './lib/git/RepoView.svelte';
   import SshView from './lib/ssh/SshView.svelte';
+  import ContextMenu from './lib/ui/ContextMenu.svelte';
+  import Dialog from './lib/ui/Dialog.svelte';
+  import Icon from './lib/ui/Icon.svelte';
+  import Toasts from './lib/ui/Toasts.svelte';
 
   type View = 'git' | 'ssh';
   let view = $state<View>('git');
@@ -9,24 +13,24 @@
 <div class="shell">
   <nav class="rail" aria-label="Modules">
     <button type="button" aria-pressed={view === 'git'} title="Dépôts" aria-label="Dépôts" onclick={() => (view = 'git')}>
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <circle cx="6" cy="4.5" r="2" /><circle cx="6" cy="15.5" r="2" /><circle cx="14" cy="6.5" r="2" />
-        <path d="M6 6.5v7M14 8.5c0 4-8 2.5-8 5" />
-      </svg>
+      <Icon name="branch" size={19} />
     </button>
     <button type="button" aria-pressed={view === 'ssh'} title="Terminal SSH" aria-label="Terminal SSH" onclick={() => (view = 'ssh')}>
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <rect x="2.5" y="3.5" width="15" height="13" rx="2" /><path d="m6 8 3 2-3 2M10.5 13H14" />
-      </svg>
+      <Icon name="terminal" size={19} />
     </button>
   </nav>
 
   <!-- Les deux vues restent montées : une session SSH survit au passage par le graphe. -->
   <main>
-    <section class="pane" hidden={view !== 'git'}><GraphView /></section>
-    <section class="pane" hidden={view !== 'ssh'}><SshView active={view === 'ssh'} /></section>
+    <section class="pane" class:hidden={view !== 'git'} inert={view !== 'git'}><RepoView /></section>
+    <section class="pane" class:hidden={view !== 'ssh'} inert={view !== 'ssh'}><SshView active={view === 'ssh'} /></section>
   </main>
 </div>
+
+<!-- Couches communes à toute l'application. -->
+<Dialog />
+<ContextMenu />
+<Toasts />
 
 <style>
   .shell {
@@ -44,42 +48,71 @@
     border-right: 1px solid var(--line);
   }
   .rail button {
+    position: relative;
     width: 36px;
     height: 36px;
-    border-radius: 8px;
+    border-radius: 9px;
     display: grid;
     place-items: center;
     color: var(--muted);
     background: none;
     border: 0;
     cursor: pointer;
+    transition:
+      background var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
   }
   .rail button:hover {
     background: var(--hover);
     color: var(--ink);
   }
-  .rail button[aria-pressed='true'] {
-    background: var(--sel);
-    color: var(--ink);
+  .rail button:active {
+    transform: scale(0.93);
   }
-  .rail svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .rail button[aria-pressed='true'] {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  /* Repère du module actif, qui glisse le long du rail. */
+  .rail button::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 9px;
+    bottom: 9px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform var(--t-med) var(--ease);
+  }
+  .rail button[aria-pressed='true']::before {
+    transform: scaleY(1);
   }
   main {
+    position: relative;
     min-width: 0;
     min-height: 0;
   }
+  /* Les vues sont superposées et se fondent l'une dans l'autre. */
   .pane {
-    height: 100%;
+    position: absolute;
+    inset: 0;
     min-height: 0;
+    transition:
+      opacity var(--t-med) var(--ease),
+      transform var(--t-med) var(--ease),
+      visibility 0s;
   }
-  .pane[hidden] {
-    display: none;
+  .pane.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    pointer-events: none;
+    transition:
+      opacity var(--t-med) var(--ease),
+      transform var(--t-med) var(--ease),
+      visibility 0s var(--t-med);
   }
 </style>
