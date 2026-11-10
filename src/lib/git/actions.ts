@@ -155,8 +155,8 @@ export async function resetTo(repo: Repo, commit: CommitRow) {
         value: 'mixed',
         options: [
           { value: 'soft', label: 'Ils restent indexés (soft)' },
-          { value: 'mixed', label: 'Ils restent dans les fichiers, non indexés (mixed)' },
-          { value: 'hard', label: 'Ils sont supprimés, avec les modifications en cours (hard)' },
+          { value: 'mixed', label: 'Ils restent dans les fichiers (mixed)' },
+          { value: 'hard', label: 'Ils sont supprimés (hard)' },
         ],
       },
     ],
@@ -223,10 +223,11 @@ export async function editSettings(repo: Repo) {
         type: 'select',
         value: current.pullMode,
         options: [
-          { value: 'ff-only', label: 'Avance rapide seulement (refuse si les branches ont divergé)' },
-          { value: 'rebase', label: 'Rebaser mes commits sur la branche distante' },
+          { value: 'ff-only', label: 'Avance rapide seulement' },
+          { value: 'rebase', label: 'Rebaser mes commits' },
           { value: 'merge', label: 'Fusionner la branche distante' },
         ],
+        hint: 'En avance rapide, le pull est refusé si ta branche et la branche distante ont divergé.',
       },
       {
         name: 'limit',

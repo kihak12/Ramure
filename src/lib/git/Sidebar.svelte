@@ -10,6 +10,8 @@
 
   type Section = 'local' | 'remote' | 'tags' | 'stashes';
   const STORAGE_KEY = 'ramure.sidebar';
+  // Au-delà, une section n'affiche que le début de sa liste : le filtre sert à trouver le reste.
+  const MAX_ITEMS = 200;
 
   function readClosed(): Section[] {
     try {
@@ -70,6 +72,12 @@
   </button>
 {/snippet}
 
+{#snippet rest(total: number)}
+  {#if total > MAX_ITEMS}
+    <li class="none">… et {total - MAX_ITEMS} autres : utilise le filtre</li>
+  {/if}
+{/snippet}
+
 <aside class="sidebar" aria-label="Branches, tags et remises">
   <label class="search">
     <Icon name="search" size={14} />
@@ -80,7 +88,7 @@
     {@render heading('local', 'laptop', 'Local', branches.length)}
     {#if isOpen('local')}
       <ul transition:slide={{ duration: 180 }}>
-        {#each branches as branch (branch.name)}
+        {#each branches.slice(0, MAX_ITEMS) as branch (branch.name)}
           <li>
             <button
               type="button"
@@ -101,13 +109,14 @@
         {:else}
           <li class="none">Aucune branche</li>
         {/each}
+        {@render rest(branches.length)}
       </ul>
     {/if}
 
     {@render heading('remote', 'cloud', 'Distant', remotes.length)}
     {#if isOpen('remote')}
       <ul transition:slide={{ duration: 180 }}>
-        {#each remotes as remote (remote.name)}
+        {#each remotes.slice(0, MAX_ITEMS) as remote (remote.name)}
           <li>
             <button
               type="button"
@@ -124,13 +133,14 @@
         {:else}
           <li class="none">{refs?.remoteNames.length ? 'Aucune branche distante' : 'Aucun dépôt distant'}</li>
         {/each}
+        {@render rest(remotes.length)}
       </ul>
     {/if}
 
     {@render heading('tags', 'tag', 'Tags', tags.length)}
     {#if isOpen('tags')}
       <ul transition:slide={{ duration: 180 }}>
-        {#each tags as tag (tag.name)}
+        {#each tags.slice(0, MAX_ITEMS) as tag (tag.name)}
           <li>
             <button
               type="button"
@@ -146,6 +156,7 @@
         {:else}
           <li class="none">Aucun tag</li>
         {/each}
+        {@render rest(tags.length)}
       </ul>
     {/if}
 

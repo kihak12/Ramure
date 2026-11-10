@@ -481,6 +481,8 @@
     padding-right: 10px;
     cursor: pointer;
     white-space: nowrap;
+    /* Un double-clic bascule de branche : il ne doit pas sélectionner du texte au passage. */
+    user-select: none;
     transition: background var(--t-fast) var(--ease);
   }
   .row::before {
