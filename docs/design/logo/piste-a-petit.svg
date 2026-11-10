@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="6.6" stroke-linecap="round" stroke-linejoin="round">
+  <title>Ramure, piste A : les bois, dessin des petites tailles</title>
+  <path d="M32 56 V46"/>
+  <g>
+  <path d="M32 46 C32 34 9 40 9 10"/>
+  <path d="M20.5 36.5 C21.5 28 19.5 24 20.5 15"/>
+  </g>
+  <g transform="matrix(-1 0 0 1 64 0)">
+  <path d="M32 46 C32 34 9 40 9 10"/>
+  <path d="M20.5 36.5 C21.5 28 19.5 24 20.5 15"/>
+  </g>
+  <circle cx="32" cy="55.5" r="5.6" fill="currentColor" stroke="none"/>
+</svg>

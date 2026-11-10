@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <title>Ramure, piste A : les bois</title>
+  <path d="M32 57 V48"/>
+  <g>
+  <path d="M32 48 C32 38 10 42 9 20 C8.8 15 9.6 10.5 12.5 7.5"/>
+  <path d="M27.2 41.7 C27.6 35 24.6 31 25.2 25"/>
+  <path d="M17.5 36.4 C18.1 30 16.6 24 17.6 17"/>
+  </g>
+  <g transform="matrix(-1 0 0 1 64 0)">
+  <path d="M32 48 C32 38 10 42 9 20 C8.8 15 9.6 10.5 12.5 7.5"/>
+  <path d="M27.2 41.7 C27.6 35 24.6 31 25.2 25"/>
+  <path d="M17.5 36.4 C18.1 30 16.6 24 17.6 17"/>
+  </g>
+  <g fill="currentColor" stroke="none">
+  <circle cx="32" cy="57" r="4.4"/>
+  <circle cx="12.5" cy="7.5" r="3.5"/>
+  <g transform="matrix(-1 0 0 1 64 0)">
+  <circle cx="12.5" cy="7.5" r="3.5"/>
+  </g>
+  </g>
+</svg>
