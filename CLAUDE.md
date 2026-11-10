@@ -19,6 +19,12 @@ Tauri 2, Rust, Svelte 5.
   light and in dark, whenever you can take them: without them it only judges the code. Fix the
   violations it reports, the most severe first, and settle its drifts with whoever asked for
   the change.
+- Before building a new screen, or when asked how a screen could be better, ask the
+  `ux-designer` subagent for proposals. Give it screenshots of the screen in light and in dark,
+  and the task the user does there. It proposes, and whoever asked decides: build only what
+  was kept, then have it reviewed by `design-reviewer`.
+- `scripts/ecran.sh` takes screenshots of the application on Linux without a display: it runs
+  the release build on a virtual screen, in light or in dark, and `xdotool` drives it.
 
 ## Conventions
 
