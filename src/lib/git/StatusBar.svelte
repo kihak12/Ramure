@@ -39,7 +39,8 @@
   </button>
   <div class="stats" aria-live="polite">
     {#if repo.busy}
-      <span class="busy"><span class="spinner"></span>{repo.switching ? `Basculement sur ${repo.switching}…` : 'Opération en cours…'}</span>
+      {@const doing = repo.switching ? `Basculement sur ${repo.switching}…` : 'Opération en cours…'}
+      <span class="busy" title={doing}><span class="spinner"></span><span class="doing">{doing}</span></span>
     {/if}
     {#if fetchText}<span class:bad={repo.lastFetch?.ok === false}>{fetchText}</span>{/if}
     {#if repo.loading}
@@ -121,8 +122,15 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
     color: var(--ink);
     --spinner: var(--muted);
+  }
+  /* Un nom de branche long ne doit pas chasser le reste de la barre. */
+  .doing {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .stats b {
     color: var(--ink);
