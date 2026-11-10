@@ -6,10 +6,23 @@
   import { motion } from './motion';
 
   const ICON = { ok: 'check', warn: 'warning', err: 'warning' } as const;
+
+  // Dans un titre, un mot trop long (un nom de branche, un chemin) est coupé en son milieu : son
+  // début et sa fin restent lisibles. Le titre complet est en infobulle, et lu par les lecteurs d'écran.
+  const LONG = 36;
+  const HEAD = 24;
+  const TAIL = 10;
+  function clip(title: string) {
+    return title
+      .split(' ')
+      .map((word) => (word.length > LONG ? `${word.slice(0, HEAD)}…${word.slice(-TAIL)}` : word))
+      .join(' ');
+  }
 </script>
 
 <div class="toasts" aria-live="polite">
   {#each toasts.items as toast (toast.id)}
+    {@const title = clip(toast.title)}
     <div
       class="toast k-{toast.kind}"
       role={toast.kind === 'err' ? 'alert' : 'status'}
@@ -19,7 +32,11 @@
     >
       <span class="badge"><Icon name={ICON[toast.kind]} size={14} /></span>
       <div class="text">
-        <b>{toast.title}</b>
+        {#if title === toast.title}
+          <b>{title}</b>
+        {:else}
+          <b title={toast.title}><span aria-hidden="true">{title}</span><span class="spoken">{toast.title}</span></b>
+        {/if}
         {#if toast.body}<pre class="mono">{toast.body}</pre>{/if}
       </div>
       <button class="close" type="button" aria-label="Fermer la notification" onclick={() => toasts.dismiss(toast.id)}>
@@ -75,6 +92,18 @@
   .text {
     min-width: 0;
     padding-top: 2px;
+  }
+  .text b {
+    font-weight: var(--fw-strong);
+  }
+  /* Hors de l'écran, mais lu : le titre entier, quand celui qui est affiché est coupé. */
+  .spoken {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   pre {
     margin: 4px 0 0;

@@ -1,4 +1,4 @@
-// Notifications éphémères, affichées en bas à droite de la fenêtre.
+// Notifications éphémères, affichées en bas, au centre de la fenêtre.
 
 export type ToastKind = 'ok' | 'warn' | 'err';
 
