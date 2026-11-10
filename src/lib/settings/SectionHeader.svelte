@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { toasts } from '../ui/toasts.svelte';
 
   /**
@@ -8,9 +9,21 @@
    */
   let { title, note = '', changed, onreset }: { title: string; note?: string; changed: boolean; onreset: () => () => void } = $props();
 
-  function reset() {
+  let button = $state<HTMLButtonElement>();
+
+  function reset(event: MouseEvent) {
     const undo = onreset();
-    toasts.ok(`« ${title} » : valeurs par défaut rétablies`, '', { label: 'Annuler', run: undo });
+    // Lancé au clavier (un clic sans bouton de souris) : le bouton se grise et perdrait le focus.
+    // Il va sur « Annuler », qui est ainsi à une touche, puis revient ici une fois l'annulation faite.
+    const keyboard = event.detail === 0;
+    toasts.ok(`« ${title} » : valeurs par défaut rétablies`, '', {
+      label: 'Annuler',
+      focus: keyboard,
+      run: () => {
+        undo();
+        if (keyboard) void tick().then(() => button?.focus());
+      },
+    });
   }
 </script>
 
@@ -20,6 +33,7 @@
     {#if note}<p>{note}</p>{/if}
   </div>
   <button
+    bind:this={button}
     class="btn ghost small"
     type="button"
     disabled={!changed}
