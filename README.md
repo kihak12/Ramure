@@ -31,6 +31,11 @@ the French label in quotes.
 - **Resizable cards**: the branch list on the left and the detail panel on the right are resized
   by dragging the handle between them and the graph, or from the keyboard. Widths are kept from
   one launch to the next; a double-click restores the default width.
+- **Cards that can be hidden**: each of the two is hidden and shown again with the button at its
+  end of the toolbar, with Ctrl + Shift + B (branch list) or Ctrl + Shift + E (detail panel), or
+  from the command palette, to read the graph on the whole width. A hidden detail panel only
+  comes back when asked for: Enter or a double-click on a commit, a click on the "WIP" row, or
+  "Voir les modifications en cours".
 
 ### Graph
 

@@ -1,6 +1,8 @@
 <script lang="ts">
   import Icon, { type IconName } from '../ui/Icon.svelte';
+  import { display, keys } from '../ui/keys.svelte';
   import { createBranch, editSettings, stashChanges } from './actions';
+  import { layout, toggleSide, type Side } from './layout.svelte';
   import type { Repo } from './repo.svelte';
 
   let { repo, onpick }: { repo: Repo; onpick: () => void } = $props();
@@ -8,6 +10,11 @@
   const status = $derived(repo.status);
   const ready = $derived(!!repo.result && !repo.locked);
   const stashes = $derived(repo.refs?.stashes.length ?? 0);
+
+  const VIEWS = {
+    sidebar: { icon: 'panel-left', name: 'Liste des branches', what: 'la liste des branches', command: 'toggle-sidebar' },
+    detail: { icon: 'panel-right', name: 'Panneau de détail', what: 'le panneau de détail', command: 'toggle-detail' },
+  } as const;
 
   function popStash() {
     void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', 'La remise n’a pas pu être appliquée');
@@ -24,7 +31,26 @@
   </button>
 {/snippet}
 
+<!-- Bouton de vue : enfoncé quand la carte est affichée. L'infobulle dit ce qu'un clic fera. -->
+{#snippet view(side: Side)}
+  {@const spec = VIEWS[side]}
+  {@const hidden = layout[`${side}Hidden`]}
+  {@const combo = keys.binding(spec.command)}
+  <button
+    class="view"
+    type="button"
+    aria-label={spec.name}
+    aria-pressed={!hidden}
+    title="{hidden ? 'Afficher' : 'Masquer'} {spec.what}{combo ? ` (${display(combo)})` : ''}"
+    disabled={!repo.result}
+    onclick={() => toggleSide(side)}
+  >
+    <Icon name={spec.icon} size={18} />
+  </button>
+{/snippet}
+
 <header class="toolbar">
+  {@render view('sidebar')}
   <button
     class="crumb"
     type="button"
@@ -73,6 +99,7 @@
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
     {@render tool('settings', 'Réglages', 'Récupération automatique, stratégie de tirage, taille du graphe', false, () => void editSettings(repo))}
   </div>
+  {@render view('detail')}
 </header>
 
 <style>
@@ -164,9 +191,43 @@
     transform: scale(0.97);
   }
   .tool:disabled,
-  .crumb:disabled {
+  .crumb:disabled,
+  .view:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+  }
+  /* Boutons de vue, aux deux bouts de la barre : une icône seule (charte, section 9.2). */
+  .view {
+    flex: none;
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: var(--radius-s);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      background var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  .view:hover:not(:disabled) {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .view:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .view[aria-pressed='true'] {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .view[aria-pressed='true']:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
+    color: var(--accent);
   }
   .glyph {
     position: relative;

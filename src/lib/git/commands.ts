@@ -4,6 +4,7 @@
 import type { Command } from '../ui/palette.svelte';
 import { createBranch, editSettings, forcePush, stashChanges, switchBranch, switchToRemote } from './actions';
 import { bare } from './labels';
+import { layout, toggleSide, toggleSides } from './layout.svelte';
 import { OPERATION } from './repo.svelte';
 import { workspace } from './workspace.svelte';
 
@@ -34,6 +35,10 @@ export function gitCommands(): Command[] {
     add({ id: 'stash', group: 'Actions', icon: 'stash', title: 'Remiser les modifications…', keywords: 'stash', disabled: !idle || repo.wipCount === 0, run: () => void stashChanges(repo) });
     add({ id: 'pop', group: 'Actions', icon: 'pop', title: 'Dépiler la dernière remise', keywords: 'stash pop', disabled: !idle || !repo.refs?.stashes.length, run: () => void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', "La remise n'a pas pu être appliquée") });
     add({ id: 'reload', group: 'Actions', icon: 'refresh', title: 'Recharger le dépôt', disabled: !idle, run: () => void repo.reload() });
+    // Le titre dit ce que la commande fera : il suit l'état de la carte.
+    add({ id: 'toggle-sidebar', group: 'Affichage', icon: 'panel-left', title: layout.sidebarHidden ? 'Afficher la liste des branches' : 'Masquer la liste des branches', keywords: 'panneau barre laterale replier', run: () => toggleSide('sidebar') });
+    add({ id: 'toggle-detail', group: 'Affichage', icon: 'panel-right', title: layout.detailHidden ? 'Afficher le panneau de détail' : 'Masquer le panneau de détail', keywords: 'panneau commit replier', run: () => toggleSide('detail') });
+    add({ id: 'toggle-sides', group: 'Affichage', icon: 'panels', title: layout.sidebarHidden && layout.detailHidden ? 'Réafficher les panneaux latéraux' : 'Masquer les panneaux latéraux', keywords: 'graphe en grand replier', run: toggleSides });
   }
   add({ id: 'open', group: 'Actions', icon: 'folder', title: 'Ouvrir un dépôt…', run: () => void workspace.pick() });
   add({ id: 'clone', group: 'Actions', icon: 'cloud', title: 'Cloner un dépôt…', keywords: 'clone', run: () => (workspace.cloning = true) });

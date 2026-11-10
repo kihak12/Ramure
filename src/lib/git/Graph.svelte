@@ -5,6 +5,7 @@
   import { commitMenu, dropMenu, labelMenu, switchBranch, switchToRemote } from './actions';
   import { accepts, drag, isBranch } from './drag.svelte';
   import { bare, labelsOf, type Label } from './labels';
+  import { revealDetail } from './layout.svelte';
   import { prefs } from './prefs.svelte';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
@@ -270,6 +271,8 @@
   function select(index: number) {
     repo.selected = index;
     scroller?.focus({ preventScroll: true });
+    // La ligne des modifications en cours : on y vient pour indexer ou commiter, le détail revient.
+    if (commits[index]?.wip) revealDetail();
   }
 
   /** Focus au clavier : la liste a toujours un commit sélectionné et visible, c'est lui qui porte le repère. */
@@ -281,6 +284,13 @@
 
   function onKey(e: KeyboardEvent) {
     if (!commits.length) return;
+    // Entrée demande le détail du commit sélectionné : il revient s'il était masqué. Les flèches,
+    // elles, ne font que déplacer la sélection (charte, section 9.17).
+    if (e.key === 'Enter' && repo.selected >= 0) {
+      e.preventDefault();
+      revealDetail();
+      return;
+    }
     const page = Math.max(1, Math.floor(viewH / ROW) - 1);
     const moves: Record<string, number> = {
       ArrowDown: repo.selected + 1,
@@ -452,6 +462,7 @@
           style:--i={Math.min(i, 30)}
           style:--c="var(--l{commit.lane % 8})"
           onclick={() => select(index)}
+          ondblclick={revealDetail}
           oncontextmenu={(e) => openCommitMenu(e, commit, index)}
         >
           <span class="labels">
