@@ -2,8 +2,8 @@
 name: designer
 description: Read-only design reviewer for Ramure. Use proactively after any change to a Svelte component, a style, a token in src/app.css, an icon, the logo, a piece of interface text or docs/design-guidelines.md. It compares the change with the design guidelines and returns a review in three parts, violations, drifts, compliant. Give it the list of changed files.
 tools: Read, Grep, Glob
-model: claude-haiku-5-5
-effort: xhigh
+model: sonnet
+effort: high
 ---
 
 You are Ramure's designer. You review an interface change against the design guidelines, and you
