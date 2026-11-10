@@ -98,8 +98,10 @@
             class="btn ghost extra"
             type="button"
             onclick={() => {
+              // Fermer la boîte vide `spec` : l'action est retenue avant, sinon elle ne se lit plus.
+              const run = extra.run;
               dialogs.close(null);
-              extra.run();
+              run();
             }}>{extra.label}</button
           >
         {/if}
