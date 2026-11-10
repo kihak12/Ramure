@@ -1,11 +1,16 @@
 <script lang="ts">
+  import { homeDir, join } from '@tauri-apps/api/path';
+  import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
+  import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
   import type { Host } from './types';
 
   let element = $state<HTMLDialogElement>();
   let form = $state<Host | null>(null);
   let tags = $state('');
+  /** Remarque affichée sous le champ de la clé après un choix dans la fenêtre de fichiers. */
+  let keyNote = $state('');
 
   const editing = $derived(ssh.editing);
   const valid = $derived(!!form && form.alias.trim() !== '' && form.hostname.trim() !== '');
@@ -16,6 +21,7 @@
     if (editing && !element.open) {
       form = { ...editing, tags: [...editing.tags] };
       tags = editing.tags.join(', ');
+      keyNote = '';
       element.showModal();
     } else if (!editing && element.open) {
       element.close();
@@ -37,6 +43,36 @@
     if (!saved) return;
     close();
     if (connect) ssh.open(saved);
+  }
+
+  /** Choisit la clé privée dans la fenêtre de fichiers du système, ouverte dans `~/.ssh`. */
+  async function browseKey() {
+    let home = '';
+    let folder: string | undefined;
+    try {
+      home = (await homeDir()).replace(/[\\/]+$/, '');
+      folder = await join(home, '.ssh');
+    } catch {
+      folder = undefined; // dossier personnel introuvable : la fenêtre s'ouvre où le système le décide
+    }
+    let picked: string | null;
+    try {
+      picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: folder });
+    } catch (e) {
+      toasts.err("La fenêtre de fichiers n'a pas pu s'ouvrir", e instanceof Error ? e.message : String(e));
+      return;
+    }
+    // Fenêtre annulée, ou fiche fermée entre-temps : le champ ne change pas.
+    if (!picked || !form) return;
+    keyNote = '';
+    if (picked.endsWith('.pub')) {
+      // La connexion se fait avec la clé privée, rangée à côté sous le même nom.
+      picked = picked.slice(0, -'.pub'.length);
+      keyNote = 'Tu as choisi la clé publique : le champ pointe sur la clé privée du même nom, qui sert à se connecter.';
+    }
+    // Dans le dossier personnel, le chemin s'écrit `~/…`, comme les clés proposées par le champ.
+    if (home && picked.startsWith(home) && /^[\\/]/.test(picked.slice(home.length))) picked = `~${picked.slice(home.length)}`;
+    form.keyPath = picked;
   }
 
   /** Connexion ponctuelle : rien n'est inscrit dans le carnet. */
@@ -99,14 +135,31 @@
           </select>
         </label>
         {#if form.auth === 'keyFile'}
-          <label class="full">
-            <span class="label">Clé privée</span>
-            <input class="field mono" type="text" list="host-keys" placeholder="~/.ssh/id_ed25519" spellcheck="false" autocomplete="off" bind:value={form.keyPath} />
+          <div class="full key">
+            <label for="host-key"><span class="label">Clé privée</span></label>
+            <div class="pick">
+              <input
+                id="host-key"
+                class="field mono"
+                type="text"
+                list="host-keys"
+                placeholder="~/.ssh/id_ed25519"
+                spellcheck="false"
+                autocomplete="off"
+                bind:value={form.keyPath}
+                oninput={() => (keyNote = '')}
+              />
+              <button class="btn" type="button" onclick={() => void browseKey()}><Icon name="folder" size={14} /> Parcourir…</button>
+            </div>
             <datalist id="host-keys">
               {#each ssh.keys as key (key.path)}<option value={key.path}>{key.algorithm}{key.comment ? ` · ${key.comment}` : ''}</option>{/each}
             </datalist>
-            <small>Si la clé est protégée, sa phrase secrète est demandée à la connexion.</small>
-          </label>
+            {#if keyNote}
+              <small class="note" role="status">{keyNote}</small>
+            {:else}
+              <small>Si la clé est protégée, sa phrase secrète est demandée à la connexion.</small>
+            {/if}
+          </div>
         {/if}
 
         <label class="full">
@@ -199,11 +252,23 @@
     gap: 10px 12px;
   }
   .grid label,
+  .key,
   fieldset {
     display: flex;
     flex-direction: column;
     gap: 5px;
     min-width: 0;
+  }
+  /* Le champ de la clé et son bouton « Parcourir… » côte à côte. */
+  .pick {
+    display: flex;
+    gap: 8px;
+  }
+  .pick .field {
+    flex: 1;
+  }
+  .note {
+    color: var(--warn);
   }
   /* Six colonnes : l'adresse en prend cinq, le port une. */
   .full {
