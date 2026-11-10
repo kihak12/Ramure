@@ -375,7 +375,9 @@ States are the same everywhere:
 - A counter (commits to pull, to push) is a round badge in `--accent`, at the top right of the
   icon.
 - During an operation, the icon spins and the button is disabled.
-- The repository and the current branch are on the left, the branch in the code font.
+- The repository and the current branch are on the left, the branch in the code font. Each has
+  a fixed width, 140 px and 200 px, so that the actions keep their place whatever the names. A
+  name that is cut gives its full text in a tooltip.
 
 ### 9.3 Fields
 

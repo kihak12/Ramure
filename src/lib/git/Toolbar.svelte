@@ -25,12 +25,18 @@
 {/snippet}
 
 <header class="toolbar">
-  <button class="crumb" type="button" onclick={onpick} disabled={repo.locked} title="Ouvrir un autre dépôt…">
+  <button
+    class="crumb"
+    type="button"
+    onclick={onpick}
+    disabled={repo.locked}
+    title={repo.result ? `${repo.result.name} — ouvrir un autre dépôt…` : 'Ouvrir un dépôt…'}
+  >
     <span class="small">dépôt</span>
     <b>{repo.result?.name ?? 'Aucun dépôt'}</b>
   </button>
   <span class="sep"><Icon name="chevron" size={14} /></span>
-  <div class="crumb static">
+  <div class="crumb static" title={repo.result ? (repo.branch ?? 'HEAD détaché') : undefined}>
     <span class="small">branche</span>
     <b class="mono">{repo.result ? (repo.branch ?? 'HEAD détaché') : '—'}</b>
   </div>
@@ -82,8 +88,9 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    /* Largeur fixe : les actions gardent leur place, quel que soit le nom. Elle ne cède qu'à une fenêtre étroite. */
+    flex: 0 1 140px;
     min-width: 70px;
-    max-width: 220px;
     padding: 3px 8px;
     border: 0;
     border-radius: var(--radius-s);
@@ -94,6 +101,7 @@
     transition: background var(--t-fast) var(--ease);
   }
   .crumb.static {
+    flex-basis: 200px;
     cursor: default;
   }
   button.crumb:hover:not(:disabled) {
