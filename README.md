@@ -158,7 +158,9 @@ npm run check
 ```
 
 This command checks the types, then rejects any colour, text size, weight, radius or duration
-hard-coded in a component: those values come from the tokens in `src/app.css`.
+hard-coded in a component: those values come from the tokens in `src/app.css`. Last, it rejects
+two files of `src/` whose names differ only by case, such as `Toasts.svelte` and
+`toasts.svelte.ts`: on Windows an import of one loads the other, and the window stays blank.
 
 ```bash
 cd src-tauri && cargo test

@@ -6,10 +6,10 @@
   import Dialog from './lib/ui/Dialog.svelte';
   import Icon from './lib/ui/Icon.svelte';
   import { allowedInTerminal, comboOf, display, keys } from './lib/ui/keys.svelte';
-  import Palette from './lib/ui/Palette.svelte';
+  import CommandPalette from './lib/ui/CommandPalette.svelte';
   import ShortcutsDialog from './lib/ui/ShortcutsDialog.svelte';
   import { palette, type Command } from './lib/ui/palette.svelte';
-  import Toasts from './lib/ui/Toasts.svelte';
+  import Notifications from './lib/ui/Notifications.svelte';
 
   type View = 'git' | 'ssh';
   let view = $state<View>('git');
@@ -77,11 +77,11 @@
 </div>
 
 <!-- Couches communes à toute l'application. -->
-<Palette />
+<CommandPalette />
 <ShortcutsDialog />
 <Dialog />
 <ContextMenu />
-<Toasts />
+<Notifications />
 
 <style>
   .shell {

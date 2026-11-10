@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "check": "svelte-check --tsconfig ./tsconfig.json && node scripts/verifier-jetons.mjs",
+    "check": "svelte-check --tsconfig ./tsconfig.json && node scripts/verifier-jetons.mjs && node scripts/verifier-noms.mjs",
     "check:jetons": "node scripts/verifier-jetons.mjs",
     "tauri": "tauri"
   },
