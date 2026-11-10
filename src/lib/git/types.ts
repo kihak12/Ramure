@@ -96,6 +96,16 @@ export interface Failed {
 
 // --- Références et historique (src-tauri/src/git/ops.rs) ----------------------------------
 
+/** Position de la branche locale qui porte le nom d'une branche distante, par rapport à elle. */
+export interface Relation {
+  /** Nom de la branche locale ; `null` si elle n'existe pas encore. */
+  local: string | null;
+  /** Commits de la branche locale absents de la branche distante. */
+  ahead: number;
+  /** Commits de la branche distante absents de la branche locale. */
+  behind: number;
+}
+
 export interface Branch {
   name: string;
   sha: string;

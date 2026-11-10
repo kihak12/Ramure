@@ -55,6 +55,8 @@ Tout passe par le clic droit sur un commit ou sur une étiquette, et par la barr
 
 - **Branches** : basculer par double-clic, créer depuis un commit, renommer, supprimer en local
   et sur le dépôt distant, suivre une branche distante.
+- **Double-clic sur une branche distante** : bascule sur la branche locale et la met à jour. En
+  retard, elle est avancée ; si les deux ont divergé, Ramure demande avant de rebaser.
 - **Tags** : léger ou annoté, pousser, supprimer en local et sur le dépôt distant.
 - **Fusion, rebase, cherry-pick, revert, reset** (soft, mixed, hard).
 - **Conflits** : quand une opération s'arrête, un bandeau propose Continuer, Passer et

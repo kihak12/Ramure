@@ -9,11 +9,57 @@ import { refName } from './drag.svelte';
 import { bare, type Label } from './labels';
 import type { Settings } from './prefs.svelte';
 import type { Repo } from './repo.svelte';
-import type { CommitRow, FileChange, ResetMode, Stash } from './types';
+import type { CommitRow, FileChange, Relation, ResetMode, Stash } from './types';
 
 const short = (sha: string) => sha.slice(0, 7);
+const commits = (count: number) => `${count} commit${count > 1 ? 's' : ''}`;
 
 // --- Branches -----------------------------------------------------------------------------
+
+/**
+ * Bascule sur la branche locale qui suit la branche distante `remote`, et la met à jour.
+ * - Pas encore de branche locale : elle est créée.
+ * - Branche locale en retard : elle est avancée jusqu'à la branche distante.
+ * - Branche locale en avance : rien à récupérer, on bascule seulement.
+ * - Branches divergées : on demande avant de rebaser, car un rebase réécrit les commits locaux.
+ */
+export async function switchToRemote(repo: Repo, remote: string) {
+  if (repo.locked) return;
+  const local = bare(remote);
+  const failed = 'Impossible de basculer';
+  let relation: Relation;
+  try {
+    relation = await repo.git<Relation>('git_remote_relation', { remote });
+  } catch (e) {
+    toasts.err(failed, e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  const { ahead, behind } = relation;
+  if (relation.local === null || ahead === 0 || behind === 0) {
+    let done = `Basculé sur ${local}`;
+    if (relation.local !== null && behind > 0) done += `, mise à jour avec ${remote} (${commits(behind)})`;
+    else if (ahead > 0) done += `, qui a ${commits(ahead)} d'avance sur ${remote}`;
+    await repo.refOp({ op: 'switch-remote', name: remote }, done, failed);
+    return;
+  }
+
+  const stay = () => {
+    if (repo.branch !== local) void repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}, sans la mettre à jour`, failed);
+  };
+  const rebase = await dialogs.confirm({
+    title: `Mettre à jour ${local} ?`,
+    body:
+      `${local} et ${remote} ont divergé : ${commits(ahead)} de ${local} ne ${ahead > 1 ? 'sont' : 'est'} pas sur ${remote}, ` +
+      `et ${commits(behind)} de ${remote} ${behind > 1 ? 'manquent' : 'manque'} à ${local}.\n\n` +
+      `Rebaser rejoue tes commits par-dessus ${remote}. Une sauvegarde de la branche est gardée.`,
+    confirmLabel: 'Basculer et rebaser',
+    extra: { label: 'Basculer sans mettre à jour', run: stay },
+  });
+  if (!rebase) return;
+  if (repo.branch !== local && !(await repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}`, failed))) return;
+  await repo.history({ op: 'rebase', onto: remote }, `${local} rebasée sur ${remote}`, 'Le rebase a échoué');
+}
 
 export async function createBranch(repo: Repo, start: string, from: string) {
   const answers = await dialogs.ask({
@@ -369,11 +415,13 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
       {
         label: `Basculer sur ${local ?? bare(target)}`,
         icon: 'check',
-        hint: local ? undefined : 'Crée la branche locale qui suit cette branche distante',
+        hint: local
+          ? undefined
+          : repo.refs?.branches.some((b) => b.name === bare(target))
+            ? `Bascule sur la branche locale et la met à jour avec ${target}`
+            : 'Crée la branche locale qui suit cette branche distante',
         run: () =>
-          void (local
-            ? repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}`, 'Impossible de basculer')
-            : repo.refOp({ op: 'switch-remote', name: target }, `Basculé sur ${bare(target)}`, 'Impossible de basculer')),
+          void (local ? repo.refOp({ op: 'switch', name: local }, `Basculé sur ${local}`, 'Impossible de basculer') : switchToRemote(repo, target)),
       },
       { separator: true },
       {
