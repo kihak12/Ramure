@@ -92,11 +92,12 @@
   const selected = new SvelteSet<number>();
   let anchor = -1;
 
-  // Un nouveau diff remet la sélection à zéro.
+  // Un nouveau diff remet la sélection et le curseur à zéro.
   $effect(() => {
     void diff;
     selected.clear();
     anchor = -1;
+    cursor = -1;
   });
 
   function toggle(line: Line, event: MouseEvent) {
@@ -111,6 +112,68 @@
       selected.add(line.index);
     }
     anchor = line.index;
+    cursor = line.index;
+  }
+
+  // --- Clavier --------------------------------------------------------------------------------
+
+  /** Ligne modifiée qui porte le curseur du clavier, par sa position dans le texte du diff. */
+  let cursor = $state(-1);
+  let linesEl = $state<HTMLDivElement>();
+
+  /** Déplace le curseur d'une ligne modifiée à l'autre ; `extend` choisit les lignes traversées. */
+  function move(to: number, extend: boolean) {
+    if (!changes.length) return;
+    const from = changes.findIndex((l) => l.index === cursor);
+    const next = Math.max(0, Math.min(changes.length - 1, to));
+    if (extend) {
+      if (from >= 0) selected.add(changes[from].index);
+      selected.add(changes[next].index);
+    }
+    cursor = changes[next].index;
+    anchor = cursor;
+    // Une fois la ligne marquée, on l'amène dans la vue.
+    requestAnimationFrame(() => linesEl?.querySelector('.cursor')?.scrollIntoView({ block: 'nearest' }));
+  }
+
+  // La zone des lignes garde le focus et traite elle-même les touches, comme les autres listes.
+  function onKey(event: KeyboardEvent) {
+    if (!canSelect || event.target !== linesEl) return;
+    const at = changes.findIndex((l) => l.index === cursor);
+    const line = at >= 0 ? changes[at] : null;
+    switch (event.key) {
+      case 'ArrowDown':
+        move(at < 0 ? 0 : at + 1, event.shiftKey);
+        break;
+      case 'ArrowUp':
+        move(at < 0 ? changes.length - 1 : at - 1, event.shiftKey);
+        break;
+      case 'Home':
+        move(0, event.shiftKey);
+        break;
+      case 'End':
+        move(changes.length - 1, event.shiftKey);
+        break;
+      case ' ':
+        if (!line) return;
+        if (selected.has(line.index)) selected.delete(line.index);
+        else selected.add(line.index);
+        break;
+      case 'Enter':
+        if (busy) return;
+        if (selected.size) applySelection();
+        else if (line) applyHunk(line.hunk);
+        else return;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+
+  // À la prise du focus sans curseur, il se pose sur la première ligne modifiée.
+  function onFocus() {
+    if (canSelect && cursor < 0 && changes.length) cursor = changes[0].index;
   }
 
   // --- Affichage côte à côte ----------------------------------------------------------------
@@ -219,11 +282,11 @@
     </div>
     {#if canSelect && selected.size}
       <button class="btn small" type="button" onclick={() => selected.clear()}>Désélectionner</button>
-      <button class="btn primary small" type="button" disabled={busy} onclick={applySelection}>
+      <button class="btn primary small" type="button" disabled={busy} onclick={applySelection} title="Entrée, dans la liste des lignes">
         {verb} {selected.size} ligne{selected.size > 1 ? 's' : ''}
       </button>
     {:else if canSelect}
-      <small class="hint">Clique des lignes pour n’en {selectable === 'unstage' ? 'retirer' : 'indexer'} qu’une partie</small>
+      <small class="hint" title="Au clavier : ↑ et ↓ pour passer d’une ligne à l’autre, Début et Fin pour aller aux extrémités, Espace pour choisir ou retirer, Maj pour étendre, Entrée pour valider">Clique des lignes pour n’en {selectable === 'unstage' ? 'retirer' : 'indexer'} qu’une partie</small>
     {/if}
     {#if parsed && (parsed.added || parsed.removed)}
       <span class="count mono"><span class="plus">+{parsed.added}</span> <span class="minus">−{parsed.removed}</span></span>
@@ -242,8 +305,9 @@
   {:else if parsed && parsed.lines.length === 0}
     <p class="note">Aucune différence de contenu à afficher (fichier vide, ou seul le mode a changé).</p>
   {:else if parsed && split}
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="lines mono" tabindex="0">
+    <!-- La zone garde le focus et traite les touches, comme les listes de l'application. -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
+    <div class="lines mono" class:selectable={canSelect} class:has-cursor={cursor >= 0} tabindex="0" bind:this={linesEl} onkeydown={onKey} onfocus={onFocus}>
       <table class="split">
         <colgroup><col class="c-no" /><col class="c-sign" /><col /><col class="c-no" /><col class="c-sign" /><col /></colgroup>
         <tbody>
@@ -270,6 +334,7 @@
                   class:c-del={left?.type === 'del'}
                   class:c-void={!left}
                   class:pickable={leftPick}
+                  class:cursor={leftPick && left?.index === cursor}
                   class:picked={left ? selected.has(left.index) : false}
                   onclick={(e) => left && toggle(left, e)}
                 >
@@ -283,6 +348,7 @@
                   class:c-add={right?.type === 'add'}
                   class:c-void={!right}
                   class:pickable={rightPick}
+                  class:cursor={rightPick && right?.index === cursor}
                   class:picked={right ? selected.has(right.index) : false}
                   onclick={(e) => right && toggle(right, e)}
                 >
@@ -298,8 +364,9 @@
       {/if}
     </div>
   {:else if parsed}
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="lines mono" class:selectable={canSelect} tabindex="0">
+    <!-- La zone garde le focus et traite les touches, comme les listes de l'application. -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
+    <div class="lines mono" class:selectable={canSelect} class:has-cursor={cursor >= 0} tabindex="0" bind:this={linesEl} onkeydown={onKey} onfocus={onFocus}>
       <table>
         <tbody>
           {#each parsed.lines as line (line.index)}
@@ -308,6 +375,7 @@
             <tr
               class="t-{line.type}"
               class:pickable
+              class:cursor={pickable && line.index === cursor}
               class:picked={selected.has(line.index)}
               aria-selected={pickable ? selected.has(line.index) : undefined}
               onclick={(e) => toggle(line, e)}
@@ -467,6 +535,15 @@
   }
   .lines:focus-visible {
     outline-offset: -2px;
+  }
+  /* Le curseur du clavier se lit sur sa ligne, par un anneau intérieur : pas de cadre autour de la
+     liste (charte, section 9.6). Sans curseur, le cadre reste, pour que le focus se voie toujours. */
+  .lines.selectable.has-cursor:focus-visible {
+    outline: none;
+  }
+  .lines:focus-visible .cursor {
+    outline: 1.5px solid var(--accent);
+    outline-offset: -1.5px;
   }
   table {
     border-collapse: collapse;

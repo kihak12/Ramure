@@ -515,6 +515,11 @@ Sidebar, file lists, graph, palette results.
 - The sign is always there: colour alone never says whether a line is added or removed.
 - A line picked to be staged on its own has a stronger tint and its sign in bold. No coloured
   bar on its edge.
+- From the keyboard, the lines behave like a list (9.6): ↑ and ↓ move from one changed line to
+  the next, Home and End go to the first and to the last, with the inner ring on the line; Space
+  picks the line, or lets go of it; Shift with any of these keys extends the choice; Enter
+  stages what is picked, or the whole hunk when nothing is. A line of the diff is a band across
+  the card: its ring has square corners.
 - When only one half of a modified line is picked, the removed line or the added one, a warning
   says so under the lines: a box on a `--warn-soft` background, with the warning icon and a
   button that picks the other half. It sits under the lines so that they do not move while they
