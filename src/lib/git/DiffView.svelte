@@ -286,7 +286,7 @@
         {verb} {selected.size} ligne{selected.size > 1 ? 's' : ''}
       </button>
     {:else if canSelect}
-      <small class="hint" title="Au clavier : ↑ et ↓ pour passer d’une ligne à l’autre, Espace pour choisir, Maj + ↑ ou ↓ pour étendre, Entrée pour valider">Clique des lignes pour n’en {selectable === 'unstage' ? 'retirer' : 'indexer'} qu’une partie</small>
+      <small class="hint" title="Au clavier : ↑ et ↓ pour passer d’une ligne à l’autre, Début et Fin pour aller aux extrémités, Espace pour choisir ou retirer, Maj pour étendre, Entrée pour valider">Clique des lignes pour n’en {selectable === 'unstage' ? 'retirer' : 'indexer'} qu’une partie</small>
     {/if}
     {#if parsed && (parsed.added || parsed.removed)}
       <span class="count mono"><span class="plus">+{parsed.added}</span> <span class="minus">−{parsed.removed}</span></span>
