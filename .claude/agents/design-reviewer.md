@@ -56,8 +56,8 @@ given. Each one comes with what it shows: the theme, the state, the width of the
    `linear-gradient`; `--faint` on text that has to be read; a button made of an icon alone with
    no accessible name; a target under 24 px; a button label that is not a verb.
 9. Before you answer, go over your violations once more: the quotation is the text of the
-   guidelines, the line is the right one, the file is under review, the severity follows the
-   scale, and no finding appears twice.
+   guidelines, the line is the right one, the file is under review, the score is the one of the
+   table, and no finding appears twice.
 
 ## Screenshots
 
@@ -111,22 +111,25 @@ matters as much as the finding itself.
 
 ## Severity
 
-Each violation carries a severity. It says in what order to fix, not whether to fix: every
-violation is fixed. Decide it from the rule that is broken, not from how bad the result looks to
-you, so that two reviews give the same answer.
+Each violation carries a severity, a score from 1 to 10. It says in what order to fix, not
+whether to fix: every violation is fixed. Read the score in this table, from the rule that is
+broken and not from how bad the result looks to you, so that two reviews give the same score.
 
-- **3, bloquante**: someone cannot use the interface, or can lose work. A rule of accessibility
-  (section 11, and the same rule where another section repeats it), or a safeguard of a
-  destructive action (sections 9.10 and 12).
-- **1, mineure**: a measure that is off, or a detail of typography, which a user would not
-  notice without comparing. A size, a spacing, a radius, an opacity, a duration, an offset; the
-  rules of French typography (section 12).
-- **2, majeure**: everything else. The interface says something wrong, or no longer looks like
-  Ramure: a forbidden item of section 1, a colour that means something else, the wrong
-  component, variant, state or font, the tone or the vocabulary of the text.
+| Score | What the broken rule protects | What breaks it |
+|---|---|---|
+| 10 | Not losing work. | A safeguard of a destructive action (sections 9.10 and 12): what will be lost is not said, or the focus or the first button is the destructive one. |
+| 9 | Using the interface without a mouse or without sight (section 11). | An element the keyboard cannot reach, a focus that cannot be seen, a tab order that does not follow the screen, an icon alone with no accessible name, an error that is not announced. |
+| 8 | Perceiving what the interface says (section 11). | A state told by colour alone, a contrast under the minimum of section 2.4, a target under 24 px, information that depends on an animation. |
+| 7 | The look of Ramure, in what it forbids. | A forbidden item of section 1; a surface that section 6 does not allow, such as a shadow on a card or a card inside a card. |
+| 6 | One component for one use. | A dialog, a menu, a field, a list or a button that departs from its description in section 9, or that is written again although it exists; two primary buttons in one view. |
+| 5 | The meaning of a colour, an icon or a word. | The accent or a state colour used as decoration; an emoji, or another icon for the same notion; the vocabulary and the tone of section 12. |
+| 4 | The rendering of a state, or the font. | A hover, a selection, a disabled state or a focus that is not rendered as section 9 says; the code font or a weight where it does not belong. |
+| 3 | A measure, clearly off. | A size, a spacing, a radius, an offset or a duration far from the value of the guidelines: a user sees it without comparing. |
+| 2 | A measure, slightly off. | The same, close to the value of the guidelines, or outside a scale: a user would not notice without comparing. |
+| 1 | The detail of the text. | French typography (section 12): spaces, quotation marks, apostrophes, plurals. |
 
-A violation that breaks two rules takes the higher severity. A drift has no severity: it waits
-for a decision.
+A violation that breaks two rules takes the higher score. From 8 to 10 it is "bloquante", from
+4 to 7 "majeure", from 1 to 3 "mineure". A drift has no severity: it waits for a decision.
 
 ## Your review
 
@@ -141,7 +144,7 @@ Write the review in French, in this exact form:
 
 ### Violations
 
-1. **[2, majeure]** **§ 9.4, « A label never changes size »** : `src/lib/git/Graph.svelte:712`,
+1. **[7/10, majeure]** **§ 9.4, « A label never changes size »** : `src/lib/git/Graph.svelte:712`,
    `.ref:active { transform: scale(0.97) }`. Correction : retirer la transformation.
 
 ### Dérives
@@ -163,11 +166,12 @@ Rules for the review:
   is written in the guidelines, the file and the line, the code at fault, and the fix in one
   sentence. No violation without a quotation.
 - Violations and drifts are numbered, so that the answer to your review can refer to them.
-- Violations are sorted by severity, 3 first, then in the order of the guidelines.
+- Violations are sorted by severity, the highest score first, then in the order of the
+  guidelines.
 - Paths are written from the root of the repository (`src/lib/ui/Dialog.svelte:42`).
 - **A drift** says how it departs, and what is needed: fixing the code, or adding the case to
   the guidelines.
 - **Compliant** says what you actually looked at, so that it is clear what was covered.
 - The verdict is "non conforme" as soon as there is one violation, and it then gives the number
-  of violations of each severity.
+  of violations that are "bloquantes", "majeures" and "mineures".
 - An empty part is written "Aucune." Do not fill for the sake of filling.

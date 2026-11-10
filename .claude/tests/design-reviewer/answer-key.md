@@ -7,67 +7,67 @@ is in the [README](README.md).
 - **T** is `change/cleanup.ts`, reviewed as `src/lib/git/cleanup.ts`.
 - The number in brackets is the section of the [design guidelines](../../../docs/design-guidelines.md)
   that holds the rule.
-- **Sev.** is the severity the definition of the subagent gives to the rule: 3 for "bloquante",
-  2 for "majeure", 1 for "mineure".
+- **Sev.** is the severity, from 1 to 10, that the table of the definition of the subagent gives
+  to the rule: 8 to 10 is "bloquante", 4 to 7 "majeure", 1 to 3 "mineure".
 
 ## Planted violations (25)
 
-Five at severity 3, twelve at severity 2, eight at severity 1.
+Five are "bloquantes", thirteen "majeures", seven "mineures".
 
 ### Interface text
 
 | | Where | What | Sev. |
 |---|---|---|---|
-| T1 | T:16 | "Oups" and an exclamation mark in an error, which does not say what to do (12). | 2 |
+| T1 | T:16 | "Oups" and an exclamation mark in an error, which does not say what to do (12). | 5 |
 | T2 | T:6 | The plural does not agree: "1 branches sélectionnées." (12). | 1 |
 | T3 | T:11, T:16 | An ordinary space before "?" and "!" instead of a non-breaking space (12). | 1 |
-| T4 | T:11 | The confirmation of a destructive action says neither what is lost nor whether it can be recovered (9.10, 12). | 3 |
-| T5 | P:71 | "Fetch" instead of "Récupérer" (12). | 2 |
-| T6 | P:78 | "Cochez": "vous" instead of "tu" (12). | 2 |
-| T7 | P:120 | An emoji, "⚠️" (7). | 2 |
+| T4 | T:11 | The confirmation of a destructive action says neither what is lost nor whether it can be recovered (9.10, 12). | 10 |
+| T5 | P:71 | "Fetch" instead of "Récupérer" (12). | 5 |
+| T6 | P:78 | "Cochez": "vous" instead of "tu" (12). | 5 |
+| T7 | P:120 | An emoji, "⚠️" (7). | 5 |
 
 ### Colour
 
 | | Where | What | Sev. |
 |---|---|---|---|
-| C1 | P:69, P:124 | Two primary buttons in one view (2.3, 9.1). | 2 |
-| C2 | P:170 | The accent used as decoration, on the title (2.3). | 2 |
-| C3 | P:330 | `--ok` decorating the border of the footer (2.3). | 2 |
-| C4 | P:267 | The hover of a row uses `--sel` instead of `--hover` (9, 9.6). | 2 |
-| C5 | P:105 | "Merged" and "not merged" told by colour alone (11, 9.6). | 3 |
+| C1 | P:69, P:124 | Two primary buttons in one view (2.3, 9.1). | 6 |
+| C2 | P:170 | The accent used as decoration, on the title (2.3). | 5 |
+| C3 | P:330 | `--ok` decorating the border of the footer (2.3). | 5 |
+| C4 | P:267 | The hover of a row uses `--sel` instead of `--hover` (9, 9.6). | 4 |
+| C5 | P:105 | "Merged" and "not merged" told by colour alone (11, 9.6). | 8 |
 
 ### Shapes and surfaces
 
 | | Where | What | Sev. |
 |---|---|---|---|
-| S1 | P:151 | A shadow on a card (1, 6, 9.8). | 2 |
-| S2 | P:303-310 | A card inside a card, `.resume` (6). | 2 |
-| S3 | P:227 | An 8 px button inside a 6 px field; what can be clicked is 6 px (5). | 1 |
-| S4 | P:273-274 | A 12 px checkbox instead of 15 px (9.3). | 1 |
-| S5 | P:336-350 | A dialog without the `--scrim` veil (6, 9.10). | 2 |
+| S1 | P:151 | A shadow on a card (1, 6, 9.8). | 7 |
+| S2 | P:303-310 | A card inside a card, `.resume` (6). | 7 |
+| S3 | P:227 | An 8 px button inside a 6 px field; what can be clicked is 6 px (5). | 2 |
+| S4 | P:273-274 | A 12 px checkbox instead of 15 px (9.3). | 2 |
+| S5 | P:336-350 | A dialog without the `--scrim` veil (6, 9.10). | 6 |
 
 ### Typography
 
 | | Where | What | Sev. |
 |---|---|---|---|
-| Y1 | P:294-297 | A SHA that is not in the code font (3.1). | 2 |
-| Y2 | P:172-177 | A counter at 11.5 px instead of 10.5 px, without tabular figures (9.5, 3.4). | 1 |
+| Y1 | P:294-297 | A SHA that is not in the code font (3.1). | 4 |
+| Y2 | P:172-177 | A counter at 11.5 px instead of 10.5 px, without tabular figures (9.5, 3.4). | 2 |
 
 ### Motion
 
 | | Where | What | Sev. |
 |---|---|---|---|
-| M1 | P:157 | An entrance offset of 48 px, above the 10 px maximum (8). | 1 |
+| M1 | P:157 | An entrance offset of 48 px, above the 10 px maximum (8). | 3 |
 
 ### States, keyboard, dialog
 
 | | Where | What | Sev. |
 |---|---|---|---|
-| A1 | P:332-335 | Disabled at 60% with the default cursor, instead of 45% and "not allowed" (9). | 1 |
-| A2 | P:124 | `tabindex="1"` breaks the tab order (11). | 3 |
-| A3 | P:125 | An icon at 15 px, outside 14, 16 and 18 (7). | 1 |
-| A4 | P:135-136 | In the dialog of a destructive action, the action comes before "Annuler" (9.10). | 3 |
-| A5 | P:135 | In the dialog, the code sends focus to the destructive button on opening (9.10). | 3 |
+| A1 | P:332-335 | Disabled at 60% with the default cursor, instead of 45% and "not allowed" (9). | 4 |
+| A2 | P:124 | `tabindex="1"` breaks the tab order (11). | 9 |
+| A3 | P:125 | An icon at 15 px, outside 14, 16 and 18 (7). | 2 |
+| A4 | P:135-136 | In the dialog of a destructive action, the action comes before "Annuler" (9.10). | 10 |
+| A5 | P:135 | In the dialog, the code sends focus to the destructive button on opening (9.10). | 10 |
 
 ## Decoys (12)
 
