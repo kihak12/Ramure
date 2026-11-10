@@ -513,8 +513,10 @@ Sidebar, file lists, graph, palette results.
   the next, with the inner ring on the line; Space picks it; Shift with ↑ or ↓ extends the
   choice; Enter stages what is picked, or the whole hunk when nothing is.
 - When only one half of a modified line is picked, the removed line or the added one, a warning
-  says so above the lines: a box on a `--warn-soft` background, with the warning icon and a
-  button that picks the other half.
+  says so under the lines: a box on a `--warn-soft` background, with the warning icon and a
+  button that picks the other half. It sits under the lines so that they do not move while they
+  are being picked. Two lines count as one modified line when they look alike; it holds for both
+  layouts, and when lines are taken out of the index.
 
 ### 9.15 Terminal
 
