@@ -18,6 +18,11 @@
       .map((word) => (word.length > LONG ? `${word.slice(0, HEAD)}…${word.slice(-TAIL)}` : word))
       .join(' ');
   }
+
+  /** Donne le focus au bouton d'action dès qu'il apparaît, si on le demande. */
+  function focused(node: HTMLButtonElement, wanted: boolean) {
+    if (wanted) node.focus();
+  }
 </script>
 
 <div class="toasts" aria-live="polite">
@@ -26,6 +31,10 @@
     <div
       class="toast k-{toast.kind}"
       role={toast.kind === 'err' ? 'alert' : 'status'}
+      onpointerenter={() => toasts.hold(toast.id)}
+      onpointerleave={() => toasts.release(toast.id)}
+      onfocusin={() => toasts.hold(toast.id)}
+      onfocusout={() => toasts.release(toast.id)}
       animate:flip={{ duration: motion.med }}
       in:fly={{ y: 24, duration: motion.med }}
       out:fly={{ y: 16, duration: motion.fast }}
@@ -44,6 +53,7 @@
         <button
           class="btn small action"
           type="button"
+          use:focused={action.focus === true}
           onclick={() => {
             toasts.dismiss(toast.id);
             action.run();
@@ -134,8 +144,8 @@
   .close {
     display: grid;
     place-items: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;

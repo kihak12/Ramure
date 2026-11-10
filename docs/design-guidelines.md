@@ -520,6 +520,10 @@ Sidebar, file lists, graph, palette results.
 
 - A notification may carry one action, a small button before its close button: it undoes what
   was just done ("Annuler"). A click runs the action and closes the notification.
+- A notification stays for as long as the pointer or the focus is on it; its delay starts again
+  when they leave. When what the action undoes was run from the keyboard, the focus goes to the
+  button of the action: it is one key away.
+- The close button is 24 × 24 px.
 
 | Type | Duration |
 |---|---|
@@ -638,8 +642,8 @@ noun, not a verb. The controls are those of section 9.3.
 **A setting applies at once.** A list, as soon as the choice changes; a number, when the field
 is left or on Enter.
 
-- No "Enregistrer", no "Annuler", no main button on the page, and no notification to say that
-  a setting was saved: the control shows the state.
+- No "Enregistrer" and no "Annuler" button on the page, no main button, and no notification to
+  say that a setting was saved: the control shows the state.
 - "Tout réinitialiser" changes several settings at once, some of them not in view. It applies
   at once too, and a notification follows, the only one of the page: it names the section and
   offers "Annuler" for 9 s, which brings every setting of the section back.
