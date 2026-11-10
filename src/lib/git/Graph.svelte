@@ -19,7 +19,6 @@
     classic: { row: 28, lane: 16, pad: 14, node: 5, merge: 4, line: 2, max: 340 },
   } as const;
 
-  const LABELS = 164; // largeur de la colonne des branches et des tags
   const BUFFER = 24; // lignes rendues au-dessus et au-dessous de la zone visible
   const STEP = 12; // la fenêtre de rendu ne se déplace que par paliers de 12 lignes
   const BAND = 24; // hauteur de la bande qui relie un commit à la capsule de son message
@@ -386,16 +385,16 @@
     }}
     oncontextmenu={(e) => menu.open(e, labelMenu(repo, label, commit.sha))}
   >
-    {#if label.kind === 'head'}<Icon name="check" size={12} />{/if}
+    {#if label.kind === 'head'}<Icon name="check" size={14} />{/if}
     <span class="ref-name">{label.name}</span>
     <!-- Pendant le basculement, l'anneau prend la place d'une icône : l'étiquette garde sa taille. -->
-    {#if label.local}{#if waiting}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="laptop" size={12} />{/if}{/if}
-    {#if label.remotes.length}{#if waiting && !label.local}<span class="spinner" aria-hidden="true"></span>{:else}<Icon name="cloud" size={12} />{/if}{/if}
-    {#if label.tag}<Icon name="tag" size={12} />{/if}
+    {#if label.local}{#if waiting}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="laptop" size={14} />{/if}{/if}
+    {#if label.remotes.length}{#if waiting && !label.local}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="cloud" size={14} />{/if}{/if}
+    {#if label.tag}<Icon name="tag" size={14} />{/if}
   </span>
 {/snippet}
 
-<div class="graph" class:ribbon style:--labels="{LABELS}px" style:--graph="{graphW}px" style:--row="{ROW}px" style:--band="{BAND}px">
+<div class="graph" class:ribbon style:--graph="{graphW}px" style:--row="{ROW}px" style:--band="{BAND}px">
   <div class="head">
     <span>Branche / Tag</span><span>Graphe</span><span>Message</span><span>Auteur</span><span>Date</span><span>SHA</span>
   </div>
@@ -434,7 +433,7 @@
           class="pulse"
           aria-hidden="true"
           style:top="{headIndex * ROW + ROW / 2}px"
-          style:left="{LABELS + metrics.pad + repo.head.lane * metrics.lane}px"
+          style:--x="{metrics.pad + repo.head.lane * metrics.lane}px"
           style:--c="var(--l{repo.head.lane % 8})"
         ></span>
       {/if}
@@ -472,15 +471,15 @@
             {#if commit.wip}
               <span class="wip-tag mono">// WIP</span>
               {#if wip}
-                {#if wip.conflicts}<span class="stat bad" title="Fichiers en conflit"><Icon name="warning" size={12} />{wip.conflicts}</span>{/if}
-                {#if wip.modified}<span class="stat warn" title="Fichiers modifiés"><Icon name="pencil" size={12} />{wip.modified}</span>{/if}
-                {#if wip.added}<span class="stat ok" title="Nouveaux fichiers"><Icon name="plus" size={12} />{wip.added}</span>{/if}
-                {#if wip.deleted}<span class="stat bad" title="Fichiers supprimés"><Icon name="minus" size={12} />{wip.deleted}</span>{/if}
+                {#if wip.conflicts}<span class="stat bad" title="Fichiers en conflit"><Icon name="warning" size={14} />{wip.conflicts}</span>{/if}
+                {#if wip.modified}<span class="stat warn" title="Fichiers modifiés"><Icon name="pencil" size={14} />{wip.modified}</span>{/if}
+                {#if wip.added}<span class="stat ok" title="Nouveaux fichiers"><Icon name="plus" size={14} />{wip.added}</span>{/if}
+                {#if wip.deleted}<span class="stat bad" title="Fichiers supprimés"><Icon name="minus" size={14} />{wip.deleted}</span>{/if}
               {:else}
                 <span class="subject muted">{repo.wipCount} fichier{repo.wipCount > 1 ? 's' : ''} modifié{repo.wipCount > 1 ? 's' : ''}</span>
               {/if}
             {:else}
-              <span class="subject">{commit.subject}</span>
+              <span class="subject" title={commit.subject}>{commit.subject}</span>
             {/if}
           </span>
           <span class="author">
@@ -488,7 +487,7 @@
               {#if !ribbon}
                 <span class="avatar" style:--c="var(--l{hue(commit.author)})" aria-hidden="true">{initials(commit.author)}</span>
               {/if}
-              <span class="who">{commit.author}</span>
+              <span class="who" title={commit.author}>{commit.author}</span>
             {/if}
           </span>
           <span class="date">{commit.wip ? '' : dateFmt.format(commit.time * 1000)}</span>
@@ -509,6 +508,14 @@
     position: relative;
     container-type: inline-size;
   }
+  /* Colonne « Branche / Tag » : 220 px. Quand le message aurait moins de 200 px, elle lui rend
+     sa largeur, jusqu'à 164 px (charte, section 10.1). `--rest` est la largeur des colonnes à
+     droite du message ; les 10 px sont la marge droite d'une ligne. */
+  .head,
+  .spacer {
+    --rest: 308px;
+    --labels: clamp(164px, calc(100cqw - var(--graph) - var(--rest) - 10px - 200px), 220px);
+  }
   .head,
   .row {
     display: grid;
@@ -519,6 +526,10 @@
      (il reste dans le panneau de détail), puis le nom de l'auteur, puis la date. */
   @container (max-width: 860px) {
     .head,
+    .spacer {
+      --rest: 242px;
+    }
+    .head,
     .row {
       grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 150px 92px;
     }
@@ -528,6 +539,14 @@
     }
   }
   @container (max-width: 740px) {
+    .head,
+    .spacer {
+      --rest: 126px;
+    }
+    .ribbon .head,
+    .ribbon .spacer {
+      --rest: 92px;
+    }
     .head,
     .row {
       grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 34px 92px;
@@ -545,6 +564,14 @@
     }
   }
   @container (max-width: 600px) {
+    .head,
+    .spacer {
+      --rest: 34px;
+    }
+    .ribbon .head,
+    .ribbon .spacer {
+      --rest: 0px;
+    }
     .head,
     .row,
     .ribbon .head,
@@ -650,6 +677,7 @@
   /* Halo du commit courant */
   .pulse {
     position: absolute;
+    left: calc(var(--labels) + var(--x));
     z-index: 2;
     width: 20px;
     height: 20px;
@@ -692,6 +720,14 @@
     height: 2px;
     opacity: 0.6;
   }
+  /* L'anneau de 12 px est centré dans la boîte de 14 px de l'icône qu'il remplace. */
+  .ref .wait {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+  }
   .ref .spinner {
     --spinner: currentColor;
   }
@@ -699,7 +735,7 @@
     flex: 0 1 auto;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
     font-size: var(--fs-small);
     line-height: 20px;
@@ -711,7 +747,7 @@
     /* Une étiquette ne change jamais de taille : ni au clic, ni au survol, ni au dépôt. */
     transition:
       background var(--t-fast) var(--ease),
-      filter var(--t-fast) var(--ease);
+      border-color var(--t-fast) var(--ease);
   }
   .ref:hover {
     background: color-mix(in srgb, var(--c, var(--line)) 30%, var(--panel));
@@ -745,15 +781,19 @@
   .ref.local {
     font-weight: var(--fw-strong);
   }
-  /* Rendu « Ruban » : une branche locale est teintée de la couleur de sa ligne ; la branche
-     courante est pleine. */
+  /* Rendu « Ruban » : toutes les étiquettes ont le même fond, teinté de la couleur de leur ligne.
+     L'icône, la bordure et la graisse disent si c'est une branche locale, distante ou un tag.
+     La branche courante est pleine. */
+  .ribbon .ref:not(.k-detached) {
+    background: color-mix(in srgb, var(--c, var(--line)) 24%, var(--panel));
+  }
+  /* Pas plus de 30 % : au-delà, le texte passe sous 7:1 en thème sombre (charte, section 2.4). */
+  .ribbon .ref:not(.k-detached):hover {
+    background: color-mix(in srgb, var(--c, var(--line)) 30%, var(--panel));
+  }
   .ribbon .ref.local {
-    background: color-mix(in srgb, var(--c) 24%, var(--panel));
     border-color: color-mix(in srgb, var(--c) 55%, transparent);
     font-weight: var(--fw-strong);
-  }
-  .ribbon .ref.local:hover {
-    background: color-mix(in srgb, var(--c) 36%, var(--panel));
   }
   .ribbon .ref.k-head {
     background: var(--c);
@@ -761,9 +801,11 @@
     color: var(--on-accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent);
   }
+  /* Au survol, le fond va vers la couleur du texte courant : plus sombre en clair, plus clair en
+     sombre. Le texte de la branche courante y gagne du contraste dans les deux thèmes. */
   .ribbon .ref.k-head:hover {
-    background: var(--c);
-    filter: brightness(1.1);
+    background: color-mix(in srgb, var(--c) 90%, var(--ink));
+    border-color: color-mix(in srgb, var(--c) 90%, var(--ink));
   }
   .more {
     flex: none;
@@ -830,10 +872,14 @@
   .stat {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 6px;
     font-size: var(--fs-label);
     font-variant-numeric: tabular-nums;
     color: var(--c);
+  }
+  /* Deux compteurs sont plus écartés que l'icône ne l'est de son chiffre. */
+  .stat + .stat {
+    margin-left: 4px;
   }
   .stat.ok {
     --c: var(--ok);
