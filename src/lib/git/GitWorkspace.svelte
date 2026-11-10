@@ -5,6 +5,7 @@
   import CloneDialog from './CloneDialog.svelte';
   import RepoView from './RepoView.svelte';
   import { workspace } from './workspace.svelte';
+  import { motion } from '../ui/motion';
 
   /** Vrai quand le module Git est à l'écran. */
   let { active = true }: { active?: boolean } = $props();
@@ -14,7 +15,7 @@
   <div class="tabs" role="tablist" aria-label="Dépôts ouverts">
     {#each workspace.tabs as tab (tab.id)}
       {@const current = tab.id === workspace.activeId}
-      <div class="tab" class:current animate:flip={{ duration: 200 }} in:scale={{ duration: 160, start: 0.9 }}>
+      <div class="tab" class:current animate:flip={{ duration: motion.med }} in:scale={{ duration: motion.med, start: 0.9 }}>
         <button
           class="open"
           type="button"
@@ -84,7 +85,7 @@
     margin-bottom: -1px;
     border: 1px solid transparent;
     border-bottom: 0;
-    border-radius: 8px 8px 0 0;
+    border-radius: var(--radius) var(--radius) 0 0;
     color: var(--muted);
     transition:
       background var(--t-fast) var(--ease),
@@ -107,7 +108,7 @@
     right: 8px;
     top: -1px;
     height: 2px;
-    border-radius: 0 0 2px 2px;
+    border-radius: 0 0 var(--radius-pill) var(--radius-pill);
     background: var(--accent);
     transform: scaleX(0);
     transition: transform var(--t-med) var(--ease);
@@ -132,10 +133,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 500;
+    font-weight: var(--fw-regular);
   }
   .current .name {
-    font-weight: 650;
+    font-weight: var(--fw-strong);
   }
   .close,
   .add {
@@ -143,7 +144,7 @@
     display: grid;
     place-items: center;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -180,7 +181,7 @@
     border-radius: 50%;
     border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
     border-top-color: var(--accent);
-    animation: spin 0.7s linear infinite;
+    animation: spin var(--t-spin) linear infinite;
   }
   @keyframes spin {
     to {

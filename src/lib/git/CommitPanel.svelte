@@ -74,8 +74,8 @@
     margin: 0;
   }
   .title {
-    font-size: 14.5px;
-    font-weight: 650;
+    font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
     overflow-wrap: anywhere;
   }
   .message {
@@ -92,7 +92,7 @@
   }
   dt {
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
   dd {
     margin: 0;
@@ -104,7 +104,7 @@
     gap: 6px;
   }
   .sha-full {
-    font-size: 11.5px;
+    font-size: var(--fs-code);
     user-select: all;
   }
   .copy {
@@ -115,7 +115,7 @@
     height: 22px;
     margin-top: -3px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -150,10 +150,10 @@
   }
   .skeleton span {
     height: 14px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: linear-gradient(90deg, var(--hover) 25%, var(--line-soft) 50%, var(--hover) 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.2s linear infinite;
+    animation: shimmer var(--t-wait) linear infinite;
   }
   .skeleton span:nth-child(2) {
     width: 70%;

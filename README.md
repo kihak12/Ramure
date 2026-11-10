@@ -146,6 +146,9 @@ npm run tauri build -- --no-bundle
 npm run check
 ```
 
+Cette commande vérifie les types, puis refuse toute couleur, taille de texte, graisse, rayon ou
+durée écrits en dur dans un composant : ces valeurs viennent des jetons de `src/app.css`.
+
 ```bash
 cd src-tauri && cargo test
 ```
@@ -160,11 +163,16 @@ cd src-tauri && RAMURE_TEST_REPO=/chemin/du/depot cargo test real_repo -- --noca
 
 | Dossier | Contenu |
 | --- | --- |
-| `src/` | Interface Svelte 5 : `lib/git/GraphView.svelte`, `lib/ssh/SshView.svelte` |
+| `src/` | Interface Svelte 5 : `lib/git/`, `lib/ssh/`, `lib/ui/` ; les jetons du design sont dans `app.css` |
+| `docs/` | La [charte graphique](docs/charte-graphique.md), et le choix de la direction visuelle dans `design/` |
+| `scripts/` | Contrôles lancés par `npm run check` |
 | `src-tauri/src/git/` | Exécution de git, parseur du log, calcul des lanes |
 | `src-tauri/src/ssh/` | Sessions russh, lecture de `~/.ssh/config` |
 
 L'interface ne touche ni au disque ni au réseau : elle appelle les commandes du cœur Rust.
+
+Les polices DM Sans et DM Mono sont embarquées dans l'application. Elles sont publiées sous la
+licence SIL Open Font License 1.1.
 
 ## Limites connues du prototype
 

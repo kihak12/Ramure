@@ -28,6 +28,7 @@
   let scrollTop = $state(0);
   let viewH = $state(600);
   let dark = $state(false);
+  let fontsReady = $state(false); // le canevas doit se redessiner quand la police embarquée est chargée
   // Vrai juste après une ouverture : les lignes entrent en cascade.
   let fresh = $state(false);
 
@@ -86,6 +87,8 @@
     const background = css.getPropertyValue('--bg').trim();
     const onColor = css.getPropertyValue('--on-accent').trim();
     const family = getComputedStyle(document.body).fontFamily;
+    const initialSize = parseFloat(css.getPropertyValue('--fs-micro'));
+    const initialWeight = css.getPropertyValue('--fw-strong').trim();
     const color = (lane: number) => palette[lane % palette.length];
     const { row, lane: laneW, pad, node, merge, line } = metrics;
 
@@ -214,8 +217,10 @@
       if (ribbon && !commit.wip && !isMerge) {
         const letters = initials(commit.author);
         ctx.fillStyle = onColor;
-        ctx.font = `700 ${letters.length > 1 ? 8 : 10}px ${family}`;
-        ctx.fillText(letters, cx, cy + 0.5);
+        ctx.font = `${initialWeight} ${initialSize}px ${family}`;
+        // Deux initiales trop larges pour la pastille : on ne garde que la première, sans réduire le texte.
+        const room = 2 * Math.sqrt(Math.max(0, node * node - (initialSize * 0.36) ** 2)) - 3;
+        ctx.fillText(ctx.measureText(letters).width > room ? letters.slice(0, 1) : letters, cx, cy + 0.5);
       }
     }
   }
@@ -223,6 +228,7 @@
   $effect(() => {
     // Redessine quand la fenêtre, les données, la largeur, le style ou le thème changent.
     void dark;
+    void fontsReady;
     draw();
   });
 
@@ -331,6 +337,7 @@
     dark = media.matches;
     const onTheme = () => (dark = media.matches);
     media.addEventListener('change', onTheme);
+    void document.fonts.ready.then(() => (fontsReady = true));
 
     const observer = new ResizeObserver(() => {
       if (scroller && scroller.clientHeight > 0) viewH = scroller.clientHeight;
@@ -557,11 +564,11 @@
   .head {
     border-bottom: 1px solid var(--line);
     background: var(--panel);
-    font-size: 10.5px;
+    font-size: var(--fs-micro);
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--muted);
-    font-weight: 600;
+    font-weight: var(--fw-strong);
     overflow: hidden;
     scrollbar-gutter: stable;
     padding-right: 10px;
@@ -612,7 +619,7 @@
     top: 3px;
     bottom: 3px;
     width: 3px;
-    border-radius: 0 3px 3px 0;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
     background: var(--accent);
     transform: scaleY(0);
     transition: transform var(--t-med) var(--ease);
@@ -628,10 +635,10 @@
   }
   .fresh .row {
     animation: row-in var(--t-slow) var(--ease) both;
-    animation-delay: calc(var(--i) * 14ms);
+    animation-delay: calc(var(--i) * var(--t-step));
   }
   .fresh .lanes {
-    animation: fade-in 500ms var(--ease) both;
+    animation: fade-in var(--t-slow) var(--ease) both;
   }
   @keyframes row-in {
     from {
@@ -650,7 +657,7 @@
     border-radius: 50%;
     border: 2px solid var(--c);
     pointer-events: none;
-    animation: pulse 2.4s var(--ease) infinite;
+    animation: pulse var(--t-halo) var(--ease) infinite;
   }
   @keyframes pulse {
     from {
@@ -691,13 +698,13 @@
     align-items: center;
     gap: 4px;
     min-width: 0;
-    font-size: 11px;
+    font-size: var(--fs-small);
     line-height: 18px;
     padding: 0 7px;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     border: 1px solid var(--c, var(--line));
     background: color-mix(in srgb, var(--c, var(--line)) 16%, var(--bg));
-    font-weight: 500;
+    font-weight: var(--fw-regular);
     transition:
       background var(--t-fast) var(--ease),
       filter var(--t-fast) var(--ease),
@@ -726,42 +733,42 @@
   /* Préfixe `k-` : la branche courante a le type `head`, qui ne doit pas hériter de l'en-tête `.head`. */
   .ref.k-head,
   .ref.k-detached {
-    font-weight: 700;
+    font-weight: var(--fw-strong);
     background: color-mix(in srgb, var(--c) 30%, var(--bg));
   }
   .ref.k-remote {
     border-style: dashed;
-    font-weight: 400;
+    font-weight: var(--fw-regular);
   }
   .ref.k-tag {
     --c: var(--muted);
-    border-radius: 10px;
-    font-weight: 400;
+    border-radius: var(--radius-s);
+    font-weight: var(--fw-regular);
   }
   /* Rendu « Ruban » : une branche locale est une pastille pleine, de la couleur de sa ligne. */
   .ribbon .ref {
     line-height: 20px;
-    border-radius: 6px;
+    border-radius: var(--radius-s);
   }
   .ribbon .ref.local {
     background: var(--c);
     color: var(--on-accent);
-    font-weight: 600;
+    font-weight: var(--fw-strong);
   }
   .ribbon .ref.local:hover {
     background: var(--c);
     filter: brightness(1.12);
   }
   .ribbon .ref.k-head {
-    font-weight: 700;
+    font-weight: var(--fw-strong);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent);
   }
   .more {
     flex: none;
-    font-size: 10.5px;
+    font-size: var(--fs-micro);
     padding: 0 5px;
     line-height: 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-pill);
     background: var(--side);
     border: 1px solid var(--line);
     color: var(--muted);
@@ -807,10 +814,10 @@
     text-overflow: ellipsis;
   }
   .wip-tag {
-    font-size: 11px;
+    font-size: var(--fs-small);
     line-height: 18px;
     padding: 0 7px;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     border: 1px dashed var(--muted);
     color: var(--muted);
   }
@@ -818,7 +825,7 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-variant-numeric: tabular-nums;
     color: var(--c);
   }
@@ -838,7 +845,7 @@
     min-width: 0;
     padding-left: 10px;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-label);
     overflow: hidden;
   }
   .who {
@@ -852,8 +859,8 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    font-size: 9px;
-    font-weight: 700;
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-strong);
     letter-spacing: -0.02em;
     color: var(--c);
     background: color-mix(in srgb, var(--c) 20%, var(--bg));
@@ -862,14 +869,14 @@
   .date {
     padding-left: 10px;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-label);
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .sha {
     padding-left: 10px;
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-code);
   }
   .muted {
     color: var(--muted);
@@ -892,21 +899,15 @@
     margin: 0;
     max-width: 52ch;
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--fs-body);
   }
   .art {
     display: grid;
     place-items: center;
     width: 64px;
     height: 64px;
-    border-radius: 20px;
+    border-radius: var(--radius-card);
     color: var(--accent);
     background: var(--accent-soft);
-    animation: float 4s ease-in-out infinite;
-  }
-  @keyframes float {
-    50% {
-      transform: translateY(-5px);
-    }
   }
 </style>

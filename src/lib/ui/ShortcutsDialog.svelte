@@ -129,7 +129,7 @@
     max-height: calc(100vh - 80px);
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     color: var(--ink);
     box-shadow: var(--shadow-pop);
@@ -156,13 +156,13 @@
   }
   h2 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 650;
+    font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
   }
   p {
     margin: 0;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
   .list {
     overflow-y: auto;
@@ -170,8 +170,8 @@
   }
   .group {
     padding: 12px 6px 4px;
-    font-size: 10.5px;
-    font-weight: 600;
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-strong);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--faint);
@@ -181,7 +181,7 @@
     align-items: center;
     gap: 8px;
     padding: 3px 6px;
-    border-radius: 7px;
+    border-radius: var(--radius);
     transition: background var(--t-fast) var(--ease);
   }
   .row:hover {
@@ -206,7 +206,7 @@
     min-height: 26px;
     padding: 2px 6px;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-s);
     background: none;
     cursor: pointer;
     transition: border-color var(--t-fast) var(--ease);
@@ -219,19 +219,19 @@
     padding: 0 6px;
     border: 1px solid var(--line);
     border-bottom-width: 2px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: var(--bg);
-    font: 11px/18px var(--f-ui);
+    font: var(--fs-micro) / 18px var(--f-ui);
   }
   .none {
     color: var(--faint);
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
   .wait {
     color: var(--accent);
-    font-size: 12px;
-    font-weight: 600;
-    animation: blink 1s ease-in-out infinite;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-strong);
+    animation: blink var(--t-wait) var(--ease) infinite;
   }
   @keyframes blink {
     50% {
@@ -244,7 +244,7 @@
     width: 24px;
     height: 24px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -267,7 +267,7 @@
   footer small {
     flex: 1;
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   footer small.warn {
     color: var(--warn);

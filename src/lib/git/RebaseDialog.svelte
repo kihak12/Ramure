@@ -3,6 +3,7 @@
   import Icon from '../ui/Icon.svelte';
   import type { Repo } from './repo.svelte';
   import type { TodoAction, TodoItem } from './types';
+  import { motion } from '../ui/motion';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -100,7 +101,7 @@
           <li
             class="a-{item.action}"
             class:dragging={dragged === n}
-            animate:flip={{ duration: 220 }}
+            animate:flip={{ duration: motion.med }}
             draggable="true"
             ondragstart={(e) => {
               dragged = n;
@@ -153,7 +154,7 @@
     max-height: calc(100vh - 80px);
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     color: var(--ink);
     box-shadow: var(--shadow-pop);
@@ -180,8 +181,8 @@
   }
   h2 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 650;
+    font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
   }
   p {
     margin: 0;
@@ -261,7 +262,7 @@
   }
   .sha {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-code);
   }
   .subject {
     min-width: 0;
@@ -271,7 +272,7 @@
   }
   textarea {
     resize: vertical;
-    font-size: 12px;
+    font-size: var(--fs-code);
   }
   .moves {
     display: flex;
@@ -284,7 +285,7 @@
     width: 24px;
     height: 24px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -307,7 +308,7 @@
   footer small {
     flex: 1;
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   footer small.bad {
     color: var(--bad);

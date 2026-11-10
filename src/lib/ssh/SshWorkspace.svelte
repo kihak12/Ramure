@@ -10,6 +10,7 @@
   import { ssh } from './ssh.svelte';
   import Terminal from './Terminal.svelte';
   import { emptyHost, type Host } from './types';
+  import { motion } from '../ui/motion';
 
   /** Vrai quand le module SSH est à l'écran. */
   let { active = false }: { active?: boolean } = $props();
@@ -133,7 +134,7 @@
       <div class="tabs" role="tablist" aria-label="Terminaux ouverts">
         {#each ssh.sessions as session (session.key)}
           {@const current = session.key === ssh.activeKey}
-          <div class="tab" class:current animate:flip={{ duration: 200 }} in:scale={{ duration: 160, start: 0.9 }}>
+          <div class="tab" class:current animate:flip={{ duration: motion.med }} in:scale={{ duration: motion.med, start: 0.9 }}>
             <button
               class="open"
               type="button"
@@ -235,8 +236,8 @@
   }
   .group {
     padding: 10px 8px 4px;
-    font-size: 10.5px;
-    font-weight: 600;
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-strong);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--faint);
@@ -250,7 +251,7 @@
     position: relative;
     display: flex;
     align-items: center;
-    border-radius: 8px;
+    border-radius: var(--radius);
     transition: background var(--t-fast) var(--ease);
   }
   li:hover,
@@ -273,7 +274,7 @@
   .tint {
     flex: none;
     width: 4px;
-    border-radius: 2px;
+    border-radius: var(--radius-pill);
     background: var(--c);
   }
   .text {
@@ -291,7 +292,7 @@
   }
   .text small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   .tags {
     display: flex;
@@ -303,7 +304,7 @@
     background: var(--panel);
     border: 1px solid var(--line);
     color: var(--muted);
-    font-size: 10.5px;
+    font-size: var(--fs-micro);
   }
   .chip.via {
     color: var(--warn);
@@ -325,7 +326,7 @@
     width: 24px;
     height: 24px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -375,7 +376,7 @@
     margin-bottom: -1px;
     border: 1px solid transparent;
     border-bottom: 0;
-    border-radius: 8px 8px 0 0;
+    border-radius: var(--radius) var(--radius) 0 0;
     color: var(--muted);
     transition:
       background var(--t-fast) var(--ease),
@@ -407,10 +408,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 500;
+    font-weight: var(--fw-regular);
   }
   .current .name {
-    font-weight: 650;
+    font-weight: var(--fw-strong);
   }
   .dot {
     flex: none;
@@ -424,7 +425,7 @@
   }
   .dot.s-connecting {
     background: var(--warn);
-    animation: blink 1s ease-in-out infinite;
+    animation: blink var(--t-wait) var(--ease) infinite;
   }
   @keyframes blink {
     50% {
@@ -439,7 +440,7 @@
     height: 20px;
     margin-right: 5px;
     border: 0;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -480,7 +481,7 @@
   .empty p {
     margin: 0;
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--fs-body);
   }
   .row {
     display: flex;
@@ -491,14 +492,8 @@
     place-items: center;
     width: 64px;
     height: 64px;
-    border-radius: 20px;
+    border-radius: var(--radius-card);
     color: var(--accent);
     background: var(--accent-soft);
-    animation: float 4s ease-in-out infinite;
-  }
-  @keyframes float {
-    50% {
-      transform: translateY(-5px);
-    }
   }
 </style>

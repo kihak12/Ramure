@@ -152,7 +152,7 @@
     width: min(560px, calc(100vw - 48px));
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     color: var(--ink);
     box-shadow: var(--shadow-pop);
@@ -173,8 +173,8 @@
   }
   h2 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 650;
+    font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
   }
   .row {
     display: flex;
@@ -183,7 +183,7 @@
   }
   .row small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
     overflow-wrap: anywhere;
   }
   .pair {
@@ -196,7 +196,7 @@
   }
   .progress small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -204,16 +204,16 @@
   .bar {
     position: relative;
     height: 6px;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
     background: var(--line);
     overflow: hidden;
   }
   .bar span {
     position: absolute;
     inset: 0 auto 0 0;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
     background: var(--accent);
-    animation: sweep 1.1s var(--ease) infinite;
+    animation: sweep var(--t-wait) var(--ease) infinite;
   }
   /* Pourcentage connu : la barre avance au lieu de balayer. */
   .bar.known span {

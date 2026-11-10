@@ -15,6 +15,7 @@
   import Toolbar from './Toolbar.svelte';
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
+  import { motion } from '../ui/motion';
 
   /** `active` : cet onglet est celui qu'on regarde. */
   let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
@@ -86,7 +87,7 @@
       {#if repo.result}
         <aside class="detail" class:working={current?.wip}>
           {#key repo.currentKey}
-            <div class="pane" in:fade={{ duration: 170 }}>
+            <div class="pane" in:fade={{ duration: motion.med }}>
               {#if current?.wip}
                 {#if repo.status}
                   <WorkPanel {repo} />
@@ -144,7 +145,7 @@
   }
   .progress.on span {
     opacity: 1;
-    animation: sweep 1.1s var(--ease) infinite;
+    animation: sweep var(--t-wait) var(--ease) infinite;
   }
   @keyframes sweep {
     from {

@@ -85,7 +85,7 @@
   li {
     display: flex;
     align-items: center;
-    border-radius: 5px;
+    border-radius: var(--radius);
     min-width: 0;
     transition: background var(--t-fast) var(--ease);
   }
@@ -112,11 +112,11 @@
     flex: none;
     width: 16px;
     height: 16px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     display: grid;
     place-items: center;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-strong);
     font-family: var(--f-mono);
     color: var(--c);
     background: color-mix(in srgb, var(--c) 16%, transparent);
@@ -162,7 +162,7 @@
     height: 22px;
     margin-right: 2px;
     border: 1px solid transparent;
-    border-radius: 5px;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     cursor: pointer;

@@ -157,7 +157,7 @@
     width: min(600px, calc(100vw - 48px));
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     color: var(--ink);
     box-shadow: var(--shadow-pop);
@@ -178,8 +178,8 @@
   }
   h2 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 650;
+    font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
   }
   .warning {
     display: flex;
@@ -217,7 +217,7 @@
   }
   small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   fieldset {
     flex-direction: row;

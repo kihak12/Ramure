@@ -5,6 +5,7 @@
   import FileList from './FileList.svelte';
   import type { Repo } from './repo.svelte';
   import type { FileChange } from './types';
+  import { motion } from '../ui/motion';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -41,7 +42,7 @@
 
 <div class="work">
   {#if conflicts.length}
-    <section class="conflicts" transition:slide={{ duration: 180 }}>
+    <section class="conflicts" transition:slide={{ duration: motion.med }}>
       <header>
         <span class="label bad"><Icon name="warning" size={13} /> En conflit · {conflicts.length}</span>
       </header>
@@ -115,7 +116,7 @@
       <span>Modifier le dernier commit</span>
     </label>
     {#if repo.amend && headPushed}
-      <p class="warn small" transition:slide={{ duration: 160 }}>
+      <p class="warn small" transition:slide={{ duration: motion.med }}>
         Ce commit est déjà sur le dépôt distant : après modification, il faudra pousser en forçant.
       </p>
     {/if}
@@ -196,7 +197,7 @@
   }
   .small {
     margin: 0;
-    font-size: 11.5px;
+    font-size: var(--fs-small);
   }
   .warn {
     padding: 6px 8px;
@@ -219,7 +220,7 @@
     min-height: 64px;
     max-height: 220px;
     font-family: var(--f-mono);
-    font-size: 12px;
+    font-size: var(--fs-code);
   }
   .send {
     display: flex;

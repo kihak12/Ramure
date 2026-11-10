@@ -102,7 +102,7 @@
     position: relative;
     width: 36px;
     height: 36px;
-    border-radius: 9px;
+    border-radius: var(--radius);
     display: grid;
     place-items: center;
     color: var(--muted);
@@ -136,7 +136,7 @@
     top: 9px;
     bottom: 9px;
     width: 3px;
-    border-radius: 0 3px 3px 0;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
     background: var(--accent);
     transform: scaleY(0);
     transition: transform var(--t-med) var(--ease);

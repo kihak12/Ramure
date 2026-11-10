@@ -2,6 +2,7 @@
   import { fly } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
   import type { Repo } from './repo.svelte';
+  import { motion } from '../ui/motion';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -54,7 +55,7 @@
   </div>
 
   {#if showJournal}
-    <div class="journal" transition:fly={{ y: 10, duration: 160 }}>
+    <div class="journal" transition:fly={{ y: 10, duration: motion.med }}>
       <span class="label">Journal des commandes · les plus récentes d'abord</span>
       {#each [...repo.journal].reverse() as entry, i (i)}
         <div class="entry mono" class:failed={!entry.ok}>
@@ -77,7 +78,7 @@
     border-top: 1px solid var(--line);
     background: var(--side);
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--fs-small);
     min-width: 0;
   }
   .branch {
@@ -94,8 +95,8 @@
     color: var(--muted);
     cursor: pointer;
     padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 11.5px;
+    border-radius: var(--radius-s);
+    font-size: var(--fs-small);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -117,7 +118,7 @@
   }
   .stats b {
     color: var(--ink);
-    font-weight: 600;
+    font-weight: var(--fw-strong);
   }
   .stats .bad {
     color: var(--bad);
@@ -131,7 +132,7 @@
     overflow: auto;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: var(--radius-l);
     padding: 10px 12px;
     display: grid;
     gap: 4px;
@@ -142,7 +143,7 @@
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr);
     gap: 10px;
-    font-size: 11.5px;
+    font-size: var(--fs-small);
     color: var(--ink);
   }
   .entry span:first-child {
