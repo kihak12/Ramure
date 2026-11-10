@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RepoView from './lib/git/RepoView.svelte';
+  import GitWorkspace from './lib/git/GitWorkspace.svelte';
   import SshView from './lib/ssh/SshView.svelte';
   import ContextMenu from './lib/ui/ContextMenu.svelte';
   import Dialog from './lib/ui/Dialog.svelte';
@@ -22,7 +22,7 @@
 
   <!-- Les deux vues restent montées : une session SSH survit au passage par le graphe. -->
   <main>
-    <section class="pane" class:hidden={view !== 'git'} inert={view !== 'git'}><RepoView /></section>
+    <section class="pane" class:hidden={view !== 'git'} inert={view !== 'git'}><GitWorkspace active={view === 'git'} /></section>
     <section class="pane" class:hidden={view !== 'ssh'} inert={view !== 'ssh'}><SshView active={view === 'ssh'} /></section>
   </main>
 </div>

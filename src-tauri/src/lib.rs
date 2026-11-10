@@ -9,6 +9,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(ssh::SshState::default())
+        .manage(git::clone::CloneState::default())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -40,6 +41,11 @@ pub fn run() {
             git::ops::git_resolve,
             git::ops::git_rebase_plan,
             git::ops::git_rebase_interactive,
+            git::clone::git_clone,
+            git::clone::git_clone_cancel,
+            git::clone::git_init,
+            git::conflict::git_conflict_read,
+            git::conflict::git_conflict_write,
             ssh::ssh_defaults,
             ssh::ssh_connect,
             ssh::ssh_write,

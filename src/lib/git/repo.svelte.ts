@@ -4,6 +4,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
 import { toasts } from '../ui/toasts.svelte';
+import { prefs, savePrefs, type Settings } from './prefs.svelte';
 import type {
   CommandLog,
   CommitDetail,
@@ -21,29 +22,7 @@ import type {
   TodoItem,
 } from './types';
 
-const STORAGE_REPO = 'ramure.repo';
-const STORAGE_SETTINGS = 'ramure.settings';
 const JOURNAL_MAX = 300; // commandes conservées dans le journal
-
-export type PullMode = 'ff-only' | 'rebase' | 'merge';
-
-export interface Settings {
-  /** Commits chargés ; 0 pour tout l'historique. */
-  limit: number;
-  /** Fetch automatique, en minutes ; 0 pour le désactiver. */
-  autoFetch: number;
-  pullMode: PullMode;
-}
-
-const DEFAULTS: Settings = { limit: 10000, autoFetch: 5, pullMode: 'ff-only' };
-
-function readSettings(): Settings {
-  try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_SETTINGS) ?? '{}') };
-  } catch {
-    return { ...DEFAULTS };
-  }
-}
 
 export interface OpenFile {
   /** `u:chemin`, `s:chemin` (répertoire de travail), `c:chemin` (commit) ou `stash:n`. */
@@ -84,7 +63,8 @@ export class Repo {
   error = $state('');
   selected = $state(-1);
   perf = $state({ ipc: 0, paint: 0 });
-  settings = $state<Settings>(readSettings());
+  /** Dossier demandé, puis racine du dépôt une fois celui-ci ouvert ; vide pour un onglet neuf. */
+  path = $state('');
   /** Augmente à chaque ouverture ou rechargement complet : le graphe rejoue son apparition. */
   loadCount = $state(0);
   lastFetch = $state<{ at: number; ok: boolean } | null>(null);
@@ -102,9 +82,16 @@ export class Repo {
   /** Plan d'un rebase interactif en préparation ; la boîte de dialogue s'ouvre quand il existe. */
   rebasePlan = $state.raw<RebasePlan | null>(null);
 
+  /** Posé par l'espace de travail : prévenu chaque fois qu'un dépôt vient d'être ouvert. */
+  onopened: (repo: Repo) => void = () => {};
   /** Posés par le graphe : amener une ligne à l'écran, revenir en haut. */
   reveal: (index: number) => void = () => {};
   resetScroll: () => void = () => {};
+
+  /** Réglages, communs à tous les dépôts ouverts. */
+  get settings(): Settings {
+    return prefs;
+  }
 
   commits = $derived(this.result?.commits ?? []);
   current = $derived(this.selected >= 0 ? (this.commits[this.selected] ?? null) : null);
@@ -156,17 +143,6 @@ export class Repo {
 
   // --- Chargement -------------------------------------------------------------------------
 
-  /** Ouvre le dépôt mémorisé à la fermeture précédente, s'il y en a un. */
-  restore() {
-    let saved = '';
-    try {
-      saved = localStorage.getItem(STORAGE_REPO) ?? '';
-    } catch {
-      /* stockage indisponible */
-    }
-    if (saved) void this.load(saved, false);
-  }
-
   open(path: string) {
     return this.load(path, false);
   }
@@ -180,6 +156,7 @@ export class Repo {
     if (!path || this.loading) return;
     this.loading = true;
     this.error = '';
+    if (!keep) this.path = path;
     const previous = keep ? this.current : null;
     const limit = this.settings.limit > 0 ? this.settings.limit : null;
     const t0 = performance.now();
@@ -203,11 +180,8 @@ export class Repo {
       if (!keep) {
         this.resetScroll();
         this.loadCount++;
-      }
-      try {
-        localStorage.setItem(STORAGE_REPO, data.repo);
-      } catch {
-        /* stockage indisponible : on se passe de la mémorisation */
+        this.path = data.repo;
+        this.onopened(this);
       }
       this.#logHead = undefined;
       void this.refreshStatus(true);
@@ -224,6 +198,7 @@ export class Repo {
       } else {
         this.error = text;
         this.result = null;
+        this.path = '';
       }
     } finally {
       this.loading = false;
@@ -264,13 +239,8 @@ export class Repo {
   }
 
   saveSettings(next: Settings) {
-    const reloadNeeded = next.limit !== this.settings.limit;
-    this.settings = next;
-    try {
-      localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(next));
-    } catch {
-      /* stockage indisponible : les réglages valent pour cette session */
-    }
+    const reloadNeeded = next.limit !== prefs.limit;
+    savePrefs(next);
     if (reloadNeeded && this.result) void this.load(this.result.repo, false);
   }
 

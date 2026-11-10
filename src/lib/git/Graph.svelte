@@ -7,7 +7,7 @@
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
 
-  let { repo, onpick }: { repo: Repo; onpick: () => void } = $props();
+  let { repo }: { repo: Repo } = $props();
 
   const ROW = 28; // hauteur d'une ligne
   const LANE = 16; // largeur d'une lane
@@ -287,19 +287,7 @@
     <span>Branche / Tag</span><span>Graphe</span><span>Message</span><span>Auteur</span><span>Date</span><span>SHA</span>
   </div>
 
-  {#if repo.error}
-    <div class="empty">
-      <span class="art bad"><Icon name="warning" size={26} /></span>
-      <p class="err">{repo.error}</p>
-      <button class="btn primary" type="button" onclick={onpick}>Choisir un autre dossier…</button>
-    </div>
-  {:else if !repo.result && !repo.loading}
-    <div class="empty">
-      <span class="art"><Icon name="branch" size={28} /></span>
-      <p>Ouvre un dépôt Git pour afficher son graphe.</p>
-      <button class="btn primary" type="button" onclick={onpick}><Icon name="folder" /> Ouvrir un dépôt…</button>
-    </div>
-  {:else if repo.result && commits.length === 0}
+  {#if repo.result && commits.length === 0}
     <div class="empty">
       <span class="art"><Icon name="commit" size={28} /></span>
       <p>Ce dépôt ne contient encore aucun commit.</p>
@@ -711,10 +699,6 @@
     color: var(--muted);
     font-size: 14px;
   }
-  .empty .err {
-    color: var(--bad);
-    white-space: pre-wrap;
-  }
   .art {
     display: grid;
     place-items: center;
@@ -724,11 +708,6 @@
     color: var(--accent);
     background: var(--accent-soft);
     animation: float 4s ease-in-out infinite;
-  }
-  .art.bad {
-    color: var(--bad);
-    background: var(--bad-soft);
-    animation: none;
   }
   @keyframes float {
     50% {

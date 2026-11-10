@@ -1,6 +1,8 @@
 //! Pilotage du binaire `git` installé sur la machine.
 //! Ramure ne réimplémente pas Git : il lance les commandes officielles et parse leur sortie.
 
+pub mod clone;
+pub mod conflict;
 pub mod graph;
 pub mod log;
 pub mod ops;
@@ -85,22 +87,14 @@ pub fn plain(bytes: &[u8]) -> String {
         .to_string()
 }
 
-/// Lance `git` dans `dir` et renvoie sa sortie complète, quel que soit le code de retour.
-pub fn exec(dir: &Path, args: &[&str], opts: Opts) -> Result<Output, String> {
+/// Commande `git` de base : sans fenêtre de console, sans question, sans éditeur.
+pub fn command() -> Command {
     let mut cmd = Command::new("git");
-    cmd.arg("--no-optional-locks")
-        .arg("-C")
-        .arg(dir)
-        .args(args)
-        // Jamais de question posée dans un terminal invisible.
-        .env("GIT_TERMINAL_PROMPT", "0")
+    // Jamais de question posée dans un terminal invisible.
+    cmd.env("GIT_TERMINAL_PROMPT", "0")
         // Ni d'éditeur : `:` est l'éditeur « ne rien faire » de git, il garde le texte proposé.
         .env("GIT_EDITOR", ":")
-        .env("GIT_SEQUENCE_EDITOR", ":")
-        .envs(opts.envs.iter().copied())
-        .stdin(if opts.input.is_some() { Stdio::piped() } else { Stdio::null() })
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .env("GIT_SEQUENCE_EDITOR", ":");
 
     #[cfg(windows)]
     {
@@ -108,6 +102,20 @@ pub fn exec(dir: &Path, args: &[&str], opts: Opts) -> Result<Output, String> {
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
         cmd.creation_flags(CREATE_NO_WINDOW);
     }
+    cmd
+}
+
+/// Lance `git` dans `dir` et renvoie sa sortie complète, quel que soit le code de retour.
+pub fn exec(dir: &Path, args: &[&str], opts: Opts) -> Result<Output, String> {
+    let mut cmd = command();
+    cmd.arg("--no-optional-locks")
+        .arg("-C")
+        .arg(dir)
+        .args(args)
+        .envs(opts.envs.iter().copied())
+        .stdin(if opts.input.is_some() { Stdio::piped() } else { Stdio::null() })
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
     let mut child = cmd
         .spawn()

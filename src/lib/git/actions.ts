@@ -5,7 +5,8 @@ import { dialogs } from '../ui/dialogs.svelte';
 import type { MenuItem } from '../ui/menu.svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { bare, type Label } from './labels';
-import type { Repo, Settings } from './repo.svelte';
+import type { Settings } from './prefs.svelte';
+import type { Repo } from './repo.svelte';
 import type { CommitRow, FileChange, ResetMode, Stash } from './types';
 
 const short = (sha: string) => sha.slice(0, 7);
