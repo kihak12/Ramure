@@ -22,6 +22,24 @@
   const headPushed = $derived(repo.hasRemote && !!repo.head && !repo.head.localOnly);
   const plural = (n: number) => (n > 1 ? 's' : '');
 
+  // Un fichier présent dans les deux listes n'est indexé qu'en partie.
+  const partial = $derived(new Set(status.staged.filter((f) => unstaged.some((u) => u.path === f.path)).map((f) => f.path)));
+
+  // Ce qui manque pour commiter : dit à l'écran, plutôt que laissé à deviner devant un bouton grisé.
+  const blocker = $derived.by(() => {
+    if (busy) return '';
+    if (conflicts.length) return 'Résous d’abord les conflits.';
+    if (!status.staged.length && !repo.amend) return 'Rien n’est indexé\u00a0: indexe un fichier ou des lignes.';
+    if (!message.trim()) return 'Écris un message de commit.';
+    return '';
+  });
+  // Ctrl + Entrée sans pouvoir commiter : la raison est mise en avant, jusqu'à ce qu'elle change.
+  let nudged = $state(false);
+  $effect(() => {
+    void blocker;
+    nudged = false;
+  });
+
   const active = $derived(repo.openFile?.key ?? null);
   const activeIn = (prefix: string) => (active?.startsWith(prefix) ? active.slice(2) : null);
 
@@ -33,10 +51,10 @@
   );
 
   function onKey(e: KeyboardEvent) {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && canCommit) {
-      e.preventDefault();
-      void repo.commit();
-    }
+    if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    if (canCommit) void repo.commit();
+    else if (blocker) nudged = true;
   }
 </script>
 
@@ -74,6 +92,7 @@
       <div class="list">
         <FileList
           files={unstaged}
+          {partial}
           active={activeIn('u:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, false)}
@@ -99,6 +118,7 @@
       <div class="list">
         <FileList
           files={status.staged}
+          {partial}
           active={activeIn('s:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, true)}
@@ -130,11 +150,21 @@
       onkeydown={onKey}
       disabled={busy}
     ></textarea>
+    {#if blocker}
+      <p id="commit-blocker" class="why small" class:nudged aria-live="polite">{blocker}</p>
+    {/if}
     <div class="send">
       <small class="muted" class:long={subjectLength > 72} title="Longueur de la première ligne ; au-delà de 72 caractères, elle est tronquée dans beaucoup d'outils.">
         {subjectLength} / 72
       </small>
-      <button class="btn primary" type="button" disabled={!canCommit} onclick={() => void repo.commit()} title="Ctrl + Entrée">
+      <button
+        class="btn primary"
+        type="button"
+        disabled={!canCommit}
+        aria-describedby={blocker ? 'commit-blocker' : undefined}
+        onclick={() => void repo.commit()}
+        title={blocker || 'Ctrl + Entrée'}
+      >
         {#if repo.amend}
           Modifier le commit
         {:else if status.staged.length}
@@ -220,6 +250,14 @@
     max-height: 220px;
     font-family: var(--f-mono);
     font-size: var(--fs-code);
+  }
+  .why {
+    margin: 0;
+    color: var(--muted);
+    transition: color var(--t-fast) var(--ease);
+  }
+  .why.nudged {
+    color: var(--warn);
   }
   .send {
     display: flex;

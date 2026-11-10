@@ -251,7 +251,7 @@
                   class:picked={left ? selected.has(left.index) : false}
                   onclick={(e) => left && toggle(left, e)}
                 >
-                  <span class="sign">{#if left && selected.has(left.index)}✓{:else if left?.type === 'del'}−{/if}</span>{#if left}{#if pair.inline && left.type === 'del'}{pair.inline.pre}<mark>{pair.inline.old}</mark>{pair.inline.post}{:else}{left.text}{/if}{/if}
+                  <span class="sign">{#if left?.type === 'del'}−{/if}</span>{#if left}{#if pair.inline && left.type === 'del'}{pair.inline.pre}<mark>{pair.inline.old}</mark>{pair.inline.post}{:else}{left.text}{/if}{/if}
                 </td>
                 <td class="no">{right?.new ?? ''}</td>
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -264,7 +264,7 @@
                   class:picked={right ? selected.has(right.index) : false}
                   onclick={(e) => right && toggle(right, e)}
                 >
-                  <span class="sign">{#if right && selected.has(right.index)}✓{:else if right?.type === 'add'}+{/if}</span>{#if right}{#if pair.inline && right.type === 'add'}{pair.inline.pre}<mark>{pair.inline.new}</mark>{pair.inline.post}{:else}{right.text}{/if}{/if}
+                  <span class="sign">{#if right?.type === 'add'}+{/if}</span>{#if right}{#if pair.inline && right.type === 'add'}{pair.inline.pre}<mark>{pair.inline.new}</mark>{pair.inline.post}{:else}{right.text}{/if}{/if}
                 </td>
               </tr>
             {/if}
@@ -292,7 +292,7 @@
             >
               <td class="no">{line.old ?? ''}</td>
               <td class="no">{line.new ?? ''}</td>
-              <td class="sign">{#if selected.has(line.index)}✓{:else}{SIGN[line.type]}{/if}</td>
+              <td class="sign">{SIGN[line.type]}</td>
               <td class="code">
                 {line.text}{#if canSelect && line.type === 'hunk'}
                   <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(line.hunk)}>{verb} ce bloc</button>
