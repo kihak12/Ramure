@@ -8,6 +8,7 @@ import { prefs, savePrefs, type Settings } from './prefs.svelte';
 import type {
   CommandLog,
   CommitDetail,
+  ConflictFile,
   Diff,
   Done,
   FileChange,
@@ -79,6 +80,8 @@ export class Repo {
   diff = $state.raw<Diff | null>(null);
   diffLoading = $state(false);
   diffError = $state('');
+  /** Fichier ouvert dans l'éditeur de conflits. */
+  conflictFile = $state.raw<FileChange | null>(null);
   /** Plan d'un rebase interactif en préparation ; la boîte de dialogue s'ouvre quand il existe. */
   rebasePlan = $state.raw<RebasePlan | null>(null);
 
@@ -171,6 +174,7 @@ export class Repo {
         this.lastFetch = null;
         this.#opened = Date.now();
         this.closeDiff();
+        this.conflictFile = null;
       }
       this.result = data;
       this.record(data.commands);
@@ -208,6 +212,9 @@ export class Repo {
   /** Enregistre un nouvel état ; recharge l'historique s'il ne lui correspond plus. */
   applyStatus(next: Status, fromLoad = false) {
     this.status = next;
+    // Le fichier ouvert dans l'éditeur de conflits a pu être résolu ou abandonné entre-temps.
+    const editing = this.conflictFile?.path;
+    if (editing && !next.unstaged.some((f) => f.kind === 'conflict' && f.path === editing)) this.conflictFile = null;
     if (fromLoad || this.#logHead === undefined) {
       this.#logHead = next.head;
       return;
@@ -308,6 +315,34 @@ export class Repo {
   /** Résout un conflit en gardant un seul côté. */
   resolve(file: FileChange, side: 'ours' | 'theirs') {
     return this.#mutate('git_resolve', { path: file.path, side });
+  }
+
+  /** Ouvre un fichier en conflit dans l'éditeur à trois voies. */
+  openConflict(file: FileChange) {
+    this.closeDiff();
+    this.conflictFile = file;
+  }
+
+  /** Versions d'un fichier en conflit : ancêtre, les deux côtés, et le fichier avec ses marqueurs. */
+  readConflict(file: FileChange) {
+    return this.git<ConflictFile>('git_conflict_read', { path: file.path });
+  }
+
+  /** Écrit le résultat de la résolution et marque le fichier comme résolu. */
+  async saveConflict(file: FileChange, content: string) {
+    if (!this.result || this.busy) return false;
+    this.busy = 'index';
+    try {
+      this.applyStatus(await this.git<Status>('git_conflict_write', { path: file.path, content }));
+      this.conflictFile = null;
+      toasts.ok('Conflit résolu', file.path);
+      return true;
+    } catch (e) {
+      toasts.err("Le fichier n'a pas pu être enregistré", errorText(e));
+      return false;
+    } finally {
+      this.busy = '';
+    }
   }
 
   async toggleAmend(on: boolean) {

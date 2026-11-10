@@ -3,6 +3,7 @@
   import { fade } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
   import CommitPanel from './CommitPanel.svelte';
+  import ConflictEditor from './ConflictEditor.svelte';
   import DiffView from './DiffView.svelte';
   import Graph from './Graph.svelte';
   import OperationBanner from './OperationBanner.svelte';
@@ -108,6 +109,10 @@
           {/key}
         </aside>
       {/if}
+
+      {#if repo.conflictFile}
+        <ConflictEditor {repo} file={repo.conflictFile} />
+      {/if}
     </div>
 
     <StatusBar {repo} />
@@ -150,6 +155,7 @@
     }
   }
   .body {
+    position: relative;
     flex: 1;
     display: grid;
     grid-template-columns: 204px minmax(0, 1fr) 324px;

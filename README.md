@@ -3,13 +3,22 @@
 Client Git graphique et client SSH/SFTP dans la même fenêtre, pour Windows et Ubuntu.
 Libre (MIT), local, sans compte.
 
-**État : jalon J2 en cours.** Le prototype J0 a validé le graphe et le terminal SSH sur
-Windows et Ubuntu. Le Git du quotidien (J1) et l'essentiel du Git avancé (J2) sont là ; ce qui
-manque encore est listé plus bas.
+**État : jalons J1 et J2 presque complets.** Le prototype J0 a validé le graphe et le terminal
+SSH sur Windows et Ubuntu. Le Git du quotidien (J1) et le Git avancé (J2) sont là, à trois
+fonctions près, listées plus bas.
 
 ## Ce que fait Ramure aujourd'hui
 
-### Dépôt et graphe
+### Dépôts
+
+- **Onglets** : un dépôt par onglet, rouverts au démarrage. Ctrl + T ouvre un onglet,
+  Ctrl + W le ferme, Ctrl + Tab passe au suivant ; un clic du milieu ferme aussi.
+- **Page d'accueil** d'un onglet neuf : ouvrir un dossier, cloner, initialiser, et la liste
+  des dépôts récents.
+- **Cloner** (`git clone --progress`) : progression en direct, interruption possible. Un clonage
+  qui échoue ne laisse pas de dossier derrière lui.
+
+### Graphe
 
 - **Graphe** : `git log`, lanes calculées en Rust, dessin sur un canvas. Seules les lignes
   visibles existent dans la page ; 50 000 commits défilent sans saccade.
@@ -38,8 +47,11 @@ Tout passe par le clic droit sur un commit ou sur une étiquette, et par la barr
 - **Tags** : léger ou annoté, pousser, supprimer en local et sur le dépôt distant.
 - **Fusion, rebase, cherry-pick, revert, reset** (soft, mixed, hard).
 - **Conflits** : quand une opération s'arrête, un bandeau propose Continuer, Passer et
-  Abandonner. Chaque fichier en conflit se résout en gardant un côté, ou en le corrigeant dans
-  ton éditeur avant de le marquer résolu.
+  Abandonner. Un clic sur un fichier en conflit ouvre l'**éditeur à trois voies** : les deux
+  versions en haut, avec le passage en conflit surligné, et le résultat en bas. Pour chaque
+  conflit, prends un côté ou les deux ; le résultat reste modifiable à la main, et l'ancêtre
+  commun s'affiche à la demande. Un fichier supprimé d'un côté, ou binaire, se résout en
+  gardant un côté.
 - **Rebase interactif** : réordonner à la souris, reformuler, fusionner, supprimer des commits.
   git relance Ramure comme « éditeur de séquence » : aucun outil extérieur n'est nécessaire.
 - **Garde-fous** : avant un reset, un rebase ou un rebase interactif, la position de la branche
@@ -65,10 +77,8 @@ passe ou de phrase secrète.
 
 ### Pas encore là
 
-- Du jalon J1 : onglets par dépôt et dépôts récents, cloner et initialiser, palette de
-  commandes (Ctrl K), diff côte à côte.
-- Du jalon J2 : éditeur de conflits à trois voies, fusion ou rebase en glissant une branche
-  sur une autre.
+- Du jalon J1 : palette de commandes (Ctrl K), diff côte à côte.
+- Du jalon J2 : fusion ou rebase en glissant une branche sur une autre.
 - Jalons J3 et J4 : carnet d'hôtes, clés, trousseau, terminal local, SFTP, tunnels,
   installeurs et mises à jour.
 

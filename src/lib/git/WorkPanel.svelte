@@ -48,9 +48,9 @@
       <div class="list">
         <FileList
           files={conflicts}
-          active={activeIn('u:')}
+          active={repo.conflictFile?.path ?? null}
           disabled={busy}
-          onopen={(f) => repo.openWorkDiff(f, false)}
+          onopen={(f) => repo.openConflict(f)}
           actions={[
             { label: sides.ours, icon: 'laptop', run: (f: FileChange) => void repo.resolve(f, 'ours') },
             { label: sides.theirs, icon: 'cloud', run: (f: FileChange) => void repo.resolve(f, 'theirs') },
@@ -58,7 +58,7 @@
           ]}
         />
       </div>
-      <p class="muted small">Pour chaque fichier : garde un côté, ou corrige-le dans ton éditeur puis marque-le résolu.</p>
+      <p class="muted small">Clique un fichier pour ouvrir l'éditeur de conflits, ou garde directement un côté avec les boutons de sa ligne.</p>
     </section>
   {/if}
 

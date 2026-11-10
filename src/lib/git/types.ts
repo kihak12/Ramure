@@ -173,3 +173,14 @@ export interface TodoItem {
   sha: string;
   message?: string;
 }
+
+/** Versions d'un fichier en conflit (src-tauri/src/git/conflict.rs). */
+export interface ConflictFile {
+  base: string | null;
+  ours: string | null;
+  theirs: string | null;
+  /** Fichier du répertoire de travail, avec les marqueurs de conflit. */
+  merged: string | null;
+  /** Une version n'est pas du texte, ou est trop volumineuse pour l'éditeur. */
+  binary: boolean;
+}
