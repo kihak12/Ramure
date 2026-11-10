@@ -12,12 +12,15 @@
 
   let {
     files,
+    partial = null,
     active = null,
     actions = [],
     disabled = false,
     onopen,
   }: {
     files: FileChange[];
+    /** Chemins des fichiers qui ne sont indexés qu'en partie. */
+    partial?: Set<string> | null;
     /** Chemin du fichier dont le diff est ouvert. */
     active?: string | null;
     actions?: Action[];
@@ -59,6 +62,9 @@
       <button class="open" type="button" onclick={() => onopen(file)} title={file.oldPath ? `${file.oldPath} → ${file.path}` : file.path}>
         <span class="kind k-{file.kind}" title={WORD[file.kind]} aria-label={WORD[file.kind]}>{LETTER[file.kind]}</span>
         <span class="path"><span class="dir">{parts.dir}{parts.dir ? '\u200e' : ''}</span><span class="name">{parts.name}</span></span>
+        {#if partial?.has(file.path)}
+          <span class="part" title="Seule une partie des modifications de ce fichier est indexée">en partie</span>
+        {/if}
       </button>
       {#each actions as action (action.label)}
         <button
@@ -66,7 +72,7 @@
           class:danger={action.danger}
           type="button"
           title={action.label}
-          aria-label="{action.label} : {file.path}"
+          aria-label="{action.label} : {file.path}"
           {disabled}
           onclick={() => action.run(file)}><Icon name={action.icon} size={14} /></button
         >
@@ -153,6 +159,11 @@
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .part {
+    flex: none;
+    color: var(--muted);
+    font-size: var(--fs-small);
   }
   .act {
     flex: none;
