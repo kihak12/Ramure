@@ -1,277 +1,275 @@
-# Direction visuelle de Ramure
+# Visual direction of Ramure
 
-Ce document garde la trace du choix de la direction visuelle de Ramure. Tout est montré sur
-l'application réelle.
+This document keeps the record of how Ramure's visual direction was chosen. Everything is shown
+on the real application.
 
-**Décision : D. Clairière, retenue le 10 novembre 2026,** avec le thème de couleurs Ardoise par
-défaut. Elle sert de base à la charte graphique (#4).
+**Decision: D. Clairière, chosen on 10 November 2026,** with the Ardoise colour theme as the
+default. It is the basis of the design guidelines (#4).
 
-## Où on en est
+## Where things stand
 
-1. Trois directions complètes ont été comparées : A. Sous-bois, B. Encre, C. Braise. Elles sont
-   gardées [plus bas](#premières-directions).
-2. Premier retour : les cartes de Sous-bois plaisent, mais pas ses boutons, ni son vert, ni la
-   bordure autour de la carte des commits.
-3. **D. Clairière** reprend ce qui a plu et corrige le reste. Elle ajoute des
-   [thèmes de couleurs](#thèmes-de-couleurs) au choix.
-4. Clairière est retenue, avec un dernier ajustement : dans la liste des commits, les étiquettes
-   de branches et de tags sont des rectangles légèrement arrondis, comme les boutons, et ne
-   rétrécissent pas au clic.
+1. Three complete directions were compared: A. Sous-bois, B. Encre, C. Braise. They are kept
+   [further down](#first-directions).
+2. First feedback: the cards of Sous-bois are liked, but not its buttons, nor its green, nor the
+   border around the commit card.
+3. **D. Clairière** keeps what was liked and fixes the rest. It adds a choice of
+   [colour themes](#colour-themes).
+4. Clairière is chosen, with one last adjustment: in the commit list, branch and tag labels are
+   slightly rounded rectangles, like buttons, and do not shrink on click.
 
-## D. Clairière, la direction retenue
+## D. Clairière, the chosen direction
 
-**Intention.** Une clairière, c'est le sous-bois ouvert. On garde les cartes et le graphe de
-Sous-bois, on retire les bordures, on reprend les boutons de l'interface actuelle, et les
-couleurs par défaut redeviennent neutres.
+**Intent.** A "clairière" is a clearing: the undergrowth ("sous-bois") opened up. The cards and
+the graph of Sous-bois are kept, the borders are removed, the buttons of the current interface
+come back, and the default colours go back to neutral.
 
-### Retours pris en compte
+### Feedback taken into account
 
-| Retour | Réponse |
+| Feedback | Answer |
 |---|---|
-| Les sections en cartes de Sous-bois plaisent. | Gardées : la barre latérale, le graphe et le détail sont trois cartes arrondies, séparées par le fond de la fenêtre. |
-| Les boutons de l'interface actuelle sont préférés. | Boutons, champs, boîtes de dialogue et barre d'outils sont ceux de l'interface actuelle : angles de 6 px, icône au-dessus du libellé. Plus aucun bouton en pilule. |
-| Les couleurs tirent trop sur le vert. | Le thème par défaut, Ardoise, est fait de gris neutres, avec l'accent bleu actuel. Le vert ne dit plus que « succès » et « ligne ajoutée ». |
-| La bordure de la carte des commits gêne. | Aucune carte n'a de bordure. Le cadre de couleur qui entourait toute la liste quand on la parcourt au clavier est retiré : le repère est porté par le commit sélectionné. La sélection est un fond arrondi, en retrait des bords de la carte. |
-| Pouvoir changer les couleurs par la suite. | Voir [Thèmes de couleurs](#thèmes-de-couleurs). |
-| Dans la liste des commits, les étiquettes doivent avoir la forme des autres boutons, et ne pas rétrécir au clic. | Les étiquettes de branches et de tags sont des rectangles à angles de 6 px. Plus de pilule, plus de rétrécissement au clic. |
+| The card layout of Sous-bois is liked. | Kept: the sidebar, the graph and the detail are three rounded cards, separated by the window background. |
+| The buttons of the current interface are preferred. | Buttons, fields, dialogs and the toolbar are those of the current interface: 6 px corners, icon above the label. No pill-shaped button any more. |
+| The colours lean too green. | The default theme, Ardoise, is made of neutral greys, with the current blue accent. Green only says "success" and "added line". |
+| The border of the commit card is in the way. | No card has a border. The coloured frame that surrounded the whole list when it was browsed from the keyboard is removed: the marker is carried by the selected commit. The selection is a rounded background, inset from the edges of the card. |
+| Being able to change the colours later. | See [Colour themes](#colour-themes). |
+| In the commit list, labels should have the shape of the other buttons, and not shrink on click. | Branch and tag labels are rectangles with 6 px corners. No pill, no shrinking on click. |
 
-### Parti pris
+### Choices
 
-| Élément | Parti pris | Vient de |
+| Element | Choice | Comes from |
 |---|---|---|
-| Police | DM Sans, 13,5 px ; DM Mono pour le code. Titres de section en minuscules. | Sous-bois |
-| Onglets | L'onglet actif est une petite carte, de la même matière que les panneaux. Pas de cadre. | nouveau |
-| Barre d'outils | Icône au-dessus du libellé, posée sur le fond de la fenêtre. | interface actuelle |
-| Boutons et champs | Angles de 6 px, comme aujourd'hui. Boîtes de dialogue inchangées. | interface actuelle |
-| Panneaux | Trois cartes à angles de 14 px, sans bordure, écartées de 8 px. | Sous-bois, sans la bordure |
-| Graphe | Pastilles à initiales, courbes souples de 3 px, message dans une capsule. Lignes de 34 px. | Sous-bois |
-| Sélection | Un fond arrondi sous la ligne, en retrait de 6 px. Aucun trait sur le bord. | nouveau |
-| Étiquettes | Rectangles à angles de 6 px, teintés de la couleur de la branche ; la branche courante est pleine. Pas de rétrécissement au clic. | interface actuelle pour la forme, Sous-bois pour les teintes |
-| Couleurs | Thème Ardoise : gris neutres, accent bleu. | nouveau |
+| Font | DM Sans, 13.5 px; DM Mono for code. Section titles in lower case. | Sous-bois |
+| Tabs | The active tab is a small card, made of the same material as the panels. No frame. | new |
+| Toolbar | Icon above the label, sitting on the window background. | current interface |
+| Buttons and fields | 6 px corners, as today. Dialogs unchanged. | current interface |
+| Panels | Three cards with 14 px corners, no border, 8 px apart. | Sous-bois, without the border |
+| Graph | Dots with initials, soft 3 px curves, the message in a capsule. 34 px rows. | Sous-bois |
+| Selection | A rounded background under the row, inset by 6 px. No bar on the edge. | new |
+| Labels | Rectangles with 6 px corners, tinted with the branch colour; the current branch is solid. No shrinking on click. | current interface for the shape, Sous-bois for the tints |
+| Colours | Ardoise theme: neutral greys, blue accent. | new |
 
-| Graphe, sombre | Graphe, clair |
+| Graph, dark | Graph, light |
 |---|---|
-| ![Clairière, graphe, thème sombre](directions/clairiere-graphe-sombre.png) | ![Clairière, graphe, thème clair](directions/clairiere-graphe-clair.png) |
+| ![Clairière, graph, dark theme](directions/clairiere-graphe-sombre.png) | ![Clairière, graph, light theme](directions/clairiere-graphe-clair.png) |
 
-| Modifications et diff | Boîte de dialogue |
+| Changes and diff | Dialog |
 |---|---|
-| ![Clairière, modifications et diff](directions/clairiere-travail-sombre.png) | ![Clairière, boîte de dialogue](directions/clairiere-dialogue-clair.png) |
+| ![Clairière, changes and diff](directions/clairiere-travail-sombre.png) | ![Clairière, dialog](directions/clairiere-dialogue-clair.png) |
 
-### Validé avec la proposition
+### Approved with the proposal
 
-Ces points venaient de Sous-bois ou étaient nouveaux. Ils sont retenus tels que montrés :
+These points came from Sous-bois or were new. They are kept as shown:
 
-- **La police.** DM Sans, et DM Mono pour le code.
-- **Le graphe.** Courbes souples et messages en capsule.
-- **Les onglets en cartes.**
-- **La densité.** 21 commits visibles sur un écran de 880 px, contre 23 dans l'interface de départ.
+- **The font.** DM Sans, and DM Mono for code.
+- **The graph.** Soft curves and messages in capsules.
+- **Tabs as cards.**
+- **Density.** 21 commits visible on an 880 px screen, against 23 in the starting interface.
 
-## Thèmes de couleurs
+## Colour themes
 
-Un thème de couleurs ne change que les couleurs : fonds, textes, traits, accent, couleurs d'état,
-couleurs des branches et du terminal. La disposition, les formes, la police et les tailles ne
-bougent pas. Chaque thème existe en clair et en sombre.
+A colour theme only changes colours: backgrounds, text, lines, accent, state colours, branch
+colours and terminal colours. The layout, the shapes, the font and the sizes do not move. Each
+theme exists in light and in dark.
 
-| Thème | Fonds | Accent |
+| Theme | Backgrounds | Accent |
 |---|---|---|
-| **Ardoise** (par défaut) | gris neutres | bleu |
-| Encre | gris presque noirs, ou blancs | indigo |
-| Sous-bois | verts très sombres, ou papier chaud | vert mousse |
-| Braise | charbon, ou crème | ambre |
+| **Ardoise** (slate, the default) | neutral greys | blue |
+| Encre (ink) | near-black greys, or whites | indigo |
+| Sous-bois (undergrowth) | very dark greens, or warm paper | moss green |
+| Braise (embers) | charcoal, or cream | amber |
 
-Ardoise est montré dans les captures de Clairière ci-dessus. Les trois autres, sur le même écran :
+Ardoise is shown in the Clairière screenshots above. The other three, on the same screen:
 
-| | Sombre | Clair |
+| | Dark | Light |
 |---|---|---|
-| Encre | ![Thème Encre, sombre](directions/theme-encre-sombre.png) | ![Thème Encre, clair](directions/theme-encre-clair.png) |
-| Sous-bois | ![Thème Sous-bois, sombre](directions/theme-sous-bois-sombre.png) | ![Thème Sous-bois, clair](directions/theme-sous-bois-clair.png) |
-| Braise | ![Thème Braise, sombre](directions/theme-braise-sombre.png) | ![Thème Braise, clair](directions/theme-braise-clair.png) |
+| Encre | ![Encre theme, dark](directions/theme-encre-sombre.png) | ![Encre theme, light](directions/theme-encre-clair.png) |
+| Sous-bois | ![Sous-bois theme, dark](directions/theme-sous-bois-sombre.png) | ![Sous-bois theme, light](directions/theme-sous-bois-clair.png) |
+| Braise | ![Braise theme, dark](directions/theme-braise-sombre.png) | ![Braise theme, light](directions/theme-braise-clair.png) |
 
-**Comment cela marcherait.**
+**How it would work.**
 
-- Un réglage « Thème de couleurs » dans les Réglages. Le changement est immédiat et mémorisé.
-- Un thème est un bloc de jetons de couleur ([`themes.css`](themes.css)), choisi par un attribut
-  sur la racine de la page. C'est possible parce que les composants passent déjà par ces jetons.
-- Un thème n'entre dans l'application que s'il respecte les contrastes fixés par la charte. Les
-  quatre proposés les respectent.
+- A "Thème de couleurs" setting in the settings. The change is immediate and remembered.
+- A theme is a block of colour tokens ([`themes.css`](themes.css)), selected by an attribute on
+  the root of the page. This is possible because the components already go through those tokens.
+- A theme only enters the application if it meets the contrasts set by the guidelines. The four
+  proposed themes do.
 
-**À savoir.** Dans le thème Sous-bois, l'accent est aussi la couleur du succès ; dans Braise, il
-est voisin de la couleur d'avertissement. Ce sont des thèmes au choix : Ardoise, le thème par
-défaut, n'a pas ce défaut.
+**Worth knowing.** In the Sous-bois theme, the accent is also the colour of success; in Braise,
+it is close to the warning colour. These are optional themes: Ardoise, the default, does not have
+that flaw.
 
-La mise en œuvre est suivie dans l'issue #9. Elle vient après l'alignement des jetons (#5).
+The implementation is tracked in issue #9. It comes after the alignment of the tokens (#5).
 
-## Suite
+## What comes next
 
-- La [charte graphique](../charte-graphique.md) fixe les règles de Clairière : issue #4.
-- Les jetons du code sont alignés sur la charte : issue #5.
-- La direction est appliquée à l'interface : issue #10. Les captures de ce document viennent de
-  l'aperçu qui a servi à choisir ; l'application a depuis la même forme.
-- Le choix du thème de couleurs arrive dans les Réglages : issue #9.
+- The [design guidelines](../design-guidelines.md) set the rules of Clairière: issue #4.
+- The tokens in the code are aligned with the guidelines: issue #5.
+- The direction is applied to the interface: issue #10. The screenshots in this document come
+  from the preview that was used to choose; the application has had the same shape since.
+- The choice of the colour theme comes to the settings: issue #9.
 
-## Premières directions
+## First directions
 
-Les trois directions comparées au départ. Chacune est un parti pris complet : police, onglets,
-barre d'outils, boutons, panneaux, dessin du graphe et couleurs. Leurs couleurs sont devenues les
-thèmes Sous-bois, Encre et Braise.
+The three directions compared at the start. Each is a complete stance: font, tabs, toolbar,
+buttons, panels, graph drawing and colours. Their colours became the Sous-bois, Encre and Braise
+themes.
 
-### En un coup d'œil
+### At a glance
 
-| | Actuelle | A. Sous-bois | B. Encre | C. Braise |
+| | Current | A. Sous-bois | B. Encre | C. Braise |
 |---|---|---|---|---|
-| Idée | point de départ | organique | technique | chaleureuse |
-| Police | celle du système | DM Sans | Inter | Rubik |
-| Onglets | cadre attaché | pilules | texte souligné | intercalaires |
-| Barre d'outils | icône sur libellé | pilules, icône et libellé côte à côte | une ligne compacte | groupes pleins |
-| Boutons | angles de 6 px | pilules | angles de 4 px | angles de 10 px, bord inférieur épais |
-| Panneaux | séparés par des traits | cartes flottantes | séparés par des traits | séparés par des traits |
-| Commit dans le graphe | pastille à initiales | pastille à initiales | point | grande pastille à initiales |
-| Tracé des branches | angles arrondis | courbes souples | angles nets, trait fin | angles très arrondis, trait épais |
-| Lien commit-message | ruban qui s'estompe | capsule autour du message | aucun | ligne entière colorée |
-| Hauteur d'une ligne | 32 px | 34 px | 26 px | 36 px |
-| Commits visibles sur un écran de 880 px | 23 | 21 | 29 | 20 |
-| Accent | bleu | vert mousse | indigo | ambre |
+| Idea | starting point | organic | technical | warm |
+| Font | the system's | DM Sans | Inter | Rubik |
+| Tabs | attached frame | pills | underlined text | folder tabs |
+| Toolbar | icon above label | pills, icon and label side by side | one compact row | solid groups |
+| Buttons | 6 px corners | pills | 4 px corners | 10 px corners, thick bottom edge |
+| Panels | separated by lines | floating cards | separated by lines | separated by lines |
+| Commit in the graph | dot with initials | dot with initials | point | large dot with initials |
+| Branch lines | rounded corners | soft curves | sharp corners, thin line | very rounded corners, thick line |
+| Link from commit to message | ribbon that fades | capsule around the message | none | whole row coloured |
+| Height of a row | 32 px | 34 px | 26 px | 36 px |
+| Commits visible on an 880 px screen | 23 | 21 | 29 | 20 |
+| Accent | blue | moss green | indigo | amber |
 
-Ce qui ne change pas d'une direction à l'autre : l'organisation de l'écran, les icônes, les
-fonctions. Le mouvement (durées, courbes d'animation) n'est pas montré par des captures ; il sera
-réglé dans la charte.
+What does not change from one direction to another: the organisation of the screen, the icons,
+the features. Motion (durations, animation curves) is not shown by screenshots; it is settled in
+the guidelines.
 
-### Repère : l'interface actuelle
+### Reference: the current interface
 
-| Sombre | Clair |
+| Dark | Light |
 |---|---|
-| ![Interface actuelle, thème sombre](directions/actuelle-graphe-sombre.png) | ![Interface actuelle, thème clair](directions/actuelle-graphe-clair.png) |
+| ![Current interface, dark theme](directions/actuelle-graphe-sombre.png) | ![Current interface, light theme](directions/actuelle-graphe-clair.png) |
 
 ### A. Sous-bois
 
-**Intention.** Tirer l'identité du nom : une ramure, ce sont des branches. Tout est arrondi et
-souple, les panneaux flottent sur le fond comme des cartes, et chaque message de commit est une
-capsule de la couleur de sa branche, accrochée à une courbe.
+**Intent.** Draw the identity from the name: a "ramure" is a set of branches. Everything is
+rounded and supple, the panels float on the background like cards, and each commit message is a
+capsule in the colour of its branch, hooked onto a curve.
 
-| Élément | Parti pris |
+| Element | Choice |
 |---|---|
-| Police | DM Sans, 13,5 px ; DM Mono pour le code. Titres de section en minuscules, sans capitales espacées. |
-| Onglets | Des pilules posées sur le fond ; l'onglet actif est une pilule teintée de l'accent. |
-| Barre d'outils | Chaque action est une pilule bordée, icône et libellé côte à côte. |
-| Boutons et champs | Boutons en pilule ; champs à angles de 10 px ; boîtes de dialogue à angles de 20 px. |
-| Panneaux | Barre latérale, graphe et détail sont trois cartes arrondies, séparées par le fond. |
-| Graphe | Pastilles à initiales, courbes souples de 3 px, message dans une capsule. Lignes de 34 px. |
-| Étiquettes | Pilules teintées ; la branche courante en pilule pleine. |
-| Couleurs | Fonds vert très sombre ou papier chaud, accent vert mousse, branches en teintes de nature. |
+| Font | DM Sans, 13.5 px; DM Mono for code. Section titles in lower case, without spaced capitals. |
+| Tabs | Pills sitting on the background; the active tab is a pill tinted with the accent. |
+| Toolbar | Each action is a bordered pill, icon and label side by side. |
+| Buttons and fields | Pill-shaped buttons; fields with 10 px corners; dialogs with 20 px corners. |
+| Panels | Sidebar, graph and detail are three rounded cards, separated by the background. |
+| Graph | Dots with initials, soft 3 px curves, the message in a capsule. 34 px rows. |
+| Labels | Tinted pills; the current branch as a solid pill. |
+| Colours | Very dark green or warm paper backgrounds, moss green accent, branches in natural hues. |
 
-**Ce qu'elle apporte.** La plus reconnaissable : aucun autre client Git ne ressemble à cela. Le
-lien entre un commit et son message est le plus lisible des trois.
+**What it brings.** The most recognisable: no other Git client looks like this. The link between
+a commit and its message is the most readable of the three.
 
-**Ce qu'elle coûte.** Les cartes et les capsules prennent de la place : moins de commits à
-l'écran, et les marges entre cartes retirent quelques pixels à chaque panneau. L'accent vert est
-aussi la couleur du succès et des lignes ajoutées dans un diff.
+**What it costs.** Cards and capsules take room: fewer commits on screen, and the margins between
+cards take a few pixels from each panel. The green accent is also the colour of success and of
+added lines in a diff.
 
-| Graphe, sombre | Graphe, clair |
+| Graph, dark | Graph, light |
 |---|---|
-| ![Sous-bois, graphe, thème sombre](directions/sous-bois-graphe-sombre.png) | ![Sous-bois, graphe, thème clair](directions/sous-bois-graphe-clair.png) |
+| ![Sous-bois, graph, dark theme](directions/sous-bois-graphe-sombre.png) | ![Sous-bois, graph, light theme](directions/sous-bois-graphe-clair.png) |
 
-| Modifications et diff | Boîte de dialogue |
+| Changes and diff | Dialog |
 |---|---|
-| ![Sous-bois, modifications et diff](directions/sous-bois-travail-sombre.png) | ![Sous-bois, boîte de dialogue](directions/sous-bois-dialogue-clair.png) |
+| ![Sous-bois, changes and diff](directions/sous-bois-travail-sombre.png) | ![Sous-bois, dialog](directions/sous-bois-dialogue-clair.png) |
 
 ### B. Encre
 
-**Intention.** Un outil d'abord. Tout est plat, dense et net, dans des gris presque sans teinte :
-les seules couleurs vives de l'écran sont celles des branches.
+**Intent.** A tool first. Everything is flat, dense and crisp, in greys with almost no tint: the
+only bright colours on screen are those of the branches.
 
-| Élément | Parti pris |
+| Element | Choice |
 |---|---|
-| Police | Inter, 12,5 px ; JetBrains Mono pour le code. Titres de section en petites capitales espacées. |
-| Onglets | Du texte, et un trait de 2 px sous l'onglet actif. Pas de cadre. |
-| Barre d'outils | Une seule ligne compacte, icône et libellé côte à côte, sans fond. |
-| Boutons et champs | Angles de 4 px, sans ombre ; boîtes de dialogue à angles de 8 px. |
-| Panneaux | Bord à bord, séparés par des traits fins. |
-| Graphe | Points de 9 px, traits de 2 px à angles nets, aucun ruban. L'avatar de l'auteur revient dans sa colonne. Lignes de 26 px. |
-| Étiquettes | Rectangles en police de code, avec une barre de couleur à gauche ; la branche courante est pleine. |
-| Couleurs | Gris neutres, accent indigo, branches en couleurs vives. |
+| Font | Inter, 12.5 px; JetBrains Mono for code. Section titles in spaced small capitals. |
+| Tabs | Text, and a 2 px line under the active tab. No frame. |
+| Toolbar | A single compact row, icon and label side by side, no background. |
+| Buttons and fields | 4 px corners, no shadow; dialogs with 8 px corners. |
+| Panels | Edge to edge, separated by thin lines. |
+| Graph | 9 px points, 2 px lines with sharp corners, no ribbon. The author's avatar goes back to its column. 26 px rows. |
+| Labels | Rectangles in the code font, with a coloured bar on the left; the current branch is solid. |
+| Colours | Neutral greys, indigo accent, branches in bright colours. |
 
-**Ce qu'elle apporte.** La plus dense : un quart de commits en plus à l'écran. L'indigo n'est la
-couleur d'aucun état (succès, avertissement, erreur), donc l'accent désigne toujours une action.
-La plus proche des habitudes prises avec GitKraken.
+**What it brings.** The densest: a quarter more commits on screen. Indigo is not the colour of
+any state (success, warning, error), so the accent always stands for an action. The closest to
+habits formed with GitKraken.
 
-**Ce qu'elle coûte.** La moins singulière des trois, et celle qui a le moins d'impact visuel : le
-graphe est précis, mais discret.
+**What it costs.** The least distinctive of the three, and the one with the least visual impact:
+the graph is precise, but discreet.
 
-| Graphe, sombre | Graphe, clair |
+| Graph, dark | Graph, light |
 |---|---|
-| ![Encre, graphe, thème sombre](directions/encre-graphe-sombre.png) | ![Encre, graphe, thème clair](directions/encre-graphe-clair.png) |
+| ![Encre, graph, dark theme](directions/encre-graphe-sombre.png) | ![Encre, graph, light theme](directions/encre-graphe-clair.png) |
 
-| Modifications et diff | Boîte de dialogue |
+| Changes and diff | Dialog |
 |---|---|
-| ![Encre, modifications et diff](directions/encre-travail-sombre.png) | ![Encre, boîte de dialogue](directions/encre-dialogue-clair.png) |
+| ![Encre, changes and diff](directions/encre-travail-sombre.png) | ![Encre, dialog](directions/encre-dialogue-clair.png) |
 
 ### C. Braise
 
-**Intention.** Une interface chaude et tactile : formes généreuses, groupes pleins, gros traits.
-L'ambre évoque le bois sans reprendre le vert attendu.
+**Intent.** A warm, tactile interface: generous shapes, solid groups, thick lines. Amber evokes
+wood without going for the expected green.
 
-| Élément | Parti pris |
+| Element | Choice |
 |---|---|
-| Police | Rubik, 13,5 px ; Fira Code pour le code. Titres de section en capitales, de la couleur de l'accent. |
-| Onglets | Des intercalaires de classeur, larges, à coins de 12 px. |
-| Barre d'outils | Les actions sont regroupées dans des blocs pleins et arrondis ; icônes de la couleur de l'accent. |
-| Boutons et champs | Angles de 10 px, bord inférieur épais qui donne du relief ; boîtes de dialogue à angles de 18 px. |
-| Panneaux | Bord à bord, séparés par des traits. |
-| Graphe | Grandes pastilles à initiales, traits de 3,5 px à angles très arrondis, ligne entière teintée de la couleur de la branche. Messages en caractères demi-gras. Lignes de 36 px. |
-| Étiquettes | Pilules pleines, plus hautes. |
-| Couleurs | Fonds charbon ou crème, accent ambre. |
+| Font | Rubik, 13.5 px; Fira Code for code. Section titles in capitals, in the accent colour. |
+| Tabs | Wide folder tabs, with 12 px corners. |
+| Toolbar | Actions are grouped in solid, rounded blocks; icons in the accent colour. |
+| Buttons and fields | 10 px corners, a thick bottom edge that gives relief; dialogs with 18 px corners. |
+| Panels | Edge to edge, separated by lines. |
+| Graph | Large dots with initials, 3.5 px lines with very rounded corners, the whole row tinted with the branch colour. Messages in semi-bold. 36 px rows. |
+| Labels | Solid pills, taller. |
+| Colours | Charcoal or cream backgrounds, amber accent. |
 
-**Ce qu'elle apporte.** Le graphe le plus spectaculaire : chaque branche se lit d'un bord à
-l'autre de l'écran. Chaleureuse, confortable en thème sombre.
+**What it brings.** The most spectacular graph: each branch reads from one edge of the screen to
+the other. Warm, comfortable in the dark theme.
 
-**Ce qu'elle coûte.** La moins dense. L'ambre est voisin de la couleur d'avertissement : un
-bouton principal et une mise en garde se ressemblent. Sur un dépôt à nombreuses branches, les
-lignes teintées peuvent charger l'écran.
+**What it costs.** The least dense. Amber is close to the warning colour: a main button and a
+warning look alike. On a repository with many branches, the tinted rows can clutter the screen.
 
-| Graphe, sombre | Graphe, clair |
+| Graph, dark | Graph, light |
 |---|---|
-| ![Braise, graphe, thème sombre](directions/braise-graphe-sombre.png) | ![Braise, graphe, thème clair](directions/braise-graphe-clair.png) |
+| ![Braise, graph, dark theme](directions/braise-graphe-sombre.png) | ![Braise, graph, light theme](directions/braise-graphe-clair.png) |
 
-| Modifications et diff | Boîte de dialogue |
+| Changes and diff | Dialog |
 |---|---|
-| ![Braise, modifications et diff](directions/braise-travail-sombre.png) | ![Braise, boîte de dialogue](directions/braise-dialogue-clair.png) |
+| ![Braise, changes and diff](directions/braise-travail-sombre.png) | ![Braise, dialog](directions/braise-dialogue-clair.png) |
 
-### Recommandation d'origine
+### Original recommendation
 
-**Sous-bois**, pour la structure et les formes. C'est la seule direction qui donne à Ramure un
-visage à lui, et la capsule est la meilleure réponse au défaut de départ : le lien entre un
-commit et son message.
+**Sous-bois**, for the structure and the shapes. It is the only direction that gives Ramure a
+face of its own, and the capsule is the best answer to the starting flaw: the link between a
+commit and its message.
 
-Deux réserves, qui peuvent se régler par un mélange :
+Two reservations, which a mix can settle:
 
-- **La densité.** Si 21 commits à l'écran sont trop peu, on peut garder les formes de Sous-bois
-  avec la hauteur de ligne d'Encre.
-- **L'accent vert.** S'il gêne à côté du vert des succès, l'indigo d'Encre fonctionne sur les
-  fonds de Sous-bois.
+- **Density.** If 21 commits on screen are too few, the shapes of Sous-bois can be kept with the
+  row height of Encre.
+- **The green accent.** If it is a problem next to the green of successes, the indigo of Encre
+  works on the backgrounds of Sous-bois.
 
-Encre reste le bon choix si la priorité est l'efficacité plutôt que l'identité.
+Encre remains the right choice if the priority is efficiency rather than identity.
 
-## Fichiers
+## Files
 
-- [`themes.css`](themes.css) : les quatre thèmes de couleurs.
-- [`directions.css`](directions.css) : les couleurs et les rayons des trois premières directions.
-- [`esquisses/`](esquisses) : les règles d'interface qui ont servi aux captures (police, onglets,
-  barre d'outils, panneaux, étiquettes). Ce sont des esquisses, pas du code à reprendre tel quel.
-- Dessin du graphe, par direction :
+- [`themes.css`](themes.css): the four colour themes.
+- [`directions.css`](directions.css): the colours and radii of the first three directions.
+- [`esquisses/`](esquisses): the interface rules that were used for the screenshots (font, tabs,
+  toolbar, panels, labels). They are sketches, not code to reuse as it is.
+- Graph drawing, by direction:
 
 | | Clairière | Sous-bois | Encre | Braise |
 |---|---|---|---|---|
-| Hauteur de ligne | 34 px | 34 px | 26 px | 36 px |
-| Largeur d'une colonne | 24 px | 24 px | 14 px | 26 px |
-| Rayon d'un commit | 10 px | 10 px | 4,5 px | 11,5 px |
-| Épaisseur du trait | 3 px | 3 px | 2 px | 3,5 px |
-| Changement de colonne | courbe | courbe | angle de 5 px | angle de 14 px |
-| Bande derrière le commit | 24 px, opacité 15 % | 24 px, opacité 15 % | aucune | 26 px, opacité 20 % |
+| Row height | 34 px | 34 px | 26 px | 36 px |
+| Width of a column | 24 px | 24 px | 14 px | 26 px |
+| Radius of a commit | 10 px | 10 px | 4.5 px | 11.5 px |
+| Thickness of the line | 3 px | 3 px | 2 px | 3.5 px |
+| Change of column | curve | curve | 5 px corner | 14 px corner |
+| Band behind the commit | 24 px, 15% opacity | 24 px, 15% opacity | none | 26 px, 20% opacity |
 
 ## Notes
 
-- Toutes les couleurs respectent les contrastes WCAG : 7:1 pour le texte courant, 4,5:1 pour le
-  texte secondaire et le texte posé sur une couleur, 3:1 pour les traits du graphe. Pour
-  Clairière, ils sont aussi vérifiés sur le fond des cartes, sur la sélection et dans les capsules.
-- Les polices proposées sont libres (SIL Open Font License) et seraient embarquées dans l'application.
-- Les captures viennent de l'interface de la PR #2, sous Ubuntu.
+- All colours meet the WCAG contrasts: 7:1 for body text, 4.5:1 for secondary text and text
+  placed on a colour, 3:1 for the lines of the graph. For Clairière, they are also checked on the
+  background of the cards, on the selection and in the capsules.
+- The proposed fonts are free (SIL Open Font License) and would be embedded in the application.
+- The screenshots come from the interface of pull request #2, on Ubuntu.

@@ -1,5 +1,5 @@
 /* Jetons de Ramure : la seule source des couleurs, des tailles, des formes et des durées.
-   Leurs valeurs sont celles de docs/charte-graphique.md (thème Ardoise). Aucun composant
+   Leurs valeurs sont celles de docs/design-guidelines.md (thème Ardoise). Aucun composant
    n'écrit ces valeurs en dur : `npm run check` le vérifie. */
 :root {
   color-scheme: light;
