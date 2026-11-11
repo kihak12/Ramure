@@ -6,7 +6,9 @@
   import Icon from '../ui/Icon.svelte';
   import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
+  import { focusWithRing } from '../ui/focus';
   import { explain } from './reasons';
+  import { forgetSecret, keyringAvailable, NO_KEYRING, secretsHeld, type SecretRef } from './secrets';
   import type { Host, SshError } from './types';
 
   let element = $state<HTMLDialogElement>();
@@ -83,6 +85,60 @@
     form.keyPath = picked;
   }
 
+  // --- Secrets retenus dans le trousseau du système (charte, section 9.21) -----------------------
+  // Le mot de passe appartient au compte (utilisateur, serveur, port), la phrase secrète à la clé :
+  // la fiche montre ce que le trousseau retient pour les siens, et permet de l'oublier.
+  let keyring = $state<boolean | null>(null);
+  let held = $state({ password: false, passphrase: false });
+  let authEl = $state<HTMLSelectElement>();
+  let keyEl = $state<HTMLInputElement>();
+
+  const passwordRef = $derived.by((): SecretRef | null => {
+    if (!form || form.auth !== 'password') return null;
+    const user = form.user.trim() || ssh.defaultUser;
+    const host = form.hostname.trim();
+    return user && host ? { kind: 'password', user, host, port: Number(form.port) || 22 } : null;
+  });
+  const passphraseRef = $derived.by((): SecretRef | null => {
+    if (!form || form.auth !== 'keyFile' || !form.keyPath.trim()) return null;
+    return { kind: 'passphrase', path: form.keyPath.trim() };
+  });
+
+  // Chaque lecture porte un numéro : la réponse d'une lecture dépassée est ignorée.
+  let reading = 0;
+  async function readHeld() {
+    const mine = ++reading;
+    const refs = [passwordRef, passphraseRef];
+    const answers = await secretsHeld(refs.filter((ref) => ref !== null));
+    if (mine !== reading) return;
+    held = { password: !!passwordRef && answers[0] === true, passphrase: !!passphraseRef && answers[passwordRef ? 1 : 0] === true };
+  }
+
+  // La fiche s'ouvre, ou un champ de la connexion change : on relit, une fois la frappe posée.
+  $effect(() => {
+    if (!form) return;
+    void [passwordRef, passphraseRef];
+    held = { password: false, passphrase: false };
+    const timer = window.setTimeout(() => void readHeld(), 250);
+    return () => window.clearTimeout(timer);
+  });
+  $effect(() => {
+    if (editing) void keyringAvailable().then((answer) => (keyring = answer));
+  });
+
+  /** Oublie le secret retenu ; le focus va au champ dont il dépend, le bouton ayant disparu. */
+  async function forgetHeld(kind: 'password' | 'passphrase') {
+    const ref = kind === 'password' ? passwordRef : passphraseRef;
+    if (!ref) return;
+    try {
+      await forgetSecret(ref);
+      held[kind] = false;
+      focusWithRing(kind === 'password' ? authEl : keyEl);
+    } catch (e) {
+      toasts.err('Le trousseau du système n’a pas pu l’oublier', typeof e === 'string' ? e : String(e));
+    }
+  }
+
   // --- Tester la connexion (charte, section 9.21) ---------------------------------------------
   /** Ce que le test montre, entre les champs et les boutons. */
   type Test =
@@ -150,15 +206,11 @@
       test = { step: 'fail', message: `Indique un utilisateur${NB}: le compte de cette machine n’a pas pu être lu.` };
       return;
     }
-    // Un mot de passe n'est jamais enregistré : il est demandé à chaque test, comme à chaque connexion.
-    if (host.auth === 'password' && !attempt.password) {
-      test = { step: 'secret', kind: 'password', path: '', error: '' };
-      return;
-    }
     const keyPath = attempt.keyPath ?? (host.auth === 'keyFile' ? host.keyPath : '');
     const auth =
       host.auth === 'password'
-        ? { kind: 'password', password: attempt.password }
+        ? // Sans mot de passe tapé, le test prend celui que le trousseau retient, comme une connexion.
+          { kind: 'password', password: attempt.password ?? null }
         : keyPath
           ? { kind: 'keyFile', path: keyPath, passphrase: attempt.passphrase ?? null }
           : { kind: 'auto' };
@@ -186,9 +238,22 @@
         return;
       }
       if (problem.kind === 'needPassphrase') {
-        const wrong = attempt.passphrase !== undefined;
         attempt = { ...attempt, passphrase: undefined };
-        test = { step: 'secret', kind: 'passphrase', path: problem.path, error: wrong ? 'Cette phrase secrète ne déverrouille pas la clé.' : '' };
+        const error =
+          problem.refused === 'typed'
+            ? 'Cette phrase secrète ne déverrouille pas la clé.'
+            : problem.refused === 'retained'
+              ? 'La phrase secrète retenue ne déverrouille plus la clé. Elle a été oubliée.'
+              : '';
+        test = { step: 'secret', kind: 'passphrase', path: problem.path, error };
+        // Un secret retenu qui est refusé est oublié : la fiche ne le montre plus.
+        if (problem.refused === 'retained') void readHeld();
+        return;
+      }
+      if (problem.kind === 'needPassword') {
+        attempt = { ...attempt, password: undefined };
+        test = { step: 'secret', kind: 'password', path: '', error: problem.refused ? 'Le serveur a refusé le mot de passe retenu. Il a été oublié.' : '' };
+        if (problem.refused) void readHeld();
         return;
       }
       if (problem.kind === 'auth' && host.auth === 'password') {
@@ -260,18 +325,32 @@
 
         <label class="full">
           <span class="label">Authentification</span>
-          <select class="field" bind:value={form.auth}>
+          <select class="field" bind:this={authEl} bind:value={form.auth}>
             <option value="auto">Agent SSH, puis clés par défaut de ~/.ssh</option>
             <option value="keyFile">Fichier de clé</option>
-            <option value="password">Mot de passe (demandé à chaque connexion)</option>
+            <option value="password">Mot de passe</option>
           </select>
         </label>
+        {#if form.auth === 'password'}
+          <!-- Ce que le trousseau retient pour ce compte, et de quoi l'oublier. -->
+          <div class="full kept">
+            {#if held.password}
+              <small role="status">Le mot de passe de ce compte est retenu dans le trousseau du système.</small>
+              <button class="btn ghost small" type="button" onclick={() => void forgetHeld('password')}>Oublier le mot de passe</button>
+            {:else if keyring === false}
+              <small>{NO_KEYRING.password}</small>
+            {:else}
+              <small>Demandé à la connexion, où tu peux le faire retenir par le trousseau du système.</small>
+            {/if}
+          </div>
+        {/if}
         {#if form.auth === 'keyFile'}
           <div class="full key">
             <label for="host-key"><span class="label">Clé privée</span></label>
             <div class="pick">
               <input
                 id="host-key"
+                bind:this={keyEl}
                 class="field mono"
                 type="text"
                 list="host-keys"
@@ -288,6 +367,11 @@
             </datalist>
             {#if keyNote}
               <small class="note" role="status">{keyNote}</small>
+            {:else if held.passphrase}
+              <div class="kept">
+                <small role="status">La phrase secrète de cette clé est retenue dans le trousseau du système.</small>
+                <button class="btn ghost small" type="button" onclick={() => void forgetHeld('passphrase')}>Oublier la phrase secrète</button>
+              </div>
             {:else}
               <small>Si la clé est protégée, sa phrase secrète est demandée à la connexion.</small>
             {/if}
@@ -369,7 +453,7 @@
         <div class="test ask" role="group" aria-label={test.kind === 'passphrase' ? 'Phrase secrète de la clé' : 'Mot de passe'}>
           <p>
             {#if test.kind === 'passphrase'}La clé <span class="mono">{test.path}</span> est protégée{NB}: sa phrase secrète est demandée pour le test, puis oubliée.
-            {:else}Le mot de passe est demandé pour le test, puis oublié{NB}: il n’est jamais enregistré.{/if}
+            {:else}Le mot de passe est demandé pour le test, puis oublié{NB}: un test ne retient rien.{/if}
           </p>
           <div class="row">
             <input
@@ -472,6 +556,13 @@
   }
   .note {
     color: var(--warn);
+  }
+  /* Un secret retenu : ce que le trousseau garde, et le bouton qui l'oublie. */
+  .kept {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
   }
   /* Six colonnes : l'adresse en prend cinq, le port une. */
   .full {

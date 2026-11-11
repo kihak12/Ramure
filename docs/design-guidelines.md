@@ -789,6 +789,34 @@ password).
   says "reconnexion…" during a try.
 - A connection that fails says why in French when the reason is known, as below.
 
+**Secrets.** A password or the passphrase of a key is asked for by a panel over the terminal: its
+title says what is asked ("Mot de passe de deploy", "Phrase secrète de la clé"), a line in
+`--muted` says for what, and the field is a password field, which takes the keyboard when the
+panel shows.
+
+- **Keeping it.** Under the field, a checkbox (9.3), unchecked: "Retenir dans le trousseau du
+  système". The keyring is that of the system: the Credential Manager on Windows, the Secret
+  Service (GNOME Keyring, KWallet) on Ubuntu. The secret is kept only once it has worked.
+- **Without a keyring**, nothing is offered, and a line in `--muted` says so in place of the
+  checkbox: "Le trousseau du système ne répond pas : ce mot de passe sera redemandé à chaque
+  connexion."
+- **A secret that is kept is used without a question.** The header of the session says where it
+  came from: "mot de passe du trousseau", "clé id_ed25519, phrase secrète du trousseau".
+- **A kept secret that is refused is forgotten**, so that it is not offered to the server a
+  second time, and the panel asks again, with the reason in error text: "Le serveur a refusé le
+  mot de passe retenu. Il a été oublié."
+- **What a secret belongs to.** A password belongs to an account on a server (user, address,
+  port): two hosts of the book on the same account share it, and changing the address of a host
+  leaves the password of the old address behind. A passphrase belongs to its key file, and is
+  good for every host that uses that key.
+- **Seeing and forgetting.** The form of a host shows what is kept for it (9.21). "Gérer les
+  clés" says, under a protected key, "Sa phrase secrète est retenue dans le trousseau du
+  système.", with "Oublier la phrase secrète", a small ghost button. Deleting a host forgets the
+  password of its account, unless another host uses it, and the confirmation says so.
+- **A secret is never shown or written**: not in the host book, not in a notification, not in
+  the header. If the keyring refuses to keep one, a warning notification says "Le secret n’a pas
+  pu être retenu" and why; the session stays open.
+
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server
 no longer answering). Only a lost connection comes back on its own, and only if "Reconnexion
@@ -811,8 +839,9 @@ automatique" is on in the settings.
 - The reasons the system gives in English are said in French when they are known (the server
   refuses, does not answer, cannot be reached, cut the connection); others are shown as they
   are, like the output of git.
-- A try that needs the user stops the series: a password, a passphrase, a server fingerprint.
-  The card asks for it once and waits.
+- A try that needs the user stops the series: a password or a passphrase that is not kept, a
+  server fingerprint. The card asks for it once and waits. A kept secret needs no one: the
+  series goes on.
 - After five failed tries, the card says so, with "Reconnecter" and "Fermer l’onglet".
 - When the session comes back, the terminal keeps the text it had, and the startup command of
   the host runs again.
@@ -1055,13 +1084,24 @@ need the room.
   - an unknown server: its fingerprint in the code font, with "Faire confiance et mémoriser"
     and "Faire confiance cette fois", as when a session connects (9.15); a fingerprint that has
     changed blocks the test, as it blocks a connection;
-  - a protected key or a password: a password field and "Tester", Enter tests. The secret is
-    forgotten after the test, whatever its result; a password is never stored. A secret that is
-    refused asks again, with the field in its error state (9.3): `--bad` border, the message
-    under it.
+  - a protected key or a password: a password field and "Tester", Enter tests. A test uses a
+    secret that is kept, as a connection does (9.15), and never keeps one: what is typed for a
+    test is forgotten after it, whatever its result. A secret that is refused asks again, with
+    the field in its error state (9.3): `--bad` border, the message under it.
   - The question sits in a box on `--bg`, 6 px corners, 10 px and 12 px of inner margins. Its
     sentence says what is asked and stands for the label of the field, whose accessible name
     repeats it.
+- **Kept secrets.** Under "Authentification", the form says what the keyring of the system
+  keeps for this host (9.15), in 11.5 px, `--muted`, and offers to forget it with a small ghost
+  button beside the sentence, or under it when the line is too short:
+  - with a password: "Le mot de passe de ce compte est retenu dans le trousseau du système." and
+    "Oublier le mot de passe"; when none is kept, "Demandé à la connexion, où tu peux le faire
+    retenir par le trousseau du système."; without a keyring, the sentence of 9.15;
+  - with a key file whose passphrase is kept: "La phrase secrète de cette clé est retenue dans
+    le trousseau du système." and "Oublier la phrase secrète".
+  - The sentence follows the fields: it is read again when the user, the address, the port or
+    the key changes. Forgetting is done at once, without saving the form; the focus then goes
+    to the field the secret depends on.
 - **The keyboard.** The field of a secret takes the focus when it appears. When the test ends
   and the focus has nowhere to be (the button clicked is gone, or "Tester la connexion" was
   disabled while the test ran), it goes back to "Tester la connexion".

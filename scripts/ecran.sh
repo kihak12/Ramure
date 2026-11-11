@@ -6,6 +6,9 @@
 #   scripts/ecran.sh capturer <fichier.png>            capture la fenêtre
 #   scripts/ecran.sh fermer                            arrête l'application et l'écran virtuel
 #
+#   ECRAN_TROUSSEAU=1 scripts/ecran.sh ouvrir …        avec un trousseau du système, vide et déverrouillé
+#   ECRAN_TROUSSEAU=0 scripts/ecran.sh ouvrir …        sans aucun trousseau
+#
 # Entre « ouvrir » et « capturer », l'application se pilote avec xdotool, sur l'écran :99 :
 #   DISPLAY=:99 xdotool mousemove 760 138 click 1
 #
@@ -49,9 +52,41 @@ if paths:
 db.commit()
 P
     [ "$theme" = sombre ] && gtk=Adwaita:dark || gtk=Adwaita
+    # Le trousseau du système, pour les écrans qui retiennent un secret :
+    #   ECRAN_TROUSSEAU=1  un trousseau (GNOME Keyring) déverrouillé, vide à chaque lancement ;
+    #   ECRAN_TROUSSEAU=0  aucun trousseau : le bus de la session ne démarre aucun service ;
+    #   sans la variable   ce que la machine a, comme avant.
+    start='exec "$0"'
+    bus=()
+    case ${ECRAN_TROUSSEAU:-} in
+      1)
+        command -v gnome-keyring-daemon >/dev/null || { echo "Il manque gnome-keyring (apt install gnome-keyring)" >&2; exit 1; }
+        rm -rf "$home/.local/share/keyrings"
+        start='printf ramure | gnome-keyring-daemon --unlock --components=secrets >/dev/null 2>&1; exec "$0"'
+        ;;
+      0)
+        # Un bus sans dossier de services : rien n'y est lancé à la demande, pas même un trousseau.
+        cat >"$home/bus-sans-services.conf" <<'CONF'
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+  <type>session</type>
+  <keep_umask/>
+  <listen>unix:tmpdir=/tmp</listen>
+  <auth>EXTERNAL</auth>
+  <policy context="default">
+    <allow send_destination="*" eavesdrop="true"/>
+    <allow eavesdrop="true"/>
+    <allow own="*"/>
+  </policy>
+</busconfig>
+CONF
+        bus=(--config-file="$home/bus-sans-services.conf")
+        ;;
+    esac
     HOME=$home XDG_CONFIG_HOME=$home/.config XDG_DATA_HOME=$home/.local/share \
       GTK_THEME=$gtk WEBKIT_DISABLE_DMABUF_RENDERER=1 \
-      dbus-run-session -- "$bin" >"$home/ramure.log" 2>&1 &
+      dbus-run-session "${bus[@]}" -- sh -c "$start" "$bin" >"$home/ramure.log" 2>&1 &
     timeout 30 xdotool search --sync --onlyvisible --name '^Ramure$' >/dev/null
     sleep 9 # le temps que la page charge les dépôts : un premier chargement est plus long
     ;;
@@ -65,7 +100,7 @@ P
     pkill -x Xvfb 2>/dev/null || true
     ;;
   *)
-    sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
     exit 1
     ;;
 esac

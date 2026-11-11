@@ -2,6 +2,8 @@
   import { invoke } from '@tauri-apps/api/core';
   import Icon from '../ui/Icon.svelte';
   import { toasts } from '../ui/toasts.svelte';
+  import { focusWithRing } from '../ui/focus';
+  import { forgetSecret, secretsHeld } from './secrets';
   import { ssh } from './ssh.svelte';
   import type { KeyInfo } from './types';
 
@@ -13,6 +15,28 @@
   let confirm = $state('');
   let comment = $state('');
   let error = $state('');
+
+  // Les clés dont le trousseau du système retient la phrase secrète (charte, section 9.15).
+  let held = $state<Record<string, boolean>>({});
+  let listEl = $state<HTMLElement>();
+  $effect(() => {
+    if (!ssh.showKeys) return;
+    const locked = ssh.keys.filter((key) => key.encrypted);
+    void secretsHeld(locked.map((key) => ({ kind: 'passphrase', path: key.path }))).then((answers) => {
+      held = Object.fromEntries(locked.map((key, i) => [key.path, answers[i] === true]));
+    });
+  });
+
+  async function forgetPassphrase(key: KeyInfo) {
+    try {
+      await forgetSecret({ kind: 'passphrase', path: key.path });
+      held[key.path] = false;
+      // Le bouton a disparu : le focus va au bouton voisin de la même clé.
+      focusWithRing(listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key.name)}"] .copy`));
+    } catch (e) {
+      toasts.err('Le trousseau du système n’a pas pu l’oublier', typeof e === 'string' ? e : String(e));
+    }
+  }
 
   const mismatch = $derived(passphrase !== confirm);
   const ready = $derived(name.trim() !== '' && !mismatch && !busy);
@@ -89,9 +113,9 @@
       <p>Les clés de <code>~/.ssh</code>. Elles y restent : Ramure n’en garde aucune copie.</p>
     </header>
 
-    <div class="list">
+    <div class="list" bind:this={listEl}>
       {#each ssh.keys as key (key.name)}
-        <div class="key">
+        <div class="key" data-key={key.name}>
           <span class="glyph"><Icon name="tag" size={16} /></span>
           <div class="text">
             <b class="mono">{key.name}</b>
@@ -100,8 +124,15 @@
               {#if key.encrypted}· <span class="locked">protégée par une phrase secrète</span>{/if}
             </small>
             <small class="mono print">{key.fingerprint}</small>
+            {#if held[key.path]}
+              <!-- Ce que le trousseau retient pour cette clé, et de quoi l'oublier. -->
+              <span class="kept">
+                <small>Sa phrase secrète est retenue dans le trousseau du système.</small>
+                <button class="btn ghost small" type="button" onclick={() => void forgetPassphrase(key)}>Oublier la phrase secrète</button>
+              </span>
+            {/if}
           </div>
-          <button class="btn small" type="button" onclick={() => void copy(key)}><Icon name="copy" size={14} /> Copier la clé publique</button>
+          <button class="btn small copy" type="button" onclick={() => void copy(key)}><Icon name="copy" size={14} /> Copier la clé publique</button>
         </div>
       {:else}
         <p class="none">Aucune clé dans ~/.ssh. Génère-en une pour te connecter sans mot de passe.</p>
@@ -239,6 +270,13 @@
   }
   .locked {
     color: var(--ok);
+  }
+  .kept {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
   }
   .none {
     padding: 14px 6px;

@@ -12,6 +12,8 @@
   import { prefs } from '../git/prefs.svelte';
   import { STATUS, type Session } from './ssh.svelte';
   import { focusWithRing } from '../ui/focus';
+  import { toasts } from '../ui/toasts.svelte';
+  import { keyringAvailable, NO_KEYRING } from './secrets';
   import { explain } from './reasons';
   import type { Closed, Connected, SshError } from './types';
 
@@ -59,9 +61,26 @@
     keyPath?: string;
     passphrase?: string;
     password?: string;
+    /** Retenir le secret tapé dans le trousseau du système, une fois qu'il a servi. */
+    keep?: boolean;
   }
 
   let phase = $state<Phase>({ step: 'connecting' });
+  // Le trousseau du système : s'il répond, la demande d'un secret propose de le retenir (9.15).
+  let keyring = $state<boolean | null>(null);
+  let keep = $state(false);
+  $effect(() => {
+    if (phase.step !== 'passphrase' && phase.step !== 'password') return;
+    void keyringAvailable().then((answer) => (keyring = answer));
+  });
+  // Un secret est demandé : son champ prend le clavier, dès que l'onglet est à l'écran. L'attribut
+  // `autofocus` ne suffit pas : il ne joue que si rien d'autre n'a le focus, or la ligne de l'hôte
+  // qu'on vient de double-cliquer l'a encore.
+  let secretEl = $state<HTMLInputElement>();
+  $effect(() => {
+    if ((phase.step !== 'passphrase' && phase.step !== 'password') || !active) return;
+    void tick().then(() => secretEl?.focus());
+  });
   // Reconnexion automatique : la tentative en cours (0 quand il n'y en a pas), son minuteur, et
   // l'heure, rafraîchie chaque seconde pour le compte à rebours.
   let retry = $state(0);
@@ -328,15 +347,6 @@
       session.status = 'closed';
       return;
     }
-    // Un mot de passe n'est jamais enregistré : il est demandé à chaque connexion.
-    if (host.auth === 'password' && !attempt.password) {
-      // La série de tentatives s'arrête : l'onglet attend l'utilisateur.
-      retry = 0;
-      session.status = 'closed';
-      phase = { step: 'password', error: '' };
-      return;
-    }
-
     phase = { step: 'connecting' };
     session.status = auto ? 'reconnecting' : 'connecting';
     secret = '';
@@ -358,7 +368,8 @@
     const keyPath = attempt.keyPath ?? (host.auth === 'keyFile' ? host.keyPath : '');
     const auth =
       host.auth === 'password'
-        ? { kind: 'password', password: attempt.password }
+        ? // Sans mot de passe tapé, le cœur prend celui que le trousseau retient, ou le demande.
+          { kind: 'password', password: attempt.password ?? null }
         : keyPath
           ? { kind: 'keyFile', path: keyPath, passphrase: attempt.passphrase ?? null }
           : { kind: 'auto' };
@@ -375,6 +386,7 @@
           acceptFingerprint: attempt.accept ?? null,
           rememberHost: attempt.remember ?? false,
           startupCommand: host.startupCommand.trim() || null,
+          rememberSecret: attempt.keep ?? false,
         },
         onData,
       });
@@ -384,6 +396,7 @@
       session.status = 'connected';
       // Les secrets ne survivent pas à l'ouverture de la session.
       attempt = {};
+      if (connected.keepFailed) toasts.warn('Le secret n’a pas pu être retenu', `Le trousseau du système l’a refusé${NB}: ${connected.keepFailed}`);
       retry = 0;
       term.focus();
     } catch (e) {
@@ -394,9 +407,23 @@
       } else if (problem.kind === 'hostKeyChanged') {
         phase = { step: 'hostKeyChanged', fingerprint: problem.fingerprint, line: problem.line };
       } else if (problem.kind === 'needPassphrase') {
-        const wrong = attempt.passphrase !== undefined;
         attempt.passphrase = undefined;
-        phase = { step: 'passphrase', path: problem.path, error: wrong ? 'Cette phrase secrète ne déverrouille pas la clé.' : '' };
+        phase = {
+          step: 'passphrase',
+          path: problem.path,
+          error:
+            problem.refused === 'typed'
+              ? 'Cette phrase secrète ne déverrouille pas la clé.'
+              : problem.refused === 'retained'
+                ? 'La phrase secrète retenue ne déverrouille plus la clé. Elle a été oubliée.'
+                : '',
+        };
+      } else if (problem.kind === 'needPassword') {
+        // Rien de retenu, ou ce qui l'était a été refusé : la série de tentatives s'arrête, l'onglet
+        // attend l'utilisateur.
+        retry = 0;
+        attempt.password = undefined;
+        phase = { step: 'password', error: problem.refused ? 'Le serveur a refusé le mot de passe retenu. Il a été oublié.' : '' };
       } else if (problem.kind === 'auth' && host.auth === 'password') {
         attempt.password = undefined;
         phase = { step: 'password', error: problem.message };
@@ -412,8 +439,10 @@
 
   function submitSecret(e: SubmitEvent) {
     e.preventDefault();
-    if (phase.step === 'passphrase') void connect({ keyPath: phase.path, passphrase: secret });
-    else if (phase.step === 'password') void connect({ password: secret });
+    // Sans trousseau, rien n'est proposé : rien n'est retenu.
+    const kept = keep && keyring === true;
+    if (phase.step === 'passphrase') void connect({ keyPath: phase.path, passphrase: secret, keep: kept });
+    else if (phase.step === 'password') void connect({ password: secret, keep: kept });
   }
 
   /** « Relancer » vient d'être cliqué : le terminal rouvert reprend le clavier, même sous le graphe. */
@@ -681,12 +710,20 @@
                 {#if phase.step === 'passphrase'}
                   La clé <span class="mono">{phase.path}</span> est protégée.
                 {:else}
-                  Pour <span class="mono">{target}</span>. Il n’est pas enregistré.
+                  Pour <span class="mono">{target}</span>.
                 {/if}
               </p>
               {#if phase.error}<p class="err" role="alert">{phase.error}</p>{/if}
-              <!-- svelte-ignore a11y_autofocus -->
-              <input class="field" type="password" autocomplete="off" autofocus aria-label={phase.step === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'} bind:value={secret} />
+              <input class="field" type="password" autocomplete="off" bind:this={secretEl} aria-label={phase.step === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'} bind:value={secret} />
+              <!-- Retenir le secret : proposé si le trousseau du système répond ; sinon on le dit. -->
+              {#if keyring}
+                <label class="keep">
+                  <input type="checkbox" bind:checked={keep} />
+                  <span>Retenir dans le trousseau du système</span>
+                </label>
+              {:else if keyring === false}
+                <p class="muted">{NO_KEYRING[phase.step]}</p>
+              {/if}
               <div class="row">
                 <button class="btn primary" type="submit" disabled={!secret}>Se connecter</button>
                 <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
@@ -923,6 +960,13 @@
   .card form {
     display: grid;
     gap: 10px;
+  }
+  /* La case et son texte sont la cible : pas plus larges que ce texte. */
+  .keep {
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   h3 {
     display: flex;
