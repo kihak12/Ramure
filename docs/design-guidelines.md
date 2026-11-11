@@ -715,10 +715,12 @@ Every setting of the application is on one page. It takes the place of the modul
 of the rail; the modules stay alive behind it, and an SSH session is not cut.
 
 **Getting there and back.** The "Réglages" button at the foot of the rail, which behaves like a
-module button (pressed while the page is shown); Ctrl + , ; the palette; and "Réglages" in the
-toolbar of a repository, a shortcut that opens the page on its "Git" section. The same button,
-the same shortcut, a module button or Escape bring back the module and the tab that were shown;
-after Escape, the focus is on the "Réglages" button of the rail.
+module button (pressed while the page is shown); Ctrl + , ; and the palette. No other button
+opens the page: one setting, one place to reach it. The page opens on the section of the module
+it is opened from, "Git" or "Terminal et SSH"; the other sections are one click away in its
+navigation. One exception: the palette command "Raccourcis clavier" opens the page on the
+section of that name, the one it names. The same button, the same shortcut, a module button or Escape bring back the module
+and the tab that were shown; after Escape, the focus is on the "Réglages" button of the rail.
 
 **Structure.** On `--side`, two cards 8 px apart and 8 px from the edges.
 
