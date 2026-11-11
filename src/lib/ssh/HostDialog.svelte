@@ -5,7 +5,6 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
   import Select from '../ui/Select.svelte';
-  import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
   import { focusWithRing } from '../ui/focus';
   import { veil } from '../ui/veil';
@@ -18,6 +17,10 @@
   let tags = $state('');
   /** Remarque affichée sous le champ de la clé après un choix dans la fenêtre de fichiers. */
   let keyNote = $state('');
+  /** Ce qui a échoué dans la fiche, dit sous l'élément qui l'a déclenché, jamais dans une
+   *  notification, que le voile de la boîte recouvrirait (charte, 9.11). */
+  let keyError = $state('');
+  let forgetError = $state<{ password: string; passphrase: string }>({ password: '', passphrase: '' });
 
   const editing = $derived(ssh.editing);
   const valid = $derived(!!form && form.alias.trim() !== '' && form.hostname.trim() !== '');
@@ -98,12 +101,13 @@
     try {
       picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: folder });
     } catch (e) {
-      toasts.err('La fenêtre de fichiers n’a pas pu s’ouvrir', e instanceof Error ? e.message : String(e));
+      keyError = `La fenêtre de fichiers n’a pas pu s’ouvrir : ${e instanceof Error ? e.message : String(e)}`;
       return;
     }
     // Fenêtre annulée, ou fiche fermée entre-temps : le champ ne change pas.
     if (!picked || !form) return;
     keyNote = '';
+    keyError = '';
     if (picked.endsWith('.pub')) {
       // La connexion se fait avec la clé privée, rangée à côté sous le même nom.
       picked = picked.slice(0, -'.pub'.length);
@@ -159,12 +163,13 @@
   async function forgetHeld(kind: 'password' | 'passphrase') {
     const ref = kind === 'password' ? passwordRef : passphraseRef;
     if (!ref) return;
+    forgetError[kind] = '';
     try {
       await forgetSecret(ref);
       held[kind] = false;
       focusWithRing(kind === 'password' ? authEl : keyEl);
     } catch (e) {
-      toasts.err('Le trousseau du système n’a pas pu l’oublier', typeof e === 'string' ? e : String(e));
+      forgetError[kind] = `Le trousseau du système n’a pas pu l’oublier : ${typeof e === 'string' ? e : String(e)}`;
     }
   }
 
@@ -376,6 +381,7 @@
             {#if held.password}
               <small role="status">Le mot de passe de ce compte est retenu dans le trousseau du système.</small>
               <button class="btn ghost small" type="button" onclick={() => void forgetHeld('password')}>Oublier le mot de passe</button>
+              {#if forgetError.password}<small class="bad" role="alert">{forgetError.password}</small>{/if}
             {:else if keyring === false}
               <small>{NO_KEYRING.password}</small>
             {:else}
@@ -397,19 +403,25 @@
                 spellcheck="false"
                 autocomplete="off"
                 bind:value={form.keyPath}
-                oninput={() => (keyNote = '')}
+                oninput={() => {
+                  keyNote = '';
+                  keyError = '';
+                }}
               />
               <button class="btn" type="button" onclick={() => void browseKey()}><Icon name="folder" size={14} /> Parcourir…</button>
             </div>
             <datalist id="host-keys">
               {#each ssh.keys as key (key.path)}<option value={key.path}>{key.algorithm}{key.comment ? ` · ${key.comment}` : ''}</option>{/each}
             </datalist>
-            {#if keyNote}
+            {#if keyError}
+              <small class="bad" role="alert">{keyError}</small>
+            {:else if keyNote}
               <small class="note" role="status">{keyNote}</small>
             {:else if held.passphrase}
               <div class="kept">
                 <small role="status">La phrase secrète de cette clé est retenue dans le trousseau du système.</small>
                 <button class="btn ghost small" type="button" onclick={() => void forgetHeld('passphrase')}>Oublier la phrase secrète</button>
+                {#if forgetError.passphrase}<small class="bad" role="alert">{forgetError.passphrase}</small>{/if}
               </div>
             {:else}
               <small>Si la clé est protégée, sa phrase secrète est demandée à la connexion.</small>
@@ -630,6 +642,9 @@
   }
   .note {
     color: var(--warn);
+  }
+  small.bad {
+    color: var(--bad);
   }
   /* Un secret retenu : ce que le trousseau garde et, dessous, le bouton qui l'oublie. Le bouton,
      sans fond ni bordure, est tiré de sa marge intérieure (8 px et 1 px de bordure) : son texte
