@@ -99,7 +99,7 @@
 
 {#snippet heading(section: Section, icon: IconName, title: string, count: number)}
   <button class="heading" type="button" aria-expanded={isOpen(section)} onclick={() => toggle(section)}>
-    <span class="caret" class:open={isOpen(section)}><Icon name="chevron" size={12} /></span>
+    <span class="caret" class:open={isOpen(section)}><Icon name="chevron" size={14} /></span>
     <Icon name={icon} size={14} />
     <span class="title">{title}</span>
     <span class="count">{count}</span>
@@ -108,7 +108,7 @@
 
 {#snippet rest(total: number)}
   {#if total > MAX_ITEMS}
-    <li class="none">… et {total - MAX_ITEMS} autres : utilise le filtre</li>
+    <li class="none">… et {total - MAX_ITEMS} autres : utilise le filtre</li>
   {/if}
 {/snippet}
 
@@ -135,9 +135,9 @@
               ondblclick={() => switchLocal(branch.name)}
               oncontextmenu={(e) => menu.open(e, labelMenu(repo, localLabel(branch.name, branch.current), branch.sha))}
             >
-              <span class="mark">{#if repo.switching === branch.name}<span class="spinner" aria-hidden="true"></span>{:else if branch.current}<Icon name="check" size={13} />{/if}</span>
+              <span class="mark">{#if repo.switching === branch.name}<span class="spinner" aria-hidden="true"></span>{:else if branch.current}<Icon name="check" size={14} />{/if}</span>
               <span class="name">{branch.name}</span>
-              {#if branch.gone}<span class="chip gone" title="La branche distante suivie n'existe plus">orpheline</span>{/if}
+              {#if branch.gone}<span class="chip gone" title="La branche distante suivie n’existe plus">orpheline</span>{/if}
               {#if branch.ahead}<span class="chip" title="{branch.ahead} commit(s) à pousser"><Icon name="up" size={10} />{branch.ahead}</span>{/if}
               {#if branch.behind}<span class="chip" title="{branch.behind} commit(s) à tirer"><Icon name="down" size={10} />{branch.behind}</span>{/if}
             </button>
@@ -207,7 +207,7 @@
               type="button"
               class="item"
               class:current={repo.openFile?.key === `stash:${stash.index}`}
-              title="{stash.message} — clic pour voir le contenu, clic droit pour l'appliquer"
+              title="{stash.message} — clic pour voir le contenu, clic droit pour l’appliquer"
               onclick={() => repo.openStashDiff(stash.index, stash.message)}
               oncontextmenu={(e) => menu.open(e, stashMenu(repo, stash))}
             >
@@ -239,7 +239,7 @@
     align-items: center;
     gap: 6px;
     margin: 12px 12px 8px;
-    padding: 0 8px;
+    padding: 0 9px;
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
     background: var(--bg);
@@ -248,6 +248,9 @@
       border-color var(--t-fast) var(--ease),
       box-shadow var(--t-fast) var(--ease);
   }
+  .search:hover:not(:focus-within) {
+    border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
+  }
   .search:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
@@ -255,6 +258,7 @@
   .search input {
     flex: 1;
     min-width: 0;
+    min-height: 30px;
     padding: 5px 0;
     border: 0;
     background: none;
@@ -278,10 +282,11 @@
     color: var(--ink);
     font-size: var(--fs-label);
     font-weight: var(--fw-strong);
-    transition: color var(--t-fast) var(--ease);
+    border-radius: var(--radius);
+    transition: background var(--t-fast) var(--ease);
   }
   .heading:hover {
-    color: var(--accent);
+    background: var(--hover);
   }
   .caret {
     display: grid;
@@ -354,7 +359,7 @@
   }
   .none {
     padding: 3px 8px 3px 28px;
-    color: var(--faint);
+    color: var(--muted);
     font-size: var(--fs-label);
   }
 </style>

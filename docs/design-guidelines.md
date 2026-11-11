@@ -372,8 +372,11 @@ States are the same everywhere:
 | Small | 24 px high, 12 px text. | In a card header or a row. |
 
 - 6 px corners. Inner margins: 5 px at the top and bottom, 12 px on the sides.
-- Hover: `--hover` background and a stronger border; a primary or danger button gets 10%
-  lighter.
+- Hover: `--hover` background and a stronger border. A primary or danger button moves 10%
+  towards `--ink`, darker in light and lighter in dark, like the label of the current branch
+  (9.4): its text gains contrast in both themes, where a lighter background lost it.
+- Every button is at least 24 px high, the small one included, and a button made of an icon
+  alone is at least 24 × 24 px.
 - Press: shrinks to 97%.
 - The label is a verb in the infinitive, with its object when the context does not give it:
   "Créer la branche" (create the branch), not "OK".

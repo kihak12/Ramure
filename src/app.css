@@ -254,7 +254,6 @@ dialog:focus-visible {
     background var(--t-fast) var(--ease),
     border-color var(--t-fast) var(--ease),
     transform var(--t-fast) var(--ease),
-    filter var(--t-fast) var(--ease),
     opacity var(--t-fast) var(--ease);
 }
 .btn:hover:not(:disabled) {
@@ -275,10 +274,11 @@ dialog:focus-visible {
   color: var(--on-accent);
   font-weight: var(--fw-strong);
 }
+/* Au survol, le fond va de 10 % vers --ink : son texte y gagne du contraste dans les deux thèmes
+   (charte, section 9.1). L'éclaircir le faisait tomber sous 4,5:1 en clair. */
 .btn.primary:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
-  filter: brightness(1.1);
+  background: color-mix(in srgb, var(--accent) 90%, var(--ink));
+  border-color: color-mix(in srgb, var(--accent) 90%, var(--ink));
 }
 .btn.danger {
   background: var(--bad);
@@ -287,9 +287,8 @@ dialog:focus-visible {
   font-weight: var(--fw-strong);
 }
 .btn.danger:hover:not(:disabled) {
-  background: var(--bad);
-  border-color: var(--bad);
-  filter: brightness(1.1);
+  background: color-mix(in srgb, var(--bad) 90%, var(--ink));
+  border-color: color-mix(in srgb, var(--bad) 90%, var(--ink));
 }
 .btn.ghost {
   background: none;
@@ -297,6 +296,7 @@ dialog:focus-visible {
   box-shadow: none;
 }
 .btn.small {
+  min-height: 24px;
   padding: 2px 8px;
   font-size: var(--fs-label);
 }

@@ -87,7 +87,7 @@
   {#if commands}
     <div class="box">
       <label class="search">
-        <Icon name="search" size={17} />
+        <Icon name="search" size={16} />
         <!-- svelte-ignore a11y_autofocus -->
         <input
           type="text"
@@ -124,7 +124,7 @@
             }}
             onclick={() => run(command)}
           >
-            <span class="glyph">{#if command.icon}<Icon name={command.icon} size={15} />{/if}</span>
+            <span class="glyph">{#if command.icon}<Icon name={command.icon} size={16} />{/if}</span>
             <span class="title">{command.title}</span>
             {#if command.hint}<span class="hint">{command.hint}</span>{/if}
             {#if command.shortcut}<span class="keys">{#each command.shortcut.split(' + ') as part, n (n)}<kbd>{part}</kbd>{/each}</span>{/if}
@@ -161,7 +161,7 @@
   @keyframes drop {
     from {
       opacity: 0;
-      transform: translateY(-12px) scale(0.98);
+      transform: translateY(-10px) scale(0.98);
     }
   }
   dialog::backdrop {
@@ -222,14 +222,12 @@
     border-radius: var(--radius);
     cursor: pointer;
   }
+  /* Les résultats sont des lignes (section 9.6) : la ligne active est sélectionnée, en --sel. */
   .item[aria-selected='true'] {
-    background: var(--accent-soft);
-  }
-  .item[aria-selected='true'] .glyph {
-    color: var(--accent);
+    background: var(--sel);
   }
   .item.disabled {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
   }
   .glyph {

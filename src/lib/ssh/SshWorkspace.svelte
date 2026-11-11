@@ -38,10 +38,12 @@
 
   const address = (host: Host) => `${host.user || ssh.defaultUser}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`;
 
+  const STATUS = { connecting: 'Connexion en cours', connected: 'Connecté', closed: 'Session terminée' } as const;
+
   async function remove(host: Host) {
     const confirmed = await dialogs.confirm({
-      title: `Supprimer ${host.alias} du carnet ?`,
-      body: 'Seule la fiche est supprimée. Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.',
+      title: `Supprimer ${host.alias} du carnet ?`,
+      body: 'La fiche est supprimée et ne pourra pas être récupérée. Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.',
       confirmLabel: 'Supprimer',
       danger: true,
     });
@@ -63,10 +65,10 @@
 </script>
 
 <div class="ssh">
-  <aside class="book" aria-label="Carnet d'hôtes">
+  <aside class="book" aria-label="Carnet d’hôtes">
     <header>
       <span class="label">Hôtes · {ssh.hosts.length}</span>
-      <button class="btn small primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={13} /> Nouvel hôte</button>
+      <button class="btn small" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte</button>
     </header>
     <label class="search">
       <Icon name="search" size={14} />
@@ -122,10 +124,10 @@
     </div>
 
     <footer>
-      <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Ajoute au carnet les hôtes de ~/.ssh/config qui n'y sont pas encore">
-        <Icon name="pull" size={13} /> Importer ~/.ssh/config
+      <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Ajoute au carnet les hôtes de ~/.ssh/config qui n’y sont pas encore">
+        <Icon name="pull" size={14} /> Importer ~/.ssh/config
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="tag" size={13} /> Clés</button>
+      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="tag" size={14} /> Gérer les clés</button>
     </footer>
   </aside>
 
@@ -145,11 +147,18 @@
                 if (e.button === 1) ssh.close(session.key);
               }}
             >
-              <span class="dot s-{session.status}" style:--c={session.host.color ? `var(--l${session.host.color})` : 'var(--ok)'}></span>
+              <!-- L'état de la session est dit en mots, pas seulement par la couleur du point. -->
+              <span
+                class="dot s-{session.status}"
+                role="img"
+                aria-label={STATUS[session.status]}
+                title={STATUS[session.status]}
+                style:--c={session.host.color ? `var(--l${session.host.color})` : 'var(--ok)'}
+              ></span>
               <span class="name">{session.title}</span>
             </button>
             <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => ssh.close(session.key)}>
-              <Icon name="x" size={12} />
+              <Icon name="x" size={14} />
             </button>
           </div>
         {/each}
@@ -167,7 +176,7 @@
         <span class="art"><Icon name="terminal" size={30} /></span>
         <p>Double-clique un hôte pour ouvrir un terminal.</p>
         <div class="row">
-          <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Nouvel hôte</button>
+          <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte</button>
           {#if ssh.loaded && !ssh.hosts.length}
             <button class="btn" type="button" onclick={() => void ssh.importConfig()}>Importer ~/.ssh/config</button>
           {/if}
@@ -211,7 +220,7 @@
     align-items: center;
     gap: 6px;
     margin: 2px 12px 8px;
-    padding: 0 8px;
+    padding: 0 9px;
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
     background: var(--bg);
@@ -220,6 +229,9 @@
       border-color var(--t-fast) var(--ease),
       box-shadow var(--t-fast) var(--ease);
   }
+  .search:hover:not(:focus-within) {
+    border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
+  }
   .search:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
@@ -227,6 +239,7 @@
   .search input {
     flex: 1;
     min-width: 0;
+    min-height: 30px;
     padding: 5px 0;
     border: 0;
     background: none;
@@ -338,7 +351,7 @@
     color: var(--ink);
   }
   .acts button:disabled {
-    opacity: 0.3;
+    opacity: 0.45;
     cursor: not-allowed;
   }
   .none {
@@ -432,9 +445,9 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 20px;
-    height: 20px;
-    margin-right: 5px;
+    width: 24px;
+    height: 24px;
+    margin-right: 4px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;

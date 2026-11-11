@@ -86,7 +86,7 @@
   <div class="box">
     <header>
       <h2>Clés SSH</h2>
-      <p>Les clés de <code>~/.ssh</code>. Elles y restent : Ramure n'en garde aucune copie.</p>
+      <p>Les clés de <code>~/.ssh</code>. Elles y restent : Ramure n’en garde aucune copie.</p>
     </header>
 
     <div class="list">
@@ -101,7 +101,7 @@
             </small>
             <small class="mono print">{key.fingerprint}</small>
           </div>
-          <button class="btn small" type="button" onclick={() => void copy(key)}><Icon name="copy" size={13} /> Copier la clé publique</button>
+          <button class="btn small" type="button" onclick={() => void copy(key)}><Icon name="copy" size={14} /> Copier la clé publique</button>
         </div>
       {:else}
         <p class="none">Aucune clé dans ~/.ssh. Génère-en une pour te connecter sans mot de passe.</p>
@@ -129,11 +129,11 @@
           </label>
           <label>
             <span>Confirmation</span>
-            <input class="field" type="password" autocomplete="new-password" bind:value={confirm} />
+            <input class="field" class:invalid={mismatch && !!confirm} type="password" autocomplete="new-password" aria-invalid={mismatch && confirm ? 'true' : undefined} bind:value={confirm} />
           </label>
         </div>
-        {#if mismatch && confirm}<p class="err">Les deux phrases secrètes ne sont pas identiques.</p>{/if}
-        {#if error}<p class="err">{error}</p>{/if}
+        {#if mismatch && confirm}<p class="err" role="alert">Les deux phrases secrètes ne sont pas identiques.</p>{/if}
+        {#if error}<p class="err" role="alert">{error}</p>{/if}
         <div class="actions">
           <button class="btn" type="button" onclick={() => (creating = false)}>Annuler</button>
           <button class="btn primary" type="submit" disabled={!ready}>{busy ? 'Création…' : 'Générer la clé'}</button>
@@ -143,7 +143,8 @@
 
     <footer>
       {#if !creating}<button class="btn" type="button" onclick={startCreating}><Icon name="plus" size={14} /> Générer une clé</button>{/if}
-      <button class="btn primary" type="button" onclick={close}>Fermer</button>
+      <!-- Pendant la création, le bouton principal est « Générer la clé » : il n'y en a qu'un. -->
+      <button class="btn" class:primary={!creating} type="button" onclick={close}>Fermer</button>
     </footer>
   </div>
 </dialog>
@@ -263,7 +264,11 @@
     font-size: var(--fs-label);
     color: var(--muted);
   }
+  .field.invalid {
+    border-color: var(--bad);
+  }
   .err {
+    font-size: var(--fs-small);
     color: var(--bad);
   }
   .actions,

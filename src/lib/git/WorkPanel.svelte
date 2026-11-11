@@ -62,7 +62,7 @@
   {#if conflicts.length}
     <section class="conflicts" transition:slide={{ duration: motion.med }}>
       <header>
-        <span class="label bad"><Icon name="warning" size={13} /> En conflit · {conflicts.length}</span>
+        <span class="label bad"><Icon name="warning" size={14} /> En conflit · {conflicts.length}</span>
       </header>
       <div class="list">
         <FileList

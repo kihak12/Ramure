@@ -31,19 +31,19 @@
           {#if tab.repo.locked}
             <span class="spinner" aria-label="Opération en cours"></span>
           {:else if tab.repo.status?.operation}
-            <span class="alert" title="Une opération attend d'être terminée"><Icon name="warning" size={14} /></span>
+            <span class="alert" title="Une opération attend d’être terminée"><Icon name="warning" size={14} /></span>
           {:else}
             <Icon name={tab.repo.path ? 'branch' : 'plus'} size={14} />
           {/if}
           <span class="name">{workspace.title(tab)}</span>
         </button>
-        <button class="close" type="button" aria-label="Fermer l'onglet {workspace.title(tab)}" title="Fermer l'onglet" onclick={() => workspace.closeTab(tab.id)}>
-          <Icon name="x" size={12} />
+        <button class="close" type="button" aria-label="Fermer l’onglet {workspace.title(tab)}" title="Fermer l’onglet" onclick={() => workspace.closeTab(tab.id)}>
+          <Icon name="x" size={14} />
         </button>
       </div>
     {/each}
     <button class="add" type="button" aria-label="Nouvel onglet" title="Nouvel onglet" onclick={() => workspace.newTab()}>
-      <Icon name="plus" size={15} />
+      <Icon name="plus" size={16} />
     </button>
   </div>
 
@@ -132,9 +132,9 @@
       opacity var(--t-fast) var(--ease);
   }
   .close {
-    width: 20px;
-    height: 20px;
-    margin-right: 5px;
+    width: 24px;
+    height: 24px;
+    margin-right: 4px;
     opacity: 0;
   }
   .tab:hover .close,

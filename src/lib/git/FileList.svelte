@@ -169,8 +169,8 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     margin-right: 2px;
     border: 1px solid transparent;
     border-radius: var(--radius-s);
@@ -184,7 +184,7 @@
       transform var(--t-fast) var(--ease);
   }
   .act:active:not(:disabled) {
-    transform: scale(0.9);
+    transform: scale(0.97);
   }
   li:hover .act,
   li:focus-within .act {
@@ -198,7 +198,10 @@
   .act.danger:hover:not(:disabled) {
     color: var(--bad);
   }
+  li:hover .act:disabled,
+  li:focus-within .act:disabled,
   .act:disabled {
+    opacity: 0.45;
     cursor: not-allowed;
   }
 </style>
