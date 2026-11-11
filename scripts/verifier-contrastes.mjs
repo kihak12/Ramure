@@ -42,6 +42,7 @@ const mix = (a, p, b) => a.map((v, i) => v * p + b[i] * (1 - p));
 const LABEL_REST = 0.24; // fond d'une étiquette
 const LABEL_HOVER = 0.28; // fond d'une étiquette survolée
 const TOWARD_INK = 0.9; // survol d'un fond plein : 10 % vers --ink
+const CAPSULE = 0.15; // capsule d'un message : un voile de la couleur, sur la ligne nue, survolée ou choisie
 
 const findings = [];
 
@@ -66,6 +67,9 @@ function check(name, t) {
     need(`--on-accent sur ${lane} survolé`, contrast(t['--on-accent'], mix(c, TOWARD_INK, t['--ink'])), 4.5);
     need(`--ink sur une étiquette ${lane}`, contrast(t['--ink'], mix(c, LABEL_REST, t['--panel'])), 7);
     need(`--ink sur une étiquette ${lane} survolée`, contrast(t['--ink'], mix(c, LABEL_HOVER, t['--panel'])), 7);
+    for (const bg of ['--panel', '--hover', '--sel']) {
+      need(`--ink sur une capsule ${lane}, ligne en ${bg}`, contrast(t['--ink'], mix(c, CAPSULE, t[bg])), 7);
+    }
   }
 }
 

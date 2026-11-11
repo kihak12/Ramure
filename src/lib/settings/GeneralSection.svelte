@@ -55,7 +55,7 @@
       {#snippet preview(choice: ThemeChoice)}<ThemePreview {choice} palette={prefs.palette} />{/snippet}
     </Choice>
   </SettingRow>
-  <SettingRow id="set-palette" name="Couleurs" help="Ne change que les couleurs : la disposition, les formes et le texte restent les mêmes." group>
+  <SettingRow id="set-palette" name="Couleurs" help="Ne change que les couleurs : la disposition, les formes et le texte restent les mêmes." group>
     <Choice name="set-palette" layout="tiles" labelledby="set-palette-name" describedby="set-palette-help" value={prefs.palette} options={PALETTES} onchange={setPalette}>
       {#snippet preview(palette: Palette)}<ThemePreview choice={prefs.theme} {palette} />{/snippet}
     </Choice>

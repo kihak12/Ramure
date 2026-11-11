@@ -153,8 +153,11 @@ Every theme must meet them, in light and in dark.
   a preview.
 - A theme enters the application only if it meets the contrasts of section 2.4, in light and in
   dark. `npm run check` computes them for every theme, branch labels and capsules included.
+- In the settings, "Thème" is the choice of light or dark, and "Couleurs" the choice of the
+  colour theme. The interface keeps these two words.
 - Worth knowing: in Sous-bois the accent is also the colour of success, and in Braise it is close
-  to the warning colour. Ardoise, the default, has neither flaw.
+  to the warning colour. It is an exception to section 2.3, accepted for these two optional
+  themes and said in the help text of their tile. Ardoise, the default, has neither flaw.
 
 ## 3. Typography
 
@@ -705,8 +708,10 @@ diff. Nothing has to be opened to compare them.
   of the check mark is kept on the other options: an option never changes size.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the chosen option, as on a row (9.6).
 - A preview is drawn with the tokens, never with colours of its own. A preview of a theme
-  carries `data-theme`, which gives it the tokens of that theme whatever the theme of the
-  window.
+  carries `data-theme` and `data-palette`, which give it the tokens of that theme whatever the
+  theme of the window.
+- A tile may carry a help text under its name, in 11.5 px, `--muted`, when its options differ by
+  more than their look: the colour themes say what sets each apart.
 - A preview is a sketch, not the component it shows: a few bars and dots, with no text. It is
   hidden from screen readers, and the name of the option says what it is. The preview of the
   graph is the one place outside the graph where the branch colours are used (2.2).
