@@ -9,6 +9,8 @@ export type GraphStyle = 'ribbon' | 'classic';
 export type DiffMode = 'unified' | 'split';
 /** `system` : clair ou sombre, comme le système. */
 export type ThemeChoice = 'system' | 'light' | 'dark';
+/** Thème de couleurs (charte, section 2.5). */
+export type Palette = 'ardoise' | 'encre' | 'sous-bois' | 'braise';
 
 export interface Settings {
   /** Commits chargés ; 0 pour tout l'historique. */
@@ -20,9 +22,10 @@ export interface Settings {
   /** Diff sur une colonne, ou ancien et nouveau côte à côte. */
   diffMode: DiffMode;
   theme: ThemeChoice;
+  palette: Palette;
 }
 
-export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system' };
+export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'ardoise' };
 
 /** Bornes de la récupération automatique, en minutes. */
 export const AUTO_FETCH = { min: 0, max: 60 } as const;

@@ -200,7 +200,7 @@
     // Le terminal lit ses couleurs dans les jetons : il les relit quand le thème change.
     const stopTheme = $effect.root(() => {
       $effect(() => {
-        void appTheme.dark;
+        void appTheme.key;
         terminal.options.theme = theme();
       });
     });

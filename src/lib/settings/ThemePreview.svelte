@@ -1,14 +1,17 @@
 <script lang="ts">
-  import type { ThemeChoice } from '../git/prefs.svelte';
+  import type { Palette, ThemeChoice } from '../git/prefs.svelte';
 
-  /** Aperçu d'un thème : une fenêtre en petit, dessinée avec les jetons de ce thème. « Système » montre les deux. */
-  let { choice }: { choice: ThemeChoice } = $props();
+  /**
+   * Aperçu d'un thème : une fenêtre en petit, dessinée avec les jetons de ce thème de couleurs, en
+   * clair ou en sombre. « Système » montre les deux moitiés.
+   */
+  let { choice, palette }: { choice: ThemeChoice; palette: Palette } = $props();
   const themes = $derived(choice === 'system' ? (['light', 'dark'] as const) : [choice]);
 </script>
 
 <span class="preview">
   {#each themes as theme (theme)}
-    <span class="window" data-theme={theme}>
+    <span class="window" data-theme={theme} data-palette={palette}>
       <span class="rail"><i></i><i></i></span>
       <span class="card side"><i></i><i></i><i></i></span>
       <span class="card main"><i class="a"></i><i></i><i class="b"></i><i></i></span>

@@ -134,9 +134,9 @@ Every theme must meet them, in light and in dark.
 | Pair | Minimum |
 |---|---|
 | `--ink` on `--panel`, `--bg`, `--sel`, `--hover` | 7:1 |
-| `--ink` in a message capsule or a branch label | 7:1 |
+| `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
 | `--muted` on `--panel`, `--side`, `--sel` | 4.5:1 |
-| `--on-accent` on `--accent` and on each branch colour | 4.5:1 |
+| `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
 | `--ok`, `--warn`, `--bad` on `--panel` and `--bg` | 4.5:1 |
 | `--accent` and each branch colour on `--panel` | 3:1 |
 
@@ -147,8 +147,14 @@ Every theme must meet them, in light and in dark.
 - A colour theme redefines the tokens of sections 2.1 and 2.2, in light and in dark, and nothing
   else: no shape, no font, no size, no shadow. It does not change the colours of the logo either
   (section 13).
-- Four themes are planned: Ardoise (the default), Encre, Sous-bois and Braise. Their values are
-  in [`design/themes.css`](design/themes.css); implementing them is issue #9.
+- Four themes: Ardoise (the default), Encre, Sous-bois and Braise. They are chosen under
+  "Couleurs" in the settings, and the choice applies at once. Their values are in `src/app.css`,
+  selected by the `data-palette` attribute: on the root for the whole window, on an element for
+  a preview.
+- A theme enters the application only if it meets the contrasts of section 2.4, in light and in
+  dark. `npm run check` computes them for every theme, branch labels and capsules included.
+- Worth knowing: in Sous-bois the accent is also the colour of success, and in Braise it is close
+  to the warning colour. Ardoise, the default, has neither flaw.
 
 ## 3. Typography
 
@@ -448,8 +454,8 @@ buttons.
   weight tell them apart, never the tint.
 - **A label never changes size**: not on click, not on hover, not when a branch is dragged onto
   it.
-- Hover: the tint of the background gets stronger, 30% at most: beyond that, `--ink` falls
-  under 7:1 in the dark theme. The solid background of the current branch moves 10% towards
+- Hover: the tint of the background gets stronger, 28% at most: beyond that, `--ink` falls
+  under 7:1 in some dark themes. The solid background of the current branch moves 10% towards
   `--ink`, darker in light and lighter in dark, so that its text gains contrast in both themes.
 - The icons of a label are 14 px.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
