@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import { dialogs } from '../ui/dialogs.svelte';
@@ -15,6 +15,14 @@
 
   /** Vrai quand le module SSH est à l'écran. */
   let { active = false }: { active?: boolean } = $props();
+
+  // L'onglet actif reste à l'écran quand les onglets débordent : la barre défile jusqu'à lui,
+  // et la marge de défilement le garde à gauche du « + ».
+  let tabsEl = $state<HTMLElement>();
+  $effect(() => {
+    void ssh.activeKey;
+    void tick().then(() => tabsEl?.querySelector('.tab.current')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  });
 
   let filter = $state('');
 
@@ -136,7 +144,7 @@
 
   <div class="work">
     {#if ssh.sessions.length}
-      <div class="tabs" role="tablist" aria-label="Terminaux ouverts">
+      <div class="tabs" role="tablist" aria-label="Terminaux ouverts" bind:this={tabsEl}>
         {#each ssh.sessions as session (session.key)}
           {@const current = session.key === ssh.activeKey}
           <div class="tab" class:current animate:flip={{ duration: motion.med }} in:scale={{ duration: motion.med, start: 0.9 }}>
@@ -394,12 +402,18 @@
     min-width: 0;
     min-height: 0;
   }
+  /* 4 px autour des onglets, rendus par une marge négative : la place de l'anneau de focus, que le
+     défilement horizontal rognerait sinon. */
   .tabs {
     display: flex;
     align-items: center;
     gap: 4px;
     min-width: 0;
+    margin: -4px;
+    padding: 4px;
     overflow-x: auto;
+    /* Un onglet qui prend le focus défile jusqu'à rester visible à gauche du « + », qui colle au bord. */
+    scroll-padding-inline-end: 40px;
     scrollbar-width: none;
   }
   /* « + » après le dernier onglet (charte, section 9.7) : il reste visible quand les onglets débordent. */
@@ -414,9 +428,13 @@
     border: 0;
     border-radius: var(--radius-s);
     background: var(--side);
+    /* Les 4 px de marge à sa droite gardent le fond de la barre : aucun onglet n'y dépasse. */
+    box-shadow: 4px 0 0 var(--side);
     color: var(--muted);
     cursor: pointer;
-    transition: background var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
   }
   .add:hover {
     background: var(--hover);
@@ -459,6 +477,8 @@
     gap: 8px;
     padding: 6px 4px 6px 10px;
     border: 0;
+    /* Les angles de l'onglet : l'anneau de focus les suit. */
+    border-radius: var(--radius);
     background: none;
     cursor: pointer;
     color: inherit;
@@ -506,13 +526,22 @@
     color: var(--muted);
     cursor: pointer;
     opacity: 0;
-    transition: opacity var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      opacity var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  .close:active,
+  .add:active {
+    transform: scale(0.97);
   }
   .tab:hover .close,
   .tab.current .close,
   .close:focus-visible {
     opacity: 1;
   }
+  /* Sur un onglet survolé ou actif, --hover ne se verrait pas : la croix prend --line (charte, 9.7). */
   .close:hover {
     background: var(--line);
     color: var(--ink);

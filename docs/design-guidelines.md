@@ -336,7 +336,8 @@ close by: an offset of 6 to 10 px at most. One scale besides the press effect: a
 grows to 112% on hover, in `--t-fast` (9.21).
 
 **The press effect.** A button shrinks to 97% while it is clicked. This applies to buttons,
-toolbar buttons and rail buttons, and to nothing else.
+toolbar buttons and rail buttons, and to nothing else. A button made of an icon alone is a
+button: the cross and the "+" of a tab bar, the close button of a notification or of a header.
 
 **What is not animated.**
 
@@ -506,10 +507,21 @@ Sidebar, file lists, graph, palette results.
 - The active tab is a small card: `--panel` background, 8 px corners, no frame and no line.
 - An inactive tab is `--muted` text on the window background; on hover, a `--hover` background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
-- The close cross is visible on the active tab, and on hover on the others.
+- The close cross is visible on the active tab, and on hover on the others. On hover it takes
+  a `--line` background, not `--hover`: it sits on a tab that is hovered or active, where
+  `--hover` would not show.
 - The "+" button follows the last tab: an icon alone, 28 × 28 px, no background at rest and
   `--hover` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
   name say what it opens, with the shortcut: "Nouveau terminal local (Ctrl + Maj + N)".
+- A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling.
+  The ring of a tab follows its 8 px corners.
+- When the tabs overflow, the bar scrolls to the active tab, and to a tab that takes the focus,
+  so that it stays whole to the left of the "+": the bar keeps 40 px of scroll room on its right,
+  the width of the "+" and its margins (a derived value, not a gap of 4.1). The "+" covers the
+  room on its right with the window background, a flat shadow in `--side` that no one sees as a
+  shadow: no tab shows past it.
+- The same goes for the cross of a row that appears on hover, such as a recent repository on the
+  start page: `--line` on hover, since it sits on a hovered row.
 
 ### 9.8 Cards
 
