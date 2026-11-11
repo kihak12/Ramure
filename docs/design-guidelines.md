@@ -678,14 +678,30 @@ own, under its graph (9.20).
 - Its header has the same height as that of a session: the computer icon, "Terminal local" in
   weight 650, the name of the shell in the code font and `--muted`, and "ouvert dans" with its
   starting folder. No "Déconnecter": the cross of the tab closes it.
-- When the shell ends normally (`exit`, Ctrl + D, exit code 0), the tab closes. When it stops on
-  an error, or cannot start, the tab stays with its text under the veil, and the panel says "Shell
-  arrêté", the exit code or the reason, what to do, and offers "Relancer" (main button) and
-  "Fermer l’onglet". A local terminal is never "reconnected": it is started again.
+- A shell that is left closes its tab: `exit` or Ctrl + D, whatever the exit code, which is only
+  that of the last command. The tab stays when the shell cannot start, is stopped by a signal, or
+  stops on an error before anything was typed in it: its text stays under the veil, and the
+  panel says "Shell arrêté", the exit code, the signal or the reason, what to do, and offers
+  "Relancer" (main button) and "Fermer l’onglet". A signal is named as the system names it
+  ("Killed"), like the output of git. A local terminal is never "reconnected": it is
+  started again.
+- Closing the tab of a local terminal stops its shell, and the program that runs in it. When a
+  program runs there, other than the shell, a dialog asks first (9.10): "Fermer ce terminal ?",
+  "Un programme tourne dans ce terminal. Il sera arrêté et sa sortie perdue.", with "Annuler",
+  which has the focus, and "Fermer le terminal", a danger button. A shell waiting at its prompt
+  closes without a question.
+- Closing the window asks the same way when a program runs in a local terminal, here or under a
+  repository (9.20): "Quitter Ramure ?", and "Quitter". The text agrees with the number of
+  terminals: "Des programmes tournent dans 2 terminaux. Ils seront arrêtés et leur sortie
+  perdue."
+- On Windows, the application cannot tell whether a program runs. The tab of one terminal, which
+  the user is looking at, closes without a question; closing the window, or the tab of a
+  repository, asks as soon as a shell is open: "Un terminal est ouvert…".
 - A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
   grey dot; its tooltip and accessible name then say "Terminal local arrêté".
 - Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus
-  goes to its main button: the terminal keeps the Tab key for the shell.
+  goes to its main button: the terminal keeps the Tab key for the shell. Under a repository, where the
+  state of the shell is a strip, the rule is that of 9.20.
 
 **Search.** Ctrl + Shift + F, or "Chercher dans le terminal" in the palette, opens a search bar
 in the terminal of the current tab.
@@ -926,7 +942,22 @@ A local terminal under the graph, opened in the folder of the repository, to run
   stops them. They are not tabs of the SSH module, and Ctrl + Shift + N still opens a terminal
   there, in the home folder.
 - **Closing.** Closing the last tab, or the end of the last shell, hides the terminal: it has no
-  empty state. A shell that stops on an error keeps its tab, as in 9.15.
+  empty state. Closing a tab where a program runs asks first, as in 9.15. So does closing the
+  tab of the repository, whose terminals may be out of sight: "Fermer le dépôt demo ?", "Un
+  programme tourne dans le terminal de ce dépôt. Il sera arrêté et sa sortie perdue.", with
+  "Annuler", which has the focus, and "Fermer le dépôt", a danger button. With several, the
+  text agrees: "Des programmes tournent dans 2 terminaux de ce dépôt…".
+- **The state of the shell is a strip**, not a panel over a veil: under the graph the terminal
+  can be five lines high, and a panel would hide the last lines of output, the ones that say why
+  the shell stopped. The strip is one line under the terminal, on `--panel`, with a `--line-soft`
+  separator, in 11.5 px.
+  - While the shell starts: the waiting ring and "Ouverture du terminal local…", in `--muted`.
+  - When it has stopped (9.15): "Shell arrêté (code de sortie 3).", or its signal, in `--muted`,
+    then "Relancer", a small main button, and "Fermer l’onglet", a small ghost button. A shell
+    that could not start says why, in `--bad`. The text is cut with an ellipsis, and whole in a
+    tooltip.
+  - "Relancer" takes the focus only when the keyboard was in that terminal: a shell that stops
+    while the user types elsewhere does not take the keyboard away.
 - **Height.** 240 px by default, 40% of the room when the window is low; 130 px at the least,
   the header and five lines. The graph always keeps 200 px. The height is set by the handle
   (9.16), shared by all the repositories and restored at the next launch.
@@ -1057,7 +1088,9 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 
 - **Contrasts.** Those of section 2.4, checked in light and in dark.
 - **Visible focus.** Every element that takes keyboard focus shows it. An outline is never
-  removed without another marker replacing it.
+  removed without another marker replacing it. A focus given by the application, to the main
+  button of a panel or back to the button of a menu, shows the same ring as one reached with
+  Tab.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element.
 - **Shortcuts.** A shortcut belongs to the whole application or to one module, Git or SSH. A

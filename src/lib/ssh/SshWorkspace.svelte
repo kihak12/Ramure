@@ -8,7 +8,8 @@
   import HostDialog from './HostDialog.svelte';
   import KeysDialog from './KeysDialog.svelte';
   import { display, keys } from '../ui/keys.svelte';
-  import { ssh, STATUS } from './ssh.svelte';
+  import { mayCloseTerminal } from './guard';
+  import { ssh, STATUS, type Session } from './ssh.svelte';
   import Terminal from './Terminal.svelte';
   import { emptyHost, type Host } from './types';
   import { motion } from '../ui/motion';
@@ -60,6 +61,11 @@
 
   // « + » des onglets : un terminal local, d'un clic. L'infobulle dit le raccourci.
   const newLocal = $derived(`Nouveau terminal local${keys.binding('terminal-new') ? ` (${display(keys.binding('terminal-new'))})` : ''}`);
+
+  /** La croix ou le clic du milieu : si un programme tourne dans un terminal local, on demande d'abord. */
+  async function closeTab(session: Session) {
+    if (await mayCloseTerminal(session)) ssh.close(session.key);
+  }
 
   async function remove(host: Host) {
     const confirmed = await dialogs.confirm({
@@ -172,7 +178,7 @@
               title={session.kind === 'local' ? (session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local') : undefined}
               onclick={() => (ssh.activeKey = session.key)}
               onauxclick={(e) => {
-                if (e.button === 1) ssh.close(session.key);
+                if (e.button === 1) void closeTab(session);
               }}
             >
               {#if session.kind === 'local'}
@@ -201,7 +207,7 @@
               {/if}
               <span class="name">{session.title}</span>
             </button>
-            <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => ssh.close(session.key)}>
+            <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => void closeTab(session)}>
               <Icon name="x" size={14} />
             </button>
           </div>

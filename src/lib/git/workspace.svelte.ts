@@ -3,6 +3,7 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
+import { mayCloseRepo } from '../ssh/guard';
 import { toasts } from '../ui/toasts.svelte';
 import { Repo } from './repo.svelte';
 import type { CommandLog, Done } from './types';
@@ -129,7 +130,11 @@ class Workspace {
     this.activate(this.tabs[(at + step + this.tabs.length) % this.tabs.length].id);
   }
 
-  closeTab(id: number) {
+  /** Ferme un onglet. Si un programme tourne dans le terminal du dépôt, on demande d'abord. */
+  async closeTab(id: number) {
+    const closing = this.tabs.find((tab) => tab.id === id);
+    if (!closing || !(await mayCloseRepo(this.title(closing), closing.repo.terminals.sessions))) return;
+    // La question a pu durer : l'onglet est cherché à nouveau.
     const at = this.tabs.findIndex((tab) => tab.id === id);
     if (at < 0) return;
     const rest = this.tabs.filter((tab) => tab.id !== id);

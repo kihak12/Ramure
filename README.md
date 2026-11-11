@@ -110,6 +110,9 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   into it, and back to the graph.
 - Several terminals per repository, in tabs; each repository keeps its own. Hiding the terminal
   or switching tabs does not stop its shells; closing the tab of the repository does.
+- Closing a tab, a repository or the window while a program runs in a terminal (a dev server, a
+  long build) asks first. On Windows, where Ramure cannot tell, closing a repository or the window
+  asks as soon as a shell is open.
 - The height is set with the handle above the terminal and restored at the next launch.
 - Unchecking the graph in the "Affichage" menu gives the terminal the whole height. The graph
   comes back when the terminal is hidden, or when a diff is opened.

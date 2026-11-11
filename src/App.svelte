@@ -1,5 +1,9 @@
 <script lang="ts">
+  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { onMount } from 'svelte';
   import { gitCommands } from './lib/git/commands';
+  import { workspace } from './lib/git/workspace.svelte';
+  import { mayQuit } from './lib/ssh/guard';
   import { sshCommands } from './lib/ssh/commands';
   import { ssh } from './lib/ssh/ssh.svelte';
   import GitWorkspace from './lib/git/GitWorkspace.svelte';
@@ -13,6 +17,20 @@
   import Notifications from './lib/ui/Notifications.svelte';
   import SettingsPage from './lib/settings/SettingsPage.svelte';
   import { settingsPage } from './lib/settings/settings.svelte';
+
+  // Fermer la fenêtre arrête tous les terminaux locaux : si un programme y tourne, on demande d'abord.
+  // Une erreur ne doit jamais empêcher de quitter : dans le doute, la fenêtre se ferme.
+  onMount(() => {
+    const stop = getCurrentWindow().onCloseRequested(async (event) => {
+      try {
+        const locals = [...ssh.sessions, ...workspace.tabs.flatMap((tab) => tab.repo.terminals.sessions)];
+        if (!(await mayQuit(locals))) event.preventDefault();
+      } catch {
+        /* on laisse fermer */
+      }
+    });
+    return () => void stop.then((off) => off());
+  });
 
   type View = 'git' | 'ssh';
   let view = $state<View>('git');
