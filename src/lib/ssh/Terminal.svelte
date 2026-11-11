@@ -832,7 +832,8 @@
   }
   .card {
     margin: auto;
-    width: min(520px, 100%);
+    /* 560 px : les trois boutons de l’empreinte tiennent sur une ligne. */
+    width: min(560px, 100%);
     display: grid;
     gap: 10px;
     padding: 16px 20px;
