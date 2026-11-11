@@ -63,6 +63,13 @@
     phase.step === 'lost' ? `Connexion perdue. Tentative ${phase.attempt} sur ${RETRIES.length} dans ${RETRIES[phase.attempt - 1]} secondes.` : '',
   );
   let retryButton = $state<HTMLButtonElement>();
+  let endButton = $state<HTMLButtonElement>();
+  // Un panneau de fin apparaît : le focus va sur son bouton principal, que le clavier n'atteindrait
+  // pas autrement, le terminal gardant la touche Tab (charte, section 9.15).
+  $effect(() => {
+    if (phase.step !== 'closed' && phase.step !== 'error') return;
+    void tick().then(() => endButton?.focus());
+  });
   // La carte apparaît : le focus va sur « Reconnecter maintenant ». Le terminal, coupé, ne sert plus,
   // et il garde la touche Tab pour lui : sans cela, le clavier n'atteindrait pas la carte.
   $effect(() => {
@@ -507,8 +514,7 @@
   <header>
     {#if local}
       <!-- Un terminal local : l'ordinateur, comme partout où « local » est dit (charte, section 7). -->
-      <Icon name="laptop" size={14} />
-      <b>Terminal local</b>
+      <span class="what"><Icon name="laptop" size={14} /> <b>Terminal local</b></span>
       {#if opened}
         <span class="mono">{opened.shell}</span>
         <span>ouvert dans <span class="mono">{opened.cwd}</span></span>
@@ -639,7 +645,7 @@
             </div>
           {:else}
             <h3>
-              {#if local}{phase.step === 'error' ? 'Le shell n’a pas pu démarrer' : 'Shell arrêté'}{:else}{phase.step === 'error'
+              {#if local}Shell arrêté{:else}{phase.step === 'error'
                   ? 'Connexion impossible'
                   : phase.lost
                     ? 'Connexion perdue'
@@ -648,7 +654,7 @@
             <p class:err={phase.step === 'error'}>{phase.message}</p>
             <div class="row">
               <!-- Un terminal local n'est jamais « reconnecté » : il est relancé. -->
-              <button class="btn primary" type="button" onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Relancer' : 'Reconnecter'}</button>
+              <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Relancer' : 'Reconnecter'}</button>
               <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
             </div>
           {/if}
@@ -738,8 +744,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    /* Hauteur fixe : celle d'un en-tête avec son bouton « Déconnecter ». Le terminal ne saute pas
+       d'un onglet à l'autre. */
+    height: 35px;
     padding: 5px 12px;
-    min-height: 34px;
     border-bottom: 1px solid var(--line-soft);
     color: var(--muted);
     font-size: var(--fs-label);
@@ -863,5 +871,10 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+  .what {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 </style>

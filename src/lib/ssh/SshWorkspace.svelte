@@ -145,6 +145,7 @@
               type="button"
               role="tab"
               aria-selected={current}
+              title={session.kind === 'local' ? (session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local') : undefined}
               onclick={() => (ssh.activeKey = session.key)}
               onauxclick={(e) => {
                 if (e.button === 1) ssh.close(session.key);
@@ -421,10 +422,12 @@
     background: var(--hover);
     color: var(--ink);
   }
+  /* 6 px entre l'icône et le nom : l'écart de l'onglet (8 px) moins 2. */
   .local {
     flex: none;
     display: grid;
     margin-left: 4px;
+    margin-right: -2px;
   }
   .local.stopped {
     color: var(--faint);

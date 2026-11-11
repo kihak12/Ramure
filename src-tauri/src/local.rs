@@ -101,7 +101,7 @@ pub fn local_open(
     on_data: Channel,
 ) -> Result<Opened, String> {
     let size = PtySize { rows: rows.max(2), cols: cols.max(2), pixel_width: 0, pixel_height: 0 };
-    let pair = native_pty_system().openpty(size).map_err(|e| format!("pseudo-terminal indisponible : {e}"))?;
+    let pair = native_pty_system().openpty(size).map_err(|e| format!("Pseudo-terminal indisponible\u{a0}: {e}."))?;
 
     let shell = default_shell();
     let dir = start_dir(cwd.as_deref());
@@ -115,7 +115,7 @@ pub fn local_open(
     let mut child = pair
         .slave
         .spawn_command(command)
-        .map_err(|e| format!("{} n'a pas pu être lancé : {e}", shell.display()))?;
+        .map_err(|e| format!("{} n’a pas pu être lancé\u{a0}: {e}.", shell.display()))?;
     // Le côté esclave appartient désormais au shell : le garder ouvert retarderait la fin de lecture.
     drop(pair.slave);
 

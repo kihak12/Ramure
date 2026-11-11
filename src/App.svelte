@@ -35,7 +35,7 @@
       {
         id: 'terminal-new',
         group: 'Modules',
-        icon: 'terminal',
+        icon: 'laptop',
         title: 'Nouveau terminal local',
         keywords: 'shell console ligne de commande powershell bash',
         run: () => {

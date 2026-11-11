@@ -499,7 +499,9 @@ Sidebar, file lists, graph, palette results.
 - An inactive tab is `--muted` text on the window background; on hover, a `--hover` background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
 - The close cross is visible on the active tab, and on hover on the others.
-- The "+" button follows the last tab.
+- The "+" button follows the last tab: an icon alone, 28 × 28 px, no background at rest and
+  `--hover` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
+  name say what it opens, with the shortcut: "Nouveau terminal local (Ctrl + Maj + N)".
 
 ### 9.8 Cards
 
@@ -616,6 +618,10 @@ terminal, colours, search and resizing as a session.
   an error, or cannot start, the tab stays with its text under the veil, and the panel says "Shell
   arrêté", the exit code or the reason, what to do, and offers "Relancer" (main button) and
   "Fermer l’onglet". A local terminal is never "reconnected": it is started again.
+- A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
+  grey dot; its tooltip and accessible name then say "Terminal local arrêté".
+- Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus
+  goes to its main button: the terminal keeps the Tab key for the shell.
 
 **Search.** Ctrl + Shift + F, or "Chercher dans le terminal" in the palette, opens a search bar
 in the terminal of the current tab.
