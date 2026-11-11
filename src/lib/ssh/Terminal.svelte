@@ -13,7 +13,24 @@
   import { STATUS, type Session } from './ssh.svelte';
   import type { Closed, Connected, SshError } from './types';
 
-  let { session, active, onclose }: { session: Session; active: boolean; onclose: () => void } = $props();
+  let {
+    session,
+    active,
+    onclose,
+    bare = false,
+    autofocus = true,
+    onoutput,
+  }: {
+    session: Session;
+    active: boolean;
+    onclose: () => void;
+    /** Sans en-tête : le panneau qui l'accueille dit lui-même ce qu'est le terminal (charte, 9.20). */
+    bare?: boolean;
+    /** Le terminal prend le clavier quand son onglet s'affiche. Sous le graphe, jamais de lui-même. */
+    autofocus?: boolean;
+    /** Appelé à chaque sortie du shell : le dépôt se relit quand elle se tait. */
+    onoutput?: () => void;
+  } = $props();
 
   /** Ce que la session attend de l'utilisateur, ou son état. */
   type Phase =
@@ -255,7 +272,10 @@
     session.status = 'connecting';
     fit.fit();
     const onData = new Channel<ArrayBuffer | number[]>();
-    onData.onmessage = (chunk) => term?.write(new Uint8Array(chunk));
+    onData.onmessage = (chunk) => {
+      term?.write(new Uint8Array(chunk));
+      onoutput?.();
+    };
     try {
       const result = await invoke<{ id: number; shell: string; cwd: string }>('local_open', {
         cols: term.cols,
@@ -265,6 +285,7 @@
       });
       sessionId = result.id;
       opened = { shell: result.shell, cwd: result.cwd };
+      session.opened = opened;
       phase = { step: 'connected' };
       session.status = 'connected';
       term.focus();
@@ -434,8 +455,14 @@
       if (!lastKey) lastKey = performance.now();
       void invoke(API.write, { id: sessionId, data }).catch(() => {});
     });
+    // Le pseudo-terminal ne suit qu'une fois le geste fini : pendant qu'on glisse une poignée, le
+    // shell redessinerait son invite à chaque image.
+    let resizeTimer: number | undefined;
     terminal.onResize(({ cols, rows }) => {
-      if (sessionId !== null) void invoke(API.resize, { id: sessionId, cols, rows }).catch(() => {});
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        if (sessionId !== null) void invoke(API.resize, { id: sessionId, cols, rows }).catch(() => {});
+      }, 120);
     });
 
     const observer = new ResizeObserver(() => {
@@ -491,6 +518,7 @@
 
     return () => {
       observer.disconnect();
+      window.clearTimeout(resizeTimer);
       stopTheme();
       void unlisten.then((stop) => stop());
       window.clearTimeout(retryTimer);
@@ -505,12 +533,13 @@
     const connected = phase.step === 'connected';
     requestAnimationFrame(() => {
       fit?.fit();
-      if (connected) term?.focus();
+      if (connected && autofocus) term?.focus();
     });
   });
 </script>
 
 <div class="session">
+  {#if !bare}
   <header>
     {#if local}
       <!-- Un terminal local : l'ordinateur, comme partout où « local » est dit (charte, section 7). -->
@@ -535,6 +564,7 @@
       <span>connexion…</span>
     {/if}
   </header>
+  {/if}
 
   {#if session.searching}
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -797,6 +827,8 @@
     display: grid;
     place-items: center;
     padding: 24px;
+    /* Dans un terminal bas (sous le graphe), le panneau défile plutôt que de déborder. */
+    overflow: auto;
     background: color-mix(in srgb, var(--term-bg) 82%, transparent);
     backdrop-filter: blur(1.5px);
     animation: fade-in var(--t-med) var(--ease);

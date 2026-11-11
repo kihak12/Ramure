@@ -2,7 +2,8 @@
   /**
    * Poignée de redimensionnement entre deux cartes (charte graphique, section 9.16).
    * Elle se glisse à la souris et se règle au clavier ; un double-clic, ou Entrée, revient à la
-   * largeur par défaut.
+   * taille par défaut. Verticale entre deux cartes côte à côte (elle règle une largeur),
+   * horizontale entre deux cartes l'une sous l'autre (elle règle une hauteur).
    */
   let {
     value,
@@ -10,6 +11,7 @@
     max,
     initial,
     direction = 1,
+    orientation = 'vertical',
     label,
     onchange,
     oncommit,
@@ -20,8 +22,10 @@
     max: number;
     /** Largeur par défaut. */
     initial: number;
-    /** 1 : la carte est à gauche de la poignée ; -1 : elle est à droite. */
+    /** 1 : la carte est à gauche (ou au-dessus) de la poignée ; -1 : à droite (ou au-dessous). */
     direction?: 1 | -1;
+    /** `vertical` : la poignée sépare deux cartes côte à côte ; `horizontal` : l'une sous l'autre. */
+    orientation?: 'vertical' | 'horizontal';
     label: string;
     onchange: (value: number) => void;
     /** Fin du geste : c'est le moment d'enregistrer. */
@@ -29,7 +33,9 @@
   } = $props();
 
   const STEP = 16; // un appui sur une flèche
-  let origin: { x: number; value: number } | null = null;
+  let origin: { at: number; value: number } | null = null;
+  const horizontal = $derived(orientation === 'horizontal');
+  const along = (e: PointerEvent) => (horizontal ? e.clientY : e.clientX);
   let dragging = $state(false);
 
   const clamp = (width: number) => Math.round(Math.min(max, Math.max(min, width)));
@@ -40,12 +46,12 @@
     const handle = e.currentTarget as HTMLElement;
     handle.focus({ preventScroll: true }); // l'annulation ci-dessus empêche aussi la prise de focus
     handle.setPointerCapture(e.pointerId);
-    origin = { x: e.clientX, value };
+    origin = { at: along(e), value };
     dragging = true;
   }
 
   function move(e: PointerEvent) {
-    if (origin) onchange(clamp(origin.value + (e.clientX - origin.x) * direction));
+    if (origin) onchange(clamp(origin.value + (along(e) - origin.at) * direction));
   }
 
   function up() {
@@ -61,10 +67,12 @@
   }
 
   function key(e: KeyboardEvent) {
-    // Flèche droite : la poignée va à droite, ce qui élargit la carte de gauche et rétrécit celle de droite.
+    // Une flèche déplace la poignée : vers la droite, elle élargit la carte de gauche et rétrécit
+    // celle de droite ; vers le haut, elle agrandit la carte du dessous.
+    const [back, forth] = horizontal ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight'];
     const moves: Record<string, number> = {
-      ArrowLeft: value - STEP * direction,
-      ArrowRight: value + STEP * direction,
+      [back]: value - STEP * direction,
+      [forth]: value + STEP * direction,
       Home: min,
       End: max,
       Enter: initial,
@@ -79,14 +87,15 @@
 <div
   class="splitter"
   class:dragging
+  class:horizontal
   role="separator"
-  aria-orientation="vertical"
+  aria-orientation={orientation}
   aria-label={label}
   aria-valuenow={Math.round(value)}
   aria-valuemin={min}
   aria-valuemax={max}
   tabindex="0"
-  title="Glisser pour redimensionner. Double-clic : largeur par défaut."
+  title="Glisser pour redimensionner. Double-clic : {horizontal ? 'hauteur' : 'largeur'} par défaut."
   onpointerdown={down}
   onpointermove={move}
   onpointerup={up}
@@ -125,6 +134,21 @@
   /* Le focus se lit sur le repère lui-même, pas par un cadre autour de la poignée. */
   .splitter:focus-visible {
     outline: none;
+  }
+  .splitter.horizontal {
+    min-height: 0;
+    min-width: 0;
+    cursor: row-resize;
+  }
+  .splitter.horizontal::before {
+    top: 50%;
+    bottom: auto;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    height: 2px;
+    margin-left: 0;
+    margin-top: -1px;
   }
   .splitter.dragging::before,
   .splitter:focus-visible::before {

@@ -235,7 +235,7 @@ From left to right and from top to bottom:
 | Module rail (Git, SSH); at its foot, the search and the settings | 48 px wide | `--side` |
 | Tab bar | tabs 30 px high | `--side` |
 | Toolbar | full width | `--side` |
-| Three cards: sidebar, centre, detail | 8 px apart; the two side cards can be resized (9.16) and hidden (9.17) | `--panel` |
+| Three cards: sidebar, centre, detail | 8 px apart; the two side cards can be resized (9.16) and hidden (9.17); under the centre card, the terminal of the repository when it is shown (9.20) | `--panel` |
 | Status bar | 26 px high | `--side` |
 
 - No line separates these areas: the background and the space are enough.
@@ -407,6 +407,11 @@ States are the same everywhere:
 - The repository and the current branch are on the left, the branch in the code font. Each has
   a fixed width, 140 px and 200 px, so that the actions keep their place whatever the names. The
   two widths only yield to a narrow window, down to 70 px. The full name is always in a tooltip.
+- In the group on the right, before "Recharger", the "Terminal" action shows and hides the
+  terminal of the repository (9.20). It is an action like the others, icon and label, and it is
+  pressed while the terminal is shown, with the same tint as a view button: an `--accent-soft`
+  background, the icon in `--accent`, `aria-pressed`. While the terminal is hidden with shells
+  still running, the badge of the action counts them.
 - Two view buttons close the toolbar, one at each end, each above the card it shows and hides:
   the branch list on the left, the detail panel on the right (9.17). They are an 18 px icon
   alone, in a 30 × 30 px button.
@@ -603,7 +608,8 @@ Sidebar, file lists, graph, palette results.
 
 **A local terminal.** The shell of the user on their own machine (PowerShell on Windows, the
 `SHELL` of the user on Ubuntu), in their home folder. It is a tab of the SSH module, with the same
-terminal, colours, search and resizing as a session.
+terminal, colours, search and resizing as a session. A repository has local terminals of its
+own, under its graph (9.20).
 
 - Opened by Ctrl + Shift + N or "Nouveau terminal local" in the palette, from either module (the
   SSH module is then shown); by the "+" after the last tab (9.7); and from the empty screen of the
@@ -672,8 +678,10 @@ automatique" is on in the settings.
 
 ### 9.16 Resize handle
 
-Between two cards whose width can be set: in the view of a repository, on either side of the
-centre card.
+Between two cards whose size can be set: in the view of a repository, on either side of the
+centre card, and between the centre card and the terminal under it (9.20). The latter is a
+horizontal handle: what is said here of the width holds for its height, with the up and down
+arrows, a horizontal marker and the vertical resize cursor.
 
 - The handle takes up the 8 px gap between the cards. At rest it cannot be seen: the window
   background already separates the cards.
@@ -793,6 +801,52 @@ diff. Nothing has to be opened to compare them.
 - A preview is a sketch, not the component it shows: a few bars and dots, with no text. It is
   hidden from screen readers, and the name of the option says what it is. The preview of the
   graph is the one place outside the graph where the branch colours are used (2.2).
+
+### 9.20 Terminal of a repository
+
+A local terminal under the graph, opened in the folder of the repository, to run a command
+(a build, the tests, a git command Ramure does not have) without leaving the repository.
+
+- **Place.** A card of its own under the centre card, as wide as it, 8 px below it: the window
+  background separates them, the handle of 9.16 sits in that gap. The side cards keep their full
+  height. Hiding a side card gives its width to the graph and to the terminal alike.
+- **Getting there and back.** The "Terminal" action of the toolbar (9.2); Ctrl + Shift + J; and
+  "Afficher le terminal" or "Masquer le terminal" in the palette. The shortcut works from the
+  terminal too, and it does three things: when the terminal is hidden, it shows it and gives it
+  the keyboard; when it is shown and the focus is elsewhere, it gives it the keyboard; when the
+  focus is in it, it hides it and the focus goes to the graph. The button and the palette only
+  show and hide. "Nouveau terminal dans le dépôt", in the palette, opens one more.
+- **The first time.** Showing the terminal of a repository that has none opens one. Nothing is
+  started at launch: the terminal of a repository comes back hidden, and its shells are new.
+- **Header.** One line, 35 px high, on `--panel`, with a `--line-soft` separator above the
+  terminal. On the left, the tabs and the "+"; on the right, "Masquer le terminal", an icon alone
+  in a 28 × 28 px button, whose tooltip carries the shortcut. No other header: the shell and the
+  starting folder are in the tooltip of the tab ("Terminal local · bash · ouvert dans
+  ~/projets/demo"), and the prompt of the shell shows them.
+- **Tabs.** As in 9.7, at the size of the header: 26 px high, at least 90 px wide, the
+  "computer" icon and the title, "Terminal", then "Terminal 2", the smallest free number in this
+  repository. The active tab, which sits on a card already, has a `--sel` background and its
+  title in weight 650; the others are in `--muted`, `--hover` on hover. The cross is visible on
+  the active tab and on hover on the others; a middle click closes a tab too. The "+" is 24 ×
+  24 px, "Nouveau terminal dans le dépôt".
+- **Each repository has its own terminals.** They belong to the tab of the repository: switching
+  tabs or modules, or hiding the terminal, does not stop them. Closing the tab of the repository
+  stops them. They are not tabs of the SSH module, and Ctrl + Shift + N still opens a terminal
+  there, in the home folder.
+- **Closing.** Closing the last tab, or the end of the last shell, hides the terminal: it has no
+  empty state. A shell that stops on an error keeps its tab, as in 9.15.
+- **Height.** 240 px by default, 40% of the room when the window is low; 120 px at the least,
+  the header and five lines. The graph always keeps 200 px. The height is set by the handle
+  (9.16), shared by all the repositories and restored at the next launch.
+- **The graph follows.** After a command in the terminal, the repository is read again on its
+  own: when its output has been quiet for 600 ms, at most once every 2 s, and when the terminal
+  is hidden. No notification: the graph, the counters and the "WIP" row change, and that is the
+  answer.
+- **Keyboard.** The terminal never takes the keyboard on its own: not when the tab of the
+  repository is shown again, not when it is shown by the button. It takes it on the shortcut, on
+  "+", and when a shell opens. In it, as in every terminal, only the shortcuts with Shift, Alt or
+  a function key act (11). No search bar here for now: Ctrl + Shift + F stays "Récupérer".
+- **What it does not cover.** The editor of a conflict covers the view, the terminal with it.
 
 ## 10. Commit graph
 

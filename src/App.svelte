@@ -88,7 +88,7 @@
       return;
     }
     const command = commands().find((c) => c.id === id);
-    if (command && !command.disabled) command.run();
+    if (command && !command.disabled) (command.key ?? command.run)();
   }
 </script>
 

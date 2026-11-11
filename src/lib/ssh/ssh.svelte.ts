@@ -19,6 +19,8 @@ export interface Session {
   searching: boolean;
   /** Compte les demandes d'ouverture : chacune rend le focus au champ, même barre ouverte. */
   searchAsk: number;
+  /** Ce que le cœur dit d'un terminal local ouvert : son shell et son dossier de départ. */
+  opened?: { shell: string; cwd: string };
 }
 
 /** L'état d'une session en mots : le point d'un onglet ou d'un en-tête ne le dit jamais par sa seule couleur. */
@@ -46,6 +48,29 @@ const LOCAL_HOST: Host = {
   updatedAt: 0,
 };
 
+/** Identifiants des onglets de terminal, communs au module SSH et aux terminaux des dépôts. */
+let nextKey = 1;
+
+/**
+ * Un terminal local qui démarre dans `cwd` (le dossier personnel s'il est vide), titré
+ * « Terminal », puis « Terminal 2 »… le plus petit numéro libre parmi `siblings`.
+ */
+export function localSession(cwd: string, siblings: Session[]): Session {
+  const taken = new Set(siblings.filter((s) => s.kind === 'local').map((s) => s.title));
+  let n = 1;
+  while (taken.has(n === 1 ? 'Terminal' : `Terminal ${n}`)) n++;
+  return {
+    key: nextKey++,
+    kind: 'local',
+    cwd,
+    host: LOCAL_HOST,
+    title: n === 1 ? 'Terminal' : `Terminal ${n}`,
+    status: 'connecting',
+    searching: false,
+    searchAsk: 0,
+  };
+}
+
 const message = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
 
 class Ssh {
@@ -64,8 +89,6 @@ class Ssh {
 
   active = $derived(this.sessions.find((s) => s.key === this.activeKey) ?? null);
   groups = $derived([...new Set(this.hosts.map((h) => h.group).filter(Boolean))]);
-
-  #next = 1;
 
   async load() {
     try {
@@ -127,7 +150,7 @@ class Ssh {
   open(host: Host) {
     const user = host.user || this.defaultUser;
     const session: Session = {
-      key: this.#next++,
+      key: nextKey++,
       kind: 'ssh',
       cwd: '',
       host: { ...host, user },
@@ -142,19 +165,7 @@ class Ssh {
 
   /** Ouvre un terminal local dans un nouvel onglet : « Terminal », puis « Terminal 2 »… le plus petit numéro libre. */
   openLocal(cwd = '') {
-    const taken = new Set(this.sessions.filter((s) => s.kind === 'local').map((s) => s.title));
-    let n = 1;
-    while (taken.has(n === 1 ? 'Terminal' : `Terminal ${n}`)) n++;
-    const session: Session = {
-      key: this.#next++,
-      kind: 'local',
-      cwd,
-      host: LOCAL_HOST,
-      title: n === 1 ? 'Terminal' : `Terminal ${n}`,
-      status: 'connecting',
-      searching: false,
-      searchAsk: 0,
-    };
+    const session = localSession(cwd, this.sessions);
     this.sessions.push(session);
     this.activeKey = session.key;
   }
