@@ -7,7 +7,7 @@ import { toasts } from '../ui/toasts.svelte';
 import { refName } from './drag.svelte';
 import { bare, type Label } from './labels';
 import type { Repo } from './repo.svelte';
-import type { CommitRow, FileChange, Relation, ResetMode, Stash } from './types';
+import type { CommitRow, FileChange, Operation, Relation, ResetMode, Stash } from './types';
 
 const short = (sha: string) => sha.slice(0, 7);
 const commits = (count: number) => `${count} commit${count > 1 ? 's' : ''}`;
@@ -268,6 +268,29 @@ export async function forcePush(repo: Repo) {
     danger: true,
   });
   if (confirmed) await repo.sync('push-force');
+}
+
+/** Ce que perd l'abandon d'une opération arrêtée : `git <opération> --abort` revient à l'état d'avant. */
+const ABORT: Record<Operation, { what: string; lost: string }> = {
+  merge: { what: 'la fusion', lost: 'Les conflits déjà résolus seront perdus.' },
+  rebase: { what: 'le rebase', lost: 'Les commits déjà rejoués et les conflits déjà résolus seront perdus.' },
+  'cherry-pick': { what: 'le cherry-pick', lost: 'Les commits déjà repris et les conflits déjà résolus seront perdus.' },
+  revert: { what: 'le revert', lost: 'Les commits déjà annulés et les conflits déjà résolus seront perdus.' },
+};
+
+/** Abandonne l'opération en cours, après une confirmation qui dit ce qui est perdu (charte, 9.1). */
+export async function abortOperation(repo: Repo) {
+  const operation = repo.status?.operation;
+  if (!operation) return;
+  const { what, lost } = ABORT[operation];
+  const confirmed = await dialogs.confirm({
+    title: `Abandonner ${what} ?`,
+    body: `Le dépôt revient à son état d’avant ${what} (git ${operation} --abort).`,
+    warning: lost,
+    confirmLabel: `Abandonner ${what}`,
+    danger: true,
+  });
+  if (confirmed) await repo.operate('abort');
 }
 
 export async function discardFiles(repo: Repo, files: FileChange[]) {

@@ -4,6 +4,7 @@
   import { tick, untrack } from 'svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
+  import Select from '../ui/Select.svelte';
   import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
   import { focusWithRing } from '../ui/focus';
@@ -362,11 +363,11 @@
 
         <label class="full">
           <span class="label">Authentification</span>
-          <select class="field" bind:this={authEl} bind:value={form.auth}>
+          <Select bind:element={authEl} bind:value={form.auth}>
             <option value="auto">Agent SSH, puis clés par défaut de ~/.ssh</option>
             <option value="keyFile">Fichier de clé</option>
             <option value="password">Mot de passe</option>
-          </select>
+          </Select>
         </label>
         {#if form.auth === 'password'}
           <!-- Ce que le trousseau retient pour ce compte, et de quoi l'oublier. -->

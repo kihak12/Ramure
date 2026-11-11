@@ -143,7 +143,8 @@
     gap: 12px;
     padding: 12px;
     border: 1px solid var(--line);
-    border-radius: var(--radius-l);
+    /* Un grand bouton standard : les coins de tout ce qui se clique (charte, sections 5 et 9.1). */
+    border-radius: var(--radius-s);
     background: var(--raised);
     box-shadow: var(--shadow-soft);
     cursor: pointer;
@@ -167,7 +168,8 @@
     place-items: center;
     width: 38px;
     height: 38px;
-    border-radius: var(--radius);
+    /* Jamais plus arrondie que le bouton qui la contient (charte, section 5). */
+    border-radius: var(--radius-s);
     /* Une pastille d'icône informe : elle n'a pas l'accent, réservé au principal, au focus et à
        l'élément actif (charte, section 2.3). */
     color: var(--muted);

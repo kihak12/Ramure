@@ -2,7 +2,7 @@
 // courant, branches, tags, onglets ouverts et dépôts récents.
 
 import type { Command } from '../ui/palette.svelte';
-import { createBranch, forcePush, stashChanges, switchBranch, switchToRemote } from './actions';
+import { abortOperation, createBranch, forcePush, stashChanges, switchBranch, switchToRemote } from './actions';
 import { bare } from './labels';
 import { layout, toggleSide, toggleSides } from './layout.svelte';
 import { OPERATION } from './repo.svelte';
@@ -23,7 +23,7 @@ export function gitCommands(): Command[] {
     if (operation) {
       const name = OPERATION[operation];
       add({ id: 'op-continue', group: 'Actions', icon: 'play', title: `Continuer : ${name.toLowerCase()}`, disabled: !idle || repo.conflicts.length > 0, hint: repo.conflicts.length ? 'conflits à résoudre' : undefined, run: () => void repo.operate('continue') });
-      add({ id: 'op-abort', group: 'Actions', icon: 'stop', title: `Abandonner : ${name.toLowerCase()}`, disabled: !idle, run: () => void repo.operate('abort') });
+      add({ id: 'op-abort', group: 'Actions', icon: 'stop', title: `Abandonner : ${name.toLowerCase()}…`, disabled: !idle, run: () => void abortOperation(repo) });
     }
     add({ id: 'fetch', group: 'Actions', icon: 'fetch', title: 'Récupérer', keywords: 'fetch', hint: 'git fetch --all --prune', disabled: !idle, run: () => void repo.sync('fetch') });
     add({ id: 'pull', group: 'Actions', icon: 'pull', title: 'Tirer', keywords: 'pull', hint: status?.upstream ?? 'pas de branche distante', disabled: !idle || !status?.upstream, run: () => void repo.sync('pull') });

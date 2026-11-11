@@ -3,6 +3,7 @@
   import { veil } from '../ui/veil';
   import { flip } from 'svelte/animate';
   import Icon from '../ui/Icon.svelte';
+  import Select from '../ui/Select.svelte';
   import type { Repo } from './repo.svelte';
   import type { TodoAction, TodoItem } from './types';
   import { motion } from '../ui/motion';
@@ -131,11 +132,13 @@
             <span class="grip" title="Glisser pour déplacer"><Icon name="grip" /></span>
             <div class="main">
               <div class="line">
-                <select class="field" bind:value={item.action} title={ACTIONS.find((a) => a.value === item.action)?.hint} aria-label="Action pour {item.subject}">
-                  {#each ACTIONS as action (action.value)}
-                    <option value={action.value}>{action.label}</option>
-                  {/each}
-                </select>
+                <span class="action">
+                  <Select bind:value={item.action} title={ACTIONS.find((a) => a.value === item.action)?.hint} aria-label="Action pour {item.subject}">
+                    {#each ACTIONS as action (action.value)}
+                      <option value={action.value}>{action.label}</option>
+                    {/each}
+                  </Select>
+                </span>
                 <span class="sha mono">{item.sha.slice(0, 7)}</span>
                 <span class="subject">{item.subject}</span>
               </div>
@@ -216,43 +219,38 @@
   .warning span {
     color: var(--ink);
   }
+  /* Des lignes simples, séparées par un filet --line (--line-soft ne se voit pas sur --raised) :
+     une ligne encadrée dans une boîte serait une carte dans une carte (charte, sections 6 et 9.6). */
   ol {
     list-style: none;
     margin: 0;
-    padding: 4px 16px;
+    padding: 4px 20px;
     overflow-y: auto;
     display: grid;
-    gap: 4px;
     align-content: start;
   }
   li {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    padding: 6px 8px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--panel);
-    transition:
-      opacity var(--t-fast) var(--ease),
-      border-color var(--t-fast) var(--ease),
-      box-shadow var(--t-fast) var(--ease);
+    padding: 6px 0;
+    transition: opacity var(--t-fast) var(--ease);
   }
-  li:hover {
-    border-color: color-mix(in srgb, var(--muted) 45%, var(--line));
+  li + li {
+    border-top: 1px solid var(--line);
   }
+  /* La ligne glissée garde sa place à demi effacée ; le système la dessine sous le pointeur. */
   li.dragging {
     opacity: 0.5;
-    box-shadow: var(--shadow-pop);
   }
   li.a-drop .subject {
     text-decoration: line-through;
     color: var(--faint);
   }
+  /* Un commit fondu dans le précédent est en retrait sous lui. */
   li.a-squash,
   li.a-fixup {
     margin-left: 22px;
-    border-style: dashed;
   }
   .grip {
     display: grid;
@@ -272,7 +270,7 @@
     gap: 10px;
     min-width: 0;
   }
-  select {
+  .action {
     width: 210px;
     flex: none;
   }

@@ -381,7 +381,8 @@ The interface has four levels. Each is recognised by its background.
 | 18 px | Toolbar and rail. |
 
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
-  for a tag.
+  for a tag, the key for an SSH key, the arrow that enters a sheet for an import. An icon that
+  stands for a git command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
 - An icon never carries a state on its own: it is backed by text or by a tooltip.
@@ -458,8 +459,10 @@ States are the same everywhere:
 | Ghost | No background and no border at rest. | What comes second to something else (see "Hierarchy" below). |
 | Ghost danger | A ghost button whose text is in `--bad`; on hover, a `--bad-soft` background. | Opens a destructive action that a dialog then confirms, never the action itself: "Supprimer l’hôte…". Its label ends with "…". |
 | Small | 24 px high, 12 px text. | In a card header or a row. |
+| Large | A standard button, 12 px inner margins: a 20 px icon in a 38 px square of `--hover`, then its label, weight 650, over a line in `--muted` at 11.5 px that says from what or where. | The actions of the start page, the only thing to do there. Never mixed with buttons of another size. |
 
-- 6 px corners. Inner margins: 5 px at the top and bottom, 12 px on the sides.
+- 6 px corners, the large button included. Inner margins: 5 px at the top and bottom, 12 px on
+  the sides.
 - A toggle is a small ghost button that keeps a state (`aria-pressed`). Pressed: an
   `--accent-soft` background and an `--accent` border, the text staying in `--ink`.
 - Hover: `--hover` background and a stronger border. A primary or danger button moves 10%
@@ -500,7 +503,8 @@ its own buttons.
 - **Danger** confirms a destructive action, in a dialog only. It takes the place of the
   primary, last on the line, and repeats the verb of the title: "Supprimer" under "Supprimer
   atelier-prod du carnet ?". **Ghost danger** is the entry that opens that dialog: "Supprimer
-  l’hôte…".
+  l’hôte…", or "Abandonner…" in the banner of a rebase or a merge that has stopped, whose dialog
+  says what is lost: the conflicts already resolved, the commits already replayed.
 - **The last line of a dialog**, from left to right: the way out, then a secondary action if
   there is one, then the primary or the danger button, last, all at the right. A destructive
   entry stands alone at the far left. Four buttons at most: what does not fit goes into the
@@ -581,9 +585,13 @@ its own buttons.
   - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked.
   - Focus: the focus ring of the application (the states of section 9). Disabled: 45%, and its
     text too.
-- A list is the control of the system, 32 px high like a field. Its look, closed and open, is
-  the system's. It is for options that are many, or that are plain values; a few options that
-  need a word of explanation are a choice (9.19).
+- A list is drawn by the application when it is closed, like the checkbox: the system's is
+  taller than a field on Linux, and cannot be brought to 32 px without cutting its text. It is a
+  field, 32 px high with its states, its value on the left, and on the right the "chevron" icon
+  turned down, 14 px, in `--muted`, 9 px from the edge. The value never runs under the chevron:
+  it is cut with an ellipsis. Open, its menu is the system's. A list is for options that are
+  many, or that are plain values; a few options that need a word of explanation are a choice
+  (9.19).
 - A filter field carries a 14 px magnifier on its left, in `--muted`; its hint names what it
   filters, and so does its accessible name.
 - A unit follows the field it belongs to, 6 px away, in 12 px, `--muted`: "min".
@@ -641,6 +649,13 @@ Sidebar, file lists, graph, palette results.
 - The state of a file is a letter on a tinted background (M, A, D, R), never a colour alone.
 - A file that is only partly staged carries the words "en partie" after its name, in `--muted`
   at 11.5 px, in both lists.
+- **A list inside a dialog** (the keys of "Gérer les clés…", the commits of an interactive rebase)
+  is made of plain rows: no border and no background of their own, since a framed row inside a
+  dialog would be a card in a card (6). The rows are separated by a `--line` line, as in a menu or
+  the palette: on `--raised`, `--line-soft` does not show. A form that opens under the list
+  ("Générer une clé") is separated from it the same way. A row that cannot be selected takes no
+  hover background. A row being dragged keeps its place in the list at half opacity, while the
+  system draws it under the pointer.
 
 ### 9.7 Tabs
 
