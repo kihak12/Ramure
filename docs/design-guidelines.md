@@ -45,7 +45,7 @@ The two screenshots show the application as it is, on a demonstration repository
    - [9.14 Diff](#914-diff)
    - [9.15 Terminal](#915-terminal)
    - [9.16 Resize handle](#916-resize-handle)
-   - [9.17 Hiding a side card](#917-hiding-a-side-card)
+   - [9.17 Showing and hiding cards](#917-showing-and-hiding-cards)
    - [9.18 Settings page](#918-settings-page)
    - [9.19 Choice](#919-choice)
    - [9.20 Terminal of a repository](#920-terminal-of-a-repository)
@@ -110,7 +110,7 @@ component that hard-codes one.
 | `--hover` | Background of a hovered element. | `#eef0f4` | `#1e222a` |
 | `--sel` | Background of a selected element. | `#e1ecfb` | `#1d3252` |
 | `--accent` | Main action, focus, active element, link. | `#2b6fdb` | `#6aa5f8` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed view button of the toolbar, row of a shortcut being recorded. | `#e4eefc` | `#182b45` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded. | `#e4eefc` | `#182b45` |
 | `--on-accent` | Text placed on the accent or on a branch colour. | `#ffffff` | `#08131f` |
 | `--ok` / `--ok-soft` | Success, added line. | `#1f7a45` / `#e2f3e8` | `#5cc48d` / `#12301f` |
 | `--warn` / `--warn-soft` | Warning, pending operation. | `#8f5708` / `#fbf0dc` | `#f0a94f` / `#3a2b14` |
@@ -431,24 +431,24 @@ States are the same everywhere:
 - A counter (commits to pull, to push) is a round badge in `--accent`, at the top right of the
   icon.
 - During an operation, the icon spins and the button is disabled.
-- The repository and the current branch are on the left, the branch in the code font. Each has
-  a fixed width, 140 px and 200 px, so that the actions keep their place whatever the names. The
-  two widths only yield to a narrow window, down to 70 px. The full name is always in a tooltip.
+- The repository and the current branch are on the left, at the edge of the toolbar, above the
+  left edge of the cards; the branch in the code font. Each has a fixed width, 140 px and
+  200 px, so that the actions keep their place whatever the names. The two widths only yield to
+  a narrow window, down to 70 px. The full name is always in a tooltip.
 - In the group on the right, before "Recharger", the "Terminal" action shows and hides the
   terminal of the repository (9.20). It is an action like the others, icon and label, and it is
-  pressed while the terminal is shown, with the same tint as a view button: an `--accent-soft`
-  background, the icon in `--accent`, `aria-pressed`. While the terminal is hidden with shells
-  still running, the badge of the action counts them.
-- Two view buttons close the toolbar, one at each end, each above the card it shows and hides:
-  the branch list on the left, the detail panel on the right (9.17). They are an 18 px icon
-  alone, in a 30 × 30 px button.
-  - Pressed means that the card is shown: an `--accent-soft` background and the icon in
-    `--accent`, like the active module in the rail. Released, the icon is in `--muted`.
-  - The tint is not alone to say the state: the card itself is there or not, right under the
-    button, the tooltip names what a click will do, and `aria-pressed` says it to screen readers.
-  - Hover: a `--hover` background and the icon in `--ink`; on a pressed button, the tint gets a
-    little stronger (12% of `--accent` over `--accent-soft`). Disabled, when no repository is
-    open: 45%.
+  pressed while the terminal is shown, with the tint of the active module in the rail: an
+  `--accent-soft` background, the icon in `--accent`, `aria-pressed`. On hover the tint gets a
+  little stronger (12% of `--accent` over `--accent-soft`). While the terminal is hidden with
+  shells still running, the badge of the action counts them.
+- One view button closes the toolbar, on the right, above the right edge of the cards:
+  "Affichage". It is an 18 px icon alone, in a 30 × 30 px button, and it opens the menu of the
+  cards to show (9.17).
+  - At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a `--hover`
+    background and the icon in `--ink`. It has no pressed state: the menu says what is shown.
+  - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher".
+    `aria-haspopup` says that it opens a menu, `aria-expanded` whether the menu is open.
+  - Disabled, when no repository is open: 45%.
 
 ### 9.3 Fields
 
@@ -564,6 +564,15 @@ Sidebar, file lists, graph, palette results.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.
 - Appears in `--t-fast`, from the point of the click.
+- A menu may also open under a button, such as "Affichage" in the toolbar (9.2): 4 px below it,
+  its right edge on the right edge of the button, and it appears from that corner. Escape, or a
+  click outside, closes it and gives the focus back to the button.
+- An item may recall the shortcut of its action, on its right, drawn as keys (9.12).
+- A checkable item (`menuitemcheckbox`) shows or hides something. Its check mark is on the
+  right, after the shortcut, 16 px, in `--accent`; its place is kept when the item is unchecked,
+  as in a choice (9.19). Choosing it applies at once and leaves the menu open, to change several
+  in a row; Space and Enter check it. An item that cannot be unchecked is disabled, and its
+  tooltip says why.
 
 ### 9.10 Dialogs
 
@@ -734,26 +743,37 @@ arrows, a horizontal marker and the vertical resize cursor.
   makes up for it.
 - A hidden card has no handle (9.17).
 
-### 9.17 Hiding a side card
+### 9.17 Showing and hiding cards
 
-In the view of a repository, the branch list and the detail panel can each be hidden, to read
-the graph on the whole width.
+The view of a repository has four cards: the branch list, the graph, the terminal of the
+repository (9.20) and the detail panel. Hiding the side cards gives the graph the whole width;
+hiding the graph gives the terminal the whole height.
 
-- Three ways, always: the view button of the toolbar (9.2), a command of the palette, and a
-  shortcut, Ctrl + Shift + B for the branch list and Ctrl + Shift + E for the detail panel. A
-  command of the palette hides or shows both at once.
-- The tooltip of a view button names what a click does, with the shortcut: "Masquer la liste des
-  branches (Ctrl + Maj + B)". Its accessible name does not change: "Liste des branches",
-  "Panneau de détail".
-- Hiding is immediate, and so is showing (8). The card comes back at the width it had.
+- **The "Affichage" menu** of the toolbar (9.2) holds one checkable item (9.9) per card, in the
+  order of the screen: "Liste des branches", "Graphe des commits", "Terminal" and "Panneau de
+  détail". Each has its icon and recalls its shortcut.
+- Three ways, always: the menu, a command of the palette, and a shortcut, Ctrl + Shift + B for
+  the branch list, Ctrl + Shift + E for the detail panel, Ctrl + Shift + J for the terminal.
+  The graph has no shortcut at first: one can be given in the settings. A command of the palette
+  hides or shows both side cards at once. The terminal also keeps its action in the toolbar.
+- **The centre is never empty**: it holds the graph, the terminal, or both. In the menu, the item
+  of the one that is alone there is disabled, and its tooltip says why: "Le graphe reste affiché
+  tant que le terminal ne l’est pas." Hiding the terminal another way, by its action, by its
+  shortcut or by the end of its last shell, brings the graph back.
+- **Hiding the graph belongs to the repository**, like its terminal: it holds for that tab, and
+  nothing of it is kept at the next launch. Opening a diff, which shows on the card of the
+  graph, brings the graph back.
+- Hiding is immediate, and so is showing (8). A side card comes back at the width it had.
 - **Hiding is the user's choice: only a request to see the detail undoes it.** The detail panel
   comes back on "Voir les modifications en cours", on "Voir les fichiers" in the banner of a
   stopped operation, on a click on the "WIP" row, and on Enter or a double-click on a commit. It
   does not come back when the selection moves, by a click or from the keyboard, nor when an
   operation stops on its own. Nothing brings the branch list back but its own commands.
-- The choice is shared by all the tabs and restored at the next launch, like the widths.
+- The choice of the side cards is shared by all the tabs and restored at the next launch, like
+  the widths.
 - What a hidden card holds is out of the tab order and out of the reach of screen readers. If
-  the focus was in the card, it moves to the graph.
+  the focus was in the card, it moves to the graph, or to the terminal when the graph is the
+  card that goes.
 
 ### 9.18 Settings page
 
@@ -848,7 +868,8 @@ A local terminal under the graph, opened in the folder of the repository, to run
 
 - **Place.** A card of its own under the centre card, as wide as it, 8 px below it: the window
   background separates them, the handle of 9.16 sits in that gap. The side cards keep their full
-  height. Hiding a side card gives its width to the graph and to the terminal alike.
+  height. Hiding a side card gives its width to the graph and to the terminal alike. When the
+  graph is hidden (9.17), the terminal takes the whole height of the centre, with no handle.
 - **Getting there and back.** The "Terminal" action of the toolbar (9.2); Ctrl + Shift + J; and
   "Afficher le terminal" or "Masquer le terminal" in the palette. The shortcut works from the
   terminal too, and it does three things: when the terminal is hidden, it shows it and gives it

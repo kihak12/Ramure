@@ -52,6 +52,17 @@ export function gitCommands(): Command[] {
       run: () => terminals.toggle(repo.path),
       key: () => terminals.key(repo.path, !!document.activeElement?.closest('[data-terminals]')),
     });
+    add({
+      id: 'toggle-graph',
+      group: 'Affichage',
+      icon: 'commit',
+      title: terminals.alone ? 'Afficher le graphe des commits' : 'Masquer le graphe des commits',
+      keywords: 'terminal en grand historique',
+      // Le centre n'est jamais vide : le graphe ne se masque que devant le terminal.
+      hint: terminals.shown ? undefined : 'le terminal doit être affiché',
+      disabled: !terminals.shown || !!repo.conflictFile,
+      run: () => terminals.toggleGraph(),
+    });
     add({ id: 'terminal-repo', group: 'Affichage', icon: 'laptop', title: 'Nouveau terminal dans le dépôt', keywords: 'console shell ligne de commande', disabled: !!repo.conflictFile, run: () => terminals.open(repo.path) });
     add({ id: 'toggle-sides', group: 'Affichage', icon: 'panels', title: layout.sidebarHidden && layout.detailHidden ? 'Réafficher les panneaux latéraux' : 'Masquer les panneaux latéraux', keywords: 'graphe en grand replier', run: toggleSides });
   }

@@ -506,6 +506,8 @@ export class Repo {
     const token = ++this.#diffToken;
     if (this.openFile?.key !== file.key) this.diff = null;
     this.openFile = file;
+    // Le diff s'ouvre sur la carte du graphe : la demander la ramène si elle était masquée.
+    this.terminals.setGraph(true);
     this.diffLoading = true;
     this.diffError = '';
     try {

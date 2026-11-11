@@ -8,6 +8,11 @@ export class RepoTerminals {
   activeKey = $state(0);
   /** Le panneau est affiché sous le graphe. */
   shown = $state(false);
+  /**
+   * Le graphe est masqué : le terminal tient toute la colonne du centre. Ne vaut que tant que le
+   * terminal est affiché ; le centre n'est jamais vide (charte, section 9.17).
+   */
+  alone = $state(false);
   /** Compte les demandes de clavier : chacune donne le focus au terminal actif. */
   focusAsk = $state(0);
 
@@ -34,8 +39,19 @@ export class RepoTerminals {
     this.shown = true;
   }
 
+  /** Masquer le terminal ramène le graphe s'il était masqué. */
   hide() {
     this.shown = false;
+    this.alone = false;
+  }
+
+  /** Masque ou affiche le graphe ; sans terminal affiché, il reste. */
+  setGraph(visible: boolean) {
+    this.alone = !visible && this.shown;
+  }
+
+  toggleGraph() {
+    this.setGraph(this.alone);
   }
 
   /** Le bouton et la palette : afficher ou masquer, sans plus. */
@@ -61,6 +77,6 @@ export class RepoTerminals {
     if (at < 0) return;
     this.sessions.splice(at, 1);
     if (this.activeKey === key) this.activeKey = this.sessions[Math.min(at, this.sessions.length - 1)]?.key ?? 0;
-    if (!this.sessions.length) this.shown = false;
+    if (!this.sessions.length) this.hide();
   }
 }

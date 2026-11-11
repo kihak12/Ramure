@@ -1,21 +1,29 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import { display } from './keys.svelte';
   import { menu, type MenuItem } from './menu.svelte';
 
   let element = $state<HTMLDivElement>();
   let position = $state({ x: 0, y: 0 });
+  // On parcourt le menu au clavier : l'élément qui a le focus le montre. La souris reprend la main en bougeant.
+  let keyboard = $state(false);
 
   const open = $derived(menu.current);
+  // Les cases d'un menu déroulant suivent leur état pendant qu'il est ouvert.
+  const items = $derived(!open ? [] : typeof open.items === 'function' ? open.items() : open.items);
 
-  // Le menu s'ouvre sous le pointeur, puis est ramené dans la fenêtre s'il en dépasse.
+  // Le menu s'ouvre sous le pointeur, ou sous son bouton et aligné sur son bord droit, puis est
+  // ramené dans la fenêtre s'il en dépasse.
   $effect(() => {
     if (!open) return;
+    keyboard = !!open.keyboard;
     position = { x: open.x, y: open.y };
     queueMicrotask(() => {
       if (!element) return;
       const box = element.getBoundingClientRect();
+      const x = open.anchor ? open.x - box.width : open.x;
       position = {
-        x: Math.max(4, Math.min(open.x, window.innerWidth - box.width - 6)),
+        x: Math.max(4, Math.min(x, window.innerWidth - box.width - 6)),
         y: Math.max(4, Math.min(open.y, window.innerHeight - box.height - 6)),
       };
       element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
@@ -24,19 +32,22 @@
 
   function pick(item: MenuItem) {
     if ('separator' in item || item.disabled) return;
-    menu.close();
+    // Une case à cocher s'applique tout de suite et laisse le menu ouvert : on en change plusieurs d'affilée.
+    if (item.checked === undefined) menu.close();
     item.run();
   }
 
+  // L'élément survolé prend le focus : Espace et Entrée agissent sur celui qu'on voit en surbrillance.
   function onKey(event: KeyboardEvent) {
     if (!element) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      menu.close();
+      menu.close(true);
       return;
     }
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
+    keyboard = true;
     const buttons = [...element.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
     const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
     const next = (at + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
@@ -57,14 +68,41 @@
     }}
     onwheel={() => menu.close()}
   ></div>
-  <div class="menu" role="menu" tabindex="-1" bind:this={element} style:left="{position.x}px" style:top="{position.y}px" onkeydown={onKey}>
-    {#each open.items as item, i (i)}
+  <div
+    class="menu"
+    class:under={!!open.anchor}
+    class:keyboard
+    role="menu"
+    tabindex="-1"
+    bind:this={element}
+    style:left="{position.x}px"
+    style:top="{position.y}px"
+    onkeydown={onKey}
+    onpointermove={() => (keyboard = false)}
+  >
+    {#each items as item, i (i)}
       {#if 'separator' in item}
         <hr />
       {:else}
-        <button type="button" role="menuitem" class:danger={item.danger} disabled={item.disabled} title={item.hint} onclick={() => pick(item)}>
+        <button
+          type="button"
+          role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+          aria-checked={item.checked}
+          class:danger={item.danger}
+          disabled={item.disabled}
+          title={item.hint}
+          onclick={() => pick(item)}
+          onpointerenter={(event) => event.currentTarget.focus()}
+        >
           <span class="glyph">{#if item.icon}<Icon name={item.icon} size={16} />{/if}</span>
           <span class="text">{item.label}</span>
+          {#if item.keys}
+            <span class="keys">{#each display(item.keys).split(' + ') as part, n (n)}<kbd>{part}</kbd>{/each}</span>
+          {/if}
+          <!-- La place de la coche est gardée sur les cases décochées : un élément ne change pas de taille. -->
+          {#if item.checked !== undefined}
+            <span class="check">{#if item.checked}<Icon name="check" size={16} />{/if}</span>
+          {/if}
         </button>
       {/if}
     {/each}
@@ -90,6 +128,10 @@
     transform-origin: top left;
     animation: pop-in var(--t-fast) var(--ease);
   }
+  /* Déroulé sous un bouton, il vient de ce bouton : son coin haut droit. */
+  .menu.under {
+    transform-origin: top right;
+  }
   .menu:focus {
     outline: none;
   }
@@ -107,7 +149,8 @@
     transition: background var(--t-fast) var(--ease);
   }
   button:hover:not(:disabled),
-  button:focus-visible {
+  button:focus-visible,
+  .keyboard button:focus {
     background: var(--accent-soft);
     outline: none;
   }
@@ -119,8 +162,13 @@
     color: var(--bad);
   }
   button.danger:hover:not(:disabled),
-  button.danger:focus-visible {
+  button.danger:focus-visible,
+  .keyboard button.danger:focus {
     background: var(--bad-soft);
+  }
+  /* Au clavier, seul l'élément qui a le focus est en surbrillance : le pointeur resté sur un autre ne compte plus. */
+  .keyboard button:hover:not(:focus) {
+    background: none;
   }
   .glyph {
     display: grid;
@@ -132,9 +180,25 @@
     color: inherit;
   }
   .text {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .keys {
+    flex: none;
+    display: flex;
+    gap: 2px;
+    margin-left: 12px;
+  }
+  .check {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
   }
   hr {
     margin: 4px 6px;

@@ -228,13 +228,13 @@
     border-color: var(--line);
     background: var(--raised);
   }
+  /* La touche partagée (app.css), un peu plus haute, et dans la couleur du texte : ici on la lit et on la change. */
   kbd {
+    min-width: 0;
     padding: 0 6px;
-    border: 1px solid var(--line);
-    border-bottom-width: 2px;
-    border-radius: var(--radius-xs);
-    background: var(--bg);
-    font: var(--fs-micro) / 18px var(--f-ui);
+    color: inherit;
+    line-height: 18px;
+    text-align: start;
   }
   .none {
     color: var(--muted);

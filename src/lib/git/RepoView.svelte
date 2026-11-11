@@ -40,6 +40,8 @@
   const terminals = $derived(repo.terminals);
   let middleHeight = $state(0);
   const terminalSize = $derived(fitTerminal(middleHeight));
+  // Le graphe masqué : le terminal tient le centre à lui seul. Jamais sans terminal à montrer.
+  const graphHidden = $derived(terminals.alone && terminals.shown && !!repo.result);
 
   // Si le focus était dans la carte qu'on masque, il passe au graphe : il ne doit pas se perdre.
   let sidebarEl = $state<HTMLElement>();
@@ -51,11 +53,16 @@
       layout.sidebarHidden ? sidebarEl : undefined,
       layout.detailHidden ? detailEl : undefined,
       terminals.shown ? undefined : terminalEl,
+      graphHidden ? centerEl : undefined,
     ];
     untrack(() => {
       const focused = document.activeElement;
       if (!active || !leaving.some((card) => card?.contains(focused))) return;
-      void tick().then(() => centerEl?.querySelector<HTMLElement>('[role="listbox"]')?.focus());
+      // Sans graphe, c'est le terminal qui reste au centre : il prend le clavier.
+      void tick().then(() => {
+        if (graphHidden) terminals.focusAsk++;
+        else centerEl?.querySelector<HTMLElement>('[role="listbox"]')?.focus();
+      });
     });
   });
 
@@ -126,7 +133,8 @@
 
       <!-- Le graphe, et sous lui le terminal du dépôt, aussi large que lui (charte, section 9.20). -->
       <div class="middle" bind:clientHeight={middleHeight} style:--terminal="{terminalSize.value}px">
-        <div class="center" bind:this={centerEl}>
+        <!-- Masqué, le graphe reste monté : sa position et sa sélection sont gardées. -->
+        <div class="center" bind:this={centerEl} hidden={graphHidden} inert={graphHidden}>
           <Graph {repo} />
           {#if repo.openFile}
             <DiffView
@@ -143,7 +151,7 @@
           {/if}
         </div>
         {#if repo.result && terminals.sessions.length}
-          {#if terminals.shown}
+          {#if terminals.shown && !graphHidden}
             <Splitter
               orientation="horizontal"
               label="Hauteur du terminal"
@@ -157,7 +165,7 @@
             />
           {/if}
           <!-- Masqué, il reste monté : ses shells continuent de tourner. -->
-          <div class="terminal" bind:this={terminalEl} hidden={!terminals.shown} inert={!terminals.shown}>
+          <div class="terminal" class:alone={graphHidden} bind:this={terminalEl} hidden={!terminals.shown} inert={!terminals.shown}>
             <TerminalPanel {repo} active={active && terminals.shown} />
           </div>
         {/if}
@@ -267,6 +275,7 @@
   /* Une carte masquée ne prend plus de place ; `hidden` seul céderait à `display` ci-dessus. */
   .side[hidden],
   .detail[hidden],
+  .center[hidden],
   .terminal[hidden] {
     display: none;
   }
@@ -296,6 +305,11 @@
     flex: none;
     height: var(--terminal);
     min-height: 0;
+  }
+  /* Sans le graphe, le terminal tient toute la colonne. */
+  .terminal.alone {
+    flex: 1;
+    height: auto;
   }
   .detail {
     overflow: auto;

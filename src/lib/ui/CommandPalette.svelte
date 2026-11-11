@@ -191,18 +191,6 @@
     font-size: var(--fs-title);
     color: var(--ink);
   }
-  kbd {
-    display: inline-block;
-    min-width: 18px;
-    padding: 0 5px;
-    border: 1px solid var(--line);
-    border-bottom-width: 2px;
-    border-radius: var(--radius-xs);
-    background: var(--bg);
-    color: var(--muted);
-    font: var(--fs-micro) / 16px var(--f-ui);
-    text-align: center;
-  }
   .results {
     overflow-y: auto;
     padding: 6px;

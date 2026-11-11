@@ -536,6 +536,12 @@ textarea {
   outline-offset: 1px;
 }
 
+/* Le focus rendu au clavier par un script : le même anneau (voir menu.svelte.ts). */
+.ring:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* Une boîte de dialogue reçoit le focus à l'ouverture : ce sont ses champs qui le montrent. */
 dialog:focus-visible {
   outline: none;
@@ -730,6 +736,20 @@ strong {
   line-height: 16px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* Touche d'un raccourci, dessinée comme une touche (charte, section 9.12). */
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+  color: var(--muted);
+  font: var(--fs-micro) / 16px var(--f-ui);
+  text-align: center;
 }
 
 .icon {
