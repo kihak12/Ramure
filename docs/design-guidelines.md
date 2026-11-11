@@ -507,6 +507,11 @@ Sidebar, file lists, graph, palette results.
   name say what it opens, with the shortcut: "Nouveau terminal local (Ctrl + Maj + N)".
 - A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling.
   The ring of a tab follows its 8 px corners.
+- When the tabs overflow, the bar scrolls to the active tab, and to a tab that takes the focus,
+  so that it stays whole to the left of the "+": the bar keeps 40 px of scroll room on its right,
+  the width of the "+" and its margins (a derived value, not a gap of 4.1). The "+" covers the
+  room on its right with the window background, a flat shadow in `--side` that no one sees as a
+  shadow: no tab shows past it.
 - The same goes for the cross of a row that appears on hover, such as a recent repository on the
   start page: `--line` on hover, since it sits on a hovered row.
 
