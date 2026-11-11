@@ -115,7 +115,7 @@
     <div class="list" bind:this={listEl}>
       {#each ssh.keys as key (key.name)}
         <div class="key" data-key={key.name}>
-          <span class="glyph"><Icon name="tag" size={16} /></span>
+          <span class="glyph"><Icon name="key" size={16} /></span>
           <div class="text">
             <b class="mono">{key.name}</b>
             <small>
@@ -230,23 +230,24 @@
     font-family: var(--f-mono);
     font-size: var(--fs-code);
   }
+  /* Des lignes simples, séparées par un filet --line (--line-soft ne se voit pas sur --raised) :
+     une ligne encadrée dans une boîte serait une carte dans une carte (charte, sections 6 et 9.6). */
   .list {
     flex: 1 1 auto;
     overflow-y: auto;
     min-height: 0;
-    padding: 0 16px;
+    padding: 0 20px;
     display: grid;
-    gap: 6px;
     align-content: start;
   }
   .key {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--panel);
+    padding: 10px 0;
+  }
+  .key + .key {
+    border-top: 1px solid var(--line);
   }
   .glyph {
     display: grid;
@@ -295,16 +296,14 @@
     margin-left: -9px;
   }
   .none {
-    padding: 12px 6px;
+    padding: 12px 0;
   }
   .create {
     display: grid;
     gap: 12px;
-    margin: 12px 16px 0;
-    padding: 12px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--bg);
+    margin: 4px 20px 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
   }
   .two {
     display: grid;

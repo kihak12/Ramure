@@ -2,6 +2,7 @@
   import { AUTO_FETCH, DEFAULTS, prefs, savePrefs, type DiffMode, type GraphStyle, type PullMode, type Settings } from '../git/prefs.svelte';
   import { workspace } from '../git/workspace.svelte';
   import Choice from '../ui/Choice.svelte';
+  import Select from '../ui/Select.svelte';
   import DiffPreview from './DiffPreview.svelte';
   import GraphPreview from './GraphPreview.svelte';
   import SectionHeader from './SectionHeader.svelte';
@@ -118,12 +119,12 @@
     help="« Tout l’historique » peut être long sur un gros dépôt."
     busy={reloading ? 'Rechargement du graphe…' : ''}
   >
-    <select id="set-limit" class="field" aria-describedby="set-limit-help" value={prefs.limit} onchange={(e) => setLimit(Number(e.currentTarget.value))}>
+    <Select id="set-limit" aria-describedby="set-limit-help" value={prefs.limit} onchange={(e) => setLimit(Number(e.currentTarget.value))}>
       <option value={1000}>1 000</option>
       <option value={10000}>10 000</option>
       <option value={50000}>50 000</option>
       <option value={0}>Tout l’historique</option>
-    </select>
+    </Select>
   </SettingRow>
 </section>
 

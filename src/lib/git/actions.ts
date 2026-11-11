@@ -7,7 +7,7 @@ import { toasts } from '../ui/toasts.svelte';
 import { refName } from './drag.svelte';
 import { bare, type Label } from './labels';
 import type { Repo } from './repo.svelte';
-import type { CommitRow, FileChange, Relation, ResetMode, Stash } from './types';
+import type { CommitRow, FileChange, Operation, Relation, ResetMode, Stash } from './types';
 
 const short = (sha: string) => sha.slice(0, 7);
 const commits = (count: number) => `${count} commit${count > 1 ? 's' : ''}`;
@@ -268,6 +268,31 @@ export async function forcePush(repo: Repo) {
     danger: true,
   });
   if (confirmed) await repo.sync('push-force');
+}
+
+/** L'opération arrêtée, dans une phrase : « Abandonner le rebase ». */
+const ABORTED: Record<Operation, string> = {
+  merge: 'la fusion',
+  rebase: 'le rebase',
+  'cherry-pick': 'le cherry-pick',
+  revert: 'le revert',
+};
+
+/** Abandonne l'opération en cours, après une confirmation qui dit ce qui est perdu (charte, 9.1). */
+export async function abortOperation(repo: Repo) {
+  const operation = repo.status?.operation;
+  if (!operation) return;
+  const what = ABORTED[operation];
+  // `git <opération> --abort` rend aux branches leurs commits d'origine : seul le travail fait
+  // pendant l'opération, les conflits résolus, est perdu, et git ne le garde nulle part.
+  const confirmed = await dialogs.confirm({
+    title: `Abandonner ${what}\u00a0?`,
+    body: `Le dépôt revient à son état d’avant ${what} (git ${operation} --abort).`,
+    warning: 'Les conflits déjà résolus seront perdus définitivement.',
+    confirmLabel: `Abandonner ${what}`,
+    danger: true,
+  });
+  if (confirmed) await repo.operate('abort');
 }
 
 export async function discardFiles(repo: Repo, files: FileChange[]) {

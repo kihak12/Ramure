@@ -130,13 +130,8 @@
     font-weight: var(--fw-strong);
     color: var(--muted);
   }
-  /* Un champ fait 32 px de haut, liste déroulante comprise (section 4.3). */
+  /* Un champ fait 32 px de haut (section 4.3) ; une liste les fait d'elle-même (ui/Select). */
   .column :global(.field) {
     height: 32px;
-  }
-  /* Une liste déroulante dessinée par le système a déjà ses marges verticales. */
-  .column :global(select.field) {
-    padding-top: 0;
-    padding-bottom: 0;
   }
 </style>

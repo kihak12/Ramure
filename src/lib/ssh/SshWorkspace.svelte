@@ -153,9 +153,9 @@
 
     <footer>
       <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Ajoute au carnet les hôtes de ~/.ssh/config qui n’y sont pas encore">
-        <Icon name="pull" size={14} /> Importer ~/.ssh/config
+        <Icon name="import" size={14} /> Importer ~/.ssh/config
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="tag" size={14} /> Gérer les clés…</button>
+      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="key" size={14} /> Gérer les clés…</button>
     </footer>
   </aside>
 

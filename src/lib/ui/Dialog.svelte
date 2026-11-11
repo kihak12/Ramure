@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import Select from './Select.svelte';
   import { veil } from './veil';
   import { dialogs, type Answers, type Field } from './dialogs.svelte';
 
@@ -67,11 +68,11 @@
             {#if field.type === 'textarea'}
               <textarea class="field" class:mono={field.mono} rows="4" placeholder={field.placeholder} bind:value={values[field.name]}></textarea>
             {:else if field.type === 'select'}
-              <select class="field" bind:value={values[field.name]}>
+              <Select bind:value={values[field.name]}>
                 {#each field.options ?? [] as option (option.value)}
                   <option value={option.value}>{option.label}</option>
                 {/each}
-              </select>
+              </Select>
             {:else if field.type === 'number'}
               <input class="field" type="number" min={field.min} max={field.max} bind:value={values[field.name]} />
             {:else}

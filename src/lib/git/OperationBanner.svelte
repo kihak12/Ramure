@@ -3,6 +3,7 @@
   import Icon from '../ui/Icon.svelte';
   import { OPERATION, type Repo } from './repo.svelte';
   import { motion } from '../ui/motion';
+  import { abortOperation } from './actions';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -32,8 +33,9 @@
         <Icon name="skip" size={14} /> Passer
       </button>
     {/if}
-    <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.operate('abort')} title="Revient à l'état d'avant l'opération">
-      <Icon name="stop" size={14} /> Abandonner
+    <!-- L'abandon perd les conflits déjà résolus : une boîte le confirme (charte, 9.1, « Hierarchy »). -->
+    <button class="btn ghost bad" type="button" disabled={repo.locked} onclick={() => void abortOperation(repo)} title="Revient à l’état d’avant l’opération">
+      <Icon name="stop" size={14} /> Abandonner…
     </button>
   </div>
 {/if}
