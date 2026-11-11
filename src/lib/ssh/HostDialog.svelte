@@ -303,7 +303,7 @@
           <input class="field" type="text" placeholder="web, docker" autocomplete="off" bind:value={tags} />
         </label>
 
-        <fieldset class="colours">
+        <fieldset class="full">
           <legend class="label">Couleur</legend>
           <label class="swatch none" class:on={form.color === ''} title="Aucune">
             <input type="radio" name="host-color" value="" bind:group={form.color} /><span class="sr">Aucune</span>
@@ -314,21 +314,22 @@
             </label>
           {/each}
         </fieldset>
-        <!-- Le test, à droite des couleurs ; son résultat juste dessous (charte, section 9.21). -->
-        <div class="testing">
-          <button
-            class="btn"
-            type="button"
-            disabled={!testable}
-            title={form.proxyJump ? 'Le rebond par bastion n’est pas encore pris en charge' : 'Se connecter avec ces valeurs, sans rien enregistrer ni ouvrir de terminal'}
-            onclick={() => {
-              attempt = {};
-              void startTest();
-            }}
-          >
-            {#if test.step === 'running'}<span class="spinner" aria-hidden="true"></span> Test en cours…{:else}Tester la connexion{/if}
-          </button>
-        </div>
+      </div>
+
+      <!-- Le test, seul sur sa ligne sous les champs ; son résultat juste dessous (charte, section 9.21). -->
+      <div class="testing">
+        <button
+          class="btn"
+          type="button"
+          disabled={!testable}
+          title={form.proxyJump ? 'Le rebond par bastion n’est pas encore pris en charge' : 'Se connecter avec ces valeurs, sans rien enregistrer ni ouvrir de terminal'}
+          onclick={() => {
+            attempt = {};
+            void startTest();
+          }}
+        >
+          {#if test.step === 'running'}<span class="spinner" aria-hidden="true"></span> Test en cours…{:else}Tester la connexion{/if}
+        </button>
       </div>
 
       {#if test.step === 'ok'}
@@ -523,20 +524,15 @@
     overflow: hidden;
     clip-path: inset(50%);
   }
+  /* Les boutons du bas se tiennent un peu à l'écart du test et de son résultat : 24 px au lieu de 14. */
   footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-  }
-  /* Les couleurs et « Tester la connexion » se partagent la dernière ligne des champs. */
-  .colours {
-    grid-column: span 4;
+    margin-top: 10px;
   }
   .testing {
-    grid-column: span 2;
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
   }
   /* « Annuler » seul à gauche, les deux enregistrements à droite. */
   .cancel {

@@ -856,20 +856,19 @@ A local terminal under the graph, opened in the folder of the repository, to run
 The dialog that adds a host to the book or changes one (9.10). It is 600 px wide: its fields
 need the room.
 
-- **Buttons.** "Tester la connexion", a secondary button, on the last line of the fields, at the
-  right of the colours, with its result right under that line. Below, the last line: "Annuler" alone on the left, and on the
-  right "Enregistrer et connecter" then "Enregistrer", the main button. This dialog parts from
-  9.10 ("Annuler" first, at the bottom right) because it has two ways to save, which stay
-  together. Nothing opens a session without saving the host: a host one connects to belongs in
-  the book.
+- **Buttons.** "Tester la connexion", a secondary button, alone on its line under the fields,
+  with its result right under it. Below, 24 px apart, the last line: "Annuler" alone on the
+  left, and on the right "Enregistrer et connecter" then "Enregistrer", the main button. This
+  dialog parts from 9.10 ("Annuler" first, at the bottom right) because it has two ways to save,
+  which stay together. Nothing opens a session without saving the host: a host one connects to
+  belongs in the book.
 - **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
   not, authenticates, and closes the connection at once: no terminal opens, nothing is saved. It
   is disabled until the form is valid (a name and an address).
 - **While it runs**, the button says "Test en cours…" with the 12 px waiting ring and cannot be
   clicked; the form stays usable. "Annuler" closes the dialog and the result of the test is
   dropped.
-- **The result** sits in a line under the fields and "Tester la connexion", never in a
-  notification: the dialog
+- **The result** sits in a line under "Tester la connexion", never in a notification: the dialog
   is where the user looks.
   - Success: the check icon and "Connexion réussie", in `--ok`, then how it authenticated, in
     `--muted` ("clé id_ed25519", "agent SSH", "mot de passe") and how long it took.
