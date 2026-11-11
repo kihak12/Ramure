@@ -10,6 +10,13 @@
 A graphical Git client and an SSH/SFTP client in one window, for Windows and Ubuntu.
 Free software (MIT), local, no account.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/depot-sombre.png">
+    <img src="docs/screenshots/depot-clair.png" alt="Ramure on a repository: the branch list, the commit graph and the detail of a commit" width="900">
+  </picture>
+</p>
+
 **Status: milestones J1 and J2 are done, J3 has started.** The J0 prototype validated the graph
 and the SSH terminal on Windows and Ubuntu. Everyday Git (J1) and advanced Git (J2) are complete.
 From the SSH milestone (J3), the host book, tabbed terminals and keys are in; the rest is listed
@@ -207,7 +214,7 @@ cd src-tauri && RAMURE_TEST_REPO=/path/to/repository cargo test real_repo -- --n
 | Folder | Content |
 | --- | --- |
 | `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/settings/`, `lib/ui/`; the design tokens are in `app.css` |
-| `docs/` | The [design guidelines](docs/design-guidelines.md), the logo in `logo/`, and the design decisions in `design/` |
+| `docs/` | The [design guidelines](docs/design-guidelines.md), the logo in `logo/`, and screenshots of the application in `screenshots/` |
 | `scripts/` | Checks run by `npm run check`, the tool that derives the application icons from the logo, and the one that takes screenshots of the application on Linux |
 | `src-tauri/src/git/` | Running git, the log parser, lane computation |
 | `src-tauri/src/ssh/` | russh sessions, reading `~/.ssh/config`, the host book and keys |

@@ -1,21 +1,24 @@
 # Ramure design guidelines
 
-The reference for Ramure's design. It sets the rules of the chosen direction, **Clairière**. How
-that direction was chosen is told in [`design/directions.md`](design/directions.md).
+The reference for Ramure's design: colours, type, spacing, shapes, motion, every component, the
+tone of the interface text and the logo.
 
-- **Status:** version 1, under review.
 - **Scope:** the whole interface, Git and SSH modules.
 - **Ground rule:** when the code and the guidelines disagree, the guidelines are right. A rule
-  changes in the guidelines first, through a pull request, and in the code second.
-
-The tokens in the code follow these guidelines (issue #5) and the interface has the shape of
-Clairière (issue #10). The screen-by-screen review, rule by rule, is issue #6.
+  changes in the guidelines first, through a pull request, and in the code second
+  ([section 14](#14-changing-the-guidelines)).
+- **In the code:** the tokens are in `src/app.css`, and `npm run check` rejects a component that
+  writes a value of its own.
+- **Review:** the screen-by-screen review of the interface, rule by rule, is issue #6.
 
 The interface is in French, so the labels quoted in this document are in French.
 
 | Dark | Light |
 |---|---|
-| ![Clairière, dark theme](design/directions/clairiere-graphe-sombre.png) | ![Clairière, light theme](design/directions/clairiere-graphe-clair.png) |
+| ![Ramure on a repository, dark theme](screenshots/depot-sombre.png) | ![Ramure on a repository, light theme](screenshots/depot-clair.png) |
+
+The two screenshots show the application as it is, on a demonstration repository. They are taken
+again when the view of a repository changes (`scripts/ecran.sh`).
 
 ## Contents
 
@@ -28,11 +31,33 @@ The interface is in French, so the labels quoted in this document are in French.
 7. [Icons](#7-icons)
 8. [Motion](#8-motion)
 9. [Components](#9-components)
+   - [9.1 Buttons](#91-buttons)
+   - [9.2 Toolbar](#92-toolbar)
+   - [9.3 Fields](#93-fields)
+   - [9.4 Branch and tag labels](#94-branch-and-tag-labels)
+   - [9.5 Counters](#95-counters)
+   - [9.6 Rows and lists](#96-rows-and-lists)
+   - [9.7 Tabs](#97-tabs)
+   - [9.8 Cards](#98-cards)
+   - [9.9 Context menus](#99-context-menus)
+   - [9.10 Dialogs](#910-dialogs)
+   - [9.11 Notifications](#911-notifications)
+   - [9.12 Command palette](#912-command-palette)
+   - [9.13 Status bar](#913-status-bar)
+   - [9.14 Diff](#914-diff)
+   - [9.15 Terminal](#915-terminal)
+   - [9.16 Resize handle](#916-resize-handle)
+   - [9.17 Hiding a side card](#917-hiding-a-side-card)
+   - [9.18 Settings page](#918-settings-page)
+   - [9.19 Choice](#919-choice)
+   - [9.20 Terminal of a repository](#920-terminal-of-a-repository)
+   - [9.21 Host form](#921-host-form)
 10. [Commit graph](#10-commit-graph)
 11. [Accessibility](#11-accessibility)
 12. [Tone of the interface text](#12-tone-of-the-interface-text)
 13. [Logo](#13-logo)
 14. [Changing the guidelines](#14-changing-the-guidelines)
+15. [History](#15-history)
 
 ## 1. Principles
 
@@ -510,6 +535,8 @@ Sidebar, file lists, graph, palette results.
 - The close cross is visible on the active tab, and on hover on the others. On hover it takes
   a `--line` background, not `--hover`: it sits on a tab that is hovered or active, where
   `--hover` would not show.
+- The same goes for the cross of a row that appears on hover, such as a recent repository on the
+  start page: `--line` on hover, since it sits on a hovered row.
 - The "+" button follows the last tab: an icon alone, 28 × 28 px, no background at rest and
   `--hover` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
   name say what it opens, with the shortcut: "Nouveau terminal local (Ctrl + Maj + N)".
@@ -520,8 +547,6 @@ Sidebar, file lists, graph, palette results.
   the width of the "+" and its margins (a derived value, not a gap of 4.1). The "+" covers the
   room on its right with the window background, a flat shadow in `--side` that no one sees as a
   shadow: no tab shows past it.
-- The same goes for the cross of a row that appears on hover, such as a recent repository on the
-  start page: `--line` on hover, since it sits on a hovered row.
 
 ### 9.8 Cards
 
@@ -569,7 +594,6 @@ Sidebar, file lists, graph, palette results.
   cut inside: its first 24 characters and its last 10 stay, around an ellipsis. The full title
   is in a tooltip, and it is what a screen reader reads. This is the one place where a text is
   not cut on the right. A title that is still too long runs over a second line.
-
 - A notification may carry one action, a small button before its close button: it undoes what
   was just done ("Annuler"). A click runs the action and closes the notification.
 - A notification stays for as long as the pointer or the focus is on it; its delay starts again
@@ -725,9 +749,9 @@ the graph on the whole width.
 - Hiding is immediate, and so is showing (8). The card comes back at the width it had.
 - **Hiding is the user's choice: only a request to see the detail undoes it.** The detail panel
   comes back on "Voir les modifications en cours", on "Voir les fichiers" in the banner of a
-  stopped operation, on a click on the "WIP" row, and on Enter or a double-click on a commit. It does not come back when the selection moves, by a click or from
-  the keyboard, nor when an operation stops on its own. Nothing brings the branch list back but
-  its own commands.
+  stopped operation, on a click on the "WIP" row, and on Enter or a double-click on a commit. It
+  does not come back when the selection moves, by a click or from the keyboard, nor when an
+  operation stops on its own. Nothing brings the branch list back but its own commands.
 - The choice is shared by all the tabs and restored at the next launch, like the widths.
 - What a hidden card holds is out of the tab order and out of the reach of screen readers. If
   the focus was in the card, it moves to the graph.
@@ -742,8 +766,9 @@ module button (pressed while the page is shown); Ctrl + , ; and the palette. No 
 opens the page: one setting, one place to reach it. The page opens on the section of the module
 it is opened from, "Git" or "Terminal et SSH"; the other sections are one click away in its
 navigation. One exception: the palette command "Raccourcis clavier" opens the page on the
-section of that name, the one it names. The same button, the same shortcut, a module button or Escape bring back the module
-and the tab that were shown; after Escape, the focus is on the "Réglages" button of the rail.
+section of that name, the one it names. The same button, the same shortcut, a module button or
+Escape bring back the module and the tab that were shown; after Escape, the focus is on the
+"Réglages" button of the rail.
 
 **Structure.** On `--side`, two cards 8 px apart and 8 px from the edges.
 
@@ -860,8 +885,8 @@ A local terminal under the graph, opened in the folder of the repository, to run
 - **Keyboard.** The terminal never takes the keyboard on its own: not when the tab of the
   repository is shown again, not when it is shown by the button, even when that opens its first
   shell. It takes it on the shortcut, on "+", on "Nouveau terminal dans le dépôt" and on
-  "Relancer". In it, as in every terminal, only the shortcuts with Shift, Alt or
-  a function key act (11). No search bar here for now: Ctrl + Shift + F stays "Récupérer".
+  "Relancer". In it, as in every terminal, only the shortcuts with Shift, Alt or a function key
+  act (11). No search bar here for now: Ctrl + Shift + F stays "Récupérer".
 - **What it does not cover.** The editor of a conflict covers the view, the terminal with it.
   While it is open, the "Terminal" action, its shortcut and its commands are disabled: nothing
   opens under it.
@@ -1041,7 +1066,9 @@ French typography:
 
 Ramure's logo is a deer's head drawn in a single stroke. The muzzle is a commit dot; two lines
 leave it, run along the head, spread apart and become the antlers. It shows a deer, and a commit
-from which two branches start. How it was chosen is told in [`design/logo.md`](design/logo.md).
+from which two branches start. In French, "ramure" means both the antlers of a deer and the
+branches of a tree: the logo draws the first as the second, with the stroke of the icons (7) and
+the curves of the graph (10).
 
 ![The logo, the icon, the symbol and their sizes](logo/planche.png)
 
@@ -1108,3 +1135,16 @@ from which two branches start. How it was chosen is told in [`design/logo.md`](d
 - `npm run check` rejects a colour, a text size, a weight, a radius or a duration hard-coded in
   a component.
 - Every pull request that touches the interface is reviewed against these guidelines.
+
+## 15. History
+
+- **The look** was chosen on 10 November 2026, among four proposals shown on the real
+  application. The one that was kept was called Clairière: the cards and the graph of an earlier
+  proposal, Sous-bois, without its borders, its pill-shaped buttons and its green. The colours
+  of the three proposals that were not kept became the colour themes Encre, Sous-bois and Braise
+  (2.5).
+- **The logo** was chosen the same day, among three drawings on the theme of a deer's antlers.
+- The record of both choices, with the screenshots and the sketches of every proposal, was in
+  `docs/design/`. It was removed once these guidelines had become the only reference. Git keeps
+  it: `git show 72eb9ec:docs/design/directions.md` for the look, and
+  `git show 72eb9ec:docs/design/logo.md` for the logo.
