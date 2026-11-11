@@ -95,6 +95,16 @@ Everything goes through a right-click on a commit or on a label, and through the
 Authentication to remotes goes through what git already uses: a credential helper (Git Credential
 Manager) or the SSH agent. Ramure does not ask for a password or a passphrase itself.
 
+### Terminal in a repository
+
+- **"Terminal"** in the toolbar, or Ctrl + Shift + J, shows a terminal under the graph, opened in
+  the folder of the repository, as wide as the graph. Ctrl + Shift + J also moves the keyboard
+  into it, and back to the graph.
+- Several terminals per repository, in tabs; each repository keeps its own. Hiding the terminal
+  or switching tabs does not stop its shells; closing the tab of the repository does.
+- The height is set with the handle above the terminal and restored at the next launch.
+- After a command, the graph, the counters and the changes are read again on their own.
+
 ### SSH
 
 - **Host book**: name, address, port, user, authentication (agent and default keys, key file, or
@@ -104,6 +114,10 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   through a bastion (ProxyJump) is imported, but cannot be connected to yet.
 - **Tabbed terminals**: a double-click on a host opens a terminal; "Reconnecter" restarts a
   session that has ended, startup command included.
+- **Local terminal**: Ctrl + Shift + N, or the "+" after the tabs, opens the shell of this
+  machine (PowerShell on Windows, your `SHELL` on Ubuntu) in your home folder.
+- **Automatic reconnection** of a lost connection, five tries, and **search** in a terminal
+  (Ctrl + Shift + F).
 - **Fingerprints**: on the first connection, the server's fingerprint is shown; accepting it
   writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
 - **Keys**: the list of keys in `~/.ssh`, generation of an ed25519 key with an optional
@@ -126,8 +140,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Not there yet
 
-- From milestone J3: secrets in the system keyring, a local terminal, a session log, automatic
-  reconnection, terminal search and themes, export to `~/.ssh/config`, import of an existing key.
+- From milestone J3: secrets in the system keyring, a session log, terminal colour themes,
+  export to `~/.ssh/config`, import of an existing key.
 - Milestone J4: SFTP, tunnels, installers and updates.
 - The interface exists in French only.
 

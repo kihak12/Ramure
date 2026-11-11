@@ -1,5 +1,6 @@
-// Cartes latérales de la vue d'un dépôt : leur largeur, et si elles sont masquées. Ces choix sont
-// communs à tous les onglets et retrouvés d'un lancement à l'autre (charte, sections 9.16 et 9.17).
+// Cartes de la vue d'un dépôt : la largeur des cartes latérales et si elles sont masquées, la
+// hauteur du terminal. Ces choix sont communs à tous les onglets et retrouvés d'un lancement à
+// l'autre (charte, sections 9.16, 9.17 et 9.20).
 
 const STORAGE_KEY = 'ramure.layout';
 
@@ -14,16 +15,22 @@ export const CENTER_MIN = 360;
 
 export type Side = keyof typeof SIDES;
 
+/** Hauteur du terminal d'un dépôt : par défaut, au moins, et ce que le graphe garde toujours. */
+export const TERMINAL = { initial: 240, min: 130, share: 0.4 } as const;
+export const GRAPH_MIN = 200;
+
 export interface Layout {
   sidebar: number;
   detail: number;
   /** Carte masquée : sa largeur choisie est gardée pour son retour. */
   sidebarHidden: boolean;
   detailHidden: boolean;
+  /** Hauteur choisie pour le terminal ; `null` tant qu'on ne l'a pas réglée. */
+  terminal: number | null;
 }
 
 function read(): Layout {
-  const layout: Layout = { sidebar: SIDES.sidebar.initial, detail: SIDES.detail.initial, sidebarHidden: false, detailHidden: false };
+  const layout: Layout = { sidebar: SIDES.sidebar.initial, detail: SIDES.detail.initial, sidebarHidden: false, detailHidden: false, terminal: null };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Layout>;
     for (const side of ['sidebar', 'detail'] as const) {
@@ -31,6 +38,7 @@ function read(): Layout {
       if (typeof value === 'number' && Number.isFinite(value)) layout[side] = value;
       layout[`${side}Hidden`] = saved[`${side}Hidden`] === true;
     }
+    if (typeof saved.terminal === 'number' && Number.isFinite(saved.terminal)) layout.terminal = saved.terminal;
   } catch {
     /* valeur illisible : on garde la disposition par défaut */
   }
@@ -97,4 +105,19 @@ export function fit(width: number) {
     maxSidebar: clamp(room - detail, SIDES.sidebar.min, SIDES.sidebar.max),
     maxDetail: clamp(room - sidebar, SIDES.detail.min, SIDES.detail.max),
   };
+}
+
+const GAP = 8; // l'écart entre le graphe et le terminal, où se tient la poignée
+
+/**
+ * Hauteur affichée du terminal dans une colonne de `height` pixels, et ses bornes. Par défaut,
+ * 240 px, ramenés à 40 % de la place quand la fenêtre est basse ; le graphe garde toujours 200 px.
+ */
+export function fitTerminal(height: number) {
+  const max = height > 0 ? Math.max(TERMINAL.min, height - GAP - GRAPH_MIN) : Infinity;
+  // Hauteur encore inconnue (avant le premier affichage) : la valeur par défaut, sans réduction.
+  const room = height > 0 ? Math.round((height - GAP) * TERMINAL.share) : TERMINAL.initial;
+  const initial = clamp(Math.min(TERMINAL.initial, room), TERMINAL.min, max);
+  const value = clamp(layout.terminal ?? initial, TERMINAL.min, max);
+  return { value, max: Number.isFinite(max) ? max : TERMINAL.initial, initial };
 }

@@ -6,13 +6,14 @@
   import ConflictEditor from './ConflictEditor.svelte';
   import DiffView from './DiffView.svelte';
   import Graph from './Graph.svelte';
-  import { SIDES, fit, layout, saveLayout } from './layout.svelte';
+  import { SIDES, TERMINAL, fit, fitTerminal, layout, saveLayout } from './layout.svelte';
   import OperationBanner from './OperationBanner.svelte';
   import RebaseDialog from './RebaseDialog.svelte';
   import type { Repo } from './repo.svelte';
   import Sidebar from './Sidebar.svelte';
   import StartPage from './StartPage.svelte';
   import StatusBar from './StatusBar.svelte';
+  import TerminalPanel from './TerminalPanel.svelte';
   import Toolbar from './Toolbar.svelte';
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
@@ -35,12 +36,22 @@
     [layout.sidebarHidden ? '' : 'var(--sidebar) 8px', 'minmax(0, 1fr)', layout.detailHidden ? '' : '8px var(--detail)'].join(' ').trim(),
   );
 
+  // Terminal du dépôt, sous le graphe : sa hauteur, celle qu'on a choisie ramenée à la place qu'il y a.
+  const terminals = $derived(repo.terminals);
+  let middleHeight = $state(0);
+  const terminalSize = $derived(fitTerminal(middleHeight));
+
   // Si le focus était dans la carte qu'on masque, il passe au graphe : il ne doit pas se perdre.
   let sidebarEl = $state<HTMLElement>();
   let detailEl = $state<HTMLElement>();
   let centerEl = $state<HTMLElement>();
+  let terminalEl = $state<HTMLElement>();
   $effect.pre(() => {
-    const leaving = [layout.sidebarHidden ? sidebarEl : undefined, layout.detailHidden ? detailEl : undefined];
+    const leaving = [
+      layout.sidebarHidden ? sidebarEl : undefined,
+      layout.detailHidden ? detailEl : undefined,
+      terminals.shown ? undefined : terminalEl,
+    ];
     untrack(() => {
       const focused = document.activeElement;
       if (!active || !leaving.some((card) => card?.contains(focused))) return;
@@ -113,20 +124,42 @@
         {/if}
       {/if}
 
-      <div class="center" bind:this={centerEl}>
-        <Graph {repo} />
-        {#if repo.openFile}
-          <DiffView
-            title={repo.openFile.title}
-            subtitle={repo.openFile.subtitle}
-            diff={repo.diff}
-            loading={repo.diffLoading}
-            error={repo.diffError}
-            selectable={repo.openFile.selectable}
-            busy={repo.locked}
-            onapply={(lines) => void repo.applyLines(lines)}
-            onclose={() => repo.closeDiff()}
-          />
+      <!-- Le graphe, et sous lui le terminal du dépôt, aussi large que lui (charte, section 9.20). -->
+      <div class="middle" bind:clientHeight={middleHeight} style:--terminal="{terminalSize.value}px">
+        <div class="center" bind:this={centerEl}>
+          <Graph {repo} />
+          {#if repo.openFile}
+            <DiffView
+              title={repo.openFile.title}
+              subtitle={repo.openFile.subtitle}
+              diff={repo.diff}
+              loading={repo.diffLoading}
+              error={repo.diffError}
+              selectable={repo.openFile.selectable}
+              busy={repo.locked}
+              onapply={(lines) => void repo.applyLines(lines)}
+              onclose={() => repo.closeDiff()}
+            />
+          {/if}
+        </div>
+        {#if repo.result && terminals.sessions.length}
+          {#if terminals.shown}
+            <Splitter
+              orientation="horizontal"
+              label="Hauteur du terminal"
+              value={terminalSize.value}
+              min={TERMINAL.min}
+              max={terminalSize.max}
+              initial={terminalSize.initial}
+              direction={-1}
+              onchange={(height) => (layout.terminal = height)}
+              oncommit={saveLayout}
+            />
+          {/if}
+          <!-- Masqué, il reste monté : ses shells continuent de tourner. -->
+          <div class="terminal" bind:this={terminalEl} hidden={!terminals.shown} inert={!terminals.shown}>
+            <TerminalPanel {repo} active={active && terminals.shown} />
+          </div>
         {/if}
       </div>
 
@@ -233,7 +266,8 @@
   }
   /* Une carte masquée ne prend plus de place ; `hidden` seul céderait à `display` ci-dessus. */
   .side[hidden],
-  .detail[hidden] {
+  .detail[hidden],
+  .terminal[hidden] {
     display: none;
   }
   .center,
@@ -245,7 +279,23 @@
   }
   .center {
     position: relative;
+    flex: 1;
     overflow: hidden;
+  }
+  .middle {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .middle > :global(.splitter) {
+    flex: none;
+    height: 8px;
+  }
+  .terminal {
+    flex: none;
+    height: var(--terminal);
+    min-height: 0;
   }
   .detail {
     overflow: auto;

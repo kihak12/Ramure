@@ -38,6 +38,21 @@ export function gitCommands(): Command[] {
     // Le titre dit ce que la commande fera : il suit l'état de la carte.
     add({ id: 'toggle-sidebar', group: 'Affichage', icon: 'panel-left', title: layout.sidebarHidden ? 'Afficher la liste des branches' : 'Masquer la liste des branches', keywords: 'panneau barre laterale replier', run: () => toggleSide('sidebar') });
     add({ id: 'toggle-detail', group: 'Affichage', icon: 'panel-right', title: layout.detailHidden ? 'Afficher le panneau de détail' : 'Masquer le panneau de détail', keywords: 'panneau commit replier', run: () => toggleSide('detail') });
+    // Le terminal du dépôt (charte, section 9.20). Le raccourci en fait plus que la palette : il
+    // donne aussi le clavier au terminal, et le masque si le clavier y est déjà.
+    const terminals = repo.terminals;
+    add({
+      id: 'toggle-terminal',
+      group: 'Affichage',
+      icon: 'terminal',
+      title: terminals.shown ? 'Masquer le terminal' : 'Afficher le terminal',
+      keywords: 'console shell ligne de commande panneau',
+      // L'éditeur d'un conflit couvre la vue, terminal compris : rien ne s'ouvre dessous.
+      disabled: !!repo.conflictFile,
+      run: () => terminals.toggle(repo.path),
+      key: () => terminals.key(repo.path, !!document.activeElement?.closest('[data-terminals]')),
+    });
+    add({ id: 'terminal-repo', group: 'Affichage', icon: 'laptop', title: 'Nouveau terminal dans le dépôt', keywords: 'console shell ligne de commande', disabled: !!repo.conflictFile, run: () => terminals.open(repo.path) });
     add({ id: 'toggle-sides', group: 'Affichage', icon: 'panels', title: layout.sidebarHidden && layout.detailHidden ? 'Réafficher les panneaux latéraux' : 'Masquer les panneaux latéraux', keywords: 'graphe en grand replier', run: toggleSides });
   }
   add({ id: 'open', group: 'Actions', icon: 'folder', title: 'Ouvrir un dépôt…', run: () => void workspace.pick() });

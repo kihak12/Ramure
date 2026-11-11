@@ -10,6 +10,11 @@
   const status = $derived(repo.status);
   const ready = $derived(!!repo.result && !repo.locked);
   const stashes = $derived(repo.refs?.stashes.length ?? 0);
+  // Terminal du dépôt (charte, section 9.20) : l'action est enfoncée quand il est affiché ; masqué,
+  // sa pastille compte les shells qui tournent encore.
+  const terminals = $derived(repo.terminals);
+  const terminalCombo = $derived(keys.binding('toggle-terminal'));
+  const terminalBadge = $derived(!terminals.shown && terminals.running ? String(terminals.running) : undefined);
 
   const VIEWS = {
     sidebar: { icon: 'panel-left', name: 'Liste des branches', what: 'la liste des branches', command: 'toggle-sidebar' },
@@ -21,8 +26,8 @@
   }
 </script>
 
-{#snippet tool(icon: IconName, label: string, title: string, disabled: boolean, run: () => void, badge?: string, spin?: boolean)}
-  <button class="tool" type="button" {title} {disabled} onclick={run}>
+{#snippet tool(icon: IconName, label: string, title: string, disabled: boolean, run: () => void, badge?: string, spin?: boolean, pressed?: boolean)}
+  <button class="tool" type="button" {title} {disabled} aria-pressed={pressed} onclick={run}>
     <span class="glyph" class:spin>
       <Icon name={icon} size={18} />
       {#if badge}<span class="badge">{badge}</span>{/if}
@@ -95,6 +100,16 @@
   </div>
 
   <div class="tools right">
+    {@render tool(
+      'terminal',
+      'Terminal',
+      `${terminals.shown ? 'Masquer' : 'Afficher'} le terminal du dépôt${terminalCombo ? ` (${display(terminalCombo)})` : ''}`,
+      !repo.result || !!repo.conflictFile,
+      () => terminals.toggle(repo.path),
+      terminalBadge,
+      false,
+      terminals.shown,
+    )}
     {@render tool('refresh', 'Recharger', 'Relire l’historique du dépôt', !ready, () => void repo.reload())}
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
   </div>
@@ -188,6 +203,16 @@
   }
   .tool:active:not(:disabled) {
     transform: scale(0.97);
+  }
+  /* « Terminal » enfoncé : la teinte d'un bouton de vue, l'icône en accent, le libellé tel quel. */
+  .tool[aria-pressed='true'] {
+    background: var(--accent-soft);
+  }
+  .tool[aria-pressed='true'] .glyph {
+    color: var(--accent);
+  }
+  .tool[aria-pressed='true']:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
   }
   .tool:disabled,
   .crumb:disabled,

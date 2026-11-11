@@ -15,6 +15,8 @@ export interface Command {
   keywords?: string;
   disabled?: boolean;
   run: () => void;
+  /** Ce que fait le raccourci, quand il en fait plus que la palette (le terminal d'un dépôt). */
+  key?: () => void;
 }
 
 class Palette {

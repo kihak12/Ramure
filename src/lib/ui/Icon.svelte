@@ -46,6 +46,7 @@
     'panel-left': '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M6 3v10"/>',
     'panel-right': '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M10 3v10"/>',
     panels: '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M6 3v10M10 3v10"/>',
+    'panel-bottom': '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 9.5h12"/>',
   } as const;
 
   export type IconName = keyof typeof PATHS;

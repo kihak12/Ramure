@@ -30,6 +30,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'toggle-sidebar', group: 'Affichage', title: 'Afficher ou masquer la liste des branches', keys: 'Ctrl+Shift+B', scope: 'git' },
   { id: 'toggle-detail', group: 'Affichage', title: 'Afficher ou masquer le panneau de détail', keys: 'Ctrl+Shift+E', scope: 'git' },
   { id: 'toggle-sides', group: 'Affichage', title: 'Afficher ou masquer les panneaux latéraux', keys: '', scope: 'git' },
+  { id: 'toggle-terminal', group: 'Affichage', title: 'Afficher ou masquer le terminal du dépôt', keys: 'Ctrl+Shift+J', scope: 'git' },
+  { id: 'terminal-repo', group: 'Affichage', title: 'Nouveau terminal dans le dépôt', keys: '', scope: 'git' },
   { id: 'terminal-search', group: 'Terminal', title: 'Chercher dans le terminal', keys: 'Ctrl+Shift+F', scope: 'ssh' },
   { id: 'tab-new', group: 'Onglets', title: 'Nouvel onglet', keys: 'Ctrl+T', scope: 'git' },
   { id: 'tab-close', group: 'Onglets', title: 'Fermer l’onglet', keys: 'Ctrl+W', scope: 'git' },

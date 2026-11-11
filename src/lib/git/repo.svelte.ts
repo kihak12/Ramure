@@ -6,6 +6,7 @@ import { tick } from 'svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { revealDetail } from './layout.svelte';
 import { prefs, type Settings } from './prefs.svelte';
+import { RepoTerminals } from './terminals.svelte';
 import type {
   CommandLog,
   CommitDetail,
@@ -87,6 +88,8 @@ export class Repo {
   conflictFile = $state.raw<FileChange | null>(null);
   /** Plan d'un rebase interactif en préparation ; la boîte de dialogue s'ouvre quand il existe. */
   rebasePlan = $state.raw<RebasePlan | null>(null);
+  /** Terminaux locaux ouverts dans le dossier du dépôt, sous le graphe (charte, section 9.20). */
+  readonly terminals = new RepoTerminals();
 
   /** Posé par l'espace de travail : prévenu chaque fois qu'un dépôt vient d'être ouvert. */
   onopened: (repo: Repo) => void = () => {};
