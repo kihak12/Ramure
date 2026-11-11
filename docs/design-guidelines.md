@@ -1142,22 +1142,30 @@ The dialog that adds a host to the book or changes one (9.10). It is 600 px wide
 need the room.
 
 - **Buttons.** "Tester la connexion", a secondary button, alone on its line under the fields,
-  with its result right under it. Below, 24 px apart, the last line: on the left "Supprimer
-  l’hôte…" for a host already in the book (below), then "Annuler"; on the right "Enregistrer et
-  connecter" then "Enregistrer", the main button. This dialog parts
-  from 9.10 ("Annuler" first, at the bottom right) because it has two ways to save, which stay
-  together. Nothing opens a session without saving the host: a host one connects to belongs in
-  the book.
-- **Deleting.** The form of a host already in the book starts its last line with "Supprimer
-  l’hôte…", a ghost danger button (9.1), before "Annuler". It opens the confirmation that the
+  with its result right under it. Below, 24 px apart, the last line follows the common order
+  (9.1, "Hierarchy"): "Supprimer l’hôte…" alone on the left for a host already in the book
+  (below); on the right "Annuler", then one main button. For a host being added, or a copy, it
+  is "Enregistrer et connecter": a host one has just added is nearly always connected to at
+  once. For a host being edited, it is "Enregistrer". Enter triggers it. Nothing opens a session
+  without saving the host: a host one connects to belongs in the book.
+- **Closing.** "Annuler", Escape and a click on the veil close the form, and what was typed is
+  lost, without a question (9.10). There is no cross in its corner: no dialog has one. A test of
+  the connection is not an operation that the veil spares: it lasts a few seconds, and stops
+  with the form.
+- **Deleting.** The form of a host already in the book has "Supprimer l’hôte…", a ghost danger
+  button (9.1), alone at the left of its last line. It opens the confirmation that the
   menu of the host opens too (9.10): what is lost, the password kept for its account included
   (9.15). Confirmed, the host is deleted, the form closes and the focus goes to the filter field
   of the book, which is always there, the row of the host being gone; cancelled, the focus is
   back on the button, with its ring. A host being added, or a copy, has no such button: it is not
   in the book yet.
 - **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
-  not, authenticates, and closes the connection at once: no terminal opens, nothing is saved. It
-  is disabled until the form is valid (a name and an address).
+  not, authenticates, and closes the connection at once: no terminal opens, nothing is saved.
+- **Until the form is valid** (a name and an address), "Tester la connexion" and the main button
+  are disabled, and a sentence in 11.5 px, `--muted`, beside the test says what is missing:
+  "Indique un nom et une adresse." It stands for both buttons, the test being the first of them,
+  and is also their tooltip (9.1). Enter in a field of an incomplete form saves nothing: the
+  sentence turns to `--warn`, takes the warning icon and is announced.
 - **While it runs**, the button says "Test en cours…" with the 12 px waiting ring and cannot be
   clicked; the form stays usable. "Annuler" closes the dialog and the result of the test is
   dropped.
@@ -1199,8 +1207,9 @@ need the room.
 - **The keyboard.** The field of a secret takes the focus when it appears. When the test ends
   and the focus has nowhere to be (the button clicked is gone, or "Tester la connexion" was
   disabled while the test ran), it goes back to "Tester la connexion".
-- **A low window.** The dialog never leaves the screen: past the height of the window, it
-  scrolls.
+- **A low window.** The dialog never leaves the screen: past the height of the window, its fields
+  scroll and its last line stays in view (9.10). It is anchored at the top, so a result of the
+  test pushes down only what is under it.
 - **A host behind a bastion** (ProxyJump) cannot be tested yet: the button is disabled, and the
   warning of the form already says why.
 - **The colour of the host** is a row of swatches, a group of radio buttons: "Aucune", a dashed

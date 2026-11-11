@@ -186,14 +186,14 @@
     min-height: 0;
     padding: 16px 20px;
   }
-  /* 3 px de marge rendus : le halo du focus d'un champ n'est pas rogné par le défilement. */
+  /* 4 px de marge rendus : le halo du focus d'un champ (3 px) n'est pas rogné par le défilement. */
   .content {
     display: flex;
     flex-direction: column;
     gap: 12px;
     min-height: 0;
-    margin: -3px;
-    padding: 3px;
+    margin: -4px;
+    padding: 4px;
     overflow-y: auto;
   }
   /* Assez haute pour la progression (une barre et une ligne) et pour une erreur d'une ligne : la
