@@ -9,7 +9,6 @@ tone of the interface text and the logo.
   ([section 14](#14-changing-the-guidelines)).
 - **In the code:** the tokens are in `src/app.css`, and `npm run check` rejects a component that
   writes a value of its own.
-- **Review:** the screen-by-screen review of the interface, rule by rule, is issue #6.
 
 The interface is in French, so the labels quoted in this document are in French.
 
@@ -17,8 +16,7 @@ The interface is in French, so the labels quoted in this document are in French.
 |---|---|
 | ![Ramure on a repository, dark theme](screenshots/depot-sombre.png) | ![Ramure on a repository, light theme](screenshots/depot-clair.png) |
 
-The two screenshots show the application as it is, on a demonstration repository. They are taken
-again when the view of a repository changes (`scripts/ecran.sh`).
+The two screenshots show the application as it is, on a demonstration repository.
 
 ## Contents
 
@@ -469,7 +467,8 @@ States are the same everywhere:
   - Checked: the `--accent` background and border, and a check mark in `--on-accent`: the path
     of the "check" icon, drawn at 13 px with a 2 px stroke so that it reads at that size.
   - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked.
-  - Focus: the focus ring of the application (11). Disabled: 45%, and its text too.
+  - Focus: the focus ring of the application (the states of section 9). Disabled: 45%, and its
+    text too.
 - A list is the control of the system, 32 px high like a field. Its look, closed and open, is
   the system's. It is for options that are many, or that are plain values; a few options that
   need a word of explanation are a choice (9.19).
@@ -1135,14 +1134,16 @@ the curves of the graph (10).
 - `npm run check` rejects a colour, a text size, a weight, a radius or a duration hard-coded in
   a component.
 - Every pull request that touches the interface is reviewed against these guidelines.
+- The two screenshots at the top of this file show the view of a repository. A pull request that
+  changes that view takes them again, in light and in dark, with `scripts/ecran.sh`.
 
 ## 15. History
 
 - **The look** was chosen on 10 November 2026, among four proposals shown on the real
-  application. The one that was kept was called Clairière: the cards and the graph of an earlier
-  proposal, Sous-bois, without its borders, its pill-shaped buttons and its green. The colours
-  of the three proposals that were not kept became the colour themes Encre, Sous-bois and Braise
-  (2.5).
+  application: Sous-bois, Encre and Braise first, then Clairière, which was kept. Clairière has
+  the cards and the graph of Sous-bois, without its borders, its pill-shaped buttons and its
+  green. Its colours are the default theme, Ardoise; the colours of the other three became the
+  themes Sous-bois, Encre and Braise (2.5).
 - **The logo** was chosen the same day, among three drawings on the theme of a deer's antlers.
 - The record of both choices, with the screenshots and the sketches of every proposal, was in
   `docs/design/`. It was removed once these guidelines had become the only reference. Git keeps
