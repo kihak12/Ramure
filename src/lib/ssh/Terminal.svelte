@@ -288,7 +288,8 @@
       session.opened = opened;
       phase = { step: 'connected' };
       session.status = 'connected';
-      term.focus();
+      if (autofocus || relaunched) term.focus();
+      relaunched = false;
     } catch (e) {
       session.status = 'closed';
       const what = onWindows ? 'Vérifie que PowerShell est installé.' : 'Vérifie la variable SHELL de ton compte.';
@@ -410,7 +411,11 @@
     else if (phase.step === 'password') void connect({ password: secret });
   }
 
+  /** « Relancer » vient d'être cliqué : le terminal rouvert reprend le clavier, même sous le graphe. */
+  let relaunched = false;
+
   function reconnect() {
+    relaunched = true;
     window.clearTimeout(retryTimer);
     attempt = {};
     term?.reset();
@@ -824,16 +829,17 @@
   .veil {
     position: absolute;
     inset: 0;
-    display: grid;
-    place-items: center;
+    /* Dans un terminal bas (sous le graphe), le panneau défile plutôt que de déborder ; ses marges
+       automatiques le centrent sans rogner son haut quand il dépasse. */
+    display: flex;
     padding: 24px;
-    /* Dans un terminal bas (sous le graphe), le panneau défile plutôt que de déborder. */
     overflow: auto;
     background: color-mix(in srgb, var(--term-bg) 82%, transparent);
     backdrop-filter: blur(1.5px);
     animation: fade-in var(--t-med) var(--ease);
   }
   .card {
+    margin: auto;
     width: min(520px, 100%);
     display: grid;
     gap: 10px;

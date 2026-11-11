@@ -15,17 +15,22 @@ export class RepoTerminals {
   /** Shells qui tournent encore : la pastille du bouton « Terminal » les compte, panneau masqué. */
   running = $derived(this.sessions.filter((s) => s.status !== 'closed').length);
 
-  /** Ouvre un terminal de plus dans `cwd`, affiche le panneau et lui donne le clavier. */
-  open(cwd: string) {
+  #add(cwd: string) {
     const session = localSession(cwd, this.sessions);
     this.sessions.push(session);
     this.activeKey = session.key;
     this.shown = true;
   }
 
-  /** Affiche le panneau ; s'il n'a pas de terminal, en ouvre un. */
+  /** « + », ou la palette : un terminal de plus dans `cwd`, qui prend le clavier. */
+  open(cwd: string) {
+    this.#add(cwd);
+    this.focusAsk++;
+  }
+
+  /** Affiche le panneau, sans lui donner le clavier ; s'il n'a pas de terminal, en ouvre un. */
   show(cwd: string) {
-    if (!this.sessions.length) this.open(cwd);
+    if (!this.sessions.length) this.#add(cwd);
     this.shown = true;
   }
 

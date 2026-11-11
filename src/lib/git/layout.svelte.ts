@@ -16,7 +16,7 @@ export const CENTER_MIN = 360;
 export type Side = keyof typeof SIDES;
 
 /** Hauteur du terminal d'un dépôt : par défaut, au moins, et ce que le graphe garde toujours. */
-export const TERMINAL = { initial: 240, min: 120, share: 0.4 } as const;
+export const TERMINAL = { initial: 240, min: 130, share: 0.4 } as const;
 export const GRAPH_MIN = 200;
 
 export interface Layout {

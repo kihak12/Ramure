@@ -95,7 +95,7 @@
   aria-valuemin={min}
   aria-valuemax={max}
   tabindex="0"
-  title="Glisser pour redimensionner. Double-clic : {horizontal ? 'hauteur' : 'largeur'} par défaut."
+  title="Glisser pour redimensionner. Double-clic : {horizontal ? 'hauteur' : 'largeur'} par défaut."
   onpointerdown={down}
   onpointermove={move}
   onpointerup={up}

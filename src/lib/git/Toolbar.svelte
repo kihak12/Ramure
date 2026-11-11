@@ -26,8 +26,8 @@
   }
 </script>
 
-{#snippet tool(icon: IconName, label: string, title: string, disabled: boolean, run: () => void, badge?: string, spin?: boolean)}
-  <button class="tool" type="button" {title} {disabled} onclick={run}>
+{#snippet tool(icon: IconName, label: string, title: string, disabled: boolean, run: () => void, badge?: string, spin?: boolean, pressed?: boolean)}
+  <button class="tool" type="button" {title} {disabled} aria-pressed={pressed} onclick={run}>
     <span class="glyph" class:spin>
       <Icon name={icon} size={18} />
       {#if badge}<span class="badge">{badge}</span>{/if}
@@ -100,20 +100,16 @@
   </div>
 
   <div class="tools right">
-    <button
-      class="tool"
-      type="button"
-      aria-pressed={terminals.shown}
-      title="{terminals.shown ? 'Masquer' : 'Afficher'} le terminal du dépôt{terminalCombo ? ` (${display(terminalCombo)})` : ''}"
-      disabled={!repo.result}
-      onclick={() => terminals.toggle(repo.path)}
-    >
-      <span class="glyph">
-        <Icon name="terminal" size={18} />
-        {#if terminalBadge}<span class="badge">{terminalBadge}</span>{/if}
-      </span>
-      <span class="text">Terminal</span>
-    </button>
+    {@render tool(
+      'terminal',
+      'Terminal',
+      `${terminals.shown ? 'Masquer' : 'Afficher'} le terminal du dépôt${terminalCombo ? ` (${display(terminalCombo)})` : ''}`,
+      !repo.result || !!repo.conflictFile,
+      () => terminals.toggle(repo.path),
+      terminalBadge,
+      false,
+      terminals.shown,
+    )}
     {@render tool('refresh', 'Recharger', 'Relire l’historique du dépôt', !ready, () => void repo.reload())}
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
   </div>

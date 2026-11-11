@@ -835,7 +835,7 @@ A local terminal under the graph, opened in the folder of the repository, to run
   there, in the home folder.
 - **Closing.** Closing the last tab, or the end of the last shell, hides the terminal: it has no
   empty state. A shell that stops on an error keeps its tab, as in 9.15.
-- **Height.** 240 px by default, 40% of the room when the window is low; 120 px at the least,
+- **Height.** 240 px by default, 40% of the room when the window is low; 130 px at the least,
   the header and five lines. The graph always keeps 200 px. The height is set by the handle
   (9.16), shared by all the repositories and restored at the next launch.
 - **The graph follows.** After a command in the terminal, the repository is read again on its
@@ -843,10 +843,13 @@ A local terminal under the graph, opened in the folder of the repository, to run
   is hidden. No notification: the graph, the counters and the "WIP" row change, and that is the
   answer.
 - **Keyboard.** The terminal never takes the keyboard on its own: not when the tab of the
-  repository is shown again, not when it is shown by the button. It takes it on the shortcut, on
-  "+", and when a shell opens. In it, as in every terminal, only the shortcuts with Shift, Alt or
+  repository is shown again, not when it is shown by the button, even when that opens its first
+  shell. It takes it on the shortcut, on "+", on "Nouveau terminal dans le dépôt" and on
+  "Relancer". In it, as in every terminal, only the shortcuts with Shift, Alt or
   a function key act (11). No search bar here for now: Ctrl + Shift + F stays "Récupérer".
 - **What it does not cover.** The editor of a conflict covers the view, the terminal with it.
+  While it is open, the "Terminal" action, its shortcut and its commands are disabled: nothing
+  opens under it.
 
 ## 10. Commit graph
 

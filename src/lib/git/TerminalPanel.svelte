@@ -137,12 +137,16 @@
     padding: 0 4px 0 6px;
     border-bottom: 1px solid var(--line-soft);
   }
+  /* Les 4 px de marge, rendus par une marge négative, laissent la place à l'anneau de focus des
+     onglets : sans eux, le défilement horizontal le rognerait. */
   .tabs {
     flex: 1;
     display: flex;
     align-items: center;
     gap: 4px;
     min-width: 0;
+    margin: 0 -4px;
+    padding: 4px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -203,7 +207,7 @@
     place-items: center;
     width: 24px;
     height: 24px;
-    margin-right: 1px;
+    margin-right: 2px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;
@@ -237,7 +241,7 @@
     cursor: pointer;
     transition: background var(--t-fast) var(--ease);
   }
-  .add:hover,
+  .add:hover:not(:disabled),
   .hide:hover {
     background: var(--hover);
     color: var(--ink);

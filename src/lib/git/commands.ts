@@ -47,10 +47,12 @@ export function gitCommands(): Command[] {
       icon: 'terminal',
       title: terminals.shown ? 'Masquer le terminal' : 'Afficher le terminal',
       keywords: 'console shell ligne de commande panneau',
+      // L'éditeur d'un conflit couvre la vue, terminal compris : rien ne s'ouvre dessous.
+      disabled: !!repo.conflictFile,
       run: () => terminals.toggle(repo.path),
       key: () => terminals.key(repo.path, !!document.activeElement?.closest('[data-terminals]')),
     });
-    add({ id: 'terminal-repo', group: 'Affichage', icon: 'laptop', title: 'Nouveau terminal dans le dépôt', keywords: 'console shell ligne de commande', run: () => terminals.open(repo.path) });
+    add({ id: 'terminal-repo', group: 'Affichage', icon: 'laptop', title: 'Nouveau terminal dans le dépôt', keywords: 'console shell ligne de commande', disabled: !!repo.conflictFile, run: () => terminals.open(repo.path) });
     add({ id: 'toggle-sides', group: 'Affichage', icon: 'panels', title: layout.sidebarHidden && layout.detailHidden ? 'Réafficher les panneaux latéraux' : 'Masquer les panneaux latéraux', keywords: 'graphe en grand replier', run: toggleSides });
   }
   add({ id: 'open', group: 'Actions', icon: 'folder', title: 'Ouvrir un dépôt…', run: () => void workspace.pick() });
