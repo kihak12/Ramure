@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
+  import { display, keys } from '../ui/keys.svelte';
   import CloneDialog from './CloneDialog.svelte';
   import RepoView from './RepoView.svelte';
   import { workspace } from './workspace.svelte';
@@ -9,10 +11,21 @@
 
   /** Vrai quand le module Git est à l'écran. */
   let { active = true }: { active?: boolean } = $props();
+
+  // L'onglet actif reste à l'écran quand les onglets débordent : la barre défile jusqu'à lui,
+  // et la marge de défilement le garde à gauche du « + ».
+  let tabsEl = $state<HTMLElement>();
+  $effect(() => {
+    void workspace.activeId;
+    void tick().then(() => tabsEl?.querySelector('.tab.current')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  });
+
+  // Le « + » dit ce qu'il ouvre, avec son raccourci (charte, section 9.7).
+  const newTab = $derived(`Nouvel onglet${keys.binding('tab-new') ? ` (${display(keys.binding('tab-new'))})` : ''}`);
 </script>
 
 <div class="workspace">
-  <div class="tabs" role="tablist" aria-label="Dépôts ouverts">
+  <div class="tabs" role="tablist" aria-label="Dépôts ouverts" bind:this={tabsEl}>
     {#each workspace.tabs as tab (tab.id)}
       {@const current = tab.id === workspace.activeId}
       <div class="tab" class:current animate:flip={{ duration: motion.med }} in:scale={{ duration: motion.med, start: 0.9 }}>
@@ -42,7 +55,7 @@
         </button>
       </div>
     {/each}
-    <button class="add" type="button" aria-label="Nouvel onglet" title="Nouvel onglet" onclick={() => workspace.newTab()}>
+    <button class="add" type="button" aria-label={newTab} title={newTab} onclick={() => workspace.newTab()}>
       <Icon name="plus" size={16} />
     </button>
   </div>
@@ -76,6 +89,8 @@
     margin-bottom: -4px;
     min-width: 0;
     overflow-x: auto;
+    /* Un onglet qui prend le focus défile jusqu'à rester visible à gauche du « + », qui colle au bord. */
+    scroll-padding-inline-end: 40px;
     scrollbar-width: none;
   }
   .tab {
@@ -106,6 +121,8 @@
     gap: 7px;
     padding: 6px 4px 6px 10px;
     border: 0;
+    /* Les angles de l'onglet : l'anneau de focus les suit. */
+    border-radius: var(--radius);
     background: none;
     cursor: pointer;
     color: inherit;
@@ -151,10 +168,16 @@
   .close:focus-visible {
     opacity: 1;
   }
+  /* Il reste visible quand les onglets débordent (charte, section 9.7). */
   .add {
+    position: sticky;
+    right: 0;
     width: 28px;
     height: 28px;
     margin-left: 2px;
+    background: var(--side);
+    /* Les 8 px de marge à sa droite gardent le fond de la barre : aucun onglet n'y dépasse. */
+    box-shadow: 8px 0 0 var(--side);
   }
   /* La croix est sur un onglet survolé ou actif, où --hover ne se verrait pas : elle prend --line.
      Le « + » est sur le fond de la fenêtre : --hover (charte, section 9.7). */

@@ -62,7 +62,7 @@
           {action.label}
         </button>
       {/if}
-      <button class="close" type="button" aria-label="Fermer la notification" onclick={() => toasts.dismiss(toast.id)}>
+      <button class="close" type="button" aria-label="Fermer la notification" title="Fermer la notification" onclick={() => toasts.dismiss(toast.id)}>
         <Icon name="x" size={14} />
       </button>
     </div>

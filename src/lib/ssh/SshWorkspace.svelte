@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import { dialogs } from '../ui/dialogs.svelte';
@@ -15,6 +15,14 @@
 
   /** Vrai quand le module SSH est à l'écran. */
   let { active = false }: { active?: boolean } = $props();
+
+  // L'onglet actif reste à l'écran quand les onglets débordent : la barre défile jusqu'à lui,
+  // et la marge de défilement le garde à gauche du « + ».
+  let tabsEl = $state<HTMLElement>();
+  $effect(() => {
+    void ssh.activeKey;
+    void tick().then(() => tabsEl?.querySelector('.tab.current')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  });
 
   let filter = $state('');
 
@@ -136,7 +144,7 @@
 
   <div class="work">
     {#if ssh.sessions.length}
-      <div class="tabs" role="tablist" aria-label="Terminaux ouverts">
+      <div class="tabs" role="tablist" aria-label="Terminaux ouverts" bind:this={tabsEl}>
         {#each ssh.sessions as session (session.key)}
           {@const current = session.key === ssh.activeKey}
           <div class="tab" class:current animate:flip={{ duration: motion.med }} in:scale={{ duration: motion.med, start: 0.9 }}>
@@ -404,6 +412,8 @@
     margin: -4px;
     padding: 4px;
     overflow-x: auto;
+    /* Un onglet qui prend le focus défile jusqu'à rester visible à gauche du « + », qui colle au bord. */
+    scroll-padding-inline-end: 40px;
     scrollbar-width: none;
   }
   /* « + » après le dernier onglet (charte, section 9.7) : il reste visible quand les onglets débordent. */
@@ -418,6 +428,8 @@
     border: 0;
     border-radius: var(--radius-s);
     background: var(--side);
+    /* Les 4 px de marge à sa droite gardent le fond de la barre : aucun onglet n'y dépasse. */
+    box-shadow: 4px 0 0 var(--side);
     color: var(--muted);
     cursor: pointer;
     transition:
@@ -465,6 +477,8 @@
     gap: 8px;
     padding: 6px 4px 6px 10px;
     border: 0;
+    /* Les angles de l'onglet : l'anneau de focus les suit. */
+    border-radius: var(--radius);
     background: none;
     cursor: pointer;
     color: inherit;
@@ -513,6 +527,7 @@
     cursor: pointer;
     opacity: 0;
     transition:
+      background var(--t-fast) var(--ease),
       opacity var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }

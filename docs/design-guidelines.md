@@ -503,9 +503,12 @@ Sidebar, file lists, graph, palette results.
   a `--line` background, not `--hover`: it sits on a tab that is hovered or active, where
   `--hover` would not show.
 - The "+" button follows the last tab: an icon alone, 28 × 28 px, no background at rest and
-  `--hover` on hover.
-- A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling. It stays in view when the tabs overflow. Its tooltip and its accessible
+  `--hover` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
   name say what it opens, with the shortcut: "Nouveau terminal local (Ctrl + Maj + N)".
+- A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling.
+  The ring of a tab follows its 8 px corners.
+- The same goes for the cross of a row that appears on hover, such as a recent repository on the
+  start page: `--line` on hover, since it sits on a hovered row.
 
 ### 9.8 Cards
 

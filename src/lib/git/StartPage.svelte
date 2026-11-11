@@ -252,7 +252,14 @@
     color: var(--muted);
     cursor: pointer;
     opacity: 0;
-    transition: opacity var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      opacity var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  .forget:active {
+    transform: scale(0.97);
   }
   li:hover .forget,
   .forget:focus-visible {
