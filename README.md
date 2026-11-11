@@ -132,8 +132,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - **Automatic reconnection** of a lost connection, five tries, and **search** in a terminal
   (Ctrl + Shift + F).
 - **Terminal colours** that follow the theme: the sixteen colours a program asks for (`ls`,
-  `git`, a coloured prompt) are those of the colour theme, in light and in dark, and each one reads
-  on the terminal background.
+  `git`, a coloured prompt) are those of the colour theme, in light and in dark. Any text that
+  would read poorly on its background is adjusted until it reads.
 - **Fingerprints**: on the first connection, the server's fingerprint is shown; accepting it
   writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
 - **Keys**: the list of keys in `~/.ssh`, generation of an ed25519 key with an optional

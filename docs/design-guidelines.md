@@ -170,8 +170,8 @@ Every theme must meet them, in light and in dark.
 - Light or dark is a setting: "Système" (the default) follows the system, "Clair" and "Sombre"
   hold one whatever the system says. The choice applies at once, to the whole window.
 - A colour theme redefines the tokens of sections 2.1, 2.2 and 2.6, in light and in dark, and
-  nothing else: no shape, no font, no size, no shadow. It does not change the colours of the logo either
-  (section 13).
+  nothing else: no shape, no font, no size, no shadow. It does not change the colours of the logo
+  either (section 13).
 - Four themes: Ardoise (the default), Encre, Sous-bois and Braise. They are chosen under
   "Couleurs" in the settings, and the choice applies at once. Their values are in `src/app.css`,
   selected by the `data-palette` attribute: on the root for the whole window, on an element for
@@ -194,21 +194,21 @@ Ardoise.
 | Token | Colour | Code | Light | Dark |
 |---|---|---|---|---|
 | `--ansi-0` | Black | 30 | `#1c1f27` | `#272a31` |
-| `--ansi-1` | Red | 31 | `#b6251a` | `#e66c62` |
-| `--ansi-2` | Green | 32 | `#096d39` | `#38a46f` |
-| `--ansi-3` | Yellow | 33 | `#895203` | `#c7831f` |
-| `--ansi-4` | Blue | 34 | `#1359c4` | `#5893e4` |
-| `--ansi-5` | Magenta | 35 | `#7b3ebd` | `#ab7ddc` |
-| `--ansi-6` | Cyan | 36 | `#036972` | `#09a1a8` |
+| `--ansi-1` | Red | 31 | `#ac190f` | `#e66c62` |
+| `--ansi-2` | Green | 32 | `#046434` | `#38a46f` |
+| `--ansi-3` | Yellow | 33 | `#7e4b02` | `#c7831f` |
+| `--ansi-4` | Blue | 34 | `#0651ba` | `#5893e4` |
+| `--ansi-5` | Magenta | 35 | `#7434b4` | `#ab7ddc` |
+| `--ansi-6` | Cyan | 36 | `#076068` | `#09a1a8` |
 | `--ansi-7` | White | 37 | `#d6dae5` | `#d5dae3` |
-| `--ansi-8` | Bright black | 90 | `#4f525c` | `#7a7e87` |
+| `--ansi-8` | Bright black | 90 | `#3d4049` | `#91959e` |
 | `--ansi-9` | Bright red | 91 | `#d33023` | `#fe9a8f` |
 | `--ansi-10` | Bright green | 92 | `#138046` | `#53ca8e` |
 | `--ansi-11` | Bright yellow | 93 | `#a06105` | `#f3a53b` |
 | `--ansi-12` | Bright blue | 94 | `#1c6ae2` | `#85b7ff` |
 | `--ansi-13` | Bright magenta | 95 | `#904bdb` | `#cea2fe` |
 | `--ansi-14` | Bright cyan | 96 | `#077b85` | `#24c8d1` |
-| `--ansi-15` | Bright white | 97 | `#6c6f79` | `#edf0f4` |
+| `--ansi-15` | Bright white | 97 | `#585b65` | `#edf0f4` |
 
 - **Every one is read on `--term-bg`**, at 4.5:1 at least, with two exceptions, which are
   backgrounds: black in dark and white in light, a shade of the terminal background. Text in
@@ -216,15 +216,18 @@ Ardoise.
 - **Black and white swap their roles with the background.** In dark, the order from the background
   outwards is black, bright black, white, bright white. In light it is reversed: white, bright
   white, bright black, black. Bright black is the grey that programs use for what is secondary
-  (a hint, a comment), so it reads in both.
-- **The bright version** stands further from the background in dark, and closer in light, while
-  still reading at 4.5:1.
+  (a hint, a comment), so it reads in both. Bright black in dark and bright white in light stand
+  at 6.5:1, well clear of the 4.5:1 to which the safety net raises black and white text: the two
+  stay apart.
+- **The bright version** of the six colours stands further from the background in dark (9.5:1
+  against 6.2:1), and closer in light (4.8:1 against 7:1).
 - **The hues come from the theme**: red is the hue of `--bad`, green that of `--ok`, yellow that
   of `--warn`; blue, magenta and cyan those of the branch colours (2.2) that come nearest. The
   greys take the hue of `--term-ink`.
-- **The safety net.** A text in any other colour (256 colours, true colours) is lightened or
-  darkened by the terminal until it reaches 4.5:1 on the background of its cell, and so is a text
-  in black on the dark background or in white on the light one.
+- **The safety net.** Any text that would read under 4.5:1 on the background of its cell is
+  lightened or darkened by the terminal until it reaches it: a text in any other colour (256
+  colours, true colours), a text in black on the dark background or in white on the light one,
+  and the default text on a coloured background.
 
 ## 3. Typography
 
@@ -744,11 +747,12 @@ own, under its graph (9.20).
   repository, asks as soon as a shell is open: "Un terminal est ouvert…".
 - A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
   grey dot; its tooltip and accessible name then say "Terminal local arrêté".
-- Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus
-  goes to its main button: the terminal keeps the Tab key for the shell. Under a repository, where the
+- Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus goes
+  to its main button: the terminal keeps the Tab key for the shell. Under a repository, where the
   state of the shell is a strip, the rule is that of 9.20.
 
-**Search.** Ctrl + Shift + F, or "Chercher dans le terminal" in the palette, opens a search bar
+**Search.** Ctrl + Shift + F, or "Chercher
+  dans le terminal" in the palette, opens a search bar
 in the terminal of the current tab.
 
 - The bar is a strip under the header of the session, on `--panel`, with a `--line-soft`
