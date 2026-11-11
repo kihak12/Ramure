@@ -44,7 +44,10 @@ pub fn check(host: &str, port: u16, key: &PublicKey) -> Known {
 
 /// Inscrit la clé du serveur dans `known_hosts`. En cas d'échec, dit pourquoi.
 pub fn learn(host: &str, port: u16, key: &PublicKey) -> Result<(), String> {
-    let path = path().ok_or("Dossier personnel introuvable\u{a0}: ni USERPROFILE (Windows) ni HOME (Linux) n’est défini.")?;
+    let path = path().ok_or(
+        "Dossier personnel introuvable\u{a0}: ni USERPROFILE (Windows) ni HOME (Linux) n’est défini. \
+         Définis-en un, puis relance Ramure.",
+    )?;
     learn_path(&path, host, port, key)
 }
 
@@ -125,7 +128,7 @@ fn explain(e: &std::io::Error) -> String {
         ErrorKind::PermissionDenied => {
             "accès refusé. Vérifie que le fichier n’est pas en lecture seule et qu’il appartient à ton compte.".into()
         }
-        ErrorKind::ReadOnlyFilesystem => "le disque est en lecture seule.".into(),
+        ErrorKind::ReadOnlyFilesystem => "le disque est en lecture seule. Rends-le inscriptible, puis reconnecte-toi.".into(),
         ErrorKind::StorageFull | ErrorKind::QuotaExceeded => {
             "le disque est plein. Libère de la place, puis reconnecte-toi.".into()
         }
@@ -141,6 +144,9 @@ fn explain_dir(e: &std::io::Error) -> String {
     match e.kind() {
         ErrorKind::AlreadyExists | ErrorKind::NotADirectory => {
             "un fichier porte ce nom, à la place du dossier. Renomme-le, puis reconnecte-toi.".into()
+        }
+        ErrorKind::PermissionDenied => {
+            "accès refusé. Vérifie que le dossier n’est pas en lecture seule et qu’il appartient à ton compte.".into()
         }
         _ => explain(e),
     }
@@ -427,7 +433,8 @@ mod tests {
     fn traduit_les_erreurs_courantes() {
         let said = |kind: ErrorKind| explain(&kind.into());
         assert!(said(ErrorKind::PermissionDenied).starts_with("accès refusé. Vérifie"));
-        assert_eq!(said(ErrorKind::ReadOnlyFilesystem), "le disque est en lecture seule.");
+        assert!(said(ErrorKind::ReadOnlyFilesystem).starts_with("le disque est en lecture seule. Rends-le"));
+        assert!(explain_dir(&ErrorKind::PermissionDenied.into()).contains("le dossier n’est pas en lecture seule"));
         assert!(said(ErrorKind::StorageFull).starts_with("le disque est plein"));
         // Une cause inconnue garde le texte du système.
         let other = std::io::Error::other("panne inattendue");

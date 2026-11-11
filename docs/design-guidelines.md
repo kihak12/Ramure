@@ -750,8 +750,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
   coloured bar on the edge.
-- A short title, then the detail. The output of git is shown as it is, in the code font at
-  11.5 px.
+- A short title, then the detail, in the code font at 11.5 px whatever it says: the output of
+  git as it is, a path, or the reason of a failure with what to do.
 - In the title, a word of more than 36 characters, such as the name of a branch or a path, is
   cut inside: its first 24 characters and its last 10 stay, around an ellipsis. The full title
   is in a tooltip, and it is what a screen reader reads. This is the one place where a text is
@@ -1208,8 +1208,8 @@ need the room.
     `--muted` ("clé id_ed25519", "agent SSH", "mot de passe") and how long it took.
   - Success with a fingerprint that could not be remembered ("Faire confiance et mémoriser", and
     `known_hosts` cannot be written): under the success, a second line, the warning icon and
-    "L’empreinte n’a pas pu être mémorisée" in `--warn`, then why, in the code font and `--muted`.
-    It is announced with the success.
+    "L’empreinte n’a pas pu être mémorisée" in `--warn`, then why and what to do, in the code font
+    and `--muted`. It is announced with the success.
   - Failure: the warning icon and the reason in `--bad`, in French when it is known (the server
     refuses, does not answer, cannot be reached, the key or the password is refused), as in
     9.15.
