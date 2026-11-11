@@ -181,7 +181,6 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    cursor: pointer;
   }
   footer {
     display: flex;

@@ -368,6 +368,32 @@ input[type='checkbox']:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* Le texte d'une case se clique aussi : c'est la cible, 24 px de haut au moins, et son survol est
+   celui de la case. Désactivée, la case grise son texte avec elle. */
+label:has(> input[type='checkbox']) {
+  min-height: 24px;
+  cursor: pointer;
+}
+label:has(> input[type='checkbox']:not(:disabled)):hover > input[type='checkbox']:not(:checked) {
+  border-color: var(--ink);
+}
+label:has(> input[type='checkbox']:not(:disabled)):hover > input[type='checkbox']:checked {
+  border-color: color-mix(in srgb, var(--accent) 90%, var(--ink));
+  background: color-mix(in srgb, var(--accent) 90%, var(--ink));
+}
+label:has(> input[type='checkbox']:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+label:has(> input[type='checkbox']:disabled) > input[type='checkbox'] {
+  opacity: 1;
+}
+
+/* Deux graisses, pas plus (charte, section 3.3) : le gras du navigateur (700) n'en est pas une. */
+b,
+strong {
+  font-weight: var(--fw-strong);
+}
 
 .label {
   font-size: var(--fs-label);

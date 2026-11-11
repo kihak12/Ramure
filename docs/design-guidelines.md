@@ -250,8 +250,8 @@ From left to right and from top to bottom:
 
 | Token | Radius | For |
 |---|---|---|
-| `--radius-xs` | 4 px | Small markers: shortcut key, file status letter, highlight inside a diff line. |
-| `--radius-s` | 6 px | What can be clicked: buttons, fields, branch and tag labels, menu items, checkboxes. |
+| `--radius-xs` | 4 px | Small markers: shortcut key, file status letter, highlight inside a diff line; the 15 px checkbox. |
+| `--radius-s` | 6 px | What can be clicked: buttons, fields, branch and tag labels, menu items. |
 | `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons. |
 | `--radius-l` | 12 px | What floats: dialogs, menus, command palette. |
 | `--radius-card` | 14 px | Cards. |
@@ -410,12 +410,15 @@ States are the same everywhere:
 - Focus: an `--accent` border and a 3 px halo in `--accent` at 25%. No outline on top of it.
 - Error: a `--bad` border, and an 11.5 px message in `--bad` under the field.
 - The label is above the field, in 12 px, weight 650, colour `--muted`. A hint inside the empty
-  field never replaces the label. The hint is in `--faint`: it never reads as typed text.
+  field never replaces the label. The hint is in `--faint`: it never reads as typed text, and it
+  never carries what has to be read, which is the role of the label or of the accessible name.
 - A checkbox is drawn by the application, never by the system, so that it reads the same in
-  both themes. Its text follows it, 6 px away, and can be clicked too.
+  both themes. Its text follows it, 6 px away, and can be clicked too: the box and its text
+  together are the target, 24 px high at least, and hovering the text is hovering the box.
   - Unchecked: a 15 px square with 4 px corners, a `--bg` background and a 1 px border in
     `--muted`.
-  - Checked: the `--accent` background and border, and a check mark in `--on-accent`.
+  - Checked: the `--accent` background and border, and a check mark in `--on-accent`: the path
+    of the "check" icon, drawn at 13 px with a 2 px stroke so that it reads at that size.
   - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked.
   - Focus: the focus ring of the application (11). Disabled: 45%, and its text too.
 - A list is the control of the system, 32 px high like a field. Its look, closed and open, is

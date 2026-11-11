@@ -218,7 +218,7 @@
   .label.bad {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     color: var(--bad);
   }
   .list {
@@ -243,16 +243,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    cursor: pointer;
     color: var(--muted);
-  }
-  /* Désactivée, la case grise aussi son texte. */
-  .amend:has(input:disabled) {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  .amend:has(input:disabled) input {
-    opacity: 1;
   }
   textarea {
     resize: vertical;
@@ -279,6 +270,7 @@
     gap: 8px;
   }
   .send small {
+    font-size: var(--fs-small);
     font-variant-numeric: tabular-nums;
   }
   .send small.long {
