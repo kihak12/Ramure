@@ -415,8 +415,4 @@
     color: var(--muted);
     cursor: pointer;
   }
-  .base-toggle input {
-    margin: 0;
-    accent-color: var(--accent);
-  }
 </style>

@@ -242,13 +242,17 @@
   .amend {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     cursor: pointer;
     color: var(--muted);
   }
-  .amend input {
-    margin: 0;
-    accent-color: var(--accent);
+  /* Désactivée, la case grise aussi son texte. */
+  .amend:has(input:disabled) {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .amend:has(input:disabled) input {
+    opacity: 1;
   }
   textarea {
     resize: vertical;

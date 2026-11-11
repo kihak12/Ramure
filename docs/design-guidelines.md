@@ -410,8 +410,14 @@ States are the same everywhere:
 - Focus: an `--accent` border and a 3 px halo in `--accent` at 25%. No outline on top of it.
 - Error: a `--bad` border, and an 11.5 px message in `--bad` under the field.
 - The label is above the field, in 12 px, weight 650, colour `--muted`. A hint inside the empty
-  field never replaces the label.
-- A checkbox is 15 px, checked in `--accent`, and its text can be clicked too.
+  field never replaces the label. The hint is in `--faint`: it never reads as typed text.
+- A checkbox is drawn by the application, never by the system, so that it reads the same in
+  both themes. Its text follows it, 6 px away, and can be clicked too.
+  - Unchecked: a 15 px square with 4 px corners, a `--bg` background and a 1 px border in
+    `--muted`.
+  - Checked: the `--accent` background and border, and a check mark in `--on-accent`.
+  - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked.
+  - Focus: the focus ring of the application (11). Disabled: 45%, and its text too.
 - A list is the control of the system, 32 px high like a field. Its look, closed and open, is
   the system's. It is for options that are many, or that are plain values; a few options that
   need a word of explanation are a choice (9.19).

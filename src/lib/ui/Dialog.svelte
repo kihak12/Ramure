@@ -180,14 +180,8 @@
   .check {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
-  }
-  .check input {
-    accent-color: var(--accent);
-    width: 15px;
-    height: 15px;
-    margin: 0;
   }
   footer {
     display: flex;
