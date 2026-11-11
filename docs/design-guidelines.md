@@ -258,7 +258,7 @@ From left to right and from top to bottom:
 | Module rail (Git, SSH); at its foot, the search and the settings | 48 px wide | `--side` |
 | Tab bar | tabs 30 px high | `--side` |
 | Toolbar | full width | `--side` |
-| Three cards: sidebar, centre, detail | 8 px apart; the two side cards can be resized (9.16) and hidden (9.17); under the centre card, the terminal of the repository when it is shown (9.20) | `--panel` |
+| The cards of a repository: the branch list, the centre, the detail panel. The centre holds the graph and, under it, the terminal of the repository when it is shown (9.20) | 8 px apart; the two side cards can be resized (9.16); each card can be hidden (9.17) | `--panel` |
 | Status bar | 26 px high | `--side` |
 
 - No line separates these areas: the background and the space are enough.
@@ -394,7 +394,7 @@ States are the same everywhere:
 | State | Rendering |
 |---|---|
 | Hover | `--hover` background, in `--t-fast`. |
-| Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields and lists. |
+| Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists and menus. |
 | Selection | `--sel` background. |
 | Disabled | 45% opacity, "not allowed" cursor, no reaction on hover. |
 
@@ -446,9 +446,11 @@ States are the same everywhere:
   cards to show (9.17).
   - At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a `--hover`
     background and the icon in `--ink`. It has no pressed state: the menu says what is shown.
-  - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher".
+  - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher"; the
+    tooltip keeps quiet while the menu is open, where it would cover the first item.
     `aria-haspopup` says that it opens a menu, `aria-expanded` whether the menu is open.
-  - Disabled, when no repository is open: 45%.
+  - Disabled, at 45%, when no repository is open, and while the editor of a conflict covers the
+    cards.
 
 ### 9.3 Fields
 
@@ -559,14 +561,20 @@ Sidebar, file lists, graph, palette results.
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow.
   Between 220 and 380 px wide.
 - An item: a 16 px icon in `--muted` in an 18 px column, then the text. 6 px corners.
-- Hover and focus: `--accent-soft` background.
+- Hover and focus: `--accent-soft` background, and no outline: the background is the marker.
+  Only one item shows it at a time. Hovering an item gives it the focus; once an arrow key is
+  pressed, the item that has the focus shows it alone, until the pointer moves again.
+- Opened with the mouse, a menu has no current item: Space and Enter do nothing until an item
+  is hovered or reached, and ↓ goes to the first one, ↑ to the last. Opened from the keyboard,
+  its first item has the focus.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.
 - Appears in `--t-fast`, from the point of the click.
 - A menu may also open under a button, such as "Affichage" in the toolbar (9.2): 4 px below it,
   its right edge on the right edge of the button, and it appears from that corner. Escape, or a
-  click outside, closes it and gives the focus back to the button.
+  click outside, closes it and gives the focus back to the button; after Escape, the button
+  shows its focus ring.
 - An item may recall the shortcut of its action, on its right, drawn as keys (9.12).
 - A checkable item (`menuitemcheckbox`) shows or hides something. Its check mark is on the
   right, after the shortcut, 16 px, in `--accent`; its place is kept when the item is unchecked,
@@ -758,7 +766,9 @@ hiding the graph gives the terminal the whole height.
   hides or shows both side cards at once. The terminal also keeps its action in the toolbar.
 - **The centre is never empty**: it holds the graph, the terminal, or both. In the menu, the item
   of the one that is alone there is disabled, and its tooltip says why: "Le graphe reste affiché
-  tant que le terminal ne l’est pas." Hiding the terminal another way, by its action, by its
+  tant que le terminal ne l’est pas.", or "Le terminal reste affiché tant que le graphe ne
+  l’est pas." The command of the palette that hides the graph is disabled the same way, and
+  says "le terminal doit être affiché". Hiding the terminal another way, by its action, by its
   shortcut or by the end of its last shell, brings the graph back.
 - **Hiding the graph belongs to the repository**, like its terminal: it holds for that tab, and
   nothing of it is kept at the next launch. Opening a diff, which shows on the card of the
@@ -870,12 +880,13 @@ A local terminal under the graph, opened in the folder of the repository, to run
   background separates them, the handle of 9.16 sits in that gap. The side cards keep their full
   height. Hiding a side card gives its width to the graph and to the terminal alike. When the
   graph is hidden (9.17), the terminal takes the whole height of the centre, with no handle.
-- **Getting there and back.** The "Terminal" action of the toolbar (9.2); Ctrl + Shift + J; and
-  "Afficher le terminal" or "Masquer le terminal" in the palette. The shortcut works from the
-  terminal too, and it does three things: when the terminal is hidden, it shows it and gives it
-  the keyboard; when it is shown and the focus is elsewhere, it gives it the keyboard; when the
-  focus is in it, it hides it and the focus goes to the graph. The button and the palette only
-  show and hide. "Nouveau terminal dans le dépôt", in the palette, opens one more.
+- **Getting there and back.** The "Terminal" action of the toolbar (9.2); the "Terminal" item
+  of the "Affichage" menu (9.17); Ctrl + Shift + J; and "Afficher le terminal" or "Masquer le
+  terminal" in the palette. The shortcut works from the terminal too, and it does three things:
+  when the terminal is hidden, it shows it and gives it the keyboard; when it is shown and the
+  focus is elsewhere, it gives it the keyboard; when the focus is in it, it hides it and the
+  focus goes to the graph. The button, the menu and the palette only show and hide.
+  "Nouveau terminal dans le dépôt", in the palette, opens one more.
 - **The first time.** Showing the terminal of a repository that has none opens one. Nothing is
   started at launch: the terminal of a repository comes back hidden, and its shells are new.
 - **Header.** One line, 35 px high, on `--panel`, with a `--line-soft` separator above the
@@ -908,8 +919,8 @@ A local terminal under the graph, opened in the folder of the repository, to run
   "Relancer". In it, as in every terminal, only the shortcuts with Shift, Alt or a function key
   act (11). No search bar here for now: Ctrl + Shift + F stays "Récupérer".
 - **What it does not cover.** The editor of a conflict covers the view, the terminal with it.
-  While it is open, the "Terminal" action, its shortcut and its commands are disabled: nothing
-  opens under it.
+  While it is open, the "Terminal" action, its shortcut and its commands are disabled, and so
+  is the "Affichage" button: nothing opens under it.
 
 ### 9.21 Host form
 

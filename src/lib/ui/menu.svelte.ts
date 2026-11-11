@@ -48,7 +48,7 @@ class Menu {
     return !!anchor && this.current?.anchor === anchor;
   }
 
-  /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre (classe `.ring`, app.css). */
+  /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre (classe `.focus-ring`, app.css). */
   close(keyboard = false) {
     const anchor = this.current?.anchor;
     this.current = null;
@@ -56,8 +56,8 @@ class Menu {
     anchor.focus();
     if (!keyboard) return;
     // Un focus donné par le script n'a pas toujours l'anneau du navigateur : on le pose, le temps du focus.
-    anchor.classList.add('ring');
-    anchor.addEventListener('blur', () => anchor.classList.remove('ring'), { once: true });
+    anchor.classList.add('focus-ring');
+    anchor.addEventListener('blur', () => anchor.classList.remove('focus-ring'), { once: true });
   }
 }
 

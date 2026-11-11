@@ -178,7 +178,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 14px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--line);
     color: var(--muted);
   }
@@ -205,8 +205,8 @@
   .item {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 7px 8px;
+    gap: 8px;
+    padding: 6px 8px;
     border-radius: var(--radius);
     cursor: pointer;
   }
@@ -245,7 +245,7 @@
   .keys {
     flex: none;
     display: inline-flex;
-    gap: 3px;
+    gap: 2px;
     margin-left: auto;
   }
   .hint + .keys {
@@ -253,15 +253,15 @@
   }
   .none {
     margin: 0;
-    padding: 22px 12px;
+    padding: 24px 12px;
     color: var(--muted);
     text-align: center;
   }
   footer {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 7px 14px;
+    gap: 16px;
+    padding: 6px 16px;
     border-top: 1px solid var(--line);
     background: var(--panel);
     color: var(--muted);

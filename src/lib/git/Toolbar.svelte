@@ -21,7 +21,6 @@
   // Le centre garde toujours le graphe ou le terminal : la case de celui qui y est seul est désactivée.
   let viewsEl = $state<HTMLButtonElement>();
   function views(): MenuItem[] {
-    const covered = !!repo.conflictFile;
     const graphAlone = !terminals.shown;
     return [
       { label: 'Liste des branches', icon: 'panel-left', checked: !layout.sidebarHidden, keys: keys.binding('toggle-sidebar'), run: () => toggleSide('sidebar') },
@@ -30,7 +29,7 @@
         icon: 'commit',
         checked: !terminals.alone,
         keys: keys.binding('toggle-graph'),
-        disabled: graphAlone || covered,
+        disabled: graphAlone,
         hint: graphAlone ? 'Le graphe reste affiché tant que le terminal ne l’est pas.' : undefined,
         run: () => terminals.toggleGraph(),
       },
@@ -39,7 +38,7 @@
         icon: 'terminal',
         checked: terminals.shown,
         keys: terminalCombo,
-        disabled: terminals.alone || covered,
+        disabled: terminals.alone,
         hint: terminals.alone ? 'Le terminal reste affiché tant que le graphe ne l’est pas.' : undefined,
         run: () => terminals.toggle(repo.path),
       },
@@ -121,7 +120,8 @@
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
   </div>
   <!-- « Affichage » : le seul bouton de vue, il déroule le choix des cartes. Menu ouvert, son
-       infobulle se tait : elle couvrirait le premier élément. -->
+       infobulle se tait : elle couvrirait le premier élément. L'éditeur d'un conflit couvre les
+       cartes : il n'y a rien à choisir tant qu'il est ouvert. -->
   <button
     class="view"
     type="button"
@@ -130,7 +130,7 @@
     aria-haspopup="menu"
     aria-expanded={menu.isUnder(viewsEl)}
     title={menu.isUnder(viewsEl) ? undefined : 'Choisir les cartes à afficher'}
-    disabled={!repo.result}
+    disabled={!repo.result || !!repo.conflictFile}
     onclick={(event) => viewsEl && menu.openUnder(viewsEl, views, event.detail === 0)}
   >
     <Icon name="panels" size={18} />
@@ -182,7 +182,7 @@
   }
   .small {
     color: var(--muted);
-    font-size: var(--fs-micro);
+    font-size: var(--fs-small);
   }
   .sep {
     display: grid;

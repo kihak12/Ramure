@@ -537,7 +537,7 @@ textarea {
 }
 
 /* Le focus rendu au clavier par un script : le même anneau (voir menu.svelte.ts). */
-.ring:focus {
+.focus-ring:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }

@@ -20,13 +20,17 @@
     position = { x: open.x, y: open.y };
     queueMicrotask(() => {
       if (!element) return;
-      const box = element.getBoundingClientRect();
-      const x = open.anchor ? open.x - box.width : open.x;
+      // offsetWidth et offsetHeight : la taille vraie, que l'animation d'apparition ne rétrécit pas.
+      const { offsetWidth: width, offsetHeight: height } = element;
+      const x = open.anchor ? open.x - width : open.x;
       position = {
-        x: Math.max(4, Math.min(x, window.innerWidth - box.width - 6)),
-        y: Math.max(4, Math.min(open.y, window.innerHeight - box.height - 6)),
+        x: Math.max(4, Math.min(x, window.innerWidth - width - 6)),
+        y: Math.max(4, Math.min(open.y, window.innerHeight - height - 6)),
       };
-      element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+      // Ouvert au clavier, le premier élément prend le focus. À la souris, c'est le menu : aucun
+      // élément n'est en cours tant qu'on n'en a pas survolé ou atteint un, Espace ne coche rien.
+      if (keyboard) element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+      else element.focus();
     });
   });
 
@@ -50,7 +54,9 @@
     keyboard = true;
     const buttons = [...element.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
     const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    const next = (at + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+    // Aucun élément en cours : ↓ va au premier, ↑ au dernier.
+    const from = at < 0 && event.key === 'ArrowUp' ? 0 : at;
+    const next = (from + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
     buttons[next]?.focus();
   }
 </script>
@@ -120,7 +126,7 @@
     z-index: 71;
     min-width: 220px;
     max-width: 380px;
-    padding: 5px;
+    padding: 4px;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
     background: var(--raised);

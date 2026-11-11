@@ -97,7 +97,7 @@
 <div class="list">
   {#each shown as shortcut, i (shortcut.id)}
     {#if i === 0 || shown[i - 1].group !== shortcut.group}
-      <h3>{shortcut.group}{#if shortcut.scope}<span class="scope"> · module {MODULES[shortcut.scope]}</span>{/if}</h3>
+      <h3>{shortcut.group}{#if shortcut.scope}{' '}<span class="scope">· module {MODULES[shortcut.scope]}</span>{/if}</h3>
     {/if}
     {@const combo = keys.binding(shortcut.id)}
     <div class="row" class:recording={recording === shortcut.id}>

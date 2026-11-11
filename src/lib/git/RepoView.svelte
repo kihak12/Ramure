@@ -191,7 +191,7 @@
                 {#if repo.status}
                   <WorkPanel {repo} />
                 {:else}
-                  <p class="muted">Lecture de l'état du dépôt…</p>
+                  <p class="muted">Lecture de l’état du dépôt…</p>
                 {/if}
               {:else if current}
                 <CommitPanel {repo} commit={current} />
