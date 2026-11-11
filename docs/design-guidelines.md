@@ -45,7 +45,7 @@ What the interface favours:
 3. **Surfaces rather than lines.** Areas are separated by their background and by space. Lines
    are only used inside a card.
 4. **One shape, one role.** A slightly rounded rectangle can be clicked. A pill or a circle
-   informs.
+   informs. One exception: a colour swatch, a round dot of colour that is chosen (9.21).
 5. **Dense and readable.** A lot of information on screen, but no text under 10.5 px and no
    target under 24 px.
 6. **Calm.** A movement is brief and explains a change. Nothing moves without an action from the
@@ -267,12 +267,12 @@ From left to right and from top to bottom:
 | `--radius-card` | 14 px | Cards. |
 | `--radius-pill` | 999 px | What informs: counters, the capsule of a commit message. |
 
-- **Everything that can be clicked is a slightly rounded rectangle.** The pill is reserved for
-  what informs without being clicked.
+- **Everything that can be clicked is a slightly rounded rectangle**, except a colour swatch
+  (below). The pill is reserved for what informs without being clicked.
 - The circle is reserved for the dot of a commit, the badge of a toolbar button, the icon of a
   notification, the waiting ring, and the colour swatches of a choice of colour (the colour of
-  an SSH host). A swatch is a dot of colour that can be clicked: it is round, and it grows a
-  little on hover (112%), the one element besides a button that changes size.
+  an SSH host). A swatch is a dot of colour that can be clicked: it is round, and it is the one
+  element that grows on hover (8).
 - An element placed inside another never has a larger radius than the one that contains it.
 
 ## 6. Surfaces and shadows
@@ -332,7 +332,8 @@ The interface has four levels. Each is recognised by its background.
 Transitions written in script read the same tokens, through `src/lib/ui/motion.ts`.
 
 **What is animated.** Opacity, position (`transform`) and colours. An appearance comes from
-close by: an offset of 6 to 10 px at most.
+close by: an offset of 6 to 10 px at most. One scale besides the press effect: a colour swatch
+grows to 112% on hover, in `--t-fast` (9.21).
 
 **The press effect.** A button shrinks to 97% while it is clicked. This applies to buttons,
 toolbar buttons and rail buttons, and to nothing else.
@@ -899,6 +900,12 @@ need the room.
   scrolls.
 - **A host behind a bastion** (ProxyJump) cannot be tested yet: the button is disabled, and the
   warning of the form already says why.
+- **The colour of the host** is a row of swatches, a group of radio buttons: "Aucune", a dashed
+  circle in `--line`, then the eight branch colours (2.2). A swatch is a 24 px circle. Hover: it
+  grows to 112%, in `--t-fast`; the colour itself says what it is, so no `--hover` background.
+  Chosen: a 2 px ring of its own colour (of `--muted` for "Aucune"), 2 px away from it, drawn
+  with a flat shadow, not an elevation. Keyboard focus: the ring of the application, 2 px of
+  `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Couleur 3".
 
 ## 10. Commit graph
 
