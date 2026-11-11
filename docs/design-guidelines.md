@@ -161,6 +161,7 @@ Every theme must meet them, in light and in dark.
 | `--muted` on `--panel`, `--side`, `--sel` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
 | `--ok`, `--warn`, `--bad` on `--panel` and `--bg` | 4.5:1 |
+| `--bad` on `--raised` and on `--bad-soft` (ghost danger button, destructive menu item) | 4.5:1 |
 | `--accent` and each branch colour on `--panel` | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | Each terminal colour (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
@@ -455,6 +456,7 @@ States are the same everywhere:
 | Primary | `--accent` background, `--on-accent` text, weight 650. | The expected action. Only one per view or per dialog. |
 | Danger | `--bad` background, `--on-accent` text, weight 650. | Confirming a destructive action, in a dialog. |
 | Ghost | No background and no border at rest. | Secondary action, in a header or a row. |
+| Ghost danger | A ghost button whose text is in `--bad`; on hover, a `--bad-soft` background. | Opens a destructive action that a dialog then confirms, never the action itself: "Supprimer l’hôte…". Its label ends with "…". |
 | Small | 24 px high, 12 px text. | In a card header or a row. |
 
 - 6 px corners. Inner margins: 5 px at the top and bottom, 12 px on the sides.
@@ -1066,11 +1068,19 @@ The dialog that adds a host to the book or changes one (9.10). It is 600 px wide
 need the room.
 
 - **Buttons.** "Tester la connexion", a secondary button, alone on its line under the fields,
-  with its result right under it. Below, 24 px apart, the last line: "Annuler" alone on the
-  left, and on the right "Enregistrer et connecter" then "Enregistrer", the main button. This
-  dialog parts from 9.10 ("Annuler" first, at the bottom right) because it has two ways to save,
-  which stay together. Nothing opens a session without saving the host: a host one connects to
-  belongs in the book.
+  with its result right under it. Below, 24 px apart, the last line: on the left "Supprimer
+  l’hôte…" for a host already in the book (below), then "Annuler"; on the right "Enregistrer et
+  connecter" then "Enregistrer", the main button. This dialog parts
+  from 9.10 ("Annuler" first, at the bottom right) because it has two ways to save, which stay
+  together. Nothing opens a session without saving the host: a host one connects to belongs in
+  the book.
+- **Deleting.** The form of a host already in the book starts its last line with "Supprimer
+  l’hôte…", a ghost danger button (9.1), before "Annuler". It opens the confirmation that the
+  menu of the host opens too (9.10): what is lost, the password kept for its account included
+  (9.15). Confirmed, the host is deleted, the form closes and the focus goes to the filter field
+  of the book, which is always there, the row of the host being gone; cancelled, the focus is
+  back on the button, with its ring. A host being added, or a copy, has no such button: it is not
+  in the book yet.
 - **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
   not, authenticates, and closes the connection at once: no terminal opens, nothing is saved. It
   is disabled until the form is valid (a name and an address).

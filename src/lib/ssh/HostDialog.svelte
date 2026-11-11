@@ -46,6 +46,20 @@
     return { ...form, port: Number(form.port) || 22, tags: tags.split(',').map((t) => t.trim()).filter(Boolean) };
   }
 
+  // « Supprimer l'hôte… » : seulement pour un hôte déjà au carnet, pas pour un ajout ni une copie.
+  let removeButton = $state<HTMLButtonElement>();
+  async function removeHost() {
+    if (!editing?.id) return;
+    // La fiche telle qu'elle est enregistrée : c'est son compte qui dit quel mot de passe part avec elle.
+    const stored = ssh.hosts.find((h) => h.id === editing.id) ?? editing;
+    if (await ssh.removeAsked(stored)) {
+      close();
+      await ssh.focusBook();
+    }
+    // Annulée : la confirmation se ferme, le clavier revient au bouton qui l'a ouverte, avec l'anneau.
+    else focusWithRing(removeButton);
+  }
+
   async function save(connect: boolean) {
     const host = current();
     if (!host || !valid) return;
@@ -481,6 +495,9 @@
       {/if}
 
       <footer>
+        {#if editing?.id}
+          <button class="btn ghost bad" type="button" bind:this={removeButton} onclick={() => void removeHost()}>Supprimer l’hôte…</button>
+        {/if}
         <button class="btn cancel" type="button" onclick={close}>Annuler</button>
         <button class="btn" type="button" disabled={!valid} onclick={() => void save(true)}>Enregistrer et connecter</button>
         <button class="btn primary" type="submit" disabled={!valid}>Enregistrer</button>
@@ -651,7 +668,7 @@
   .testing {
     display: flex;
   }
-  /* « Annuler » seul à gauche, les deux enregistrements à droite. */
+  /* À gauche « Supprimer l'hôte… », s'il est au carnet, puis « Annuler » ; les deux enregistrements à droite. */
   .cancel {
     margin-right: auto;
   }

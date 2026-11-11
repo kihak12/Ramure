@@ -59,6 +59,8 @@ function check(name, t, dark) {
   for (const state of ['--ok', '--warn', '--bad']) {
     for (const bg of ['--panel', '--bg']) need(`${state} sur ${bg}`, contrast(t[state], t[bg]), 4.5);
   }
+  // Un bouton fantôme destructeur et l'élément destructeur d'un menu : sur ce qui flotte, et survolés.
+  for (const bg of ['--raised', '--bad-soft']) need(`--bad sur ${bg}`, contrast(t['--bad'], t[bg]), 4.5);
   need('--accent sur --panel', contrast(t['--accent'], t['--panel']), 3);
   need('--term-ink sur --term-bg', contrast(t['--term-ink'], t['--term-bg']), 7);
   for (let i = 0; i < 16; i++) {

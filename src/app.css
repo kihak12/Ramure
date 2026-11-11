@@ -811,6 +811,15 @@ dialog:focus-visible {
   border-color: transparent;
   box-shadow: none;
 }
+/* Fantôme destructeur : il ouvre une action destructrice qu'une boîte confirme ensuite, comme
+   l'élément destructeur d'un menu (charte, sections 9.1 et 9.9). */
+.btn.ghost.bad {
+  color: var(--bad);
+}
+.btn.ghost.bad:hover:not(:disabled) {
+  background: var(--bad-soft);
+  border-color: transparent;
+}
 .btn.small {
   min-height: 24px;
   padding: 2px 8px;
