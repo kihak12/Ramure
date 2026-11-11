@@ -130,9 +130,9 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 22px;
-    height: 22px;
-    margin-top: -3px;
+    width: 24px;
+    height: 24px;
+    margin-top: -4px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;

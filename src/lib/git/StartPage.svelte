@@ -52,13 +52,13 @@
           {#each recents as recent, i (recent.path)}
             <li style:--i={i}>
               <button class="recent" type="button" onclick={() => void workspace.openPath(recent.path)} title={recent.path}>
-                <Icon name="branch" size={15} />
+                <Icon name="branch" size={16} />
                 <b>{recent.name}</b>
                 <span class="path mono">{recent.path}</span>
                 <span class="when">{ago(recent.at)}</span>
               </button>
               <button class="forget" type="button" aria-label="Retirer {recent.name} de la liste" title="Retirer de la liste" onclick={() => workspace.forget(recent.path)}>
-                <Icon name="x" size={13} />
+                <Icon name="x" size={14} />
               </button>
             </li>
           {/each}

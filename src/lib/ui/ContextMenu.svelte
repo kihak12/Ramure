@@ -63,7 +63,7 @@
         <hr />
       {:else}
         <button type="button" role="menuitem" class:danger={item.danger} disabled={item.disabled} title={item.hint} onclick={() => pick(item)}>
-          <span class="glyph">{#if item.icon}<Icon name={item.icon} size={15} />{/if}</span>
+          <span class="glyph">{#if item.icon}<Icon name={item.icon} size={16} />{/if}</span>
           <span class="text">{item.label}</span>
         </button>
       {/if}

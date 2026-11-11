@@ -33,7 +33,7 @@
 </script>
 
 <footer class="status">
-  <span class="branch mono">{#if repo.branch}<Icon name="branch" size={13} /> {repo.branch}{/if}</span>
+  <span class="branch mono">{#if repo.branch}<Icon name="branch" size={14} /> {repo.branch}{/if}</span>
   <button class="journal-btn mono" type="button" aria-expanded={showJournal} onclick={() => (showJournal = !showJournal)} disabled={!repo.journal.length}>
     {last ? `$ ${last.command}` : 'Journal des commandes'}
   </button>

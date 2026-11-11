@@ -202,9 +202,9 @@
     <div class="choose">
       {#if current}
         <div class="nav">
-          <button class="btn small" type="button" aria-label="Conflit précédent" disabled={blocks.length < 2} onclick={() => step(-1)}><Icon name="up" size={13} /></button>
+          <button class="btn small" type="button" aria-label="Conflit précédent" disabled={blocks.length < 2} onclick={() => step(-1)}><Icon name="up" size={14} /></button>
           <span class="count">Conflit <b>{Math.min(index, blocks.length - 1) + 1}</b> sur {blocks.length}</span>
-          <button class="btn small" type="button" aria-label="Conflit suivant" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={13} /></button>
+          <button class="btn small" type="button" aria-label="Conflit suivant" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
         </div>
         <button class="btn small take ours" type="button" onclick={() => take('ours')}>Prendre : {names.ours.toLowerCase()}</button>
         <button class="btn small take theirs" type="button" onclick={() => take('theirs')}>Prendre : {names.theirs.toLowerCase()}</button>
@@ -214,7 +214,7 @@
           <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l'ancêtre commun</label>
         {/if}
       {:else}
-        <span class="done"><Icon name="check" size={15} /> Tous les conflits sont résolus. Relis le résultat, corrige-le au besoin, puis enregistre.</span>
+        <span class="done"><Icon name="check" size={16} /> Tous les conflits sont résolus. Relis le résultat, corrige-le au besoin, puis enregistre.</span>
         {#if data.base !== null}
           <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l'ancêtre commun</label>
         {/if}

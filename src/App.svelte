@@ -81,10 +81,10 @@
 <div class="shell">
   <nav class="rail" aria-label="Modules">
     <button type="button" aria-pressed={shown === 'git'} title="Dépôts" aria-label="Dépôts" onclick={() => show('git')}>
-      <Icon name="branch" size={19} />
+      <Icon name="branch" size={18} />
     </button>
     <button type="button" aria-pressed={shown === 'ssh'} title="Terminal SSH" aria-label="Terminal SSH" onclick={() => show('ssh')}>
-      <Icon name="terminal" size={19} />
+      <Icon name="terminal" size={18} />
     </button>
     <button class="last" type="button" title="Palette de commandes{keys.binding('palette') ? ` (${display(keys.binding('palette'))})` : ''}" aria-label="Palette de commandes" onclick={openPalette}>
       <Icon name="search" size={18} />

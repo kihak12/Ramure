@@ -101,7 +101,7 @@
             </small>
             <small class="mono print">{key.fingerprint}</small>
           </div>
-          <button class="btn small" type="button" onclick={() => void copy(key)}><Icon name="copy" size={13} /> Copier la clé publique</button>
+          <button class="btn small" type="button" onclick={() => void copy(key)}><Icon name="copy" size={14} /> Copier la clé publique</button>
         </div>
       {:else}
         <p class="none">Aucune clé dans ~/.ssh. Génère-en une pour te connecter sans mot de passe.</p>

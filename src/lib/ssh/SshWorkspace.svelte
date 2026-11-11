@@ -66,7 +66,7 @@
   <aside class="book" aria-label="Carnet d'hôtes">
     <header>
       <span class="label">Hôtes · {ssh.hosts.length}</span>
-      <button class="btn small primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={13} /> Nouvel hôte</button>
+      <button class="btn small primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Nouvel hôte</button>
     </header>
     <label class="search">
       <Icon name="search" size={14} />
@@ -123,9 +123,9 @@
 
     <footer>
       <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Ajoute au carnet les hôtes de ~/.ssh/config qui n'y sont pas encore">
-        <Icon name="pull" size={13} /> Importer ~/.ssh/config
+        <Icon name="pull" size={14} /> Importer ~/.ssh/config
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="tag" size={13} /> Clés</button>
+      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="tag" size={14} /> Clés</button>
     </footer>
   </aside>
 
@@ -149,7 +149,7 @@
               <span class="name">{session.title}</span>
             </button>
             <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => ssh.close(session.key)}>
-              <Icon name="x" size={12} />
+              <Icon name="x" size={14} />
             </button>
           </div>
         {/each}
@@ -432,9 +432,9 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 20px;
-    height: 20px;
-    margin-right: 5px;
+    width: 24px;
+    height: 24px;
+    margin-right: 4px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;
