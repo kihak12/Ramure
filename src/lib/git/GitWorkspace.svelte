@@ -31,13 +31,13 @@
           {#if tab.repo.locked}
             <span class="spinner" aria-label="Opération en cours"></span>
           {:else if tab.repo.status?.operation}
-            <span class="alert" title="Une opération attend d'être terminée"><Icon name="warning" size={14} /></span>
+            <span class="alert" title="Une opération attend d’être terminée"><Icon name="warning" size={14} /></span>
           {:else}
             <Icon name={tab.repo.path ? 'branch' : 'plus'} size={14} />
           {/if}
           <span class="name">{workspace.title(tab)}</span>
         </button>
-        <button class="close" type="button" aria-label="Fermer l'onglet {workspace.title(tab)}" title="Fermer l'onglet" onclick={() => workspace.closeTab(tab.id)}>
+        <button class="close" type="button" aria-label="Fermer l’onglet {workspace.title(tab)}" title="Fermer l’onglet" onclick={() => workspace.closeTab(tab.id)}>
           <Icon name="x" size={14} />
         </button>
       </div>

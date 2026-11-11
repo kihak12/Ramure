@@ -22,7 +22,7 @@
     if (!repo.settings.autoFetch) return 'Récupération auto désactivée';
     if (!repo.lastFetch) return `Récupération auto toutes les ${repo.settings.autoFetch} min`;
     const minutes = Math.floor((now - repo.lastFetch.at) / 60_000);
-    const when = minutes < 1 ? "à l'instant" : `il y a ${minutes} min`;
+    const when = minutes < 1 ? 'à l’instant' : `il y a ${minutes} min`;
     return repo.lastFetch.ok ? `Dernière récupération ${when}` : `Dernière récupération en échec, ${when}`;
   });
 
@@ -34,7 +34,7 @@
 
 <footer class="status">
   <span class="branch mono">{#if repo.branch}<Icon name="branch" size={14} /> {repo.branch}{/if}</span>
-  <button class="journal-btn mono" type="button" aria-expanded={showJournal} onclick={() => (showJournal = !showJournal)} disabled={!repo.journal.length}>
+  <button class="journal-btn" type="button" aria-expanded={showJournal} onclick={() => (showJournal = !showJournal)} disabled={!repo.journal.length}>
     {last ? `$ ${last.command}` : 'Journal des commandes'}
   </button>
   <div class="stats" aria-live="polite">
@@ -47,7 +47,7 @@
       <span>Chargement…</span>
     {:else if result}
       <span><b>{numFmt.format(count)}</b> commit{count > 1 ? 's' : ''}{result.truncated ? ' (tronqué)' : ''}</span>
-      <span title="Durée de git log, calcul des lanes, puis temps total jusqu'à l'affichage">
+      <span title="Durée de git log, calcul des lanes, puis temps total jusqu’à l’affichage">
         git {ms(result.timings.gitMs)} · lanes {ms(result.timings.layoutMs)} · affiché en <b>{ms(repo.perf.paint)}</b>
       </span>
       {#if repo.frames}
@@ -60,7 +60,7 @@
 
   {#if showJournal}
     <div class="journal" transition:fly={{ y: 10, duration: motion.med }}>
-      <span class="label">Journal des commandes · les plus récentes d'abord</span>
+      <span class="label">Journal des commandes · les plus récentes d’abord</span>
       {#each [...repo.journal].reverse() as entry, i (i)}
         <div class="entry mono" class:failed={!entry.ok}>
           <span>{ms(entry.ms)}</span><span>$ {entry.command}</span>
@@ -96,6 +96,7 @@
     background: none;
     color: var(--muted);
     cursor: pointer;
+    min-height: 24px;
     padding: 2px 6px;
     border-radius: var(--radius-s);
     font-size: var(--fs-small);
@@ -108,6 +109,10 @@
   .journal-btn:hover:not(:disabled) {
     background: var(--hover);
     color: var(--ink);
+  }
+  .journal-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
   .stats {
     margin-left: auto;

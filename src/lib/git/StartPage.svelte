@@ -89,7 +89,7 @@
   @keyframes rise {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(10px);
     }
   }
   header {
@@ -149,17 +149,17 @@
     cursor: pointer;
     text-align: left;
     transition:
-      transform var(--t-med) var(--ease),
-      border-color var(--t-fast) var(--ease),
-      box-shadow var(--t-med) var(--ease);
+      transform var(--t-fast) var(--ease),
+      background var(--t-fast) var(--ease),
+      border-color var(--t-fast) var(--ease);
   }
+  /* Un bouton : au survol, le fond --hover et une bordure plus marquée ; il ne flotte pas (section 9.1). */
   .action:hover {
-    transform: translateY(-2px);
-    border-color: var(--accent);
-    box-shadow: var(--shadow-pop);
+    background: var(--hover);
+    border-color: color-mix(in srgb, var(--muted) 45%, var(--line));
   }
   .action:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
   .glyph {
     flex: none;
@@ -236,7 +236,7 @@
   }
   .when {
     flex: none;
-    color: var(--faint);
+    color: var(--muted);
     font-size: var(--fs-small);
   }
   .forget {

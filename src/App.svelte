@@ -170,7 +170,7 @@
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
     background: var(--accent);
     transform: scaleY(0);
-    transition: transform var(--t-med) var(--ease);
+    transition: transform var(--t-slow) var(--ease);
   }
   .rail button[aria-pressed='true']::before {
     transform: scaleY(1);

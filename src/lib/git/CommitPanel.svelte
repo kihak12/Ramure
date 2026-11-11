@@ -44,7 +44,7 @@
   <dt>Date</dt>
   <dd>{fullDateFmt.format(commit.time * 1000)}</dd>
   <dt>Parent{commit.parents.length > 1 ? 's' : ''}</dt>
-  <dd class="mono">{commit.parents.length ? commit.parents.map((p) => p.slice(0, 7)).join(', ') : 'aucun (premier commit)'}</dd>
+  <dd>{#if commit.parents.length}<span class="mono parents">{commit.parents.map((p) => p.slice(0, 7)).join(', ')}</span>{:else}aucun (premier commit){/if}</dd>
   {#if repo.hasRemote}
     <dt>Emplacement</dt>
     <dd>{commit.localOnly ? 'Local uniquement, pas encore poussé' : 'Présent sur le dépôt distant'}</dd>
@@ -56,7 +56,7 @@
 </dl>
 
 {#if repo.detailError}
-  <p class="err">{repo.detailError}</p>
+  <p class="err" role="alert">{repo.detailError}</p>
 {:else if detail}
   <span class="label">
     Fichiers modifiés · {detail.files.length}{commit.parents.length > 1 ? ' (par rapport au premier parent)' : ''}
@@ -147,7 +147,7 @@
     color: var(--ink);
   }
   .copy:active {
-    transform: scale(0.9);
+    transform: scale(0.97);
   }
   .files {
     width: calc(100% + 12px);
@@ -184,5 +184,8 @@
     to {
       background-position: -200% 0;
     }
+  }
+  .parents {
+    font-size: var(--fs-code);
   }
 </style>

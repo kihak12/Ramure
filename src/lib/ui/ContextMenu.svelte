@@ -112,7 +112,7 @@
     outline: none;
   }
   button:disabled {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
   }
   button.danger {

@@ -87,7 +87,7 @@
   {#if commands}
     <div class="box">
       <label class="search">
-        <Icon name="search" size={17} />
+        <Icon name="search" size={16} />
         <!-- svelte-ignore a11y_autofocus -->
         <input
           type="text"
@@ -161,7 +161,7 @@
   @keyframes drop {
     from {
       opacity: 0;
-      transform: translateY(-12px) scale(0.98);
+      transform: translateY(-10px) scale(0.98);
     }
   }
   dialog::backdrop {
@@ -222,14 +222,12 @@
     border-radius: var(--radius);
     cursor: pointer;
   }
+  /* Les résultats sont des lignes (section 9.6) : la ligne active est sélectionnée, en --sel. */
   .item[aria-selected='true'] {
-    background: var(--accent-soft);
-  }
-  .item[aria-selected='true'] .glyph {
-    color: var(--accent);
+    background: var(--sel);
   }
   .item.disabled {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
   }
   .glyph {
