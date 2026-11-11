@@ -172,7 +172,8 @@
   type Test =
     | { step: 'idle' }
     | { step: 'running' }
-    | { step: 'ok'; method: string; ms: number }
+    /** `learnFailed` : l'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit. */
+    | { step: 'ok'; method: string; ms: number; learnFailed: string | null }
     | { step: 'fail'; message: string }
     | { step: 'hostKey'; fingerprint: string; algorithm: string }
     | { step: 'secret'; kind: 'passphrase' | 'password'; path: string; error: string };
@@ -245,7 +246,7 @@
     const mine = ++run;
     test = { step: 'running' };
     try {
-      const done = await invoke<{ knownHost: boolean; authMethod: string; connectMs: number }>('ssh_test', {
+      const done = await invoke<{ knownHost: boolean; learnFailed?: string | null; authMethod: string; connectMs: number }>('ssh_test', {
         params: {
           host: host.hostname.trim(),
           port: host.port || 22,
@@ -257,7 +258,7 @@
       });
       if (mine !== run) return;
       attempt = {};
-      test = { step: 'ok', method: done.authMethod, ms: done.connectMs };
+      test = { step: 'ok', method: done.authMethod, ms: done.connectMs, learnFailed: done.learnFailed ?? null };
     } catch (e) {
       if (mine !== run) return;
       const problem: SshError = e && typeof e === 'object' && 'kind' in e ? (e as SshError) : { kind: 'other', message: String(e) };
@@ -476,6 +477,13 @@
           <Icon name="check" size={14} />
           <span><b>Connexion réussie</b> <span class="how">{test.method}, en {Math.round(test.ms)}{NB}ms</span></span>
         </p>
+        {#if test.learnFailed}
+          <!-- Le serveur a été accepté pour ce test, mais pas inscrit dans known_hosts (charte, 9.21). -->
+          <p class="test warn" role="status">
+            <Icon name="warning" size={14} />
+            <span><b>L’empreinte n’a pas pu être mémorisée</b> <span class="how mono">{test.learnFailed}</span></span>
+          </p>
+        {/if}
       {:else if test.step === 'fail'}
         <p class="test bad" role="alert"><Icon name="warning" size={14} /> <span>{test.message}</span></p>
       {:else if test.step === 'hostKey'}
@@ -750,8 +758,11 @@
   .test.ok {
     color: var(--ok);
   }
-  .test.ok .how {
+  .test .how {
     color: var(--muted);
+  }
+  .test.warn {
+    color: var(--warn);
   }
   .test.bad {
     color: var(--bad);

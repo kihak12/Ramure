@@ -6,6 +6,7 @@
 
 pub mod config;
 pub mod keyfiles;
+pub mod known_hosts;
 pub mod secrets;
 pub mod store;
 
@@ -22,6 +23,8 @@ use serde::{Deserialize, Serialize};
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::mpsc;
+
+use known_hosts::Known;
 
 /// Clés essayées en mode automatique, dans l'ordre d'OpenSSH.
 const DEFAULT_KEYS: [&str; 3] = ["id_ed25519", "id_ecdsa", "id_rsa"];
@@ -87,6 +90,8 @@ pub struct TestParams {
 #[serde(rename_all = "camelCase")]
 pub struct Tested {
     known_host: bool,
+    /// L'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit : pourquoi.
+    learn_failed: Option<String>,
     auth_method: String,
     connect_ms: f64,
 }
@@ -126,6 +131,8 @@ pub struct Connected {
     fingerprint: String,
     /// Faux si l'empreinte a été acceptée pour cette session seulement.
     known_host: bool,
+    /// L'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit : pourquoi.
+    learn_failed: Option<String>,
     auth_method: String,
     connect_ms: f64,
     /// Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit, sans le secret.
@@ -163,7 +170,8 @@ pub struct Defaults {
 
 enum HostVerdict {
     Trusted(String),
-    AcceptedOnce(String),
+    /// Acceptée pour cette session. `learn_failed` : elle devait être mémorisée, et ne l'a pas été.
+    AcceptedOnce { fingerprint: String, learn_failed: Option<String> },
     Unknown { fingerprint: String, algorithm: String },
     Changed { fingerprint: String, line: usize },
 }
@@ -187,23 +195,21 @@ impl client::Handler for ClientHandler {
         let fingerprint = key.fingerprint(HashAlg::Sha256).to_string();
         let algorithm = key.algorithm().as_str().to_string();
 
-        let verdict = match keys::check_known_hosts(&self.host, self.port, &key) {
-            Ok(true) => HostVerdict::Trusted(fingerprint),
-            Err(keys::Error::KeyChanged { line }) => HostVerdict::Changed { fingerprint, line },
-            // Hôte inconnu, ou `known_hosts` absent ou illisible.
-            Ok(false) | Err(_) => {
-                if self.accepted.as_deref() == Some(fingerprint.as_str()) {
-                    // L'utilisateur fait confiance à ce serveur : on l'inscrit dans known_hosts,
-                    // comme le fait OpenSSH. Si l'écriture échoue, la confiance vaut pour la session.
-                    let learned = self.remember
-                        && keys::known_hosts::learn_known_hosts(&self.host, self.port, &key).is_ok();
-                    if learned { HostVerdict::Trusted(fingerprint) } else { HostVerdict::AcceptedOnce(fingerprint) }
-                } else {
-                    HostVerdict::Unknown { fingerprint, algorithm }
+        let verdict = match known_hosts::check(&self.host, self.port, &key) {
+            Known::Trusted => HostVerdict::Trusted(fingerprint),
+            Known::Changed { line } => HostVerdict::Changed { fingerprint, line },
+            Known::Unknown if self.accepted.as_deref() == Some(fingerprint.as_str()) => {
+                // L'utilisateur fait confiance à ce serveur : on l'inscrit dans known_hosts,
+                // comme le fait OpenSSH. Si l'écriture échoue, la confiance vaut pour la session.
+                match self.remember.then(|| known_hosts::learn(&self.host, self.port, &key)) {
+                    Some(Ok(())) => HostVerdict::Trusted(fingerprint),
+                    Some(Err(reason)) => HostVerdict::AcceptedOnce { fingerprint, learn_failed: Some(reason) },
+                    None => HostVerdict::AcceptedOnce { fingerprint, learn_failed: None },
                 }
             }
+            Known::Unknown => HostVerdict::Unknown { fingerprint, algorithm },
         };
-        let trusted = matches!(verdict, HostVerdict::Trusted(_) | HostVerdict::AcceptedOnce(_));
+        let trusted = matches!(verdict, HostVerdict::Trusted(_) | HostVerdict::AcceptedOnce { .. });
         if let Ok(mut slot) = self.verdict.lock() {
             *slot = Some(verdict);
         }
@@ -493,6 +499,7 @@ struct Opened {
     handle: Handle<ClientHandler>,
     fingerprint: String,
     known_host: bool,
+    learn_failed: Option<String>,
     auth_method: String,
     /// Le secret tapé qui a servi, et le nom sous lequel le retenir si on le demande.
     typed: Option<(String, String)>,
@@ -508,6 +515,7 @@ async fn open_authenticated(
     accept_fingerprint: Option<String>,
     remember_host: bool,
 ) -> Result<Opened, SshError> {
+    let host = host.trim();
     // Le mot de passe est trouvé avant de se connecter : sans lui, inutile de déranger le serveur.
     let password_account = secrets::password_account(user, host, port);
     let password = match auth {
@@ -555,15 +563,15 @@ async fn open_authenticated(
         }
         Ok(Ok(handle)) => handle,
     };
-    let (fingerprint, known_host) = match seen {
-        Some(HostVerdict::Trusted(fingerprint)) => (fingerprint, true),
-        Some(HostVerdict::AcceptedOnce(fingerprint)) => (fingerprint, false),
-        _ => (String::new(), false),
+    let (fingerprint, known_host, learn_failed) = match seen {
+        Some(HostVerdict::Trusted(fingerprint)) => (fingerprint, true, None),
+        Some(HostVerdict::AcceptedOnce { fingerprint, learn_failed }) => (fingerprint, false, learn_failed),
+        _ => (String::new(), false, None),
     };
 
     match authenticate(&mut handle, user, auth, password, password_account).await {
         Ok(Authenticated { method, typed }) => {
-            Ok(Opened { handle, fingerprint, known_host, auth_method: method, typed })
+            Ok(Opened { handle, fingerprint, known_host, learn_failed, auth_method: method, typed })
         }
         Err(e) => {
             let _ = handle.disconnect(Disconnect::ByApplication, "", "fr").await;
@@ -590,6 +598,7 @@ pub async fn ssh_test(params: TestParams) -> Result<Tested, SshError> {
     let _ = opened.handle.disconnect(Disconnect::ByApplication, "", "fr").await;
     Ok(Tested {
         known_host: opened.known_host,
+        learn_failed: opened.learn_failed,
         auth_method: opened.auth_method,
         connect_ms: started.elapsed().as_secs_f64() * 1000.0,
     })
@@ -603,7 +612,7 @@ pub async fn ssh_connect(
     on_data: Channel,
 ) -> Result<Connected, SshError> {
     let started = Instant::now();
-    let Opened { handle, fingerprint, known_host, auth_method, typed } = open_authenticated(
+    let Opened { handle, fingerprint, known_host, learn_failed, auth_method, typed } = open_authenticated(
         &params.host,
         params.port,
         &params.user,
@@ -651,6 +660,7 @@ pub async fn ssh_connect(
         id,
         fingerprint,
         known_host,
+        learn_failed,
         auth_method,
         connect_ms: started.elapsed().as_secs_f64() * 1000.0,
         keep_failed,

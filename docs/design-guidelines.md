@@ -866,6 +866,15 @@ password).
   says "reconnexion…" during a try.
 - A connection that fails says why in French when the reason is known, as below.
 
+**An unknown server.** A server that is not in `known_hosts` stops the connection: a panel over
+the terminal, "Serveur inconnu", shows its fingerprint in the code font, with "Faire confiance et
+mémoriser", "Faire confiance cette fois" and "Annuler". Remembering it adds one line at the end
+of `known_hosts`, as OpenSSH does, and only if the key is not there yet. If the file cannot be
+written, the session opens all the same: its header says "empreinte acceptée pour cette session",
+and a warning notification says "L’empreinte n’a pas pu être mémorisée" and why; the test of the
+host form says it in its result line instead (9.21). A fingerprint that has changed blocks the
+connection, and names the line of `known_hosts` to look at.
+
 **Secrets.** A password or the passphrase of a key is asked for by a panel over the terminal: its
 title says what is asked ("Mot de passe de deploy", "Phrase secrète de la clé"), a line in
 `--muted` says for what, and the field is a password field, which takes the keyboard when the
@@ -1173,6 +1182,10 @@ need the room.
   is where the user looks.
   - Success: the check icon and "Connexion réussie", in `--ok`, then how it authenticated, in
     `--muted` ("clé id_ed25519", "agent SSH", "mot de passe") and how long it took.
+  - Success with a fingerprint that could not be remembered ("Faire confiance et mémoriser", and
+    `known_hosts` cannot be written): under the success, a second line, the warning icon and
+    "L’empreinte n’a pas pu être mémorisée" in `--warn`, then why, in the code font and `--muted`.
+    It is announced with the success.
   - Failure: the warning icon and the reason in `--bad`, in French when it is known (the server
     refuses, does not answer, cannot be reached, the key or the password is refused), as in
     9.15.

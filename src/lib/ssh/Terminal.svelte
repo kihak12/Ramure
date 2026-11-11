@@ -400,6 +400,7 @@
       session.status = 'connected';
       // Les secrets ne survivent pas à l'ouverture de la session.
       attempt = {};
+      if (connected.learnFailed) toasts.warn('L’empreinte n’a pas pu être mémorisée', connected.learnFailed);
       if (connected.keepFailed) toasts.warn('Le secret n’a pas pu être retenu', `Le trousseau du système l’a refusé${NB}: ${connected.keepFailed}`);
       retry = 0;
       term.focus();
