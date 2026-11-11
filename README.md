@@ -131,6 +131,9 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   machine (PowerShell on Windows, your `SHELL` on Ubuntu) in your home folder.
 - **Automatic reconnection** of a lost connection, five tries, and **search** in a terminal
   (Ctrl + Shift + F).
+- **Terminal colours** that follow the theme: the sixteen colours a program asks for (`ls`,
+  `git`, a coloured prompt) are those of the colour theme, in light and in dark, and each one reads
+  on the terminal background.
 - **Fingerprints**: on the first connection, the server's fingerprint is shown; accepting it
   writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
 - **Keys**: the list of keys in `~/.ssh`, generation of an ed25519 key with an optional
@@ -156,8 +159,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Not there yet
 
-- From milestone J3: secrets in the system keyring, a session log, terminal colour themes,
-  export to `~/.ssh/config`, import of an existing key.
+- From milestone J3: secrets in the system keyring, a session log, export to `~/.ssh/config`,
+  import of an existing key.
 - Milestone J4: SFTP, tunnels, installers and updates.
 - The interface exists in French only.
 

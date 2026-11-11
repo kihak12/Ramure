@@ -430,6 +430,9 @@
   onMount(() => {
     const css = getComputedStyle(document.documentElement);
     const v = (name: string) => css.getPropertyValue(name).trim();
+    // Les 16 couleurs ANSI, dans l'ordre de xterm.js : 0 à 7, puis leurs versions vives (charte, 2.6).
+    const ANSI = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'] as const;
+    const bright = (name: string) => `bright${name[0].toUpperCase()}${name.slice(1)}`;
     const theme = () => ({
       background: v('--term-bg'),
       foreground: v('--term-ink'),
@@ -437,6 +440,7 @@
       selectionBackground: v('--sel'),
       // La marge des résultats de recherche, sans trait sur son bord.
       overviewRulerBorder: v('--term-bg'),
+      ...Object.fromEntries(ANSI.flatMap((name, i) => [[name, v(`--ansi-${i}`)], [bright(name), v(`--ansi-${i + 8}`)]])),
     });
 
     const terminal = new Terminal({
@@ -449,6 +453,10 @@
       cursorBlink: true,
       scrollback: 5000,
       theme: theme(),
+      // Filet de sécurité : un texte d'une couleur choisie par le programme (256 couleurs, couleurs
+      // vraies, ou le noir et le blanc qui servent de fonds) est éclairci ou foncé jusqu'à 4,5:1 sur
+      // le fond de sa cellule.
+      minimumContrastRatio: 4.5,
     });
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);

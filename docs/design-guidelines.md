@@ -163,13 +163,14 @@ Every theme must meet them, in light and in dark.
 | `--ok`, `--warn`, `--bad` on `--panel` and `--bg` | 4.5:1 |
 | `--accent` and each branch colour on `--panel` | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
+| Each terminal colour (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
 ### 2.5 Colour themes
 
 - Light or dark is a setting: "Système" (the default) follows the system, "Clair" and "Sombre"
   hold one whatever the system says. The choice applies at once, to the whole window.
-- A colour theme redefines the tokens of sections 2.1 and 2.2, in light and in dark, and nothing
-  else: no shape, no font, no size, no shadow. It does not change the colours of the logo either
+- A colour theme redefines the tokens of sections 2.1, 2.2 and 2.6, in light and in dark, and
+  nothing else: no shape, no font, no size, no shadow. It does not change the colours of the logo either
   (section 13).
 - Four themes: Ardoise (the default), Encre, Sous-bois and Braise. They are chosen under
   "Couleurs" in the settings, and the choice applies at once. Their values are in `src/app.css`,
@@ -182,6 +183,48 @@ Every theme must meet them, in light and in dark.
 - Worth knowing: in Sous-bois the accent is also the colour of success, and in Braise it is close
   to the warning colour. It is an exception to section 2.3, accepted for these two optional
   themes and said in the help text of their tile. Ardoise, the default, has neither flaw.
+
+### 2.6 Terminal colours
+
+Sixteen colours draw what a program asks for in a terminal: the eight ANSI colours (codes 30 to
+37) and their bright versions (90 to 97), in text and in background. They are tokens like the
+others, so they follow light and dark and the colour theme. The values below are those of
+Ardoise.
+
+| Token | Colour | Code | Light | Dark |
+|---|---|---|---|---|
+| `--ansi-0` | Black | 30 | `#1c1f27` | `#272a31` |
+| `--ansi-1` | Red | 31 | `#b6251a` | `#e66c62` |
+| `--ansi-2` | Green | 32 | `#096d39` | `#38a46f` |
+| `--ansi-3` | Yellow | 33 | `#895203` | `#c7831f` |
+| `--ansi-4` | Blue | 34 | `#1359c4` | `#5893e4` |
+| `--ansi-5` | Magenta | 35 | `#7b3ebd` | `#ab7ddc` |
+| `--ansi-6` | Cyan | 36 | `#036972` | `#09a1a8` |
+| `--ansi-7` | White | 37 | `#d6dae5` | `#d5dae3` |
+| `--ansi-8` | Bright black | 90 | `#4f525c` | `#7a7e87` |
+| `--ansi-9` | Bright red | 91 | `#d33023` | `#fe9a8f` |
+| `--ansi-10` | Bright green | 92 | `#138046` | `#53ca8e` |
+| `--ansi-11` | Bright yellow | 93 | `#a06105` | `#f3a53b` |
+| `--ansi-12` | Bright blue | 94 | `#1c6ae2` | `#85b7ff` |
+| `--ansi-13` | Bright magenta | 95 | `#904bdb` | `#cea2fe` |
+| `--ansi-14` | Bright cyan | 96 | `#077b85` | `#24c8d1` |
+| `--ansi-15` | Bright white | 97 | `#6c6f79` | `#edf0f4` |
+
+- **Every one is read on `--term-bg`**, at 4.5:1 at least, with two exceptions, which are
+  backgrounds: black in dark and white in light, a shade of the terminal background. Text in
+  those two colours stays readable all the same: see the safety net below.
+- **Black and white swap their roles with the background.** In dark, the order from the background
+  outwards is black, bright black, white, bright white. In light it is reversed: white, bright
+  white, bright black, black. Bright black is the grey that programs use for what is secondary
+  (a hint, a comment), so it reads in both.
+- **The bright version** stands further from the background in dark, and closer in light, while
+  still reading at 4.5:1.
+- **The hues come from the theme**: red is the hue of `--bad`, green that of `--ok`, yellow that
+  of `--warn`; blue, magenta and cyan those of the branch colours (2.2) that come nearest. The
+  greys take the hue of `--term-ink`.
+- **The safety net.** A text in any other colour (256 colours, true colours) is lightened or
+  darkened by the terminal until it reaches 4.5:1 on the background of its cell, and so is a text
+  in black on the dark background or in white on the light one.
 
 ## 3. Typography
 
@@ -662,6 +705,8 @@ Sidebar, file lists, graph, palette results.
 ### 9.15 Terminal
 
 - `--term-bg` background, `--term-ink` text, code font at 13 px.
+- The colours a program asks for are those of section 2.6: they change with light and dark and
+  with the colour theme, at once, in the open terminals too.
 - Terminal tabs follow the rule for tabs (9.7).
 
 **A local terminal.** The shell of the user on their own machine (PowerShell on Windows, the

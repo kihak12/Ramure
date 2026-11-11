@@ -47,7 +47,9 @@ const MATCH = 0.3; // résultat d'une recherche dans le terminal : l'accent sur 
 
 const findings = [];
 
-function check(name, t) {
+/** `dark` : le thème est sombre. Les couleurs ANSI s'y lisent toutes, sauf le noir en sombre et le
+ *  blanc en clair : ce sont des fonds (charte, section 2.6). */
+function check(name, t, dark) {
   const need = (what, value, minimum) => {
     if (value < minimum) findings.push(`${name} : ${what} à ${value.toFixed(2)}:1, il faut ${minimum}:1`);
   };
@@ -59,6 +61,15 @@ function check(name, t) {
   }
   need('--accent sur --panel', contrast(t['--accent'], t['--panel']), 3);
   need('--term-ink sur --term-bg', contrast(t['--term-ink'], t['--term-bg']), 7);
+  for (let i = 0; i < 16; i++) {
+    const token = `--ansi-${i}`;
+    if (!t[token]) {
+      findings.push(`${name} : ${token} manque`);
+      continue;
+    }
+    if (i === (dark ? 0 : 7)) continue;
+    need(`${token} sur --term-bg`, contrast(t[token], t['--term-bg']), 4.5);
+  }
   need('--term-ink sur un résultat de recherche', contrast(t['--term-ink'], mix(t['--accent'], MATCH, t['--term-bg'])), 7);
   for (const fill of ['--accent', '--bad']) {
     need(`--on-accent sur ${fill}`, contrast(t['--on-accent'], t[fill]), 4.5);
@@ -87,8 +98,8 @@ for (const palette of PALETTES) {
   const normal = (body) => body.split(';').map((d) => d.trim()).filter(Boolean).join(';');
   if (normal(system) !== normal(chosen)) findings.push(`${palette} : les deux blocs du sombre ne donnent pas les mêmes valeurs`);
   const day = colours(light);
-  check(`${palette}, clair`, day);
-  check(`${palette}, sombre`, { ...day, ...colours(chosen) });
+  check(`${palette}, clair`, day, false);
+  check(`${palette}, sombre`, { ...day, ...colours(chosen) }, true);
 }
 
 if (findings.length > 0) {
