@@ -884,7 +884,17 @@ need the room.
     and "Cette fois seulement", as when a session connects (9.15); a fingerprint that has
     changed blocks the test, as it blocks a connection;
   - a protected key or a password: a password field and "Tester", Enter tests. The secret is
-    forgotten after the test, whatever its result; a password is never stored.
+    forgotten after the test, whatever its result; a password is never stored. A secret that is
+    refused asks again, with the field in its error state (9.3): `--bad` border, the message
+    under it.
+  - The question sits in a box on `--bg`, 6 px corners, 10 px and 12 px of inner margins. Its
+    sentence says what is asked and stands for the label of the field, whose accessible name
+    repeats it.
+- **The keyboard.** The field of a secret takes the focus when it appears. When the test ends
+  and the focus has nowhere to be (the button clicked is gone, or "Tester la connexion" was
+  disabled while the test ran), it goes back to "Tester la connexion".
+- **A low window.** The dialog never leaves the screen: past the height of the window, it
+  scrolls.
 - **A host behind a bastion** (ProxyJump) cannot be tested yet: the button is disabled, and the
   warning of the form already says why.
 

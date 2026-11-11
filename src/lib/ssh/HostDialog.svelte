@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { homeDir, join } from '@tauri-apps/api/path';
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
   import { toasts } from '../ui/toasts.svelte';
@@ -67,7 +67,7 @@
     try {
       picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: folder });
     } catch (e) {
-      toasts.err("La fenêtre de fichiers n'a pas pu s'ouvrir", e instanceof Error ? e.message : String(e));
+      toasts.err('La fenêtre de fichiers n’a pas pu s’ouvrir', e instanceof Error ? e.message : String(e));
       return;
     }
     // Fenêtre annulée, ou fiche fermée entre-temps : le champ ne change pas.
@@ -108,6 +108,15 @@
   // Chaque test porte un numéro : le résultat d'un test abandonné (fiche fermée, champ changé) est ignoré.
   let run = 0;
   let secretEl = $state<HTMLInputElement>();
+  let testButton = $state<HTMLButtonElement>();
+
+  // Le bouton cliqué a disparu (une question), ou s'est désactivé pendant le test : une fois le
+  // résultat affiché, le clavier revient sur « Tester la connexion » plutôt que de se perdre.
+  $effect(() => {
+    if (test.step !== 'ok' && test.step !== 'fail') return;
+    const lost = !document.activeElement || document.activeElement === document.body || document.activeElement === element;
+    if (lost) void tick().then(() => testButton?.focus());
+  });
 
   /** Oublie le test : son résultat, ses secrets, et celui qui serait encore en cours. */
   function forget() {
@@ -138,7 +147,7 @@
     secret = '';
     const user = host.user || ssh.defaultUser;
     if (!user) {
-      test = { step: 'fail', message: `Indique un utilisateur${NB}: le compte de cette machine n'a pas pu être lu.` };
+      test = { step: 'fail', message: `Indique un utilisateur${NB}: le compte de cette machine n’a pas pu être lu.` };
       return;
     }
     // Un mot de passe n'est jamais enregistré : il est demandé à chaque test, comme à chaque connexion.
@@ -192,7 +201,7 @@
         step: 'fail',
         message:
           problem.kind === 'hostKeyChanged'
-            ? `L'empreinte du serveur ne correspond plus à celle de la ligne ${problem.line} de known_hosts${NB}: le test est bloqué, comme une connexion.`
+            ? `L’empreinte du serveur ne correspond plus à celle de la ligne ${problem.line} de known_hosts${NB}: le test est bloqué, comme une connexion.`
             : explain(problem.message),
       };
     }
@@ -221,12 +230,12 @@
         void save(false);
       }}
     >
-      <h2>{form.id ? `Modifier ${editing?.alias ?? "l'hôte"}` : 'Nouvel hôte'}</h2>
+      <h2>{form.id ? `Modifier ${editing?.alias ?? 'l’hôte'}` : 'Nouvel hôte'}</h2>
 
       {#if form.proxyJump}
         <p class="warning">
           <Icon name="warning" />
-          <span>Cet hôte passe par un bastion (ProxyJump). Il est dans le carnet, mais le rebond par bastion n'est pas encore pris en charge.</span>
+          <span>Cet hôte passe par un bastion (ProxyJump). Il est dans le carnet, mais le rebond par bastion n’est pas encore pris en charge.</span>
         </p>
       {/if}
 
@@ -319,6 +328,7 @@
       <!-- Le test, seul sur sa ligne sous les champs ; son résultat juste dessous (charte, section 9.21). -->
       <div class="testing">
         <button
+          bind:this={testButton}
           class="btn"
           type="button"
           disabled={!testable}
@@ -342,7 +352,7 @@
       {:else if test.step === 'hostKey'}
         <div class="test ask" role="group" aria-label="Serveur inconnu">
           <p>
-            <b class="mono">{form.hostname}</b> n’est pas dans <code>known_hosts</code>. Vérifie que cette empreinte {test.algorithm} est
+            <b class="mono">{form.hostname}</b> n’est pas dans <span class="mono">known_hosts</span>. Vérifie que cette empreinte {test.algorithm} est
             bien celle du serveur avant de lui faire confiance{NB}:
           </p>
           <p class="print mono">{test.fingerprint}</p>
@@ -361,11 +371,13 @@
             {#if test.kind === 'passphrase'}La clé <span class="mono">{test.path}</span> est protégée{NB}: sa phrase secrète est demandée pour le test, puis oubliée.
             {:else}Le mot de passe est demandé pour le test, puis oublié{NB}: il n’est jamais enregistré.{/if}
           </p>
-          {#if test.error}<p class="err" role="alert">{test.error}</p>{/if}
           <div class="row">
             <input
               bind:this={secretEl}
               class="field"
+              class:invalid={!!test.error}
+              aria-invalid={test.error ? 'true' : undefined}
+              aria-describedby={test.error ? 'host-secret-error' : undefined}
               type="password"
               autocomplete="off"
               aria-label={test.kind === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'}
@@ -380,6 +392,7 @@
             />
             <button class="btn small" type="button" disabled={!secret} onclick={submitSecret}>Tester</button>
           </div>
+          {#if test.error}<p class="err" id="host-secret-error" role="alert">{test.error}</p>{/if}
         </div>
       {/if}
 
@@ -395,6 +408,9 @@
 <style>
   dialog {
     width: min(600px, calc(100vw - 48px));
+    /* Dans une fenêtre basse (1000 × 600), la fiche défile plutôt que de sortir de l'écran. */
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
     padding: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
@@ -413,8 +429,8 @@
   form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 18px 20px 16px;
+    gap: 12px;
+    padding: 16px 20px;
   }
   h2 {
     margin: 0;
@@ -423,7 +439,7 @@
   }
   .warning {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
     padding: 8px 10px;
     border-radius: var(--radius-s);
@@ -436,14 +452,14 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 10px 12px;
+    gap: 12px;
   }
   .grid label,
   .key,
   fieldset {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
     min-width: 0;
   }
   /* Le champ de la clé et son bouton « Parcourir… » côte à côte. */
@@ -512,6 +528,11 @@
       0 0 0 2px var(--raised),
       0 0 0 4px var(--c, var(--muted));
   }
+  /* Une pastille prise au clavier montre l'anneau de focus : son bouton radio, lui, est invisible. */
+  .swatch:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
   .swatch input {
     position: absolute;
     opacity: 0;
@@ -524,12 +545,12 @@
     overflow: hidden;
     clip-path: inset(50%);
   }
-  /* Les boutons du bas se tiennent un peu à l'écart du test et de son résultat : 24 px au lieu de 14. */
+  /* Les boutons du bas se tiennent un peu à l'écart du test et de son résultat : 24 px au lieu de 12. */
   footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 10px;
+    margin-top: 12px;
   }
   .testing {
     display: flex;
@@ -542,13 +563,13 @@
   .test {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
     font-size: var(--fs-small);
   }
   .test :global(svg) {
     flex: none;
-    margin-top: 1px;
+    margin-top: 2px;
   }
   .test.ok {
     color: var(--ok);
@@ -575,7 +596,17 @@
     overflow-wrap: anywhere;
   }
   .err {
+    margin: 0;
     color: var(--bad);
+    font-size: var(--fs-small);
+  }
+  /* Secret refusé : bordure et halo en --bad (charte, section 9.3). */
+  .field.invalid,
+  .field.invalid:focus-visible {
+    border-color: var(--bad);
+  }
+  .field.invalid:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent);
   }
   .row {
     display: flex;
