@@ -10,7 +10,7 @@
   import { onMount } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { prefs } from '../git/prefs.svelte';
-  import type { Session } from './ssh.svelte';
+  import { STATUS, type Session } from './ssh.svelte';
   import type { Closed, Connected, SshError } from './types';
 
   let { session, active, onclose }: { session: Session; active: boolean; onclose: () => void } = $props();
@@ -58,6 +58,26 @@
     const which = `${phase.attempt}${NB}sur${NB}${RETRIES.length}`;
     return seconds > 0 ? `Nouvelle tentative dans ${seconds}${NB}s, ${which}.` : `Tentative ${which}…`;
   });
+  // Ce qu'un lecteur d'écran entend : une fois par tentative, pas à chaque seconde.
+  const announce = $derived(
+    phase.step === 'lost' ? `Connexion perdue. Tentative ${phase.attempt} sur ${RETRIES.length} dans ${RETRIES[phase.attempt - 1]} secondes.` : '',
+  );
+  let retryButton = $state<HTMLButtonElement>();
+  // La carte apparaît : le focus va sur « Reconnecter maintenant ». Le terminal, coupé, ne sert plus,
+  // et il garde la touche Tab pour lui : sans cela, le clavier n'atteindrait pas la carte.
+  $effect(() => {
+    if (phase.step !== 'lost' || phase.attempt !== 1) return;
+    void tick().then(() => retryButton?.focus());
+  });
+
+  /** Les motifs les plus courants, donnés par le système en anglais, dits en français. */
+  function explain(reason: string) {
+    if (/refused/i.test(reason)) return `Le serveur refuse la connexion${NB}: son service SSH est peut-être arrêté.`;
+    if (/timed out|ne répond pas/i.test(reason)) return 'Le serveur ne répond pas.';
+    if (/unreachable|no route/i.test(reason)) return 'Le réseau ne permet pas de joindre le serveur.';
+    if (/reset by peer|broken pipe/i.test(reason)) return 'La connexion a été coupée par le réseau ou par le serveur.';
+    return reason;
+  }
 
   /** Programme la tentative `attempt`, ou s'arrête après la dernière. */
   function scheduleRetry(attempt: number, reason: string) {
@@ -65,14 +85,14 @@
     if (attempt > RETRIES.length) {
       retry = 0;
       session.status = 'closed';
-      phase = { step: 'closed', lost: true, message: `Les ${RETRIES.length} tentatives de reconnexion ont échoué${reason ? `${NB}: ${reason}` : '.'}` };
+      phase = { step: 'closed', lost: true, message: `Les ${RETRIES.length} tentatives de reconnexion ont échoué${reason ? `${NB}: ${explain(reason)}` : '.'}` };
       return;
     }
     retry = attempt;
     session.status = 'reconnecting';
     const delay = RETRIES[attempt - 1] * 1000;
     now = Date.now();
-    phase = { step: 'lost', attempt, at: now + delay, reason };
+    phase = { step: 'lost', attempt, at: now + delay, reason: explain(reason) };
     retryTimer = window.setTimeout(() => void connect({}, attempt), delay);
   }
 
@@ -239,6 +259,9 @@
     }
     // Un mot de passe n'est jamais enregistré : il est demandé à chaque connexion.
     if (host.auth === 'password' && !attempt.password) {
+      // La série de tentatives s'arrête : l'onglet attend l'utilisateur.
+      retry = 0;
+      session.status = 'closed';
       phase = { step: 'password', error: '' };
       return;
     }
@@ -336,6 +359,8 @@
       foreground: v('--term-ink'),
       cursor: v('--accent'),
       selectionBackground: v('--sel'),
+      // La marge des résultats de recherche, sans trait sur son bord.
+      overviewRulerBorder: v('--term-bg'),
     });
 
     const terminal = new Terminal({
@@ -396,13 +421,13 @@
       session.status = 'closed';
       phase =
         ending === 'lost'
-          ? { step: 'closed', lost: true, message: reason ?? 'La connexion au serveur a été coupée.' }
+          ? { step: 'closed', lost: true, message: reason ? explain(reason) : 'La connexion au serveur a été coupée.' }
           : {
               step: 'closed',
               message: reason
                 ? `Connexion interrompue\u00a0: ${reason}`
                 : exitStatus === null || exitStatus === 0
-                  ? 'Session terminée.'
+                  ? 'Le serveur a fermé la session.'
                   : `Session terminée (code de sortie ${exitStatus}).`,
             };
     });
@@ -432,7 +457,7 @@
 
 <div class="session">
   <header>
-    <span class="dot s-{session.status}"></span>
+    <span class="dot s-{session.status}" role="img" aria-label={STATUS[session.status]} title={STATUS[session.status]}></span>
     <b class="mono">{target}</b>
     {#if phase.step === 'connected' && info}
       <span>{info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session'}</span>
@@ -541,10 +566,13 @@
             </form>
           {:else if phase.step === 'lost'}
             <h3><Icon name="warning" /> Connexion perdue</h3>
-            <p role="status">{waitText}</p>
-            {#if phase.reason}<p class="muted">{phase.reason}</p>{/if}
+            <!-- Le compte à rebours change chaque seconde : il n'est pas lu, seule l'annonce l'est. -->
+            <p aria-hidden="true">{waitText}</p>
+            <p class="spoken" role="status">{announce}</p>
+            <!-- La ligne du motif garde sa place : les boutons ne bougent pas d'une tentative à l'autre. -->
+            <p class="muted reason">{phase.reason || NB}</p>
             <div class="row">
-              <button class="btn primary" type="button" onclick={retryNow}><Icon name="refresh" size={14} /> Reconnecter maintenant</button>
+              <button class="btn primary" type="button" bind:this={retryButton} onclick={retryNow}><Icon name="refresh" size={14} /> Reconnecter maintenant</button>
               <button class="btn ghost" type="button" onclick={stopRetrying}>Arrêter</button>
             </div>
           {:else}
@@ -757,5 +785,14 @@
   }
   .wait {
     justify-self: center;
+  }
+  /* Hors de l'écran, mais lu : l'annonce d'une tentative de reconnexion. */
+  .spoken {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 </style>

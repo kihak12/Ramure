@@ -625,11 +625,21 @@ no longer answering). Only a lost connection comes back on its own, and only if 
 automatique" is on in the settings.
 
 - Five tries, 2, 5, 10, 20 and 30 s apart. While it waits, the terminal keeps its text under
-  the veil, and a card says "Connexion perdue", when the next try comes and which one it is
-  ("Nouvelle tentative dans 4 s, 2 sur 5"), with "Reconnecter maintenant" (main button) and
-  "Arrêter".
+  the veil, and a panel over the veil, like the one that shows the connection, says "Connexion
+  perdue", when the next try comes and which one it is ("Nouvelle tentative dans 4 s, 2 sur
+  5."), why the last one failed, and offers "Reconnecter maintenant" (main button) and "Arrêter".
+  The line of the reason keeps its place, so that the buttons do not move from one try to the
+  next.
+- When the panel appears, the focus goes to "Reconnecter maintenant": the terminal keeps the
+  Tab key for the shell, and the keyboard could not reach the panel otherwise.
+- The countdown changes every second and is not read; a screen reader hears one sentence per
+  try ("Connexion perdue. Tentative 2 sur 5 dans 5 secondes.").
 - The dot of the tab and of the header blinks in `--warn` while it waits and tries, as when it
-  connects; its tooltip says "Reconnexion en cours".
+  connects; its tooltip and its accessible name say "Reconnexion en cours". The dot always says
+  the state in words this way, whatever the state.
+- The reasons the system gives in English are said in French when they are known (the server
+  refuses, does not answer, cannot be reached, cut the connection); others are shown as they
+  are, like the output of git.
 - A try that needs the user stops the series: a password, a passphrase, a server fingerprint.
   The card asks for it once and waits.
 - After five failed tries, the card says so, with "Reconnecter" and "Fermer l’onglet".

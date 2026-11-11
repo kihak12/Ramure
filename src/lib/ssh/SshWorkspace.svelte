@@ -7,7 +7,7 @@
   import { menu } from '../ui/menu.svelte';
   import HostDialog from './HostDialog.svelte';
   import KeysDialog from './KeysDialog.svelte';
-  import { ssh } from './ssh.svelte';
+  import { ssh, STATUS } from './ssh.svelte';
   import Terminal from './Terminal.svelte';
   import { emptyHost, type Host } from './types';
   import { motion } from '../ui/motion';
@@ -38,7 +38,6 @@
 
   const address = (host: Host) => `${host.user || ssh.defaultUser}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`;
 
-  const STATUS = { connecting: 'Connexion en cours', reconnecting: 'Reconnexion en cours', connected: 'Connecté', closed: 'Session terminée' } as const;
 
   async function remove(host: Host) {
     const confirmed = await dialogs.confirm({
