@@ -494,7 +494,7 @@ its own buttons.
 - **Primary.** The action the user came to the surface to do. One per surface at most; two
   surfaces in view may each have theirs. It is never destructive, and never a mere way out. A
   surface where no action is expected more than the others has no primary: "Gérer les clés…" at
-  rest, where one may copy a key, create one or leave, and its "Fermer" is standard.
+  rest, where one may copy a key, import one, create one or leave, and its "Fermer" is standard.
 - **Standard.** Every other action that moves forward, a second way to do the main thing
   included ("Faire confiance cette fois" beside "Faire confiance et mémoriser", "Basculer sans
   mettre à jour" beside "Basculer et rebaser"), and the way out of a dialog ("Annuler",
@@ -536,11 +536,13 @@ its own buttons.
   leaves. Escape and a click on the veil leave (9.10). The tab order follows the visual order. A
   shortcut, when there is one, is in the tooltip: "Ctrl + Entrée".
 - **The button just pressed does not move.** What it produces, a result, an error, a question, a
-  progress, appears below it, or in a place kept for it beforehand and as high as its usual size,
-  and pushes down only what is under it; nothing above the button moves. On a line aligned to the
-  right, the primary keeps its right edge: a label that changes while it works ("Clonage en cours…")
-  may shift what stands to its left. A dialog is anchored at the top of the window for that reason
-  (9.10). A form that opens in a dialog, as a new step, may push the last line down as it opens.
+  progress, appears below it, or on the left of the last line of a dialog, the buttons staying at
+  the top of that line (9.15, "Keys"), or in a place kept for it beforehand and as high as its
+  usual size, and pushes down only what is under it; nothing above the button moves. On a line
+  aligned to the right, the primary keeps its right edge: a label that changes while it works
+  ("Clonage en cours…") may shift what stands to its left. A dialog is anchored at the top of the
+  window for that reason (9.10). A form that opens in a dialog, as a new step, may push the last
+  line down as it opens.
 - **Toolbar.** No primary: every action has the same weight, icon above label (9.2), and the
   pressed state is its only emphasis.
 
@@ -1221,6 +1223,10 @@ need the room.
   of the book, which is always there, the row of the host being gone; cancelled, the focus is
   back on the button, with its ring. A host being added, or a copy, has no such button: it is not
   in the book yet.
+- **A failure** to save or to delete the host is said on the left of the last line, between
+  "Supprimer l’hôte…" and the buttons on the right, never in a notification (9.11): the warning
+  icon and "L’hôte n’a pas pu être enregistré", then why, in `--bad` at 11.5 px, announced at
+  once. The form stays open with what was typed, and the buttons do not move.
 - **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
   not, authenticates, and closes the connection at once: no terminal opens, nothing is saved.
 - **Until the form is valid** (a name and an address), "Tester la connexion" and the main button

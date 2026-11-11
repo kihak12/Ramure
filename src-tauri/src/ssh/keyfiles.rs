@@ -67,14 +67,14 @@ pub fn list_in(dir: &Path) -> Vec<KeyInfo> {
 pub fn generate_in(dir: &Path, name: &str, passphrase: &str, comment: &str) -> Result<KeyInfo, String> {
     let name = name.trim();
     if !plain_name(name) {
-        return Err("Le nom de la clé ne peut contenir que des lettres, des chiffres, « _ », « - » et « . ».".into());
+        return Err("Le nom de la clé ne peut contenir que des lettres, des chiffres, «\u{a0}_\u{a0}», «\u{a0}-\u{a0}» et «\u{a0}.\u{a0}».".into());
     }
     let private = dir.join(name);
     let public = dir.join(format!("{name}.pub"));
     if private.exists() || public.exists() {
-        return Err(format!("Une clé nommée « {name} » existe déjà dans ~/.ssh."));
+        return Err(format!("Une clé nommée «\u{a0}{name}\u{a0}» existe déjà dans ~/.ssh\u{a0}: choisis un autre nom."));
     }
-    let failed = |e: &dyn std::fmt::Display| format!("la clé n'a pas pu être créée : {e}");
+    let failed = |e: &dyn std::fmt::Display| format!("La clé n’a pas pu être créée\u{a0}: {e}");
 
     fs::create_dir_all(dir).map_err(|e| failed(&e))?;
     #[cfg(unix)]
@@ -94,7 +94,7 @@ pub fn generate_in(dir: &Path, name: &str, passphrase: &str, comment: &str) -> R
         let _ = fs::remove_file(&private);
         return Err(failed(&e));
     }
-    describe(dir, name).ok_or_else(|| "la clé a été créée mais n'a pas pu être relue".to_string())
+    describe(dir, name).ok_or_else(|| "La clé a été créée mais n’a pas pu être relue\u{a0}: ferme la boîte et rouvre-la.".to_string())
 }
 
 /// Un nom de fichier de clé sans surprise : ni chemin, ni espace, ni fichier caché.
@@ -232,7 +232,7 @@ pub fn import_in(dir: &Path, source: &Path) -> Result<KeyInfo, String> {
         let _ = fs::remove_file(&private);
         return Err(failed(&e));
     }
-    describe(dir, name).ok_or_else(|| "la clé a été copiée mais n’a pas pu être relue".to_string())
+    describe(dir, name).ok_or_else(|| "La clé a été copiée mais n’a pas pu être relue\u{a0}: ferme la boîte et rouvre-la.".to_string())
 }
 
 /// Crée un fichier qui n'existe pas encore : une clé privée en lecture et écriture pour son seul

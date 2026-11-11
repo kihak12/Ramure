@@ -5,6 +5,7 @@
   import Icon from '../ui/Icon.svelte';
   import { veil } from '../ui/veil';
   import { focusWithRing } from '../ui/focus';
+  import { tick } from 'svelte';
   import { forgetSecret, secretsHeld } from './secrets';
   import { ssh } from './ssh.svelte';
   import type { KeyInfo } from './types';
@@ -34,13 +35,14 @@
   });
 
   async function forgetPassphrase(key: KeyInfo) {
+    result = null;
     try {
       await forgetSecret({ kind: 'passphrase', path: key.path });
       held[key.path] = false;
       // Le bouton a disparu : le focus va au bouton voisin de la même clé.
       focusWithRing(listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key.name)}"] .copy`));
     } catch (e) {
-      result = { ok: false, text: `Le trousseau du système n’a pas pu l’oublier : ${said(e)}` };
+      result = { ok: false, text: `Le trousseau du système n’a pas pu oublier la phrase secrète de ${key.name} : ${said(e)}` };
     }
   }
 
@@ -104,6 +106,7 @@
 
   // Importer une clé venue d'ailleurs : elle est copiée dans ~/.ssh avec sa clé publique.
   let importing = $state(false);
+  let importEl = $state<HTMLButtonElement>();
   async function importKey() {
     let home: string | undefined;
     try {
@@ -129,6 +132,8 @@
       result = { ok: false, text: said(err) };
     } finally {
       importing = false;
+      // Le bouton, désactivé pendant l'import, avait perdu le focus : il le retrouve.
+      if (document.activeElement === document.body) await tick().then(() => importEl?.focus());
     }
   }
 
@@ -214,15 +219,19 @@
          la clé », et « Annuler » revient à la liste. -->
     <footer>
       <!-- Le résultat de la dernière action, à gauche des boutons, qui restent en haut de la ligne. -->
-      <p class="result" class:bad={result?.ok === false} role="status" aria-live={result?.ok === false ? 'assertive' : 'polite'}>
-        {#if result && !creating}<Icon name={result.ok ? 'check' : 'warning'} size={14} /><span>{result.text}</span>{/if}
-      </p>
+      <div class="result">
+        <p role="status">{#if result?.ok && !creating}<Icon name="check" size={14} /><span>{result.text}</span>{/if}</p>
+        {#if result && !result.ok && !creating}<p class="bad" role="alert"><Icon name="warning" size={14} /><span>{result.text}</span></p>{/if}
+      </div>
       {#if creating}
         <button class="btn" type="button" onclick={() => (creating = false)}>Annuler</button>
         <button class="btn primary" type="submit" form="new-key" disabled={!ready}>{busy ? 'Création…' : 'Générer la clé'}</button>
       {:else}
         <button class="btn" type="button" onclick={close}>Fermer</button>
-        <button class="btn" type="button" disabled={importing} onclick={() => void importKey()}><Icon name="import" size={14} /> Importer une clé…</button>
+        <button class="btn" type="button" bind:this={importEl} disabled={importing} onclick={() => void importKey()}>
+          <Icon name="import" size={14} />
+          {importing ? 'Importation…' : 'Importer une clé…'}
+        </button>
         <button class="btn" type="button" onclick={startCreating}><Icon name="plus" size={14} /> Générer une clé</button>
       {/if}
     </footer>
@@ -371,25 +380,27 @@
   footer .btn {
     flex: none;
   }
+  /* Le résultat : une région de statut toujours là pour un succès, une alerte pour un échec. Le
+     texte s'aligne à peu près sur celui des boutons, de 30 px de haut. */
   .result {
     flex: 1;
     min-width: 0;
+    padding-top: 8px;
+    font-size: var(--fs-small);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .result p {
     display: flex;
     align-items: flex-start;
     gap: 6px;
     margin: 0;
-    /* Le texte s'aligne sur celui des boutons, de 30 px de haut. */
-    padding-top: 7px;
-    font-size: var(--fs-small);
-    line-height: 1.35;
     color: var(--ok);
-    overflow-wrap: anywhere;
   }
-  .result.bad {
+  .result p.bad {
     color: var(--bad);
   }
   .result :global(svg) {
     flex: none;
-    margin-top: 1px;
   }
 </style>

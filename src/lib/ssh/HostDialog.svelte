@@ -21,6 +21,8 @@
    *  notification, que le voile de la boîte recouvrirait (charte, 9.11). */
   let keyError = $state('');
   let forgetError = $state<{ password: string; passphrase: string }>({ password: '', passphrase: '' });
+  /** La fiche n'a pas pu être enregistrée ou supprimée : dit dans sa dernière ligne. */
+  let failure = $state('');
 
   const editing = $derived(ssh.editing);
   const valid = $derived(!!form && form.alias.trim() !== '' && form.hostname.trim() !== '');
@@ -70,7 +72,8 @@
     if (!editing?.id) return;
     // La fiche telle qu'elle est enregistrée : c'est son compte qui dit quel mot de passe part avec elle.
     const stored = ssh.hosts.find((h) => h.id === editing.id) ?? editing;
-    if (await ssh.removeAsked(stored)) {
+    failure = '';
+    if (await ssh.removeAsked(stored, (text) => (failure = text))) {
       close();
       await ssh.focusBook();
     }
@@ -81,8 +84,12 @@
   async function save(connect: boolean) {
     const host = current();
     if (!host || !valid) return;
+    failure = '';
     const saved = await ssh.save(host);
-    if (!saved) return;
+    if (typeof saved === 'string') {
+      failure = saved;
+      return;
+    }
     close();
     if (connect) ssh.open(saved);
   }
@@ -554,6 +561,10 @@
         {#if editing?.id}
           <button class="btn ghost bad remove" type="button" bind:this={removeButton} onclick={() => void removeHost()}>Supprimer l’hôte…</button>
         {/if}
+        <!-- Un échec d'enregistrer ou de supprimer, à gauche des boutons, qui ne bougent pas (charte, 9.11). -->
+        <div class="failure">
+          {#if failure}<p role="alert"><Icon name="warning" size={14} /><span>{failure}</span></p>{/if}
+        </div>
         <button class="btn" type="button" onclick={close}>Annuler</button>
         <button class="btn primary" type="submit" disabled={!valid} title={valid ? undefined : MISSING}>
           {adding ? 'Enregistrer et connecter' : 'Enregistrer'}
@@ -734,13 +745,31 @@
   /* 24 px au-dessus de la dernière ligne (charte, 9.21). */
   footer {
     display: flex;
-    justify-content: flex-end;
+    align-items: flex-start;
     gap: 8px;
     margin-top: 24px;
   }
-  /* L'entrée destructrice, seule tout à gauche. */
-  .remove {
-    margin-right: auto;
+  footer .btn {
+    flex: none;
+  }
+  /* Entre l'entrée destructrice, tout à gauche, et les boutons de droite : l'échec, s'il y en a un. */
+  .failure {
+    flex: 1;
+    min-width: 0;
+    padding-top: 8px;
+    font-size: var(--fs-small);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .failure p {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    color: var(--bad);
+  }
+  .failure :global(svg) {
+    flex: none;
   }
   .testing {
     display: flex;
