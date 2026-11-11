@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import { flip } from 'svelte/animate';
-  import { scale } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import { dialogs } from '../ui/dialogs.svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
@@ -163,7 +163,7 @@
       <div class="tabs" role="tablist" aria-label="Terminaux ouverts" bind:this={tabsEl}>
         {#each ssh.sessions as session (session.key)}
           {@const current = session.key === ssh.activeKey}
-          <div class="tab" class:current animate:flip={{ duration: motion.med }} in:scale={{ duration: motion.med, start: 0.9 }}>
+          <div class="tab" class:current animate:flip={{ duration: motion.med }} in:fade={{ duration: motion.med }}>
             <button
               class="open"
               type="button"

@@ -380,7 +380,9 @@ where the user asked for the operation: on the tab of the repository, on the lab
 the branch being switched to, in the status bar, on the row and the tab of a host being connected
 to. It is the shared class `.spinner` of
 `src/app.css`, whose `--spinner` property gives it another colour. Words always say the state
-beside it, so the ring itself is hidden from screen readers.
+beside it, so the ring itself is hidden from screen readers. One exception: on the tab of a host
+being connected to, the ring stands alone in the place of the dot, and carries the name of the
+state (9.15).
 
 **When a repository is opened** or after a full reload, the rows of the graph come in one after
 the other, once. Never on scroll.
@@ -713,10 +715,13 @@ password).
   "Connexion en cours…", in `--muted`. The row keeps its height. It follows the session, not the
   terminal: it shows on the click, before the tab has appeared.
 - On the tab and in the header of the session, the ring takes the place of the dot, in the same
-  place: the title does not move. The header says "connexion…" beside it.
+  place: the title does not move. The header says "connexion…" beside it. On the tab, where no
+  word stands beside it, the ring carries the name of the state, "Connexion en cours", as the
+  dot does.
 - Over the terminal, the panel says "Connexion à deploy@serveur…", with the ring.
 - When a lost connection is being opened again, the row says "Reconnexion en cours…" the same
-  way; the tab and the header keep their dot, which blinks in `--warn` (below).
+  way; the tab and the header keep their dot, which blinks in `--warn` (below), and the header
+  says "reconnexion…" during a try.
 - A connection that fails says why in French when the reason is known, as below.
 
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing

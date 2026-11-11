@@ -548,8 +548,9 @@
       {/if}
     {:else}
       {#if session.status === 'connecting'}
-        <!-- La connexion s'ouvre : l'anneau d'attente tient la place du point, comme sur l'onglet. -->
-        <span class="spinner" role="img" aria-label={STATUS.connecting} title={STATUS.connecting}></span>
+        <!-- La connexion s'ouvre : l'anneau d'attente tient la place du point, comme sur l'onglet.
+             « connexion… » le dit à côté : l'anneau lui-même n'est pas lu. -->
+        <span class="spinner" aria-hidden="true"></span>
       {:else}
         <span class="dot s-{session.status}" role="img" aria-label={STATUS[session.status]} title={STATUS[session.status]}></span>
       {/if}
@@ -564,7 +565,7 @@
       {#if echo !== null}<span title="Délai médian entre une frappe et son affichage">écho {Math.round(echo)} ms</span>{/if}
       <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke(API.close, { id: sessionId })}>Déconnecter</button>
     {:else if phase.step === 'connecting'}
-      <span>connexion…</span>
+      <span>{session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…'}</span>
     {/if}
   </header>
   {/if}
@@ -657,7 +658,7 @@
                   Pour <span class="mono">{target}</span>. Il n’est pas enregistré.
                 {/if}
               </p>
-              {#if phase.error}<p class="err">{phase.error}</p>{/if}
+              {#if phase.error}<p class="err" role="alert">{phase.error}</p>{/if}
               <!-- svelte-ignore a11y_autofocus -->
               <input class="field" type="password" autocomplete="off" autofocus aria-label={phase.step === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'} bind:value={secret} />
               <div class="row">
@@ -684,7 +685,8 @@
                     ? 'Connexion perdue'
                     : 'Session terminée'}{/if}
             </h3>
-            <p class:err={phase.step === 'error'}>{phase.message}</p>
+            <!-- Un échec est annoncé aussitôt : le focus part sur le bouton, le motif ne serait pas lu. -->
+            <p class:err={phase.step === 'error'} role={phase.step === 'error' ? 'alert' : undefined}>{phase.message}</p>
             <div class="row">
               <!-- Un terminal local n'est jamais « reconnecté » : il est relancé. -->
               <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Relancer' : 'Reconnecter'}</button>
