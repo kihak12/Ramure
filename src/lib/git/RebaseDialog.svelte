@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import { veil } from '../ui/veil';
   import { flip } from 'svelte/animate';
   import Icon from '../ui/Icon.svelte';
   import type { Repo } from './repo.svelte';
@@ -17,8 +19,8 @@
   const ACTIONS: { value: TodoAction; label: string; hint: string }[] = [
     { value: 'pick', label: 'Garder', hint: 'Le commit est rejoué tel quel' },
     { value: 'reword', label: 'Reformuler', hint: 'Le commit est rejoué avec un nouveau message' },
-    { value: 'squash', label: 'Fusionner (messages réunis)', hint: 'Fusionné dans le commit au-dessus ; les deux messages sont réunis' },
-    { value: 'fixup', label: 'Fusionner (message ignoré)', hint: 'Fusionné dans le commit au-dessus ; seul le message de celui-ci est gardé' },
+    { value: 'squash', label: 'Fusionner (messages réunis)', hint: 'Fusionné dans le commit au-dessus ; les deux messages sont réunis' },
+    { value: 'fixup', label: 'Fusionner (message ignoré)', hint: 'Fusionné dans le commit au-dessus ; seul le message de celui-ci est gardé' },
     { value: 'drop', label: 'Supprimer', hint: 'Le commit disparaît de la branche' },
   ];
 
@@ -29,9 +31,9 @@
   const plan = $derived(repo.rebasePlan);
   const firstKept = $derived(items.find((i) => i.action !== 'drop'));
   const problem = $derived.by(() => {
-    if (!firstKept) return 'Tous les commits seraient supprimés : utilise plutôt un reset.';
+    if (!firstKept) return 'Tous les commits seraient supprimés : utilise plutôt un reset.';
     if (firstKept.action === 'squash' || firstKept.action === 'fixup') {
-      return 'Le premier commit conservé ne peut pas être fusionné : il n’a pas de commit au-dessus de lui.';
+      return 'Le premier commit conservé ne peut pas être fusionné : il n’a pas de commit au-dessus de lui.';
     }
     if (items.some((i) => i.action === 'reword' && !i.message.trim())) return 'Un commit à reformuler a un message vide.';
     return '';
@@ -45,6 +47,8 @@
     if (plan && !element.open) {
       items = plan.commits.map((c) => ({ sha: c.sha, subject: c.subject, action: 'pick', message: c.message }));
       element.showModal();
+      // Les lignes paraissent après l'ouverture : le focus va ensuite à la première liste (charte, 9.10).
+      void tick().then(() => element?.querySelector<HTMLElement>('select')?.focus());
     } else if (!plan && element.open) {
       element.close();
     }
@@ -79,19 +83,27 @@
     e.preventDefault();
     cancel();
   }}
+  use:veil={cancel}
 >
   {#if plan}
-    <div class="box">
+    <!-- Un formulaire : Entrée lance le rebase (charte, 9.10), sauf dans un message à reformuler. -->
+    <form
+      class="box"
+      onsubmit={(e) => {
+        e.preventDefault();
+        if (!problem && changed) run();
+      }}
+    >
       <header>
         <h2>Rebase interactif</h2>
         <p>
           {items.length} commit{items.length > 1 ? 's' : ''} de <b class="mono">{repo.branch ?? 'HEAD'}</b>, du plus ancien (en haut) au plus récent (en bas).
-          Glisse une ligne ou utilise les flèches pour changer l'ordre.
+          Glisse une ligne ou utilise les flèches pour changer l’ordre.
         </p>
         {#if plan.pushed}
           <p class="warning">
             <Icon name="warning" />
-            <span>Certains de ces commits sont déjà sur le dépôt distant : après le rebase, il faudra pousser en forçant.</span>
+            <span>Certains de ces commits sont déjà sur le dépôt distant : après le rebase, il faudra pousser en forçant.</span>
           </p>
         {/if}
       </header>
@@ -140,18 +152,23 @@
       </ol>
 
       <footer>
-        <small class:bad={!!problem}>{problem || 'La position actuelle de la branche est sauvegardée dans refs/ramure/backup avant le rebase.'}</small>
+        <!-- La raison d'un « Lancer le rebase » désactivé, sinon la sauvegarde (charte, 9.1). -->
+        <small class:bad={!!problem}>
+          {problem ||
+            (changed
+              ? 'La position actuelle de la branche est sauvegardée dans refs/ramure/backup avant le rebase.'
+              : 'Change l’ordre ou l’action d’un commit pour lancer le rebase.')}
+        </small>
         <button class="btn" type="button" onclick={cancel}>Annuler</button>
-        <button class="btn primary" type="button" disabled={!!problem || !changed} onclick={run}>Lancer le rebase</button>
+        <button class="btn primary" type="submit" disabled={!!problem || !changed}>Lancer le rebase</button>
       </footer>
-    </div>
+    </form>
   {/if}
 </dialog>
 
 <style>
   dialog {
     width: min(760px, calc(100vw - 48px));
-    max-height: calc(100vh - 80px);
     padding: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
@@ -175,7 +192,7 @@
     min-height: 0;
   }
   header {
-    padding: 18px 20px 10px;
+    padding: 16px 20px 8px;
     display: grid;
     gap: 8px;
   }
@@ -202,7 +219,7 @@
   ol {
     list-style: none;
     margin: 0;
-    padding: 4px 14px;
+    padding: 4px 16px;
     overflow-y: auto;
     display: grid;
     gap: 4px;
@@ -258,7 +275,6 @@
   select {
     width: 210px;
     flex: none;
-    padding: 4px 6px;
   }
   .sha {
     color: var(--muted);
@@ -289,14 +305,19 @@
     background: none;
     color: var(--muted);
     cursor: pointer;
-    transition: background var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
   }
   .moves button:hover:not(:disabled) {
     background: var(--hover);
     color: var(--ink);
   }
+  .moves button:active:not(:disabled) {
+    transform: scale(0.97);
+  }
   .moves button:disabled {
-    opacity: 0.3;
+    opacity: 0.45;
     cursor: not-allowed;
   }
   footer {

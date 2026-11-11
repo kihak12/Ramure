@@ -40,9 +40,9 @@
     {/if}
 
     <div class="actions">
-      {@render action('folder', 'Ouvrir un dépôt', 'Un dossier déjà présent sur cette machine', () => void workspace.pick())}
-      {@render action('cloud', 'Cloner un dépôt', 'Depuis une adresse HTTPS ou SSH', () => (workspace.cloning = true))}
-      {@render action('plus', 'Initialiser un dépôt', 'Dans un dossier existant', () => void workspace.init())}
+      {@render action('folder', 'Ouvrir un dépôt…', 'Un dossier déjà présent sur cette machine', () => void workspace.pick())}
+      {@render action('cloud', 'Cloner un dépôt…', 'Depuis une adresse HTTPS ou SSH', () => (workspace.cloning = true))}
+      {@render action('plus', 'Initialiser un dépôt…', 'Dans un dossier existant', () => void workspace.init())}
     </div>
 
     {#if recents.length}
@@ -83,7 +83,7 @@
   .inner {
     width: min(680px, 100%);
     display: grid;
-    gap: 22px;
+    gap: 24px;
     animation: rise var(--t-slow) var(--ease) both;
   }
   @keyframes rise {
@@ -141,7 +141,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px;
+    padding: 12px;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
     background: var(--raised);
@@ -168,8 +168,10 @@
     width: 38px;
     height: 38px;
     border-radius: var(--radius);
-    color: var(--accent);
-    background: var(--accent-soft);
+    /* Une pastille d'icône informe : elle n'a pas l'accent, réservé au principal, au focus et à
+       l'élément actif (charte, section 2.3). */
+    color: var(--muted);
+    background: var(--hover);
   }
   .words {
     display: flex;
@@ -207,7 +209,7 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     padding: 8px 10px;
     border: 0;
     background: none;

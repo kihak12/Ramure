@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import { veil } from './veil';
   import { dialogs, type Answers, type Field } from './dialogs.svelte';
 
   let element = $state<HTMLDialogElement>();
@@ -42,12 +43,12 @@
     e.preventDefault();
     dialogs.close(null);
   }}
-  onclick={(e) => {
-    if (e.target === element) dialogs.close(null);
-  }}
+  use:veil={() => dialogs.close(null)}
 >
   {#if spec}
     <form onsubmit={submit}>
+      <!-- Le contenu défile si la fenêtre est trop basse ; la dernière ligne reste en vue (charte, 9.10). -->
+      <div class="content">
       <h2>{spec.title}</h2>
       {#if spec.body}<p class="body">{spec.body}</p>{/if}
       {#if spec.warning}
@@ -90,12 +91,17 @@
           </label>
         {/if}
       {/each}
+      </div>
 
       <footer>
+        <!-- La sortie, l'action annexe, puis le principal, à droite (charte, 9.1, « Hierarchy »). -->
+        <!-- Action destructive : le focus arrive sur « Annuler », pour qu'Entrée ne détruise rien (charte, 9.10). -->
+        <!-- svelte-ignore a11y_autofocus -->
+        <button class="btn" type="button" autofocus={!!spec.danger} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Annuler'}</button>
         {#if spec.extra}
           {@const extra = spec.extra}
           <button
-            class="btn ghost extra"
+            class="btn"
             type="button"
             onclick={() => {
               // Fermer la boîte vide `spec` : l'action est retenue avant, sinon elle ne se lit plus.
@@ -105,12 +111,9 @@
             }}>{extra.label}</button
           >
         {/if}
-        <!-- Action destructive : le focus arrive sur « Annuler », pour qu'Entrée ne détruise rien (charte, 9.10). -->
-        <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn" type="button" autofocus={!!spec.danger} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Annuler'}</button>
         <!-- svelte-ignore a11y_autofocus -->
         <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid} autofocus={fields.length === 0 && !spec.danger}>
-          {spec.confirmLabel ?? 'Valider'}
+          {spec.confirmLabel}
         </button>
       </footer>
     </form>
@@ -128,6 +131,8 @@
     box-shadow: var(--shadow-pop);
   }
   dialog[open] {
+    display: flex;
+    flex-direction: column;
     animation: pop-in var(--t-med) var(--ease);
   }
   dialog::backdrop {
@@ -139,7 +144,18 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    min-height: 0;
     padding: 16px 20px;
+  }
+  /* 3 px de marge rendus : le halo du focus d'un champ n'est pas rogné par le défilement. */
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    margin: -3px;
+    padding: 3px;
+    overflow-y: auto;
   }
   h2 {
     margin: 0;
@@ -182,14 +198,13 @@
     align-items: center;
     gap: 6px;
   }
+  /* Trop de boutons pour une ligne : ils passent à la ligne suivante, le principal reste le dernier,
+     en bas à droite (charte, 9.1, « Hierarchy »). */
   footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
     margin-top: 4px;
-  }
-  .extra {
-    margin-right: auto;
-    color: var(--accent);
   }
 </style>

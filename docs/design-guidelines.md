@@ -142,8 +142,8 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
 
 - No colour is hard-coded in a component. An intermediate shade is made with `color-mix()`
   between two tokens.
-- **The accent** stands for one thing at a time: the main button of a view or of a dialog, the
-  focus, the active element. Never two main buttons side by side.
+- **The accent** stands for one thing at a time: the main button of a surface (9.1,
+  "Hierarchy"), the focus, the active element. Never two main buttons in one surface.
 - **State colours** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
 - **`--faint`** never carries information that is needed: its contrast is too low for text that
   has to be read.
@@ -453,9 +453,9 @@ States are the same everywhere:
 | Variant | Rendering | Use |
 |---|---|---|
 | Standard | `--raised` background, `--line` border, `--shadow-soft` shadow. | Ordinary action. |
-| Primary | `--accent` background, `--on-accent` text, weight 650. | The expected action. Only one per view or per dialog. |
+| Primary | `--accent` background, `--on-accent` text, weight 650. | The expected action. Only one per surface (see "Hierarchy" below). |
 | Danger | `--bad` background, `--on-accent` text, weight 650. | Confirming a destructive action, in a dialog. |
-| Ghost | No background and no border at rest. | Secondary action, in a header or a row. |
+| Ghost | No background and no border at rest. | What comes second to something else (see "Hierarchy" below). |
 | Ghost danger | A ghost button whose text is in `--bad`; on hover, a `--bad-soft` background. | Opens a destructive action that a dialog then confirms, never the action itself: "Supprimer l’hôte…". Its label ends with "…". |
 | Small | 24 px high, 12 px text. | In a card header or a row. |
 
@@ -473,6 +473,65 @@ States are the same everywhere:
 - A disabled button whose reason is not plain to see says why: a sentence in `--muted` at
   11.5 px next to it, repeated in its tooltip. If the user tries the action all the same, the
   sentence turns to `--warn` and takes the warning icon.
+
+#### Hierarchy
+
+The weight of a button says how much it matters. From the heaviest to the lightest: primary,
+standard, ghost; danger and ghost danger are the destructive pair. A button takes the lightest
+level that still does its job. Elsewhere in these guidelines, "main button" means the primary,
+and "secondary button" a standard one.
+
+A **surface** is a dialog, a panel laid over a terminal, a card, a banner or a strip: what holds
+its own buttons.
+
+- **Primary.** The action the user came to the surface to do. One per surface at most; two
+  surfaces in view may each have theirs. It is never destructive, and never a mere way out. A
+  surface where no action is expected more than the others has no primary: "Gérer les clés…" at
+  rest, where one may copy a key, create one or leave, and its "Fermer" is standard.
+- **Standard.** Every other action that moves forward, a second way to do the main thing
+  included ("Faire confiance cette fois" beside "Faire confiance et mémoriser", "Basculer sans
+  mettre à jour" beside "Basculer et rebaser"), and the way out of a dialog ("Annuler",
+  "Fermer"). In the header, a row or the foot of a card, the actions of the card are small
+  standard buttons ("Tout indexer", "Ajouter un hôte…").
+- **Ghost.** What comes second to something else: a toggle; a button that sits beside the
+  sentence or the element it acts on ("Oublier le mot de passe", the cross of a tab); the
+  actions that a row shows on hover; and the way out of a panel laid over a terminal or of a
+  strip ("Annuler", "Fermer l’onglet", "Arrêter"), which have no veil to leave by.
+- **Danger** confirms a destructive action, in a dialog only. It takes the place of the
+  primary, last on the line, and repeats the verb of the title: "Supprimer" under "Supprimer
+  atelier-prod du carnet ?". **Ghost danger** is the entry that opens that dialog: "Supprimer
+  l’hôte…".
+- **The last line of a dialog**, from left to right: the way out, then a secondary action if
+  there is one, then the primary or the danger button, last, all at the right. A destructive
+  entry stands alone at the far left. Four buttons at most: what does not fit goes into the
+  body, on its own line above the last one ("Tester la connexion"). When the buttons do not fit
+  on one line, the first ones go up a line, 8 px apart, each line aligned to the right: the
+  primary stays last, at the bottom right. A dialog that parts from this order says why in its
+  section.
+- **The line of a panel or a strip** reads the other way: the main button first, at the left,
+  then the others, the way out last (9.15, 9.20).
+- **Labels.** A verb in the infinitive with its object (12). A button that does two things says
+  both: "Enregistrer et connecter". "…" ends the label of a button that opens a dialog or the
+  file picker of the system, as in a menu (9.9): "Supprimer l’hôte…", "Ajouter un hôte…",
+  "Parcourir…". A form that opens in place, inside the same dialog, is not a dialog: "Générer
+  une clé". The labels of the toolbar are short words under an icon (9.2), with neither verb nor
+  "…".
+- **Work in progress.** A button that starts an operation says so in its own label while it runs, in
+  French and with the ellipsis once ("Test en cours…", "Création…", "Clonage en cours…"), and cannot
+  be clicked again. The output of git goes beside it, as it is, never into the label. When the wait
+  can last, the waiting ring (8) or a progress bar next to it shows it.
+- **Keyboard.** In a dialog, Enter triggers the primary, unless the focus is on another button,
+  which Enter then presses: for a destructive action the focus starts on the way out, so Enter
+  leaves. Escape and a click on the veil leave (9.10). The tab order follows the visual order. A
+  shortcut, when there is one, is in the tooltip: "Ctrl + Entrée".
+- **The button just pressed does not move.** What it produces, a result, an error, a question, a
+  progress, appears below it, or in a place kept for it beforehand and as high as its usual size,
+  and pushes down only what is under it; nothing above the button moves. On a line aligned to the
+  right, the primary keeps its right edge: a label that changes while it works ("Clonage en cours…")
+  may shift what stands to its left. A dialog is anchored at the top of the window for that reason
+  (9.10). A form that opens in a dialog, as a new step, may push the last line down as it opens.
+- **Toolbar.** No primary: every action has the same weight, icon above label (9.2), and the
+  pressed state is its only emphasis.
 
 ### 9.2 Toolbar
 
@@ -638,13 +697,24 @@ Sidebar, file lists, graph, palette results.
 - To confirm a destructive action, to enter a few values, or to offer a way through when an
   action would be refused ("Remiser et basculer"). Never for plain information: that is the role
   of a notification. Never for a setting: settings have their page (9.18).
-- Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow, 460 px
-  wide at most.
+- Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
+  wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
+  takes the width it needs, up to 760 px: the clone 560 px, the form of a host 600 px (9.21),
+  "Gérer les clés…" 640 px, the interactive rebase 760 px.
+- **Place.** Centred across the window, and anchored 11% from its top, as the command palette
+  (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
+  change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
+  it, its content scrolls, and its last line of buttons stays in view.
 - A 15 px title, weight 650: the name of the action ("Nouvelle branche", new branch).
   Explanatory text in `--muted`.
 - A warning is a box on a `--warn-soft` background, with an icon.
-- The buttons are at the bottom right: "Annuler" (cancel) first, the action second.
-- Enter confirms, Escape cancels. A click on the veil cancels too.
+- The buttons are on the last line, in the order of 9.1 ("Hierarchy"): "Annuler" (cancel), then
+  the action, at the right.
+- Enter triggers the main button; for a destructive action the focus is on "Annuler", and Enter
+  cancels. Escape cancels. A click on the veil cancels too, when it is pressed and released on
+  the veil, not at the end of a drag that started in the dialog; except while an operation runs
+  in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
+  What was typed in the dialog is lost, without a question.
 - On opening, focus goes to the first field. For a destructive action, it goes to "Annuler".
 - A destructive action says what will be lost, and whether it can be recovered.
 
@@ -721,7 +791,7 @@ own, under its graph (9.20).
 
 - Opened by Ctrl + Shift + N or "Nouveau terminal local" in the palette, from either module (the
   SSH module is then shown); by the "+" after the last tab (9.7); and from the empty screen of the
-  module, by "Ouvrir un terminal local", next to "Ajouter un hôte".
+  module, by "Ouvrir un terminal local", next to "Ajouter un hôte…".
 - Its tab carries the "computer" icon instead of the dot of a host (7: the computer means
   "local"), and its tooltip and accessible name say "Terminal local". Its title is "Terminal",
   then "Terminal 2", "Terminal 3", the smallest free number.
@@ -818,7 +888,7 @@ panel shows.
   is forgotten, unless another host uses it. A passphrase belongs to its key file, and is good
   for every host that uses that key.
 - **Seeing and forgetting.** The form of a host shows what is kept for it (9.21). "Gérer les
-  clés" says, under a protected key, "Sa phrase secrète est retenue dans le trousseau du
+  clés…" says, under a protected key, "Sa phrase secrète est retenue dans le trousseau du
   système.", with "Oublier la phrase secrète" under the sentence, a small ghost button whose
   accessible name names the key. Deleting a host forgets the password of its account, unless
   another host uses it, and the confirmation says so: "… ni l’un ni l’autre ne pourra être

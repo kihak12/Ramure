@@ -90,7 +90,7 @@
   <aside class="book" aria-label="Carnet d’hôtes">
     <header>
       <span class="label">Hôtes · {ssh.hosts.length}</span>
-      <button class="btn small" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte</button>
+      <button class="btn small" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte…</button>
     </header>
     <label class="search">
       <Icon name="search" size={14} />
@@ -155,7 +155,7 @@
       <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Ajoute au carnet les hôtes de ~/.ssh/config qui n’y sont pas encore">
         <Icon name="pull" size={14} /> Importer ~/.ssh/config
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="tag" size={14} /> Gérer les clés</button>
+      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="tag" size={14} /> Gérer les clés…</button>
     </footer>
   </aside>
 
@@ -224,7 +224,7 @@
         <span class="art"><Icon name="terminal" size={30} /></span>
         <p>Double-clique un hôte pour ouvrir un terminal distant, ou ouvre un terminal sur cette machine.</p>
         <div class="row">
-          <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte</button>
+          <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte…</button>
           <button class="btn" type="button" onclick={() => ssh.openLocal()}><Icon name="laptop" size={14} /> Ouvrir un terminal local</button>
           {#if ssh.loaded && !ssh.hosts.length}
             <button class="btn" type="button" onclick={() => void ssh.importConfig()}>Importer ~/.ssh/config</button>
@@ -419,6 +419,7 @@
   }
   .book footer {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     padding: 8px 12px 12px;
     border-top: 1px solid var(--line-soft);

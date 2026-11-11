@@ -729,6 +729,14 @@ textarea {
   outline-offset: 1px;
 }
 
+/* Une boîte de dialogue est ancrée à 11 % du haut de la fenêtre, comme la palette : quand elle
+   grandit, seul ce qui est sous le changement descend (charte, sections 9.1 et 9.10). Au-delà de
+   la hauteur de la fenêtre, chaque boîte fait défiler son contenu et garde sa dernière ligne. */
+dialog {
+  margin: 11vh auto auto;
+  max-height: calc(89vh - 24px);
+}
+
 /* Un focus donné par un script : le même anneau (voir lib/ui/focus.ts). */
 .focus-ring:focus {
   outline: 2px solid var(--accent);

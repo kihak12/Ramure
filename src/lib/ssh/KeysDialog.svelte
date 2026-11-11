@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import Icon from '../ui/Icon.svelte';
+  import { veil } from '../ui/veil';
   import { toasts } from '../ui/toasts.svelte';
   import { focusWithRing } from '../ui/focus';
   import { forgetSecret, secretsHeld } from './secrets';
@@ -103,9 +104,7 @@
     e.preventDefault();
     close();
   }}
-  onclick={(e) => {
-    if (e.target === element) close();
-  }}
+  use:veil={close}
 >
   <div class="box">
     <header>
@@ -143,7 +142,7 @@
     </div>
 
     {#if creating}
-      <form class="create" onsubmit={generate}>
+      <form class="create" id="new-key" onsubmit={generate}>
         <span class="label">Nouvelle clé ed25519</span>
         <div class="two">
           <label>
@@ -166,19 +165,24 @@
             <input class="field" class:invalid={mismatch && !!confirm} type="password" autocomplete="new-password" aria-invalid={mismatch && confirm ? 'true' : undefined} bind:value={confirm} />
           </label>
         </div>
-        {#if mismatch && confirm}<p class="err" role="alert">Les deux phrases secrètes ne sont pas identiques.</p>{/if}
-        {#if error}<p class="err" role="alert">{error}</p>{/if}
-        <div class="actions">
-          <button class="btn" type="button" onclick={() => (creating = false)}>Annuler</button>
-          <button class="btn primary" type="submit" disabled={!ready}>{busy ? 'Création…' : 'Générer la clé'}</button>
-        </div>
+        <!-- Une ligne gardée pour les erreurs : quand l'une paraît, les boutons ne bougent pas (charte, 9.1). -->
+        <p class="err" role="alert">
+          {#if mismatch && confirm}Les deux phrases secrètes ne sont pas identiques.{:else if error}{error}{/if}
+        </p>
       </form>
     {/if}
 
+    <!-- La sortie, puis l'action, à droite (charte, 9.1, « Hierarchy »). Une simple sortie n'est jamais
+         le bouton principal : au repos, la boîte n'en a pas ; pendant une création, c'est « Générer
+         la clé », et « Annuler » revient à la liste. -->
     <footer>
-      {#if !creating}<button class="btn" type="button" onclick={startCreating}><Icon name="plus" size={14} /> Générer une clé</button>{/if}
-      <!-- Pendant la création, le bouton principal est « Générer la clé » : il n'y en a qu'un. -->
-      <button class="btn" class:primary={!creating} type="button" onclick={close}>Fermer</button>
+      {#if creating}
+        <button class="btn" type="button" onclick={() => (creating = false)}>Annuler</button>
+        <button class="btn primary" type="submit" form="new-key" disabled={!ready}>{busy ? 'Création…' : 'Générer la clé'}</button>
+      {:else}
+        <button class="btn" type="button" onclick={close}>Fermer</button>
+        <button class="btn" type="button" onclick={startCreating}><Icon name="plus" size={14} /> Générer une clé</button>
+      {/if}
     </footer>
   </div>
 </dialog>
@@ -186,7 +190,6 @@
 <style>
   dialog {
     width: min(640px, calc(100vw - 48px));
-    max-height: calc(100vh - 80px);
     padding: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
@@ -210,7 +213,7 @@
     min-height: 0;
   }
   header {
-    padding: 18px 20px 10px;
+    padding: 16px 20px 8px;
     display: grid;
     gap: 6px;
   }
@@ -231,7 +234,7 @@
     flex: 1 1 auto;
     overflow-y: auto;
     min-height: 0;
-    padding: 0 14px;
+    padding: 0 16px;
     display: grid;
     gap: 6px;
     align-content: start;
@@ -251,8 +254,10 @@
     width: 30px;
     height: 30px;
     border-radius: var(--radius);
-    color: var(--accent);
-    background: var(--accent-soft);
+    /* Une pastille d'icône informe : elle n'a pas l'accent, réservé au principal, au focus et à
+       l'élément actif (charte, section 2.3). */
+    color: var(--muted);
+    background: var(--hover);
   }
   .text {
     flex: 1;
@@ -290,12 +295,12 @@
     margin-left: -9px;
   }
   .none {
-    padding: 14px 6px;
+    padding: 12px 6px;
   }
   .create {
     display: grid;
-    gap: 10px;
-    margin: 12px 14px 0;
+    gap: 12px;
+    margin: 12px 16px 0;
     padding: 12px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -304,29 +309,26 @@
   .two {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 10px;
+    gap: 12px;
   }
   .create label {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     font-size: var(--fs-label);
     color: var(--muted);
   }
+  /* La ligne des erreurs garde sa hauteur, vide ou non. */
   .err {
+    min-height: calc(var(--fs-small) * 1.35);
+    margin: 0;
     font-size: var(--fs-small);
     color: var(--bad);
   }
-  .actions,
   footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-  }
-  footer {
-    padding: 14px 20px 16px;
-  }
-  footer .btn:first-child:not(.primary) {
-    margin-right: auto;
+    padding: 16px 20px;
   }
 </style>
