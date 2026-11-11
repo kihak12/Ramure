@@ -361,7 +361,7 @@
               Faire confiance et mémoriser
             </button>
             <button class="btn small ghost" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: false })}>
-              Cette fois seulement
+              Faire confiance cette fois
             </button>
           </div>
         </div>

@@ -624,7 +624,7 @@
                 Faire confiance et mémoriser
               </button>
               <button class="btn" type="button" onclick={() => void connect({ accept: phase.step === 'hostKey' ? phase.fingerprint : undefined, remember: false })}>
-                Cette fois seulement
+                Faire confiance cette fois
               </button>
               <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
             </div>

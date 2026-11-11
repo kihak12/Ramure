@@ -270,7 +270,9 @@ From left to right and from top to bottom:
 - **Everything that can be clicked is a slightly rounded rectangle.** The pill is reserved for
   what informs without being clicked.
 - The circle is reserved for the dot of a commit, the badge of a toolbar button, the icon of a
-  notification and the waiting ring.
+  notification, the waiting ring, and the colour swatches of a choice of colour (the colour of
+  an SSH host). A swatch is a dot of colour that can be clicked: it is round, and it grows a
+  little on hover (112%), the one element besides a button that changes size.
 - An element placed inside another never has a larger radius than the one that contains it.
 
 ## 6. Surfaces and shadows
@@ -881,7 +883,7 @@ need the room.
     and the startup command do not touch it.
 - **What a connection asks, the test asks too**, in the same line, in place of the result:
   - an unknown server: its fingerprint in the code font, with "Faire confiance et mémoriser"
-    and "Cette fois seulement", as when a session connects (9.15); a fingerprint that has
+    and "Faire confiance cette fois", as when a session connects (9.15); a fingerprint that has
     changed blocks the test, as it blocks a connection;
   - a protected key or a password: a password field and "Tester", Enter tests. The secret is
     forgotten after the test, whatever its result; a password is never stored. A secret that is
