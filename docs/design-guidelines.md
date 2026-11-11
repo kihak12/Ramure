@@ -761,7 +761,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   480 px wide at most.
 - **Never for an action done in a dialog.** A modal dialog lays its veil over the notifications
   and makes them unreachable: a click on one falls on the veil and closes the dialog. The dialog
-  says the result itself, in its body or on the left of its last line (9.15, "Keys"; 9.21).
+  says the result itself, in its body or on the left of its last line (9.15, "Keys"; 9.21). One
+  exception: a dialog that closes once its action is done, to offer undoing it (the export to
+  `~/.ssh/config`, 9.15).
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
   coloured bar on the edge.
@@ -984,11 +986,14 @@ never a synchronisation: nothing is written before the dialog has shown what wil
   clé ~/.ssh/id_ed25519`. "Modifié", with only what changes, in the code font: `Port 22 → 2222`.
   "Non exporté", in `--warn` with the warning icon in place of the checkbox, with why and what to
   do, in `--muted`. The hosts already up to date are not listed: a line in `--muted` under the
-  list counts them, "3 hôtes sont déjà à jour dans le fichier."
+  list counts them, "3 hôtes sont déjà à jour dans le fichier." A detail line wraps rather than
+  being cut: what changes and why are read whole. The list and the last line show once the file
+  has been read, at once: their buttons never change under the pointer.
 - **Checked at first**: the hosts to add. The hosts to change are not, since the file may have
   been edited by hand, and a sentence under the text says so: "Une entrée modifiée garde la
   version du fichier tant que tu ne la coches pas." Opened from the menu of a host, its row is
-  checked. "Tout cocher" heads the list when it has more than one row to check.
+  checked. "Tout cocher" heads the list when it has more than one row to check. Enter on a
+  checkbox exports, as Enter in a field does.
 - **What is written**: only HostName, User, Port and IdentityFile, in the block `Host <name>` of
   the host, each line keeping its indentation and the spelling of its keyword; a missing line is
   added at the end of the block, and a new block before `Host *`, since for ssh the first value
@@ -997,12 +1002,20 @@ never a synchronisation: nothing is written before the dialog has shown what wil
   host with a password is exported without a key: the password is never written.
 - **The last line**: "Annuler", then the main button, which counts what it writes, "Exporter 2
   hôtes". With nothing checked it is disabled, and the left of the line says why, as its tooltip
-  does: "Coche au moins un hôte." With nothing to export, the list gives way to one sentence,
-  "Tous les hôtes sont déjà à jour dans ~/.ssh/config.", and the line has only "Fermer".
-- **The result.** A failure is said on the left of the last line, the dialog staying open (9.11).
-  Once written, the dialog closes and a notification says "2 hôtes exportés vers ~/.ssh/config",
-  with the copy of the old file in its detail and "Annuler", which puts the old file back, unless
-  it has changed since.
+  does: "Coche au moins un hôte."; Enter all the same turns the sentence to `--warn` with the
+  warning icon, announced. When every row is "Non exporté", the left of the line says "Aucun de
+  ces hôtes ne peut être exporté." and the line has only "Fermer". An empty book says "Le carnet
+  est vide : rien à exporter.". With nothing to export, the list gives way to one sentence, "Tous
+  les hôtes sont déjà à jour dans ~/.ssh/config.", and the line has only "Fermer".
+- **The result.** A failure is said on the left of the last line, with what to do, the dialog
+  staying open (9.11); while it writes, the main button says "Export en cours…" and a click on the
+  veil does not close it (9.10). Once written, the dialog closes and a notification says "2 hôtes
+  exportés vers ~/.ssh/config", with the copy of the old file in its detail and "Annuler", which
+  puts the old file back, unless it has changed since. One host gives "vps exporté vers
+  ~/.ssh/config"; a file that did not exist gives "~/.ssh/config a été créé." in the detail.
+  Undoing says "~/.ssh/config est revenu comme avant l’export", or "~/.ssh/config a été retiré"
+  for a file the export had created; when it cannot, an error notification says why. When the
+  export was started from the keyboard, the focus goes to "Annuler" (9.11).
 
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server

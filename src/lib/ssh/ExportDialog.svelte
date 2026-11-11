@@ -2,6 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
+  import { focusWithRing } from '../ui/focus';
   import { veil } from '../ui/veil';
   import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
@@ -23,6 +24,10 @@
   let busy = $state(false);
   /** Ce qui a échoué : la lecture du fichier, ou son écriture. Dit dans la dernière ligne (9.11). */
   let failure = $state('');
+  /** L'export a été tenté sans rien de coché : la raison passe en avertissement (charte, 9.1). */
+  let tried = $state(false);
+  /** L'export vient du clavier : le focus ira au bouton « Annuler » de la notification (9.11). */
+  let byKeyboard = false;
 
   const single = $derived(ssh.exporting !== null && ssh.exporting !== 'all');
   const listed = $derived(rows.filter((row) => row.status !== 'current'));
@@ -49,6 +54,7 @@
     checked = {};
     loaded = false;
     failure = '';
+    tried = false;
     const ids = ssh.exporting === 'all' ? null : [ssh.exporting];
     try {
       rows = await invoke<Row[]>('ssh_config_preview', { ids });
@@ -60,7 +66,7 @@
     loaded = true;
     // Le focus va à la première case, sinon au bouton de la dernière ligne (charte, 9.10).
     await tick();
-    element?.querySelector<HTMLElement>('input[type="checkbox"], footer .btn:last-child')?.focus();
+    focusWithRing(element?.querySelector<HTMLElement>('input[type="checkbox"], footer .btn:last-child'));
   }
 
   function checkAll(value: boolean) {
@@ -69,6 +75,22 @@
 
   const close = () => (ssh.exporting = null);
 
+  $effect(() => {
+    if (count) tried = false;
+  });
+
+  /** Entrée sur une case lance l'export, comme sur un champ ; sans rien de coché, dit pourquoi. */
+  function onKey(e: KeyboardEvent) {
+    if (e.key !== 'Enter' || !(e.target instanceof HTMLInputElement)) return;
+    e.preventDefault();
+    if (!count) {
+      tried = true;
+      return;
+    }
+    byKeyboard = true;
+    (e.currentTarget as HTMLFormElement).requestSubmit();
+  }
+
   async function exportChosen(e: SubmitEvent) {
     e.preventDefault();
     if (!count || busy) return;
@@ -76,6 +98,8 @@
     failure = '';
     const ids = writable.filter((row) => checked[row.id]).map((row) => row.id);
     const alias = writable.find((row) => checked[row.id])?.alias ?? '';
+    const keyboard = byKeyboard;
+    byKeyboard = false;
     try {
       const done = await invoke<Exported>('ssh_config_export', { ids });
       close();
@@ -83,7 +107,7 @@
       toasts.ok(
         done.count === 1 ? `${alias} exporté vers ~/.ssh/config` : `${plural(done.count, 'hôte')} exportés vers ~/.ssh/config`,
         done.backup ? `Ancien fichier${NB}: ~/.ssh/config.ramure.bak` : '~/.ssh/config a été créé.',
-        { label: 'Annuler', run: () => void undo(done) },
+        { label: 'Annuler', run: () => void undo(done), focus: keyboard },
       );
     } catch (err) {
       failure = typeof err === 'string' ? err : String(err);
@@ -109,9 +133,13 @@
     e.preventDefault();
     close();
   }}
-  use:veil={close}
+  use:veil={() => {
+    // Un clic de travers n'arrête pas une écriture en cours ; Échap et « Annuler » la laissent finir.
+    if (!busy) close();
+  }}
 >
-  <form class="box" onsubmit={exportChosen}>
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <form class="box" onsubmit={exportChosen} onkeydown={onKey}>
     <header>
       <h2 id="export-title">Exporter vers ~/.ssh/config</h2>
       <p>Ramure ajoute ou met à jour ces hôtes. Le reste du fichier n’est pas touché, et l’ancien fichier est copié dans <code>~/.ssh/config.ramure.bak</code>.</p>
@@ -172,16 +200,27 @@
       <div class="result">
         {#if failure}
           <p class="bad" role="alert"><Icon name="warning" size={14} /><span>{failure}</span></p>
+        {:else if writable.length && !count && tried}
+          <p class="tried" role="alert"><Icon name="warning" size={14} /><span>{WHY}</span></p>
         {:else if writable.length && !count}
           <p class="why">{WHY}</p>
+        {:else if loaded && listed.length && !writable.length}
+          <p class="why">Aucun de ces hôtes ne peut être exporté.</p>
         {/if}
       </div>
-      {#if writable.length}
+      <!-- La dernière ligne paraît une fois le fichier lu : ses boutons ne changent pas sous le pointeur. -->
+      {#if loaded && writable.length}
         <button class="btn" type="button" onclick={close}>Annuler</button>
-        <button class="btn primary" type="submit" disabled={!count || busy} title={count ? undefined : WHY}>
+        <button
+          class="btn primary"
+          type="submit"
+          disabled={!count || busy}
+          title={count ? undefined : WHY}
+          onclick={(e) => (byKeyboard = e.detail === 0)}
+        >
           {busy ? 'Export en cours…' : count ? `Exporter ${plural(count, 'hôte')}` : 'Exporter'}
         </button>
-      {:else}
+      {:else if loaded}
         <button class="btn" type="button" onclick={close}>Fermer</button>
       {/if}
     </footer>
@@ -325,6 +364,9 @@
   }
   .result .why {
     color: var(--muted);
+  }
+  .result .tried {
+    color: var(--warn);
   }
   .result .bad {
     color: var(--bad);

@@ -166,7 +166,7 @@ fn blocked(host: &Host, wanted: &Wanted, lines: &[String], all: &[Block], taken:
         return Some("Son nom contient un caractère que ssh lirait comme un motif\u{a0}: renomme l’hôte.".into());
     }
     if host.proxy_jump {
-        return Some("Il passe par un bastion, dont Ramure ne garde pas l’adresse.".into());
+        return Some("Il passe par un bastion, dont Ramure ne garde pas l’adresse\u{a0}: écris son entrée à la main, avec ProxyJump.".into());
     }
     if taken.contains(&wanted.alias) {
         return Some("Un autre hôte du carnet porte ce nom\u{a0}: renomme l’un des deux.".into());
@@ -306,7 +306,7 @@ pub fn apply(text: &str, hosts: &[Host], chosen: &[String]) -> (String, usize) {
 }
 
 fn config_path() -> Result<PathBuf, String> {
-    config::home().map(|home| home.join(".ssh").join("config")).ok_or_else(|| "Dossier personnel introuvable.".to_string())
+    config::home().map(|home| home.join(".ssh").join("config")).ok_or_else(|| "Dossier personnel introuvable\u{a0}: ni USERPROFILE (Windows) ni HOME (Linux) n’est défini. Définis-en un, puis relance Ramure.".to_string())
 }
 
 fn backup_path(path: &Path) -> PathBuf {
@@ -319,14 +319,16 @@ fn read(path: &Path) -> Result<String, String> {
             "~/.ssh/config n’est pas en UTF-8\u{a0}: enregistre-le en UTF-8 dans un éditeur, puis recommence.".to_string()
         }),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
-        Err(e) => Err(format!("~/.ssh/config\u{a0}: {e}")),
+        Err(e) => Err(format!("~/.ssh/config n’a pas pu être lu\u{a0}: vérifie que ton compte peut le lire, puis rouvre la boîte. ({e})")),
     }
 }
 
 /// Écrit `text` à la place de `path`, par un fichier voisin renommé : un fichier à moitié écrit
 /// n'est jamais lu par ssh.
 fn write(path: &Path, text: &str) -> Result<(), String> {
-    let failed = |e: std::io::Error| format!("~/.ssh/config n’a pas pu être écrit\u{a0}: {e}");
+    let failed = |e: std::io::Error| {
+        format!("~/.ssh/config n’a pas pu être écrit\u{a0}: vérifie que ni le fichier ni ~/.ssh ne sont en lecture seule, puis recommence. ({e})")
+    };
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir).map_err(failed)?;
     }
@@ -363,7 +365,7 @@ pub fn export_to(path: &Path, hosts: &[Host], chosen: &[String]) -> Result<Expor
     }
     let backup = if path.exists() {
         let copy = backup_path(path);
-        fs::copy(path, &copy).map_err(|e| format!("L’ancien fichier n’a pas pu être copié\u{a0}: {e}"))?;
+        fs::copy(path, &copy).map_err(|e| format!("L’ancien fichier n’a pas pu être copié, et rien n’a été écrit\u{a0}: vérifie que ~/.ssh n’est pas en lecture seule, puis recommence. ({e})"))?;
         Some(copy.display().to_string())
     } else {
         None
@@ -377,10 +379,12 @@ pub fn undo_at(path: &Path, written: &str, had_backup: bool) -> Result<(), Strin
         return Err("~/.ssh/config a changé depuis l’export\u{a0}: il est resté tel quel. L’ancien fichier est dans ~/.ssh/config.ramure.bak.".into());
     }
     if had_backup {
-        let old = fs::read_to_string(backup_path(path)).map_err(|e| format!("~/.ssh/config.ramure.bak\u{a0}: {e}"))?;
+        let old = fs::read_to_string(backup_path(path)).map_err(|e| {
+            format!("~/.ssh/config.ramure.bak n’a pas pu être lu\u{a0}: remets-le à la place de ~/.ssh/config à la main. ({e})")
+        })?;
         write(path, &old)
     } else {
-        fs::remove_file(path).map_err(|e| format!("~/.ssh/config\u{a0}: {e}"))
+        fs::remove_file(path).map_err(|e| format!("~/.ssh/config n’a pas pu être retiré\u{a0}: supprime-le à la main. ({e})"))
     }
 }
 
