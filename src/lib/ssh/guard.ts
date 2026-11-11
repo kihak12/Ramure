@@ -17,7 +17,8 @@ async function running(sessions: Session[]) {
     const busy = await invoke<(boolean | null)[]>('local_busy', { ids: open.map((s) => s.localId) });
     return { programs: busy.filter((b) => b === true).length, unknown: busy.filter((b) => b === null).length };
   } catch {
-    // Le cœur ne répond pas : on ne sait pas, donc on demande.
+    // Le cœur ne répond pas : on ne sait pas. Comme sous Windows, le dépôt et la fenêtre demandent
+    // alors, et l'onglet d'un seul terminal, qu'on a sous les yeux, se ferme sans question.
     return { programs: 0, unknown: open.length };
   }
 }
@@ -46,8 +47,12 @@ export async function mayCloseRepo(name: string, sessions: Session[]): Promise<b
   return dialogs.confirm({
     title: `Fermer le dépôt ${name} ?`,
     body: programs
-      ? `Un programme tourne dans le terminal de ce dépôt. Il sera arrêté ${LOST}.`
-      : `Un terminal est ouvert dans ce dépôt. Ce qui y tourne sera arrêté, ${LOST}.`,
+      ? programs === 1
+        ? `Un programme tourne dans le terminal de ce dépôt. Il sera arrêté ${LOST}.`
+        : `Des programmes tournent dans ${programs} terminaux de ce dépôt. Ils seront arrêtés et leur sortie perdue.`
+      : unknown === 1
+        ? `Un terminal est ouvert dans ce dépôt. Ce qui y tourne sera arrêté, ${LOST}.`
+        : `${unknown} terminaux sont ouverts dans ce dépôt. Ce qui y tourne sera arrêté, ${LOST}.`,
     confirmLabel: 'Fermer le dépôt',
     danger: true,
   });
