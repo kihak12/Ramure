@@ -45,6 +45,16 @@
     return out;
   });
 
+  // Les hôtes dont une session s'ouvre : leur ligne le dit aussitôt, là où l'on vient d'agir
+  // (charte, section 9.15). L'état vient de la session, pas du terminal : il n'attend pas son montage.
+  const waiting = $derived(
+    new Map(
+      ssh.sessions
+        .filter((s) => s.kind === 'ssh' && (s.status === 'connecting' || s.status === 'reconnecting'))
+        .map((s) => [s.host.id, s.status]),
+    ),
+  );
+
   const address = (host: Host) => `${host.user || ssh.defaultUser}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`;
 
 
@@ -91,6 +101,7 @@
         {#if section.group}<div class="group">{section.group}</div>{/if}
         <ul>
           {#each section.hosts as host (host.id)}
+            {@const wait = waiting.get(host.id)}
             <li>
               <button
                 class="host"
@@ -105,7 +116,12 @@
                 <span class="tint" style:--c={host.color ? `var(--l${host.color})` : 'var(--faint)'}></span>
                 <span class="text">
                   <b>{host.alias}</b>
-                  <small class="mono">{address(host)}</small>
+                  <!-- Pendant la connexion, l'attente prend la place de l'adresse : la ligne garde sa hauteur. -->
+                  {#if wait}
+                    <small class="wait"><span class="spinner" aria-hidden="true"></span><span>{STATUS[wait]}…</span></small>
+                  {:else}
+                    <small class="mono">{address(host)}</small>
+                  {/if}
                   {#if host.tags.length || host.proxyJump}
                     <span class="tags">
                       {#if host.proxyJump}<span class="chip via" title="Rebond par bastion : pas encore pris en charge">bastion</span>{/if}
@@ -170,6 +186,9 @@
                 >
                   <Icon name="laptop" size={14} />
                 </span>
+              {:else if session.status === 'connecting'}
+                <!-- La connexion s'ouvre : l'anneau d'attente tient la place du point. -->
+                <span class="spinner" role="img" aria-label={STATUS.connecting} title={STATUS.connecting}></span>
               {:else}
                 <!-- L'état de la session est dit en mots, pas seulement par la couleur du point. -->
                 <span
@@ -338,6 +357,15 @@
     color: var(--muted);
     font-size: var(--fs-small);
   }
+  .text small.wait {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wait span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .tags {
     display: flex;
     flex-wrap: wrap;
@@ -503,10 +531,13 @@
   .dot.s-connected {
     background: var(--c);
   }
-  .dot.s-connecting,
   .dot.s-reconnecting {
     background: var(--warn);
     animation: blink var(--t-wait) var(--ease) infinite;
+  }
+  /* L'anneau de 12 px tient dans la place du point de 8 px : le titre de l'onglet ne bouge pas. */
+  .open .spinner {
+    margin: -2px;
   }
   @keyframes blink {
     50% {

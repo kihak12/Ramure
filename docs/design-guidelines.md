@@ -377,7 +377,8 @@ graph: a ring that widens and fades, in 2.4 s.
 
 The waiting ring is 12 px, in `--accent` or in the colour of the text around it, and it appears
 where the user asked for the operation: on the tab of the repository, on the label or the row of
-the branch being switched to, in the status bar. It is the shared class `.spinner` of
+the branch being switched to, in the status bar, on the row and the tab of a host being connected
+to. It is the shared class `.spinner` of
 `src/app.css`, whose `--spinner` property gives it another colour. Words always say the state
 beside it, so the ring itself is hidden from screen readers.
 
@@ -704,6 +705,20 @@ in the terminal of the current tab.
   `--bad`, and the count says "Expression non valide", announced at once (`role="alert"`). In
   this bar the message stands beside the field rather than under it: the bar is one line high.
 
+**Connecting.** The wait shows at once, where the user has just acted and where the terminal
+will be. It lasts until the session is open, has failed, or asks for something (a fingerprint, a
+password).
+
+- On the row of the host in the book, the address gives way to the waiting ring (8) and
+  "Connexion en cours…", in `--muted`. The row keeps its height. It follows the session, not the
+  terminal: it shows on the click, before the tab has appeared.
+- On the tab and in the header of the session, the ring takes the place of the dot, in the same
+  place: the title does not move. The header says "connexion…" beside it.
+- Over the terminal, the panel says "Connexion à deploy@serveur…", with the ring.
+- When a lost connection is being opened again, the row says "Reconnexion en cours…" the same
+  way; the tab and the header keep their dot, which blinks in `--warn` (below).
+- A connection that fails says why in French when the reason is known, as below.
+
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server
 no longer answering). Only a lost connection comes back on its own, and only if "Reconnexion
@@ -719,9 +734,10 @@ automatique" is on in the settings.
   Tab key for the shell, and the keyboard could not reach the panel otherwise.
 - The countdown changes every second and is not read; a screen reader hears one sentence per
   try ("Connexion perdue. Tentative 2 sur 5 dans 5 secondes.").
-- The dot of the tab and of the header blinks in `--warn` while it waits and tries, as when it
-  connects; its tooltip and its accessible name say "Reconnexion en cours". The dot always says
-  the state in words this way, whatever the state.
+- The dot of the tab and of the header blinks in `--warn` while it waits and tries; its tooltip
+  and its accessible name say "Reconnexion en cours". The dot always says the state in words
+  this way, whatever the state, and so does the ring that stands for it during a first
+  connection.
 - The reasons the system gives in English are said in French when they are known (the server
   refuses, does not answer, cannot be reached, cut the connection); others are shown as they
   are, like the output of git.

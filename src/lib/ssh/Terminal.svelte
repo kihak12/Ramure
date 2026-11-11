@@ -392,7 +392,8 @@
         // Le serveur ne répond toujours pas : la tentative suivante est programmée.
         scheduleRetry(auto + 1, problem.message);
       } else {
-        phase = { step: 'error', message: problem.message };
+        // Le motif du système, dit en français quand on le connaît (charte, section 9.15).
+        phase = { step: 'error', message: explain(problem.message) };
       }
     }
   }
@@ -546,7 +547,12 @@
         <span>ouvert dans <span class="mono">{opened.cwd}</span></span>
       {/if}
     {:else}
-      <span class="dot s-{session.status}" role="img" aria-label={STATUS[session.status]} title={STATUS[session.status]}></span>
+      {#if session.status === 'connecting'}
+        <!-- La connexion s'ouvre : l'anneau d'attente tient la place du point, comme sur l'onglet. -->
+        <span class="spinner" role="img" aria-label={STATUS.connecting} title={STATUS.connecting}></span>
+      {:else}
+        <span class="dot s-{session.status}" role="img" aria-label={STATUS[session.status]} title={STATUS[session.status]}></span>
+      {/if}
       <b class="mono">{target}</b>
     {/if}
     {#if local}
@@ -798,10 +804,12 @@
     background: var(--ok);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent);
   }
-  .dot.s-connecting,
   .dot.s-reconnecting {
     background: var(--warn);
     animation: blink var(--t-wait) var(--ease) infinite;
+  }
+  header > .spinner {
+    margin: -2px;
   }
   @keyframes blink {
     50% {
