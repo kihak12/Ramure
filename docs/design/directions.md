@@ -89,8 +89,8 @@ Ardoise is shown in the Clairière screenshots above. The other three, on the sa
 **How it would work.**
 
 - A "Thème de couleurs" setting in the settings. The change is immediate and remembered.
-- A theme is a block of colour tokens ([`themes.css`](themes.css)), selected by an attribute on
-  the root of the page. This is possible because the components already go through those tokens.
+- A theme is a block of colour tokens, selected by an attribute on the root of the page. The
+  four themes are now in [`src/app.css`](../../src/app.css), selected by `data-palette`. This is possible because the components already go through those tokens.
 - A theme only enters the application if it meets the contrasts set by the guidelines. The four
   proposed themes do.
 
@@ -251,7 +251,6 @@ Encre remains the right choice if the priority is efficiency rather than identit
 
 ## Files
 
-- [`themes.css`](themes.css): the four colour themes.
 - [`directions.css`](directions.css): the colours and radii of the first three directions.
 - [`esquisses/`](esquisses): the interface rules that were used for the screenshots (font, tabs,
   toolbar, panels, labels). They are sketches, not code to reuse as it is.

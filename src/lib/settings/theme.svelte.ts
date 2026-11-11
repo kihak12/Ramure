@@ -1,5 +1,6 @@
-// Thème clair ou sombre : celui du système, ou celui qu'on a choisi dans les réglages
-// (charte, section 2.5). Les jetons de src/app.css suivent l'attribut `data-theme` de la racine.
+// Thème clair ou sombre, celui du système ou celui qu'on a choisi, et thème de couleurs
+// (charte, section 2.5). Les jetons de src/app.css suivent les attributs `data-theme` et
+// `data-palette` de la racine.
 
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { prefs } from '../git/prefs.svelte';
@@ -11,6 +12,9 @@ class Theme {
 
   /** Vrai quand l'interface est sombre. Ce qui dessine ses propres couleurs (graphe, terminal) le lit. */
   dark = $derived(prefs.theme === 'system' ? this.#systemDark : prefs.theme === 'dark');
+  /** Change dès qu'une couleur change : clair ou sombre, ou thème de couleurs. Le graphe et le
+   *  terminal, qui lisent les jetons pour dessiner, se redessinent quand elle change. */
+  key = $derived(`${prefs.palette}:${this.dark ? 'dark' : 'light'}`);
 
   constructor() {
     system.addEventListener('change', () => (this.#systemDark = system.matches));
@@ -19,8 +23,10 @@ class Theme {
   /** Applique le choix à la page, et à la barre de titre de la fenêtre quand le système le permet. */
   apply() {
     const choice = prefs.theme;
-    if (choice === 'system') delete document.documentElement.dataset.theme;
-    else document.documentElement.dataset.theme = choice;
+    const root = document.documentElement;
+    if (choice === 'system') delete root.dataset.theme;
+    else root.dataset.theme = choice;
+    root.dataset.palette = prefs.palette;
     try {
       void getCurrentWindow()
         .setTheme(choice === 'system' ? null : choice)

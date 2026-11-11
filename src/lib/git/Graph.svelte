@@ -33,7 +33,7 @@
   let scrollTop = $state(0);
   let viewH = $state(600);
   // Le canvas lit ses couleurs dans les jetons : il se redessine quand le thème change.
-  const dark = $derived(theme.dark);
+  const dark = $derived(theme.key);
   let fontsReady = $state(false); // le canevas doit se redessiner quand la police embarquée est chargée
   // Vrai juste après une ouverture : les lignes entrent en cascade.
   let fresh = $state(false);
@@ -755,7 +755,7 @@
       border-color var(--t-fast) var(--ease);
   }
   .ref:hover {
-    background: color-mix(in srgb, var(--c, var(--line)) 30%, var(--panel));
+    background: color-mix(in srgb, var(--c, var(--line)) 28%, var(--panel));
   }
   .ref[draggable='true'] {
     cursor: grab;
@@ -774,7 +774,7 @@
   .ref.k-head,
   .ref.k-detached {
     font-weight: var(--fw-strong);
-    background: color-mix(in srgb, var(--c) 30%, var(--panel));
+    background: color-mix(in srgb, var(--c) 28%, var(--panel));
   }
   .ref.k-remote {
     border-style: dashed;
@@ -792,9 +792,9 @@
   .ribbon .ref:not(.k-detached) {
     background: color-mix(in srgb, var(--c, var(--line)) 24%, var(--panel));
   }
-  /* Pas plus de 30 % : au-delà, le texte passe sous 7:1 en thème sombre (charte, section 2.4). */
+  /* Pas plus de 28 % : au-delà, le texte passe sous 7:1 dans certains thèmes sombres (charte, section 2.4). */
   .ribbon .ref:not(.k-detached):hover {
-    background: color-mix(in srgb, var(--c, var(--line)) 30%, var(--panel));
+    background: color-mix(in srgb, var(--c, var(--line)) 28%, var(--panel));
   }
   .ribbon .ref.local {
     border-color: color-mix(in srgb, var(--c) 55%, transparent);
