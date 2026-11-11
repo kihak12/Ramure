@@ -78,7 +78,8 @@ What it forbids:
 
 - a colour hard-coded in a component;
 - a border or a shadow around a card;
-- a coloured bar on the edge of a card or of a row, to mark a selection or a state;
+- a coloured bar on the edge of a card or of a row, to mark a selection or a state; the colour
+  that the user gives an SSH host is the one exception (9.21): it names the host, never a state;
 - a pill for an element that can be clicked;
 - an element that changes size when it is clicked, other than a button;
 - a decorative gradient;
@@ -158,10 +159,10 @@ Every theme must meet them, in light and in dark.
 |---|---|
 | `--ink` on `--panel`, `--bg`, `--sel`, `--hover` | 7:1 |
 | `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
-| `--muted` on `--panel`, `--side`, `--sel` | 4.5:1 |
+| `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
-| `--ok`, `--warn`, `--bad` on `--panel` and `--bg` | 4.5:1 |
-| `--bad` on `--raised` and on `--bad-soft` (ghost danger button, destructive menu item) | 4.5:1 |
+| `--ok`, `--warn`, `--bad` on `--panel`, `--bg` and `--raised` (the result of a test in a dialog) | 4.5:1 |
+| `--bad` on `--bad-soft` and `--warn-soft` (ghost danger button, destructive menu item, the banner of an operation) | 4.5:1 |
 | `--accent` and each branch colour on `--panel` | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | Each terminal colour (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
@@ -460,7 +461,7 @@ States are the same everywhere:
 | Ghost | No background and no border at rest. | What comes second to something else (see "Hierarchy" below). |
 | Ghost danger | A ghost button whose text is in `--bad`; on hover, a `--bad-soft` background. | Opens a destructive action that a dialog then confirms, never the action itself: "Supprimer l’hôte…". Its label ends with "…". |
 | Small | 24 px high, 12 px text. | In a card header or a row. |
-| Large | A standard button, 12 px inner margins: a 20 px icon in a 38 px square of `--hover`, then its label, weight 650, over a line in `--muted` at 11.5 px that says from what or where. | The actions of the start page, the only thing to do there. Never mixed with buttons of another size. |
+| Large | A standard button, 12 px inner margins: a 20 px icon in `--muted`, with no square behind it, then its label, weight 650, over a line in `--muted` at 11.5 px that says from what or where. | The actions of the start page, the only thing to do there. Never mixed with buttons of another size. |
 
 - 6 px corners, the large button included. Inner margins: 5 px at the top and bottom, 12 px on
   the sides; 12 px all around for the large button.
@@ -514,8 +515,10 @@ its own buttons.
   on one line, the first ones go up a line, 8 px apart, each line aligned to the right: the
   primary stays last, at the bottom right. A dialog that parts from this order says why in its
   section.
-- **The line of a panel or a strip** reads the other way: the main button first, at the left,
-  then the others, the way out last (9.15, 9.20).
+- **The line of a panel, a strip or a banner** reads the other way: the main button first, at
+  the left, then the others, the way out last (9.15, 9.20). In the banner of an operation that
+  has stopped: "Continuer", "Passer", then "Abandonner…"; "Voir les fichiers" is a small ghost
+  button after the sentence it acts on, "résous-les dans le panneau des modifications".
 - **Labels.** A verb in the infinitive with its object (12). A button that does two things says
   both: "Enregistrer et connecter". "…" ends the label of a button that opens a dialog or the
   file picker of the system, as in a menu (9.9): "Supprimer l’hôte…", "Ajouter un hôte…",
@@ -1252,6 +1255,11 @@ need the room.
   Chosen: a 2 px ring of its own colour (of `--muted` for "Aucune"), 2 px away from it, drawn
   with a flat shadow, not an elevation. Keyboard focus: the ring of the application, 2 px of
   `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Couleur 3".
+- **In the host book**, the chosen colour is a 4 px bar with round ends on the left of the row,
+  as high as its two lines of text. It names the host and never says its state, which is why it
+  is the one coloured bar allowed on the edge of a row (1): the selection is the background of
+  the row (9.6), and the state of a session is the dot of its tab. A host without a colour keeps
+  the place empty, so that the names stay aligned.
 
 ## 10. Commit graph
 
@@ -1363,7 +1371,7 @@ recalled in brackets where it helps.
 | rebase | Rebaser |
 | checkout, switch | Basculer |
 | remote | Distant |
-| revert | Annuler (revert) |
+| revert | Annuler (revert), for the action: "Annuler ce commit (revert)". The operation in progress keeps the word: "Revert en cours", "Abandonner le revert", where "l’annulation" would stand beside an "Annuler" button. |
 | commit, tag, cherry-pick, reset, HEAD | Kept as they are. |
 
 French typography:

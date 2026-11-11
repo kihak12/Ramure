@@ -114,7 +114,8 @@
                 }}
                 oncontextmenu={(e) => hostMenu(e, host)}
               >
-                <span class="tint" style:--c={host.color ? `var(--l${host.color})` : 'var(--faint)'}></span>
+                <!-- La couleur choisie nomme l'hôte ; sans couleur, la place reste vide (charte, 9.21). -->
+                <span class="tint" style:--c={host.color ? `var(--l${host.color})` : 'transparent'}></span>
                 <span class="text">
                   <b>{host.alias}</b>
                   <!-- Pendant la connexion, l'attente prend la place de l'adresse : la ligne garde sa hauteur. -->

@@ -249,16 +249,12 @@
   .key + .key {
     border-top: 1px solid var(--line);
   }
+  /* L'icône seule, sans carré derrière : un fond --hover ne se verrait pas sur --raised en sombre.
+     Elle informe : pas d'accent, réservé au principal, au focus et à l'élément actif (charte, 2.3). */
   .glyph {
+    flex: none;
     display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    border-radius: var(--radius);
-    /* Une pastille d'icône informe : elle n'a pas l'accent, réservé au principal, au focus et à
-       l'élément actif (charte, section 2.3). */
     color: var(--muted);
-    background: var(--hover);
   }
   .text {
     flex: 1;

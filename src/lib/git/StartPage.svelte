@@ -162,18 +162,13 @@
   .action:active {
     transform: scale(0.97);
   }
+  /* L'icône seule, sans carré derrière : un fond --hover se confondrait avec --raised en sombre, et
+     avec le bouton survolé. Elle informe : pas d'accent, réservé au principal, au focus et à
+     l'élément actif (charte, sections 2.3 et 9.1). */
   .glyph {
     flex: none;
     display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    /* Jamais plus arrondie que le bouton qui la contient (charte, section 5). */
-    border-radius: var(--radius-s);
-    /* Une pastille d'icône informe : elle n'a pas l'accent, réservé au principal, au focus et à
-       l'élément actif (charte, section 2.3). */
     color: var(--muted);
-    background: var(--hover);
   }
   .words {
     display: flex;
