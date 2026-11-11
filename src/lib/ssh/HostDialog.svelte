@@ -7,6 +7,7 @@
   import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
   import { focusWithRing } from '../ui/focus';
+  import { veil } from '../ui/veil';
   import { explain } from './reasons';
   import { forgetSecret, keyringAvailable, NO_KEYRING, secretsHeld, type SecretRef } from './secrets';
   import type { Host, SshError } from './types';
@@ -19,6 +20,16 @@
 
   const editing = $derived(ssh.editing);
   const valid = $derived(!!form && form.alias.trim() !== '' && form.hostname.trim() !== '');
+  // Un hôte qu'on ajoute (ou une copie) n'est pas encore au carnet : on s'y connecte presque
+  // toujours aussitôt, l'enregistrement connecte. Un hôte qu'on modifie s'enregistre seulement.
+  const adding = $derived(!editing?.id);
+  /** Ce qui manque tant que la fiche n'est pas valide : dit à côté du test et dans les infobulles (9.1). */
+  const MISSING = 'Indique un nom et une adresse.';
+  // Entrée dans une fiche incomplète : rien ne s'enregistre, la phrase passe en avertissement (9.1).
+  let tried = $state(false);
+  $effect(() => {
+    if (valid) tried = false;
+  });
   const COLORS = ['0', '1', '2', '3', '4', '5', '6', '7'];
 
   $effect(() => {
@@ -29,6 +40,9 @@
       keyNote = '';
       forget();
       element.showModal();
+      // À la première ouverture, les champs paraissent après la boîte : `autofocus` n'y joue pas. Le
+      // focus va ensuite au premier champ, « Nom » (charte, 9.10).
+      void tick().then(() => element?.querySelector<HTMLInputElement>('input[autofocus]')?.focus());
     } else if (!editing && element.open) {
       element.close();
     }
@@ -301,14 +315,23 @@
     e.preventDefault();
     close();
   }}
+  use:veil={close}
 >
   {#if form}
+    <!-- La touche Entrée est seulement observée : les champs restent les éléments interactifs. -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <form
       onsubmit={(e) => {
         e.preventDefault();
-        void save(false);
+        void save(adding);
+      }}
+      onkeydown={(e) => {
+        // Entrée dans un champ d'une fiche incomplète : le bouton grisé ne fait rien, la phrase le dit.
+        if (e.key === 'Enter' && !valid && e.target instanceof HTMLInputElement) tried = true;
       }}
     >
+      <!-- Les champs défilent si la fenêtre est trop basse ; la dernière ligne reste en vue (charte, 9.10). -->
+      <div class="content">
       <h2>{form.id ? `Modifier ${editing?.alias ?? 'l’hôte'}` : 'Nouvel hôte'}</h2>
 
       {#if form.proxyJump}
@@ -430,7 +453,11 @@
           class="btn"
           type="button"
           disabled={!testable}
-          title={form.proxyJump ? 'Le rebond par bastion n’est pas encore pris en charge' : 'Se connecter avec ces valeurs, sans rien enregistrer ni ouvrir de terminal'}
+          title={form.proxyJump
+            ? 'Le rebond par bastion n’est pas encore pris en charge'
+            : valid
+              ? 'Se connecter avec ces valeurs, sans rien enregistrer ni ouvrir de terminal'
+              : MISSING}
           onclick={() => {
             attempt = {};
             void startTest();
@@ -438,6 +465,10 @@
         >
           {#if test.step === 'running'}<span class="spinner" aria-hidden="true"></span> Test en cours…{:else}Tester la connexion{/if}
         </button>
+        <!-- Tant que la fiche n'est pas valide, ce qui manque, à côté du premier bouton grisé. -->
+        {#if !valid && !form.proxyJump}
+          <small class="why" class:tried role={tried ? 'alert' : undefined}>{#if tried}<Icon name="warning" size={14} />{/if}{MISSING}</small>
+        {/if}
       </div>
 
       {#if test.step === 'ok'}
@@ -494,13 +525,18 @@
         </div>
       {/if}
 
+      </div>
+
+      <!-- « Supprimer l'hôte… » seul à gauche, s'il est au carnet ; « Annuler » puis l'unique
+           enregistrement, à droite (charte, 9.1, « Hierarchy », et 9.21). -->
       <footer>
         {#if editing?.id}
-          <button class="btn ghost bad" type="button" bind:this={removeButton} onclick={() => void removeHost()}>Supprimer l’hôte…</button>
+          <button class="btn ghost bad remove" type="button" bind:this={removeButton} onclick={() => void removeHost()}>Supprimer l’hôte…</button>
         {/if}
-        <button class="btn cancel" type="button" onclick={close}>Annuler</button>
-        <button class="btn" type="button" disabled={!valid} onclick={() => void save(true)}>Enregistrer et connecter</button>
-        <button class="btn primary" type="submit" disabled={!valid}>Enregistrer</button>
+        <button class="btn" type="button" onclick={close}>Annuler</button>
+        <button class="btn primary" type="submit" disabled={!valid} title={valid ? undefined : MISSING}>
+          {adding ? 'Enregistrer et connecter' : 'Enregistrer'}
+        </button>
       </footer>
     </form>
   {/if}
@@ -509,8 +545,6 @@
 <style>
   dialog {
     width: min(600px, calc(100vw - 48px));
-    /* Dans une fenêtre basse (1000 × 600), la fiche défile plutôt que de sortir de l'écran. */
-    overflow-y: auto;
     padding: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
@@ -526,11 +560,26 @@
     backdrop-filter: blur(2px);
     animation: fade-in var(--t-med) var(--ease);
   }
+  /* Dans une fenêtre basse (1000 × 600), les champs défilent et la dernière ligne reste en vue. */
+  dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
   form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    min-height: 0;
     padding: 16px 20px;
+  }
+  /* 4 px de marge rendus : le halo du focus d'un champ (3 px) n'est pas rogné par le défilement. */
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    margin: -4px;
+    padding: 4px;
+    overflow-y: auto;
   }
   h2 {
     margin: 0;
@@ -658,18 +707,33 @@
     clip-path: inset(50%);
   }
   /* Les boutons du bas se tiennent un peu à l'écart du test et de son résultat : 24 px au lieu de 12. */
+  /* 24 px au-dessus de la dernière ligne (charte, 9.21). */
   footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 24px;
+  }
+  /* L'entrée destructrice, seule tout à gauche. */
+  .remove {
+    margin-right: auto;
   }
   .testing {
     display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  /* À gauche « Supprimer l'hôte… », s'il est au carnet, puis « Annuler » ; les deux enregistrements à droite. */
-  .cancel {
-    margin-right: auto;
+  /* Pourquoi le test et l'enregistrement sont grisés (charte, 9.1). Après un Entrée tenté quand
+     même, la phrase passe en avertissement, avec son icône. */
+  .why {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: var(--fs-small);
+  }
+  .why.tried {
+    color: var(--warn);
   }
   /* Le résultat du test, entre les champs et les boutons (charte, section 9.21). */
   .test {
