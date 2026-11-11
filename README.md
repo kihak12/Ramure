@@ -114,9 +114,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Settings, shortcuts and command log
 
-- **Settings page**: the button at the foot of the rail, or Ctrl + , . Every setting applies at
-  once; there is nothing to save. "Réglages" in the toolbar of a repository opens the same page
-  on its "Git" section.
+- **Settings page**: the button at the foot of the rail, or Ctrl + , . It opens on the section
+  of the module you are in. Every setting applies at once; there is nothing to save.
 - **Light or dark**: "Système" follows the system, "Clair" and "Sombre" hold one.
 - **Colour themes**: Ardoise (the default), Encre, Sous-bois and Braise, each in light and dark.
   A theme changes the colours only. `npm run check` verifies that every theme meets the contrasts

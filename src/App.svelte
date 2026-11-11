@@ -21,6 +21,9 @@
 
   let settingsButton = $state<HTMLButtonElement>();
 
+  /** Les réglages s'ouvrent sur la section du module d'où on vient (charte, section 9.18). */
+  const toggleSettings = () => settingsPage.toggle(view === 'git' ? 'git' : 'ssh');
+
   function show(module: View) {
     view = module;
     settingsPage.hide();
@@ -31,7 +34,7 @@
     const general: Command[] = [
       { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Afficher les dépôts', disabled: shown === 'git', run: () => show('git') },
       { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Afficher le terminal SSH', disabled: shown === 'ssh', run: () => show('ssh') },
-      { id: 'settings', group: 'Modules', icon: 'settings', title: settingsPage.open ? 'Fermer les réglages' : 'Réglages', keywords: 'preferences options theme sombre clair style graphe', run: () => settingsPage.toggle() },
+      { id: 'settings', group: 'Modules', icon: 'settings', title: settingsPage.open ? 'Fermer les réglages' : 'Réglages', keywords: 'preferences options theme sombre clair style graphe', run: toggleSettings },
       {
         id: 'terminal-new',
         group: 'Modules',
@@ -108,7 +111,7 @@
       aria-pressed={settingsPage.open}
       title="Réglages{keys.binding('settings') ? ` (${display(keys.binding('settings'))})` : ''}"
       aria-label="Réglages"
-      onclick={() => settingsPage.toggle()}
+      onclick={toggleSettings}
     >
       <Icon name="settings" size={18} />
     </button>

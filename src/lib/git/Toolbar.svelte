@@ -1,7 +1,6 @@
 <script lang="ts">
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import { display, keys } from '../ui/keys.svelte';
-  import { settingsPage } from '../settings/settings.svelte';
   import { createBranch, stashChanges } from './actions';
   import { layout, toggleSide, type Side } from './layout.svelte';
   import type { Repo } from './repo.svelte';
@@ -98,7 +97,6 @@
   <div class="tools right">
     {@render tool('refresh', 'Recharger', 'Relire l’historique du dépôt', !ready, () => void repo.reload())}
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
-    {@render tool('settings', 'Réglages', 'Ouvrir les réglages de Git : récupération automatique, tirage, graphe, diff', false, () => settingsPage.show('git'))}
   </div>
   {@render view('detail')}
 </header>

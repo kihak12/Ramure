@@ -23,8 +23,10 @@ class SettingsPage {
     this.open = false;
   }
 
-  toggle() {
-    this.open = !this.open;
+  /** Ouvre la page sur `section`, ou la ferme si elle est ouverte. */
+  toggle(section?: SectionId) {
+    if (this.open) this.hide();
+    else this.show(section);
   }
 }
 
