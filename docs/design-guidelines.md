@@ -113,7 +113,7 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
 
 - `--l0` is the accent colour: the first column and the accent echo each other.
 - Outside the graph, these colours are only used for a marker chosen by the user, such as the
-  colour of an SSH host.
+  colour of an SSH host, and for the preview of the graph in the settings (9.19).
 
 ### 2.3 Rules of use
 
@@ -413,7 +413,8 @@ States are the same everywhere:
   field never replaces the label.
 - A checkbox is 15 px, checked in `--accent`, and its text can be clicked too.
 - A list is the control of the system, 32 px high like a field. Its look, closed and open, is
-  the system's; replacing it by the application's own control is issue #58.
+  the system's. It is for options that are many, or that are plain values; a few options that
+  need a word of explanation are a choice (9.19).
 - A filter field carries a 14 px magnifier on its left, in `--muted`; its hint names what it
   filters, and so does its accessible name.
 - A unit follows the field it belongs to, 6 px away, in 12 px, `--muted`: "min".
@@ -525,6 +526,10 @@ Sidebar, file lists, graph, palette results.
 
 - A notification may carry one action, a small button before its close button: it undoes what
   was just done ("Annuler"). A click runs the action and closes the notification.
+- A notification stays for as long as the pointer or the focus is on it; its delay starts again
+  when they leave. When what the action undoes was run from the keyboard, the focus goes to the
+  button of the action: it is one key away.
+- The close button is 24 × 24 px.
 
 | Type | Duration |
 |---|---|
@@ -638,13 +643,14 @@ its tooltip then says so. Under the title, groups, each with a 12 px title, weig
 
 **A setting** is a row: its name in 13.5 px, `--ink`, a help text under it in 11.5 px,
 `--muted`, and its control on the right, 240 px wide. 12 px between two rows. The name is a
-noun, not a verb. The controls are those of section 9.3.
+noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice sits
+under the name of its setting, on the whole width of the column.
 
 **A setting applies at once.** A list, as soon as the choice changes; a number, when the field
 is left or on Enter.
 
-- No "Enregistrer", no "Annuler", no main button on the page, and no notification to say that
-  a setting was saved: the control shows the state.
+- No "Enregistrer" and no "Annuler" button on the page, no main button, and no notification to
+  say that a setting was saved: the control shows the state.
 - "Tout réinitialiser" changes several settings at once, some of them not in view. It applies
   at once too, and a notification follows, the only one of the page: it names the section and
   offers "Annuler" for 9 s, which brings every setting of the section back.
@@ -661,6 +667,31 @@ keys (9.12), and a button that restores the default.
   that a combination is awaited. Backspace removes the shortcut, Escape cancels.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
+
+### 9.19 Choice
+
+A few options, all in view, for a setting whose options need a word of explanation or are
+better seen than named: the theme, the way to pull, the style of the graph, the layout of the
+diff. Nothing has to be opened to compare them.
+
+- It is a group of radio buttons: one option is always chosen. Tab enters and leaves the group;
+  the arrows move the choice, which applies at once.
+- **Rows**: one option per row, its name in 13.5 px, and under it what it entails, in 11.5 px,
+  `--muted`.
+- **Tiles**: the options side by side, each with a preview 64 px high above its name. For what
+  is seen rather than read. A tile has a `--line` border: it is a control, at the level of a
+  button or a field (6), not a card, and neither is its preview.
+- An option has 8 px corners and is at least 28 px high. Hover: a `--hover` background.
+- The chosen option: a `--sel` background, its name in weight 650, and a check mark in
+  `--accent` on its right. Never the colour alone, never a coloured bar on an edge. The place
+  of the check mark is kept on the other options: an option never changes size.
+- Keyboard focus: a 1.5 px inner ring in `--accent` on the chosen option, as on a row (9.6).
+- A preview is drawn with the tokens, never with colours of its own. A preview of a theme
+  carries `data-theme`, which gives it the tokens of that theme whatever the theme of the
+  window.
+- A preview is a sketch, not the component it shows: a few bars and dots, with no text. It is
+  hidden from screen readers, and the name of the option says what it is. The preview of the
+  graph is the one place outside the graph where the branch colours are used (2.2).
 
 ## 10. Commit graph
 

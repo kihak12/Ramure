@@ -1,7 +1,10 @@
 /* Jetons de Ramure : la seule source des couleurs, des tailles, des formes et des durées.
    Leurs valeurs sont celles de docs/design-guidelines.md (thème Ardoise). Aucun composant
    n'écrit ces valeurs en dur : `npm run check` le vérifie. */
-:root {
+/* `data-theme` sur un élément lui donne les jetons de ce thème, quel que soit celui de la fenêtre :
+   c'est ainsi qu'un aperçu de thème se dessine (charte, section 9.19). */
+:root,
+[data-theme='light'] {
   color-scheme: light;
 
   /* Couleurs (charte, section 2) */
@@ -122,7 +125,7 @@
     --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
   }
 }
-:root[data-theme='dark'] {
+[data-theme='dark'] {
   color-scheme: dark;
   --side: #0c0d11;
   --panel: #181b21;
@@ -161,7 +164,8 @@
 
 /* Qui a demandé moins d'animations n'en reçoit presque plus : les états changent sans transition. */
 @media (prefers-reduced-motion: reduce) {
-  :root {
+  :root,
+  [data-theme] {
     --t-fast: 1ms;
     --t-med: 1ms;
     --t-slow: 1ms;

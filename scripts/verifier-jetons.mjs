@@ -58,7 +58,7 @@ for (const file of walk(source)) {
       .join(';\n');
   };
   const system = declarations(":root:not([data-theme='light'])");
-  const chosen = declarations(":root[data-theme='dark']");
+  const chosen = declarations("\n[data-theme='dark'] {");
   if (system === null || chosen === null) findings.push('src/app.css  un des deux blocs du thème sombre est introuvable');
   else if (system !== chosen) findings.push('src/app.css  les deux blocs du thème sombre ne donnent pas les mêmes valeurs');
 }

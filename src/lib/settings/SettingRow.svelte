@@ -5,13 +5,27 @@
    * Une ligne de réglage : son nom et son aide à gauche, son contrôle à droite (charte, section 9.18).
    * `error` : la valeur saisie n'est pas valide, elle n'a pas été appliquée.
    * `busy` : l'application du réglage est en cours, et ce qu'elle fait.
+   * `group` : le contrôle est un choix (section 9.19). Il se place sous le nom, sur toute la
+   * largeur, et c'est `{id}-name` qui le nomme.
    */
-  let { id, name, help = '', error = '', busy = '', children }: { id: string; name: string; help?: string; error?: string; busy?: string; children: Snippet } = $props();
+  let {
+    id,
+    name,
+    help = '',
+    error = '',
+    busy = '',
+    group = false,
+    children,
+  }: { id: string; name: string; help?: string; error?: string; busy?: string; group?: boolean; children: Snippet } = $props();
 </script>
 
-<div class="setting">
+<div class="setting" class:group>
   <div class="text">
-    <label for={id}>{name}</label>
+    {#if group}
+      <span class="name" id="{id}-name">{name}</span>
+    {:else}
+      <label class="name" for={id}>{name}</label>
+    {/if}
     {#if help}<p id="{id}-help">{help}</p>{/if}
   </div>
   <div class="control">
@@ -37,8 +51,15 @@
     /* Le nom est à la hauteur du contrôle : 32 px, comme un champ. */
     padding-top: 6px;
   }
-  label {
+  .name {
     font-size: var(--fs-body);
+  }
+  .group {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .group .text {
+    padding-top: 0;
   }
   p {
     margin: 0;
