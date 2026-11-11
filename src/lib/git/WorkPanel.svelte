@@ -218,7 +218,7 @@
   .label.bad {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     color: var(--bad);
   }
   .list {
@@ -242,13 +242,8 @@
   .amend {
     display: flex;
     align-items: center;
-    gap: 7px;
-    cursor: pointer;
+    gap: 6px;
     color: var(--muted);
-  }
-  .amend input {
-    margin: 0;
-    accent-color: var(--accent);
   }
   textarea {
     resize: vertical;
@@ -275,6 +270,7 @@
     gap: 8px;
   }
   .send small {
+    font-size: var(--fs-small);
     font-variant-numeric: tabular-nums;
   }
   .send small.long {

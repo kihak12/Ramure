@@ -124,7 +124,7 @@
   async function close() {
     if (modified) {
       const sure = await dialogs.confirm({
-        title: 'Fermer sans enregistrer ?',
+        title: 'Fermer sans enregistrer ?',
         body: 'Les choix et les corrections faits dans cet éditeur seront perdus. Le fichier garde ses marqueurs de conflit.',
         confirmLabel: 'Fermer sans enregistrer',
         danger: true,
@@ -137,7 +137,7 @@
   const save = () => void repo.saveConflict(file, result?.getText() ?? text);
 </script>
 
-<section class="conflict" aria-label="Éditeur de conflits : {file.path}" in:fly={{ y: 16, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
+<section class="conflict" aria-label="Éditeur de conflits : {file.path}" in:fly={{ y: 16, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <span class="glyph"><Icon name="merge" size={18} /></span>
     <div class="names">
@@ -148,7 +148,7 @@
         {:else if blocks.length}
           {blocks.length} conflit{blocks.length > 1 ? 's' : ''} à résoudre
         {:else if editable}
-          Plus aucun marqueur de conflit : le fichier peut être enregistré
+          Plus aucun marqueur de conflit : le fichier peut être enregistré
         {/if}
       </small>
     </div>
@@ -166,15 +166,15 @@
     <div class="note">
       <p>
         {#if data.binary}
-          Ce fichier n'est pas du texte, ou il est trop volumineux pour l'éditeur.
+          Ce fichier n’est pas du texte, ou il est trop volumineux pour l’éditeur.
         {:else}
-          L'un des deux côtés a supprimé ce fichier : il n'y a pas deux textes à réunir.
+          L’un des deux côtés a supprimé ce fichier : il n’y a pas deux textes à réunir.
         {/if}
         Résous-le en gardant un côté.
       </p>
       <div class="pick">
-        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'ours')}>Garder : {names.ours.toLowerCase()}</button>
-        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'theirs')}>Garder : {names.theirs.toLowerCase()}</button>
+        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'ours')}>Garder : {names.ours.toLowerCase()}</button>
+        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'theirs')}>Garder : {names.theirs.toLowerCase()}</button>
       </div>
     </div>
   {:else}
@@ -206,17 +206,17 @@
           <span class="count">Conflit <b>{Math.min(index, blocks.length - 1) + 1}</b> sur {blocks.length}</span>
           <button class="btn small" type="button" aria-label="Conflit suivant" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
         </div>
-        <button class="btn small take ours" type="button" onclick={() => take('ours')}>Prendre : {names.ours.toLowerCase()}</button>
-        <button class="btn small take theirs" type="button" onclick={() => take('theirs')}>Prendre : {names.theirs.toLowerCase()}</button>
-        <button class="btn small" type="button" onclick={() => take('both')} title="{names.ours}, puis {names.theirs.toLowerCase()}">Les deux</button>
-        <button class="btn small" type="button" onclick={() => take('both-reversed')} title="{names.theirs}, puis {names.ours.toLowerCase()}">Les deux, inversés</button>
+        <button class="btn small take ours" type="button" onclick={() => take('ours')}>Prendre : {names.ours.toLowerCase()}</button>
+        <button class="btn small take theirs" type="button" onclick={() => take('theirs')}>Prendre : {names.theirs.toLowerCase()}</button>
+        <button class="btn small" type="button" onclick={() => take('both')} title="{names.ours}, puis {names.theirs.toLowerCase()}">Prendre les deux</button>
+        <button class="btn small" type="button" onclick={() => take('both-reversed')} title="{names.theirs}, puis {names.ours.toLowerCase()}">Prendre les deux, inversés</button>
         {#if data.base !== null}
-          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l'ancêtre commun</label>
+          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l’ancêtre commun</label>
         {/if}
       {:else}
         <span class="done"><Icon name="check" size={16} /> Tous les conflits sont résolus. Relis le résultat, corrige-le au besoin, puis enregistre.</span>
         {#if data.base !== null}
-          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l'ancêtre commun</label>
+          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l’ancêtre commun</label>
         {/if}
       {/if}
     </div>
@@ -226,7 +226,7 @@
         <div class="bar">
           <span class="dot"></span>
           <b>Résultat</b>
-          <small>modifiable : les choix ci-dessus s'y appliquent, et tu peux le corriger à la main</small>
+          <small>modifiable : les choix ci-dessus s’y appliquent, et tu peux le corriger à la main</small>
         </div>
         <CodeEditor bind:this={result} value={data.merged ?? ''} marks={resultMarks} lineSeparator={separator} label="Résultat de la résolution" onchange={(next) => (text = next)} />
       </div>
@@ -258,7 +258,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 7px 12px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--line-soft);
     min-width: 0;
   }
@@ -271,7 +271,6 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    line-height: 1.3;
   }
   .names b,
   .names small {
@@ -413,10 +412,5 @@
     gap: 6px;
     margin-left: auto;
     color: var(--muted);
-    cursor: pointer;
-  }
-  .base-toggle input {
-    margin: 0;
-    accent-color: var(--accent);
   }
 </style>
