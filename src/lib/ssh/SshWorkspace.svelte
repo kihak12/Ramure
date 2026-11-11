@@ -394,11 +394,15 @@
     min-width: 0;
     min-height: 0;
   }
+  /* 4 px autour des onglets, rendus par une marge négative : la place de l'anneau de focus, que le
+     défilement horizontal rognerait sinon. */
   .tabs {
     display: flex;
     align-items: center;
     gap: 4px;
     min-width: 0;
+    margin: -4px;
+    padding: 4px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -416,7 +420,9 @@
     background: var(--side);
     color: var(--muted);
     cursor: pointer;
-    transition: background var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
   }
   .add:hover {
     background: var(--hover);
@@ -506,13 +512,21 @@
     color: var(--muted);
     cursor: pointer;
     opacity: 0;
-    transition: opacity var(--t-fast) var(--ease);
+    transition:
+      opacity var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  .close:active,
+  .add:active {
+    transform: scale(0.97);
   }
   .tab:hover .close,
   .tab.current .close,
   .close:focus-visible {
     opacity: 1;
   }
+  /* Sur un onglet survolé ou actif, --hover ne se verrait pas : la croix prend --line (charte, 9.7). */
   .close:hover {
     background: var(--line);
     color: var(--ink);

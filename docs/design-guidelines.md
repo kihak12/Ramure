@@ -333,7 +333,8 @@ Transitions written in script read the same tokens, through `src/lib/ui/motion.t
 close by: an offset of 6 to 10 px at most.
 
 **The press effect.** A button shrinks to 97% while it is clicked. This applies to buttons,
-toolbar buttons and rail buttons, and to nothing else.
+toolbar buttons and rail buttons, and to nothing else. A button made of an icon alone is a
+button: the cross and the "+" of a tab bar, the close button of a notification or of a header.
 
 **What is not animated.**
 
@@ -498,9 +499,12 @@ Sidebar, file lists, graph, palette results.
 - The active tab is a small card: `--panel` background, 8 px corners, no frame and no line.
 - An inactive tab is `--muted` text on the window background; on hover, a `--hover` background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
-- The close cross is visible on the active tab, and on hover on the others.
+- The close cross is visible on the active tab, and on hover on the others. On hover it takes
+  a `--line` background, not `--hover`: it sits on a tab that is hovered or active, where
+  `--hover` would not show.
 - The "+" button follows the last tab: an icon alone, 28 × 28 px, no background at rest and
-  `--hover` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
+  `--hover` on hover.
+- A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling. It stays in view when the tabs overflow. Its tooltip and its accessible
   name say what it opens, with the shortcut: "Nouveau terminal local (Ctrl + Maj + N)".
 
 ### 9.8 Cards

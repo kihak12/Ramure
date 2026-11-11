@@ -151,7 +151,13 @@
     background: none;
     color: var(--muted);
     cursor: pointer;
-    transition: background var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  .close:active {
+    transform: scale(0.97);
   }
   .close:hover {
     background: var(--hover);

@@ -70,7 +70,10 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 8px 8px 0;
+    /* 4 px sous les onglets, rendus par une marge négative : la place de l'anneau de focus, que le
+       défilement horizontal rognerait sinon. */
+    padding: 8px 8px 4px;
+    margin-bottom: -4px;
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
@@ -129,7 +132,13 @@
     cursor: pointer;
     transition:
       background var(--t-fast) var(--ease),
-      opacity var(--t-fast) var(--ease);
+      opacity var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  .close:active,
+  .add:active {
+    transform: scale(0.97);
   }
   .close {
     width: 24px;
@@ -147,9 +156,14 @@
     height: 28px;
     margin-left: 2px;
   }
-  .close:hover,
-  .add:hover {
+  /* La croix est sur un onglet survolé ou actif, où --hover ne se verrait pas : elle prend --line.
+     Le « + » est sur le fond de la fenêtre : --hover (charte, section 9.7). */
+  .close:hover {
     background: var(--line);
+    color: var(--ink);
+  }
+  .add:hover {
+    background: var(--hover);
     color: var(--ink);
   }
   .spinner {
