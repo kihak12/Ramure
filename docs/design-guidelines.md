@@ -385,8 +385,9 @@ The interface has four levels. Each is recognised by its background.
 | 20 px | The large button of the start page (9.1). |
 
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
-  for a tag, the key for an SSH key, the arrow that enters a sheet for an import. An icon that
-  stands for a git command (pull, push, stash) is never borrowed for something else.
+  for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
+  leaves it, the same sheet turned over, for an export. An icon that stands for a git command
+  (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
 - An icon never carries a state on its own: it is backed by text or by a tooltip.
@@ -591,7 +592,11 @@ its own buttons.
     `--muted`.
   - Checked: the `--accent` background and border, and a check mark in `--on-accent`: the path
     of the "check" icon, drawn at 13 px with a 2 px stroke so that it reads at that size.
-  - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked.
+  - Partly checked, for a box that checks a whole list when only some of its rows are ("Tout
+    cocher"): the same as checked, with a dash in place of the check mark, the path of the
+    "minus" icon drawn the same way.
+  - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked or partly
+    checked.
   - Focus: the focus ring of the application (the states of section 9). Disabled: 45%, and its
     text too.
 - A list is drawn by the application when it is closed, like the checkbox: the system's is
@@ -732,7 +737,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
   takes the width it needs, up to 760 px: the clone 560 px, the form of a host 600 px (9.21),
-  "Gérer les clés…" 640 px, the interactive rebase 760 px.
+  "Gérer les clés…" and the export to `~/.ssh/config` 640 px, the interactive rebase 760 px.
 - **Place.** Centred across the window, and anchored 11% from its top, as the command palette
   (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
@@ -964,6 +969,40 @@ clé", all standard, since no action is expected more than the others (9.1).
   under itself while the buttons stay at the top of the line: they do not move (9.1). A key
   imported or generated takes its row in the list, in the order of the names: the list grows by
   one row and pushes the last line down with it, since what the action produced is that row.
+
+**Exporting to `~/.ssh/config`.** So that a host of the book opens with `ssh <name>` too, in a
+terminal or in any tool that reads that file. "Exporter vers ~/.ssh/config…", a small standard
+button in the foot of the book under "Importer ~/.ssh/config", opens a dialog for every host; the
+same entry in the menu of a host opens it for that host alone. It is an export done when asked,
+never a synchronisation: nothing is written before the dialog has shown what will change.
+
+- **The dialog**, "Exporter vers ~/.ssh/config", says what Ramure does: "Ramure ajoute ou met à
+  jour ces hôtes. Le reste du fichier n’est pas touché, et l’ancien fichier est copié dans
+  ~/.ssh/config.ramure.bak." Then a list inside a dialog (9.6), one row per host to add, to change
+  or that cannot be exported: a checkbox, the name, its state in words, and under them a line in
+  11.5 px. "Ajouté", with what will be written, in the code font: `deploy@10.0.0.9 · port 2222 ·
+  clé ~/.ssh/id_ed25519`. "Modifié", with only what changes, in the code font: `Port 22 → 2222`.
+  "Non exporté", in `--warn` with the warning icon in place of the checkbox, with why and what to
+  do, in `--muted`. The hosts already up to date are not listed: a line in `--muted` under the
+  list counts them, "3 hôtes sont déjà à jour dans le fichier."
+- **Checked at first**: the hosts to add. The hosts to change are not, since the file may have
+  been edited by hand, and a sentence under the text says so: "Une entrée modifiée garde la
+  version du fichier tant que tu ne la coches pas." Opened from the menu of a host, its row is
+  checked. "Tout cocher" heads the list when it has more than one row to check.
+- **What is written**: only HostName, User, Port and IdentityFile, in the block `Host <name>` of
+  the host, each line keeping its indentation and the spelling of its keyword; a missing line is
+  added at the end of the block, and a new block before `Host *`, since for ssh the first value
+  found wins. Nothing is ever deleted. A host whose name has a space or a pattern character, that
+  goes through a bastion, or whose name shares its `Host` line with others, is not exported. A
+  host with a password is exported without a key: the password is never written.
+- **The last line**: "Annuler", then the main button, which counts what it writes, "Exporter 2
+  hôtes". With nothing checked it is disabled, and the left of the line says why, as its tooltip
+  does: "Coche au moins un hôte." With nothing to export, the list gives way to one sentence,
+  "Tous les hôtes sont déjà à jour dans ~/.ssh/config.", and the line has only "Fermer".
+- **The result.** A failure is said on the left of the last line, the dialog staying open (9.11).
+  Once written, the dialog closes and a notification says "2 hôtes exportés vers ~/.ssh/config",
+  with the copy of the old file in its detail and "Annuler", which puts the old file back, unless
+  it has changed since.
 
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server

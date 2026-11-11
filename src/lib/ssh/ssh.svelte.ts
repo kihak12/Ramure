@@ -91,6 +91,8 @@ class Ssh {
   /** Hôte en cours de modification ; la fiche s'ouvre quand il existe. */
   editing = $state.raw<Host | null>(null);
   showKeys = $state(false);
+  /** La boîte d'export vers ~/.ssh/config : pour tout le carnet, pour un hôte (son id), ou fermée. */
+  exporting = $state<'all' | string | null>(null);
 
   active = $derived(this.sessions.find((s) => s.key === this.activeKey) ?? null);
   groups = $derived([...new Set(this.hosts.map((h) => h.group).filter(Boolean))]);

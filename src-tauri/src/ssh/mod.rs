@@ -5,6 +5,7 @@
 //! sur un canal Tauri.
 
 pub mod config;
+pub mod export;
 pub mod keyfiles;
 pub mod known_hosts;
 pub mod secrets;

@@ -21,5 +21,15 @@ export function sshCommands(): Command[] {
         session.searchAsk++;
       },
     },
+    {
+      id: 'ssh-export',
+      group: 'SSH',
+      icon: 'export',
+      title: 'Exporter le carnet vers ~/.ssh/config…',
+      keywords: 'config ssh ecrire hotes',
+      disabled: !ssh.hosts.length,
+      hint: ssh.hosts.length ? undefined : 'le carnet est vide',
+      run: () => (ssh.exporting = 'all'),
+    },
   ];
 }
