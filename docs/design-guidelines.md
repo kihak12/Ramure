@@ -242,6 +242,7 @@ Ardoise.
 - Both fonts are embedded in the application. No font is loaded from the network.
 - **The code font** is for what gets copied or typed in a terminal: SHAs, git commands, file
   content (diff, conflict editor), the terminal, the name of the current branch in the toolbar.
+  The detail of a notification is in it too, whatever it says (9.11).
 - In a list of files, the path is in the interface font: the folder in `--muted`, the file name
   in `--ink`.
 - DM Mono stops at weight 500. Emphasised code text is rendered at 500; the browser does not
@@ -750,8 +751,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
   coloured bar on the edge.
-- A short title, then the detail. The output of git is shown as it is, in the code font at
-  11.5 px.
+- A short title, then the detail, in the code font at 11.5 px whatever it says: the output of
+  git as it is, a path, or the reason of a failure with what to do.
 - In the title, a word of more than 36 characters, such as the name of a branch or a path, is
   cut inside: its first 24 characters and its last 10 stay, around an ellipsis. The full title
   is in a tooltip, and it is what a screen reader reads. This is the one place where a text is
@@ -892,9 +893,12 @@ the terminal, "Serveur inconnu", shows its fingerprint in the code font, with "F
 mémoriser", "Faire confiance cette fois" and "Annuler". Remembering it adds one line at the end
 of `known_hosts`, as OpenSSH does, and only if the key is not there yet. If the file cannot be
 written, the session opens all the same: its header says "empreinte acceptée pour cette session",
-and a warning notification says "L’empreinte n’a pas pu être mémorisée" and why; the test of the
-host form says it in its result line instead (9.21). A fingerprint that has changed blocks the
-connection, and names the line of `known_hosts` to look at.
+and a warning notification says "L’empreinte n’a pas pu être mémorisée", then why and what to do:
+in French when the cause is known (access refused, a read-only or full disk, a folder or a file
+in the way), "accès refusé. Vérifie que le fichier n’est pas en lecture seule…", otherwise the
+text of the system as it is; the test of the host form says it in its result line instead (9.21).
+A fingerprint that has changed blocks the connection, and names the line of `known_hosts` to look
+at.
 
 **Secrets.** A password or the passphrase of a key is asked for by a panel over the terminal: its
 title says what is asked ("Mot de passe de deploy", "Phrase secrète de la clé"), a line in
@@ -1205,8 +1209,8 @@ need the room.
     `--muted` ("clé id_ed25519", "agent SSH", "mot de passe") and how long it took.
   - Success with a fingerprint that could not be remembered ("Faire confiance et mémoriser", and
     `known_hosts` cannot be written): under the success, a second line, the warning icon and
-    "L’empreinte n’a pas pu être mémorisée" in `--warn`, then why, in the code font and `--muted`.
-    It is announced with the success.
+    "L’empreinte n’a pas pu être mémorisée" in `--warn`, then why and what to do, in the code font
+    and `--muted`. It is announced with the success.
   - Failure: the warning icon and the reason in `--bad`, in French when it is known (the server
     refuses, does not answer, cannot be reached, the key or the password is refused), as in
     9.15.
