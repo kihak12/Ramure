@@ -1226,7 +1226,8 @@ need the room.
 - **A failure** to save or to delete the host is said on the left of the last line, between
   "Supprimer l’hôte…" and the buttons on the right, never in a notification (9.11): the warning
   icon and "L’hôte n’a pas pu être enregistré", then why, in `--bad` at 11.5 px, announced at
-  once. The form stays open with what was typed, and the buttons do not move.
+  once. The form stays open with what was typed, and the buttons do not move. The failure goes
+  away at the next try, and when the form is opened again.
 - **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
   not, authenticates, and closes the connection at once: no terminal opens, nothing is saved.
 - **Until the form is valid** (a name and an address), "Tester la connexion" and the main button

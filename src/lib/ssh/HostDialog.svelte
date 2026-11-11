@@ -44,6 +44,9 @@
       form = { ...editing, tags: [...editing.tags] };
       tags = editing.tags.join(', ');
       keyNote = '';
+      keyError = '';
+      failure = '';
+      forgetError = { password: '', passphrase: '' };
       forget();
       element.showModal();
       // À la première ouverture, les champs paraissent après la boîte : `autofocus` n'y joue pas. Le

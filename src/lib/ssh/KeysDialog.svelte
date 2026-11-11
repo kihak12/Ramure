@@ -132,8 +132,10 @@
       result = { ok: false, text: said(err) };
     } finally {
       importing = false;
-      // Le bouton, désactivé pendant l'import, avait perdu le focus : il le retrouve.
-      if (document.activeElement === document.body) await tick().then(() => importEl?.focus());
+      // Le bouton, désactivé pendant l'import, avait perdu le focus, tombé sur la page ou sur la
+      // boîte : il le retrouve, avec son anneau (charte, 11).
+      const active = document.activeElement;
+      if (!active || active === document.body || active === element) await tick().then(() => focusWithRing(importEl));
     }
   }
 
