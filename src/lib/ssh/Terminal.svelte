@@ -11,6 +11,7 @@
   import Icon from '../ui/Icon.svelte';
   import { prefs } from '../git/prefs.svelte';
   import { STATUS, type Session } from './ssh.svelte';
+  import { explain } from './reasons';
   import type { Closed, Connected, SshError } from './types';
 
   let {
@@ -93,15 +94,6 @@
     if (phase.step !== 'lost' || phase.attempt !== 1) return;
     void tick().then(() => retryButton?.focus());
   });
-
-  /** Les motifs les plus courants, donnés par le système en anglais, dits en français. */
-  function explain(reason: string) {
-    if (/refused/i.test(reason)) return `Le serveur refuse la connexion${NB}: son service SSH est peut-être arrêté.`;
-    if (/timed out|ne répond pas/i.test(reason)) return 'Le serveur ne répond pas.';
-    if (/unreachable|no route/i.test(reason)) return 'Le réseau ne permet pas de joindre le serveur.';
-    if (/reset by peer|broken pipe/i.test(reason)) return 'La connexion a été coupée par le réseau ou par le serveur.';
-    return reason;
-  }
 
   /** Programme la tentative `attempt`, ou s'arrête après la dernière. */
   function scheduleRetry(attempt: number, reason: string) {

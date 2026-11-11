@@ -851,6 +851,44 @@ A local terminal under the graph, opened in the folder of the repository, to run
   While it is open, the "Terminal" action, its shortcut and its commands are disabled: nothing
   opens under it.
 
+### 9.21 Host form
+
+The dialog that adds a host to the book or changes one (9.10). It is 600 px wide: its fields
+need the room.
+
+- **Buttons.** "Tester la connexion", a secondary button, on the last line of the fields, at the
+  right of the colours, with its result right under that line. Below, the last line: "Annuler" alone on the left, and on the
+  right "Enregistrer et connecter" then "Enregistrer", the main button. This dialog parts from
+  9.10 ("Annuler" first, at the bottom right) because it has two ways to save, which stay
+  together. Nothing opens a session without saving the host: a host one connects to belongs in
+  the book.
+- **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
+  not, authenticates, and closes the connection at once: no terminal opens, nothing is saved. It
+  is disabled until the form is valid (a name and an address).
+- **While it runs**, the button says "Test en cours…" with the 12 px waiting ring and cannot be
+  clicked; the form stays usable. "Annuler" closes the dialog and the result of the test is
+  dropped.
+- **The result** sits in a line under the fields and "Tester la connexion", never in a
+  notification: the dialog
+  is where the user looks.
+  - Success: the check icon and "Connexion réussie", in `--ok`, then how it authenticated, in
+    `--muted` ("clé id_ed25519", "agent SSH", "mot de passe") and how long it took.
+  - Failure: the warning icon and the reason in `--bad`, in French when it is known (the server
+    refuses, does not answer, cannot be reached, the key or the password is refused), as in
+    9.15.
+  - Success is announced as a status (`role="status"`), failure as an alert (`role="alert"`).
+  - The result goes away as soon as a field of the connection changes: the address, the port,
+    the user, the authentication, the key, the bastion. The name, the group, the tags, the colour
+    and the startup command do not touch it.
+- **What a connection asks, the test asks too**, in the same line, in place of the result:
+  - an unknown server: its fingerprint in the code font, with "Faire confiance et mémoriser"
+    and "Cette fois seulement", as when a session connects (9.15); a fingerprint that has
+    changed blocks the test, as it blocks a connection;
+  - a protected key or a password: a password field and "Tester", Enter tests. The secret is
+    forgotten after the test, whatever its result; a password is never stored.
+- **A host behind a bastion** (ProxyJump) cannot be tested yet: the button is disabled, and the
+  warning of the form already says why.
+
 ## 10. Commit graph
 
 ### 10.1 Columns

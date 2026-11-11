@@ -71,6 +71,7 @@ pub fn run() {
             git::conflict::git_conflict_write,
             ssh::ssh_defaults,
             ssh::ssh_connect,
+            ssh::ssh_test,
             ssh::ssh_write,
             ssh::ssh_resize,
             ssh::ssh_close,
