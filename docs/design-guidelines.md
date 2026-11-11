@@ -892,9 +892,12 @@ the terminal, "Serveur inconnu", shows its fingerprint in the code font, with "F
 mémoriser", "Faire confiance cette fois" and "Annuler". Remembering it adds one line at the end
 of `known_hosts`, as OpenSSH does, and only if the key is not there yet. If the file cannot be
 written, the session opens all the same: its header says "empreinte acceptée pour cette session",
-and a warning notification says "L’empreinte n’a pas pu être mémorisée" and why; the test of the
-host form says it in its result line instead (9.21). A fingerprint that has changed blocks the
-connection, and names the line of `known_hosts` to look at.
+and a warning notification says "L’empreinte n’a pas pu être mémorisée", then why and what to do:
+in French when the cause is known (access refused, a read-only or full disk, a folder or a file
+in the way), "accès refusé. Vérifie que le fichier n’est pas en lecture seule…", otherwise the
+text of the system as it is; the test of the host form says it in its result line instead (9.21).
+A fingerprint that has changed blocks the connection, and names the line of `known_hosts` to look
+at.
 
 **Secrets.** A password or the passphrase of a key is asked for by a panel over the terminal: its
 title says what is asked ("Mot de passe de deploy", "Phrase secrète de la clé"), a line in

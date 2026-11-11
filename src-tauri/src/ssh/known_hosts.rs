@@ -44,7 +44,7 @@ pub fn check(host: &str, port: u16, key: &PublicKey) -> Known {
 
 /// Inscrit la clé du serveur dans `known_hosts`. En cas d'échec, dit pourquoi.
 pub fn learn(host: &str, port: u16, key: &PublicKey) -> Result<(), String> {
-    let path = path().ok_or("Dossier personnel introuvable")?;
+    let path = path().ok_or("Dossier personnel introuvable\u{a0}: ni USERPROFILE (Windows) ni HOME (Linux) n’est défini.")?;
     learn_path(&path, host, port, key)
 }
 
@@ -83,9 +83,13 @@ pub fn learn_path(path: &Path, host: &str, port: u16, key: &PublicKey) -> Result
     if check_path(path, host, port, key) == Known::Trusted {
         return Ok(());
     }
-    let failed = |e: std::io::Error| format!("{}\u{a0}: {e}", path.display());
+    let failed = |e: std::io::Error| format!("{}\u{a0}: {}", path.display(), explain(&e));
     if let Some(dir) = path.parent() {
-        fs::create_dir_all(dir).map_err(|e| format!("{}\u{a0}: {e}", dir.display()))?;
+        fs::create_dir_all(dir).map_err(|e| format!("{}\u{a0}: {}", dir.display(), explain_dir(&e)))?;
+    }
+    // Sous Windows, ouvrir un dossier répond « accès refusé » : le cas est reconnu avant.
+    if path.is_dir() {
+        return Err(failed(ErrorKind::IsADirectory.into()));
     }
     let existing = match fs::read(path) {
         Ok(bytes) => bytes,
@@ -108,9 +112,38 @@ pub fn learn_path(path: &Path, host: &str, port: u16, key: &PublicKey) -> Result
     drop(file);
 
     if check_path(path, host, port, key) != Known::Trusted {
-        return Err(format!("{}\u{a0}: la ligne écrite n’a pas été retrouvée à la relecture", path.display()));
+        let advice = "Ouvre le fichier pour vérifier sa dernière ligne.";
+        return Err(format!("{}\u{a0}: la ligne écrite n’a pas été retrouvée à la relecture. {advice}", path.display()));
     }
     Ok(())
+}
+
+/// Une erreur du système, en français et avec ce qu'il faut faire, quand la cause est connue ;
+/// sinon le texte du système, tel quel (en anglais sous Linux, dans la langue de Windows sinon).
+fn explain(e: &std::io::Error) -> String {
+    match e.kind() {
+        ErrorKind::PermissionDenied => {
+            "accès refusé. Vérifie que le fichier n’est pas en lecture seule et qu’il appartient à ton compte.".into()
+        }
+        ErrorKind::ReadOnlyFilesystem => "le disque est en lecture seule.".into(),
+        ErrorKind::StorageFull | ErrorKind::QuotaExceeded => {
+            "le disque est plein. Libère de la place, puis reconnecte-toi.".into()
+        }
+        ErrorKind::IsADirectory => {
+            "c’est un dossier, pas un fichier. Renomme-le, puis reconnecte-toi\u{a0}: le fichier sera créé.".into()
+        }
+        _ => e.to_string(),
+    }
+}
+
+/// Le dossier `.ssh` n'a pas pu être créé : un fichier porte souvent ce nom.
+fn explain_dir(e: &std::io::Error) -> String {
+    match e.kind() {
+        ErrorKind::AlreadyExists | ErrorKind::NotADirectory => {
+            "un fichier porte ce nom, à la place du dossier. Renomme-le, puis reconnecte-toi.".into()
+        }
+        _ => explain(e),
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -374,6 +407,30 @@ mod tests {
         fs::create_dir_all(&path).unwrap();
         let error = learn_path(&path, "serveur.exemple", 22, &key(ED25519)).unwrap_err();
         assert!(error.starts_with(&path.display().to_string()), "{error}");
+        assert!(error.contains("c’est un dossier, pas un fichier"), "{error}");
         let _ = fs::remove_dir_all(path.parent().unwrap().parent().unwrap());
+    }
+
+    #[test]
+    fn dit_quand_un_fichier_prend_la_place_du_dossier() {
+        let path = scratch("fichier-ssh");
+        let dir = path.parent().unwrap();
+        fs::create_dir_all(dir.parent().unwrap()).unwrap();
+        fs::write(dir, b"").unwrap();
+        let error = learn_path(&path, "serveur.exemple", 22, &key(ED25519)).unwrap_err();
+        assert!(error.starts_with(&dir.display().to_string()), "{error}");
+        assert!(error.contains("un fichier porte ce nom"), "{error}");
+        let _ = fs::remove_dir_all(dir.parent().unwrap());
+    }
+
+    #[test]
+    fn traduit_les_erreurs_courantes() {
+        let said = |kind: ErrorKind| explain(&kind.into());
+        assert!(said(ErrorKind::PermissionDenied).starts_with("accès refusé. Vérifie"));
+        assert_eq!(said(ErrorKind::ReadOnlyFilesystem), "le disque est en lecture seule.");
+        assert!(said(ErrorKind::StorageFull).starts_with("le disque est plein"));
+        // Une cause inconnue garde le texte du système.
+        let other = std::io::Error::other("panne inattendue");
+        assert_eq!(explain(&other), "panne inattendue");
     }
 }
