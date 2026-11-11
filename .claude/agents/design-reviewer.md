@@ -18,7 +18,8 @@ return a review. You change nothing: you only have reading tools.
   durations), and the shared classes and animations (`.btn`, `.field`, `.label`, `.chip`).
 - `src/lib/ui/` holds the shared components (dialog, menu, notifications, palette) and the
   icon set, `Icon.svelte`.
-- `docs/design/directions.md` shows, in screenshots, the expected rendering.
+- `docs/screenshots/` shows the application as it is, in light and in dark: the two
+  screenshots at the top of the guidelines.
 
 You only judge with the rules written in the guidelines. If a rule seems to be missing, or if
 two rules contradict each other, say so under drifts; do not invent one.

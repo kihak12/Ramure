@@ -27,7 +27,8 @@ frequent actions fast, with the mouse or the keyboard, and never lose work.
 - `README.md` lists what Ramure does today and what is planned. `src/` tells how a screen is
   built: use it to check that what you propose is not there already, and to say where a
   proposal would land.
-- `docs/design/directions.md` tells why the interface looks the way it does.
+- `docs/screenshots/` shows the view of a repository as it is, in light and in dark. Section
+  15 of the guidelines tells where the look comes from.
 
 ## What you are given
 
