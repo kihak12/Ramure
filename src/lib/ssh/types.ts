@@ -37,6 +37,8 @@ export interface Connected {
   knownHost: boolean;
   authMethod: string;
   connectMs: number;
+  /** Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit. */
+  keepFailed?: string | null;
 }
 
 export interface Closed {
@@ -52,7 +54,10 @@ export interface Closed {
 export type SshError =
   | { kind: 'hostKeyUnknown'; fingerprint: string; algorithm: string }
   | { kind: 'hostKeyChanged'; fingerprint: string; line: number }
-  | { kind: 'needPassphrase'; path: string }
+  /** `refused` : la phrase secrète essayée ne déverrouille pas la clé, tapée ou retenue (et alors oubliée). */
+  | { kind: 'needPassphrase'; path: string; refused?: 'typed' | 'retained' | null }
+  /** `refused` : le mot de passe que le trousseau retenait a été refusé, et oublié. */
+  | { kind: 'needPassword'; refused: boolean }
   | { kind: 'auth'; message: string }
   | { kind: 'other'; message: string };
 

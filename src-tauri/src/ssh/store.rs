@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use super::config::{self, HostEntry};
+use super::secrets;
 
 /// Version du schéma, tenue dans `PRAGMA user_version`.
 const SCHEMA_VERSION: i32 = 1;
@@ -224,14 +225,45 @@ pub fn hosts_list(store: State<'_, Store>) -> Result<Vec<Host>, String> {
     store.list()
 }
 
-#[tauri::command]
-pub fn host_save(store: State<'_, Store>, host: Host) -> Result<Host, String> {
-    store.save(host)
+/// Le nom sous lequel le trousseau retient le mot de passe d'un hôte : celui de son compte sur son
+/// serveur, tel qu'une connexion le forme.
+fn password_account(host: &Host) -> String {
+    let user = if host.user.is_empty() { super::current_user() } else { host.user.clone() };
+    secrets::password_account(&user, &host.hostname, if host.port == 0 { 22 } else { host.port })
 }
 
+/// Vrai si plus aucune fiche de `hosts` ne se connecte au compte `account`.
+fn orphaned(hosts: &[Host], account: &str) -> bool {
+    !hosts.iter().any(|host| password_account(host) == account)
+}
+
+/// Oublie le mot de passe retenu pour `account` si plus aucune fiche ne s'en sert.
+fn forget_if_orphaned(store: &Store, account: String) {
+    if store.list().is_ok_and(|hosts| orphaned(&hosts, &account)) {
+        secrets::forget_quietly(account);
+    }
+}
+
+/// Enregistre une fiche. Si son adresse a changé, le mot de passe retenu pour l'ancienne est oublié.
+#[tauri::command]
+pub fn host_save(store: State<'_, Store>, host: Host) -> Result<Host, String> {
+    let previous = if host.id.is_empty() { None } else { store.list()?.into_iter().find(|h| h.id == host.id) };
+    let saved = store.save(host)?;
+    if let Some(account) = previous.map(|h| password_account(&h)).filter(|old| *old != password_account(&saved)) {
+        forget_if_orphaned(&store, account);
+    }
+    Ok(saved)
+}
+
+/// Supprime une fiche, et oublie le mot de passe retenu pour son compte.
 #[tauri::command]
 pub fn host_delete(store: State<'_, Store>, id: String) -> Result<(), String> {
-    store.delete(&id)
+    let gone = store.list()?.into_iter().find(|h| h.id == id);
+    store.delete(&id)?;
+    if let Some(host) = gone {
+        forget_if_orphaned(&store, password_account(&host));
+    }
+    Ok(())
 }
 
 /// Importe les hôtes de `~/.ssh/config`.
@@ -284,6 +316,27 @@ mod tests {
 
         assert!(store.save(Host { hostname: "x".into(), ..Host::default() }).is_err());
         assert!(store.save(Host { alias: "x".into(), ..Host::default() }).is_err());
+    }
+
+    #[test]
+    fn a_password_is_orphaned_when_no_host_uses_its_account() {
+        let mut one = host("web", "");
+        one.hostname = "serveur.example".into();
+        one.user = "deploy".into();
+        one.port = 22;
+        let mut twin = one.clone();
+        twin.alias = "web (copie)".into();
+        let account = password_account(&one);
+        assert_eq!(account, "ssh-password:deploy@serveur.example:22");
+        // Une autre fiche du même compte : le mot de passe sert encore.
+        assert!(!orphaned(&[twin.clone()], &account));
+        // Le même serveur sous un autre utilisateur est un autre compte.
+        twin.user = "root".into();
+        assert!(orphaned(&[twin], &account));
+        assert!(orphaned(&[], &account));
+        // Sans port, c'est le 22.
+        one.port = 0;
+        assert_eq!(password_account(&one), account);
     }
 
     #[test]

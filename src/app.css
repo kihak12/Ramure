@@ -836,6 +836,14 @@ dialog:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
+/* Champ en erreur : bordure et halo en --bad, son message dessous (charte, section 9.3). */
+.field.invalid,
+.field.invalid:focus-visible {
+  border-color: var(--bad);
+}
+.field.invalid:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent);
+}
 
 /* Le texte d'aide d'un champ vide ne se lit jamais comme du texte saisi (charte, section 9.3). */
 ::placeholder {

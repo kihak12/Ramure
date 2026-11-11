@@ -29,3 +29,6 @@ uuid = { version = "1.29.2", features = ["v4"] }
 rand = "0.10"
 # Pseudo-terminal des terminaux locaux : ConPTY sous Windows, openpty ailleurs.
 portable-pty = "0.9.0"
+# Trousseau du système : Gestionnaire d'identifiants sous Windows, Secret Service sous Linux
+# (par zbus, sans bibliothèque système à installer).
+keyring = "4.2"

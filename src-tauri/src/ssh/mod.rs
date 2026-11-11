@@ -6,6 +6,7 @@
 
 pub mod config;
 pub mod keyfiles;
+pub mod secrets;
 pub mod store;
 
 use std::collections::HashMap;
@@ -43,7 +44,8 @@ pub enum Auth {
     /// Agent SSH, puis clés par défaut de `~/.ssh`.
     Auto,
     KeyFile { path: String, passphrase: Option<String> },
-    Password { password: String },
+    /// Sans mot de passe : celui que le trousseau retient pour ce compte, s'il y en a un.
+    Password { password: Option<String> },
 }
 
 #[derive(Deserialize)]
@@ -62,6 +64,9 @@ pub struct ConnectParams {
     remember_host: bool,
     /// Commande envoyée dans le terminal dès que le shell est prêt.
     startup_command: Option<String>,
+    /// Vrai pour retenir dans le trousseau du système le secret tapé, une fois qu'il a servi.
+    #[serde(default)]
+    remember_secret: bool,
 }
 
 /// Ce qu'il faut pour tester un hôte : se connecter et s'authentifier, sans ouvrir de terminal.
@@ -93,9 +98,21 @@ pub enum SshError {
     HostKeyUnknown { fingerprint: String, algorithm: String },
     /// L'empreinte ne correspond plus à celle enregistrée : connexion bloquée.
     HostKeyChanged { fingerprint: String, line: usize },
-    NeedPassphrase { path: String },
+    /// La clé `path` est protégée. `refused` : la phrase secrète essayée ne la déverrouille pas.
+    NeedPassphrase { path: String, refused: Option<Refused> },
+    /// Il faut un mot de passe. `refused` : celui que le trousseau retenait a été refusé, et oublié.
+    NeedPassword { refused: bool },
     Auth { message: String },
     Other { message: String },
+}
+
+/// D'où venait un secret qui n'a pas servi : tapé à l'instant, ou retenu dans le trousseau. Un
+/// secret retenu qui est refusé est oublié : il ne sera pas présenté une seconde fois au serveur.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Refused {
+    Typed,
+    Retained,
 }
 
 fn other(e: impl std::fmt::Display) -> SshError {
@@ -111,6 +128,8 @@ pub struct Connected {
     known_host: bool,
     auth_method: String,
     connect_ms: f64,
+    /// Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit, sans le secret.
+    keep_failed: Option<String>,
 }
 
 /// Pourquoi une session s'est terminée. Seule une connexion perdue se rouvre d'elle-même.
@@ -192,25 +211,61 @@ impl client::Handler for ClientHandler {
     }
 }
 
+/// Ce qu'a donné une clé : si le serveur l'a acceptée, et d'où venait sa phrase secrète.
+struct KeyTried {
+    accepted: bool,
+    /// La phrase secrète venait du trousseau.
+    retained: bool,
+    /// La phrase secrète tapée qui a déverrouillé la clé : à retenir si on le demande.
+    typed: Option<String>,
+}
+
 async fn auth_key_file(
     handle: &mut Handle<ClientHandler>,
     user: &str,
     path: &Path,
     passphrase: Option<&str>,
-) -> Result<bool, SshError> {
-    let key = match keys::load_secret_key(path, passphrase) {
+) -> Result<KeyTried, SshError> {
+    let shown = path.display().to_string();
+    let mut retained = false;
+    let mut typed = None;
+    let key = match keys::load_secret_key(path, None) {
         Ok(key) => key,
         Err(keys::Error::KeyIsEncrypted) => {
-            return Err(SshError::NeedPassphrase { path: path.display().to_string() });
+            let account = secrets::passphrase_account(path);
+            // La phrase tapée d'abord ; sinon celle que le trousseau retient pour cette clé.
+            let (candidate, from_keyring) = match passphrase {
+                Some(given) => (given.to_string(), false),
+                None => match secrets::held(account.clone()).await {
+                    Some(kept) => (kept, true),
+                    None => return Err(SshError::NeedPassphrase { path: shown, refused: None }),
+                },
+            };
+            match keys::load_secret_key(path, Some(&candidate)) {
+                Ok(key) => {
+                    if from_keyring {
+                        retained = true;
+                    } else {
+                        typed = Some(candidate);
+                    }
+                    key
+                }
+                Err(_) if from_keyring => {
+                    // La phrase retenue ne déverrouille plus la clé : elle est oubliée, et redemandée.
+                    let _ = secrets::forget(account).await;
+                    return Err(SshError::NeedPassphrase { path: shown, refused: Some(Refused::Retained) });
+                }
+                Err(_) => return Err(SshError::NeedPassphrase { path: shown, refused: Some(Refused::Typed) }),
+            }
         }
-        Err(e) => return Err(other(format!("{} : {e}", path.display()))),
+        Err(e) => return Err(other(format!("{shown} : {e}"))),
     };
     let hash = handle.best_supported_rsa_hash().await.map_err(other)?.flatten();
     let result = handle
         .authenticate_publickey(user, PrivateKeyWithHashAlg::new(Arc::new(key), hash))
         .await
         .map_err(other)?;
-    Ok(result.success())
+    Ok(KeyTried { accepted: result.success(), retained, typed })
 }
 
 /// Essaie chaque identité de l'agent SSH. Renvoie le commentaire de la clé acceptée.
@@ -238,19 +293,51 @@ async fn auth_agent(handle: &mut Handle<ClientHandler>, user: &str) -> Option<St
     None
 }
 
+/// Un mot de passe prêt à servir : tapé à l'instant, ou retenu dans le trousseau.
+struct Password {
+    value: String,
+    retained: bool,
+}
+
+/// Une authentification réussie.
+struct Authenticated {
+    /// Comment : « mot de passe », « clé id_ed25519 », « agent SSH »…
+    method: String,
+    /// Le secret tapé qui a servi, et le nom sous lequel le retenir si on le demande.
+    typed: Option<(String, String)>,
+}
+
+/// Le nom d'une clé tel qu'on le montre, suivi de ce qui l'a déverrouillée si c'est le trousseau.
+fn key_method(name: &str, retained: bool) -> String {
+    if retained { format!("clé {name}, phrase secrète du trousseau") } else { format!("clé {name}") }
+}
+
 async fn authenticate(
     handle: &mut Handle<ClientHandler>,
     user: &str,
     auth: &Auth,
-) -> Result<String, SshError> {
+    password: Option<Password>,
+    password_account: String,
+) -> Result<Authenticated, SshError> {
     match auth {
-        Auth::Password { password } => {
+        Auth::Password { .. } => {
+            let Some(password) = password else {
+                return Err(SshError::NeedPassword { refused: false });
+            };
             let result = handle
-                .authenticate_password(user, password.as_str())
+                .authenticate_password(user, password.value.as_str())
                 .await
                 .map_err(other)?;
             if result.success() {
-                Ok("mot de passe".into())
+                Ok(if password.retained {
+                    Authenticated { method: "mot de passe du trousseau".into(), typed: None }
+                } else {
+                    Authenticated { method: "mot de passe".into(), typed: Some((password_account, password.value)) }
+                })
+            } else if password.retained {
+                // Le mot de passe retenu n'est plus le bon : il est oublié, et redemandé.
+                let _ = secrets::forget(password_account).await;
+                Err(SshError::NeedPassword { refused: true })
             } else {
                 Err(SshError::Auth { message: "Le serveur a refusé ce mot de passe.".into() })
             }
@@ -258,9 +345,13 @@ async fn authenticate(
         Auth::KeyFile { path, passphrase } => {
             let path = config::expand(path);
             let passphrase = passphrase.as_deref().filter(|p| !p.is_empty());
-            if auth_key_file(handle, user, &path, passphrase).await? {
+            let tried = auth_key_file(handle, user, &path, passphrase).await?;
+            if tried.accepted {
                 let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-                Ok(format!("clé {name}"))
+                Ok(Authenticated {
+                    method: key_method(&name, tried.retained),
+                    typed: tried.typed.map(|passphrase| (secrets::passphrase_account(&path), passphrase)),
+                })
             } else {
                 Err(SshError::Auth {
                     message: format!("Le serveur a refusé la clé {}.", path.display()),
@@ -269,7 +360,8 @@ async fn authenticate(
         }
         Auth::Auto => {
             if let Some(comment) = auth_agent(handle, user).await {
-                return Ok(if comment.is_empty() { "agent SSH".into() } else { format!("agent SSH ({comment})") });
+                let method = if comment.is_empty() { "agent SSH".into() } else { format!("agent SSH ({comment})") };
+                return Ok(Authenticated { method, typed: None });
             }
             // Première clé chiffrée rencontrée : on demandera sa passphrase si rien d'autre ne passe.
             let mut encrypted = None;
@@ -280,16 +372,18 @@ async fn authenticate(
                         continue;
                     }
                     match auth_key_file(handle, user, &path, None).await {
-                        Ok(true) => return Ok(format!("clé {name}")),
-                        Err(SshError::NeedPassphrase { path }) => {
-                            encrypted.get_or_insert(path);
+                        Ok(tried) if tried.accepted => {
+                            return Ok(Authenticated { method: key_method(name, tried.retained), typed: None });
                         }
-                        Ok(false) | Err(_) => {}
+                        Err(SshError::NeedPassphrase { path, refused }) => {
+                            encrypted.get_or_insert((path, refused));
+                        }
+                        Ok(_) | Err(_) => {}
                     }
                 }
             }
             match encrypted {
-                Some(path) => Err(SshError::NeedPassphrase { path }),
+                Some((path, refused)) => Err(SshError::NeedPassphrase { path, refused }),
                 None => Err(SshError::Auth {
                     message: "Aucune clé acceptée : ni celles de l'agent SSH, ni les clés par défaut de ~/.ssh."
                         .into(),
@@ -368,12 +462,15 @@ fn ending_without_close(ended_by_server: bool) -> Ending {
     if ended_by_server { Ending::Exit } else { Ending::Lost }
 }
 
+/// L'utilisateur de cette machine : celui d'un hôte qui n'en précise pas.
+pub fn current_user() -> String {
+    std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default()
+}
+
 /// Valeurs proposées par le formulaire : utilisateur courant, hôtes de `~/.ssh/config`, clés présentes.
 #[tauri::command]
 pub fn ssh_defaults() -> Defaults {
-    let user = std::env::var("USERNAME")
-        .or_else(|_| std::env::var("USER"))
-        .unwrap_or_default();
+    let user = current_user();
     let ssh_dir = config::home().map(|home| home.join(".ssh"));
     let hosts = ssh_dir
         .as_ref()
@@ -397,6 +494,8 @@ struct Opened {
     fingerprint: String,
     known_host: bool,
     auth_method: String,
+    /// Le secret tapé qui a servi, et le nom sous lequel le retenir si on le demande.
+    typed: Option<(String, String)>,
 }
 
 /// Se connecte à `host:port`, vérifie l'empreinte du serveur et authentifie `user`. Commun à une
@@ -409,6 +508,19 @@ async fn open_authenticated(
     accept_fingerprint: Option<String>,
     remember_host: bool,
 ) -> Result<Opened, SshError> {
+    // Le mot de passe est trouvé avant de se connecter : sans lui, inutile de déranger le serveur.
+    let password_account = secrets::password_account(user, host, port);
+    let password = match auth {
+        Auth::Password { password } => match password.as_deref().filter(|p| !p.is_empty()) {
+            Some(given) => Some(Password { value: given.to_string(), retained: false }),
+            None => match secrets::held(password_account.clone()).await {
+                Some(kept) => Some(Password { value: kept, retained: true }),
+                None => return Err(SshError::NeedPassword { refused: false }),
+            },
+        },
+        _ => None,
+    };
+
     let verdict = Arc::new(Mutex::new(None));
     let config = Arc::new(client::Config {
         keepalive_interval: Some(Duration::from_secs(30)),
@@ -449,8 +561,10 @@ async fn open_authenticated(
         _ => (String::new(), false),
     };
 
-    match authenticate(&mut handle, user, auth).await {
-        Ok(auth_method) => Ok(Opened { handle, fingerprint, known_host, auth_method }),
+    match authenticate(&mut handle, user, auth, password, password_account).await {
+        Ok(Authenticated { method, typed }) => {
+            Ok(Opened { handle, fingerprint, known_host, auth_method: method, typed })
+        }
         Err(e) => {
             let _ = handle.disconnect(Disconnect::ByApplication, "", "fr").await;
             Err(e)
@@ -489,7 +603,7 @@ pub async fn ssh_connect(
     on_data: Channel,
 ) -> Result<Connected, SshError> {
     let started = Instant::now();
-    let Opened { handle, fingerprint, known_host, auth_method } = open_authenticated(
+    let Opened { handle, fingerprint, known_host, auth_method, typed } = open_authenticated(
         &params.host,
         params.port,
         &params.user,
@@ -498,6 +612,15 @@ pub async fn ssh_connect(
         params.remember_host,
     )
     .await?;
+
+    // Le secret a servi : c'est maintenant qu'il est retenu, si on l'a demandé. Un trousseau qui
+    // refuse n'empêche pas la session : l'interface le dira.
+    let mut keep_failed = None;
+    if params.remember_secret {
+        if let Some((account, secret)) = typed {
+            keep_failed = secrets::keep(account, secret).await.err();
+        }
+    }
 
     let channel = handle.channel_open_session().await.map_err(other)?;
     channel
@@ -530,6 +653,7 @@ pub async fn ssh_connect(
         known_host,
         auth_method,
         connect_ms: started.elapsed().as_secs_f64() * 1000.0,
+        keep_failed,
     })
 }
 

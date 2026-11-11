@@ -9,6 +9,7 @@
   import KeysDialog from './KeysDialog.svelte';
   import { display, keys } from '../ui/keys.svelte';
   import { mayCloseTerminal } from './guard';
+  import { secretsHeld } from './secrets';
   import { ssh, STATUS, type Session } from './ssh.svelte';
   import Terminal from './Terminal.svelte';
   import { emptyHost, type Host } from './types';
@@ -67,10 +68,23 @@
     if (await mayCloseTerminal(session)) ssh.close(session.key);
   }
 
+  /** Le compte d'un hôte sur son serveur : c'est à lui qu'appartient un mot de passe retenu. */
+  const account = (host: Host) => `${host.user || ssh.defaultUser}@${host.hostname}:${host.port || 22}`;
+
   async function remove(host: Host) {
+    // Le mot de passe retenu pour ce compte part avec sa dernière fiche : la confirmation le dit.
+    const last = !ssh.hosts.some((other) => other.id !== host.id && account(other) === account(host));
+    const [kept] =
+      host.auth === 'password' && last
+        ? await secretsHeld([{ kind: 'password', user: host.user || ssh.defaultUser, host: host.hostname, port: host.port || 22 }])
+        : [false];
     const confirmed = await dialogs.confirm({
       title: `Supprimer ${host.alias} du carnet ?`,
-      body: 'La fiche est supprimée et ne pourra pas être récupérée. Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.',
+      body: `${
+        kept
+          ? 'La fiche est supprimée, et le mot de passe que le trousseau du système retient pour ce compte est oublié : ni l’un ni l’autre ne pourra être récupéré.'
+          : 'La fiche est supprimée et ne pourra pas être récupérée.'
+      } Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.`,
       confirmLabel: 'Supprimer',
       danger: true,
     });
