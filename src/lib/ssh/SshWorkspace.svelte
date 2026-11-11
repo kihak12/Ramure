@@ -318,8 +318,10 @@
     border-radius: var(--radius);
     transition: background var(--t-fast) var(--ease);
   }
+  /* Le fond suit le pointeur, et le focus clavier : un clic ne laisse rien derrière lui, même si le
+     bouton de la ligne garde le focus (charte, section 9.6). */
   li:hover,
-  li:focus-within {
+  li:has(:focus-visible) {
     background: var(--hover);
   }
   .host {
@@ -390,7 +392,7 @@
     transition: opacity var(--t-fast) var(--ease);
   }
   li:hover .acts,
-  li:focus-within .acts {
+  li:has(:focus-visible) .acts {
     opacity: 1;
   }
   .acts button {

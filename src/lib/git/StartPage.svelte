@@ -200,8 +200,9 @@
     animation-delay: calc(var(--i) * var(--t-step) + var(--t-fast));
     transition: background var(--t-fast) var(--ease);
   }
+  /* Le fond suit le pointeur, et le focus clavier : un clic ne laisse pas de survol (charte, 9.6). */
   li:hover,
-  li:focus-within {
+  li:has(:focus-visible) {
     background: var(--hover);
   }
   .recent {

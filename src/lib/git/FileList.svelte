@@ -95,8 +95,9 @@
     min-width: 0;
     transition: background var(--t-fast) var(--ease);
   }
+  /* Le fond suit le pointeur, et le focus clavier : un clic ne laisse pas de survol (charte, 9.6). */
   li:hover,
-  li:focus-within {
+  li:has(:focus-visible) {
     background: var(--hover);
   }
   li.active {
@@ -187,7 +188,7 @@
     transform: scale(0.97);
   }
   li:hover .act,
-  li:focus-within .act {
+  li:has(:focus-visible) .act {
     opacity: 1;
   }
   .act:hover:not(:disabled) {
@@ -199,7 +200,7 @@
     color: var(--bad);
   }
   li:hover .act:disabled,
-  li:focus-within .act:disabled,
+  li:has(:focus-visible) .act:disabled,
   .act:disabled {
     opacity: 0.45;
     cursor: not-allowed;

@@ -633,7 +633,11 @@ Sidebar, file lists, graph, palette results.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the selected row. **Never an outline
   around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
   selected when it receives focus, the first one becomes selected.
-- The actions of a row (stage, discard) appear on hover and on focus, on the right.
+- The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
+- A click leaves no hover behind: a row that keeps the focus of a click shows neither the hover
+  background nor its actions once the pointer has left. Only the keyboard focus shows them. This
+  holds for the rows that hold a button of their own: the host book, the file lists, the recent
+  repositories of the start page.
 - The state of a file is a letter on a tinted background (M, A, D, R), never a colour alone.
 - A file that is only partly staged carries the words "en partie" after its name, in `--muted`
   at 11.5 px, in both lists.
