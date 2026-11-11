@@ -1,4 +1,4 @@
-// État du module SSH : carnet d'hôtes, clés, et sessions de terminal ouvertes.
+// État du module SSH : carnet d'hôtes, clés, et terminaux ouverts, distants ou locaux.
 
 import { invoke } from '@tauri-apps/api/core';
 import { toasts } from '../ui/toasts.svelte';
@@ -7,7 +7,12 @@ import type { Host, KeyInfo } from './types';
 export interface Session {
   /** Identifiant de l'onglet (différent de celui de la connexion côté Rust). */
   key: number;
+  /** `ssh` : une session sur un hôte du carnet. `local` : le shell de cette machine. */
+  kind: 'ssh' | 'local';
+  /** L'hôte d'une session SSH ; pour un terminal local, une fiche vide qui ne sert pas. */
   host: Host;
+  /** Dossier de départ d'un terminal local ; le dossier personnel s'il est vide. */
+  cwd: string;
   title: string;
   status: 'connecting' | 'reconnecting' | 'connected' | 'closed';
   /** La barre de recherche du terminal est ouverte. */
@@ -22,6 +27,23 @@ export const STATUS: Record<Session['status'], string> = {
   reconnecting: 'Reconnexion en cours',
   connected: 'Connecté',
   closed: 'Session terminée',
+};
+
+/** La fiche d'hôte d'un terminal local : il n'en a pas, celle-ci ne sert qu'à remplir le champ. */
+const LOCAL_HOST: Host = {
+  id: '',
+  alias: '',
+  hostname: '',
+  port: 0,
+  user: '',
+  auth: 'auto',
+  keyPath: '',
+  group: '',
+  tags: [],
+  color: '',
+  startupCommand: '',
+  proxyJump: false,
+  updatedAt: 0,
 };
 
 const message = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
@@ -106,8 +128,29 @@ class Ssh {
     const user = host.user || this.defaultUser;
     const session: Session = {
       key: this.#next++,
+      kind: 'ssh',
+      cwd: '',
       host: { ...host, user },
       title: host.alias || `${user}@${host.hostname}`,
+      status: 'connecting',
+      searching: false,
+      searchAsk: 0,
+    };
+    this.sessions.push(session);
+    this.activeKey = session.key;
+  }
+
+  /** Ouvre un terminal local dans un nouvel onglet : « Terminal », puis « Terminal 2 »… le plus petit numéro libre. */
+  openLocal(cwd = '') {
+    const taken = new Set(this.sessions.filter((s) => s.kind === 'local').map((s) => s.title));
+    let n = 1;
+    while (taken.has(n === 1 ? 'Terminal' : `Terminal ${n}`)) n++;
+    const session: Session = {
+      key: this.#next++,
+      kind: 'local',
+      cwd,
+      host: LOCAL_HOST,
+      title: n === 1 ? 'Terminal' : `Terminal ${n}`,
       status: 'connecting',
       searching: false,
       searchAsk: 0,

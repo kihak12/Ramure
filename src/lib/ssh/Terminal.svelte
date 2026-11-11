@@ -63,6 +63,13 @@
     phase.step === 'lost' ? `Connexion perdue. Tentative ${phase.attempt} sur ${RETRIES.length} dans ${RETRIES[phase.attempt - 1]} secondes.` : '',
   );
   let retryButton = $state<HTMLButtonElement>();
+  let endButton = $state<HTMLButtonElement>();
+  // Un panneau de fin apparaît : le focus va sur son bouton principal, que le clavier n'atteindrait
+  // pas autrement, le terminal gardant la touche Tab (charte, section 9.15).
+  $effect(() => {
+    if (phase.step !== 'closed' && phase.step !== 'error') return;
+    void tick().then(() => endButton?.focus());
+  });
   // La carte apparaît : le focus va sur « Reconnecter maintenant ». Le terminal, coupé, ne sert plus,
   // et il garde la touche Tab pour lui : sans cela, le clavier n'atteindrait pas la carte.
   $effect(() => {
@@ -230,6 +237,43 @@
   let attempt: Attempt = {};
 
   const host = $derived(session.host);
+  // Un terminal local parle au cœur Rust par ses propres commandes ; le reste du composant est commun.
+  // La nature d'un onglet ne change pas : la lire une fois suffit.
+  // svelte-ignore state_referenced_locally
+  const local = session.kind === 'local';
+  const API = local
+    ? { write: 'local_write', resize: 'local_resize', close: 'local_close', closed: 'local-closed' }
+    : { write: 'ssh_write', resize: 'ssh_resize', close: 'ssh_close', closed: 'ssh-closed' };
+  /** Ce que le cœur dit d'un terminal local ouvert : son shell et son dossier de départ. */
+  let opened = $state<{ shell: string; cwd: string } | null>(null);
+  const onWindows = navigator.userAgent.includes('Windows');
+
+  /** Lance le shell de cette machine dans un pseudo-terminal. */
+  async function openLocal() {
+    if (!term || !fit) return;
+    phase = { step: 'connecting' };
+    session.status = 'connecting';
+    fit.fit();
+    const onData = new Channel<ArrayBuffer | number[]>();
+    onData.onmessage = (chunk) => term?.write(new Uint8Array(chunk));
+    try {
+      const result = await invoke<{ id: number; shell: string; cwd: string }>('local_open', {
+        cols: term.cols,
+        rows: term.rows,
+        cwd: session.cwd || null,
+        onData,
+      });
+      sessionId = result.id;
+      opened = { shell: result.shell, cwd: result.cwd };
+      phase = { step: 'connected' };
+      session.status = 'connected';
+      term.focus();
+    } catch (e) {
+      session.status = 'closed';
+      const what = onWindows ? 'Vérifie que PowerShell est installé.' : 'Vérifie la variable SHELL de ton compte.';
+      phase = { step: 'error', message: `${typeof e === 'string' ? e : String(e)} ${what}` };
+    }
+  }
   const target = $derived(`${host.user}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`);
 
   function median(values: number[]) {
@@ -245,6 +289,7 @@
   /** Ouvre la session. `auto` : numéro de la tentative de reconnexion automatique, 0 sinon. */
   async function connect(next: Attempt = {}, auto = 0) {
     if (!term || !fit) return;
+    if (local) return openLocal();
     retry = auto;
     attempt = { ...attempt, ...next };
     if (host.proxyJump) {
@@ -387,10 +432,10 @@
     terminal.onData((data) => {
       if (sessionId === null) return;
       if (!lastKey) lastKey = performance.now();
-      void invoke('ssh_write', { id: sessionId, data }).catch(() => {});
+      void invoke(API.write, { id: sessionId, data }).catch(() => {});
     });
     terminal.onResize(({ cols, rows }) => {
-      if (sessionId !== null) void invoke('ssh_resize', { id: sessionId, cols, rows }).catch(() => {});
+      if (sessionId !== null) void invoke(API.resize, { id: sessionId, cols, rows }).catch(() => {});
     });
 
     const observer = new ResizeObserver(() => {
@@ -407,11 +452,21 @@
       });
     });
 
-    const unlisten = listen<Closed>('ssh-closed', (event) => {
+    const unlisten = listen<Closed>(API.closed, (event) => {
       if (event.payload.id !== sessionId) return;
       sessionId = null;
       info = null;
       const { exitStatus, reason, ending } = event.payload;
+      // Terminal local : une fin normale ferme l'onglet ; une erreur le garde, avec « Relancer ».
+      if (local) {
+        if (exitStatus === 0) return onclose();
+        session.status = 'closed';
+        phase = {
+          step: 'closed',
+          message: `${exitStatus === null ? 'Le shell s’est arrêté.' : `Le shell s’est arrêté (code de sortie ${exitStatus}).`} Relance-le, ou ferme l’onglet.`,
+        };
+        return;
+      }
       // Seule une connexion perdue se rouvre d'elle-même, et seulement si le réglage le permet.
       if (ending === 'lost' && prefs.sshReconnect) {
         term?.write('\r\n');
@@ -439,7 +494,7 @@
       stopTheme();
       void unlisten.then((stop) => stop());
       window.clearTimeout(retryTimer);
-      if (sessionId !== null) void invoke('ssh_close', { id: sessionId }).catch(() => {});
+      if (sessionId !== null) void invoke(API.close, { id: sessionId }).catch(() => {});
       terminal.dispose();
     };
   });
@@ -457,14 +512,25 @@
 
 <div class="session">
   <header>
-    <span class="dot s-{session.status}" role="img" aria-label={STATUS[session.status]} title={STATUS[session.status]}></span>
-    <b class="mono">{target}</b>
-    {#if phase.step === 'connected' && info}
+    {#if local}
+      <!-- Un terminal local : l'ordinateur, comme partout où « local » est dit (charte, section 7). -->
+      <span class="what"><Icon name="laptop" size={14} /> <b>Terminal local</b></span>
+      {#if opened}
+        <span class="mono">{opened.shell}</span>
+        <span>ouvert dans <span class="mono">{opened.cwd}</span></span>
+      {/if}
+    {:else}
+      <span class="dot s-{session.status}" role="img" aria-label={STATUS[session.status]} title={STATUS[session.status]}></span>
+      <b class="mono">{target}</b>
+    {/if}
+    {#if local}
+      <!-- Pas de « Déconnecter » : la croix de l'onglet ferme le terminal. -->
+    {:else if phase.step === 'connected' && info}
       <span>{info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session'}</span>
       <span>{info.authMethod}</span>
       <span>connexion en {Math.round(info.connectMs)} ms</span>
       {#if echo !== null}<span title="Délai médian entre une frappe et son affichage">écho {Math.round(echo)} ms</span>{/if}
-      <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke('ssh_close', { id: sessionId })}>Déconnecter</button>
+      <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke(API.close, { id: sessionId })}>Déconnecter</button>
     {:else if phase.step === 'connecting'}
       <span>connexion…</span>
     {/if}
@@ -516,7 +582,9 @@
         <div class="card" class:bad={phase.step === 'hostKeyChanged'}>
           {#if phase.step === 'connecting'}
             <span class="spinner wait" aria-hidden="true"></span>
-            <p class="lead">{retry ? 'Reconnexion' : 'Connexion'} à <b class="mono">{target}</b>…</p>
+            <p class="lead">
+              {#if local}Ouverture du terminal local…{:else}{retry ? 'Reconnexion' : 'Connexion'} à <b class="mono">{target}</b>…{/if}
+            </p>
           {:else if phase.step === 'hostKey'}
             <h3><Icon name="warning" /> Serveur inconnu</h3>
             <p>
@@ -576,10 +644,17 @@
               <button class="btn ghost" type="button" onclick={stopRetrying}>Arrêter</button>
             </div>
           {:else}
-            <h3>{phase.step === 'error' ? 'Connexion impossible' : phase.lost ? 'Connexion perdue' : 'Session terminée'}</h3>
+            <h3>
+              {#if local}Shell arrêté{:else}{phase.step === 'error'
+                  ? 'Connexion impossible'
+                  : phase.lost
+                    ? 'Connexion perdue'
+                    : 'Session terminée'}{/if}
+            </h3>
             <p class:err={phase.step === 'error'}>{phase.message}</p>
             <div class="row">
-              <button class="btn primary" type="button" onclick={reconnect}><Icon name="refresh" size={14} /> Reconnecter</button>
+              <!-- Un terminal local n'est jamais « reconnecté » : il est relancé. -->
+              <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Relancer' : 'Reconnecter'}</button>
               <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
             </div>
           {/if}
@@ -669,8 +744,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    /* Hauteur fixe : celle d'un en-tête avec son bouton « Déconnecter ». Le terminal ne saute pas
+       d'un onglet à l'autre. */
+    height: 35px;
     padding: 5px 12px;
-    min-height: 34px;
     border-bottom: 1px solid var(--line-soft);
     color: var(--muted);
     font-size: var(--fs-label);
@@ -794,5 +871,10 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+  .what {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 </style>

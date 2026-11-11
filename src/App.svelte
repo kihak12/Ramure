@@ -1,6 +1,7 @@
 <script lang="ts">
   import { gitCommands } from './lib/git/commands';
   import { sshCommands } from './lib/ssh/commands';
+  import { ssh } from './lib/ssh/ssh.svelte';
   import GitWorkspace from './lib/git/GitWorkspace.svelte';
   import SshWorkspace from './lib/ssh/SshWorkspace.svelte';
   import ContextMenu from './lib/ui/ContextMenu.svelte';
@@ -31,6 +32,17 @@
       { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Afficher les dépôts', disabled: shown === 'git', run: () => show('git') },
       { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Afficher le terminal SSH', disabled: shown === 'ssh', run: () => show('ssh') },
       { id: 'settings', group: 'Modules', icon: 'settings', title: settingsPage.open ? 'Fermer les réglages' : 'Réglages', keywords: 'preferences options theme sombre clair style graphe', run: () => settingsPage.toggle() },
+      {
+        id: 'terminal-new',
+        group: 'Modules',
+        icon: 'laptop',
+        title: 'Nouveau terminal local',
+        keywords: 'shell console ligne de commande powershell bash',
+        run: () => {
+          show('ssh');
+          ssh.openLocal();
+        },
+      },
       { id: 'shortcuts', group: 'Modules', icon: 'settings', title: 'Raccourcis clavier', keywords: 'touches clavier reglages', run: () => settingsPage.show('keys') },
     ];
     // Les actions Git n'ont de sens que devant un dépôt.
