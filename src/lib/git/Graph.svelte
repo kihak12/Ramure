@@ -21,6 +21,10 @@
     classic: { row: 28, lane: 16, pad: 14, node: 5, merge: 4, line: 2, max: 340 },
   } as const;
 
+  const LABELS = { max: 220, min: 164 }; // colonne « Branche / Tag »
+  const MESSAGE = { wanted: 200, min: 120 }; // colonne du message
+  const GRAPH_MIN = 72; // le graphe n'est jamais plus étroit que son en-tête
+  const ROW_END = 10; // marge droite d'une ligne
   const BUFFER = 24; // lignes rendues au-dessus et au-dessous de la zone visible
   const STEP = 12; // la fenêtre de rendu ne se déplace que par paliers de 12 lignes
   const BAND = 24; // hauteur de la bande qui relie un commit à la capsule de son message
@@ -42,10 +46,37 @@
   const ROW = $derived(metrics.row);
 
   const commits = $derived(repo.commits);
-  // Jamais plus étroit que son en-tête de colonne.
-  const graphW = $derived(
-    Math.max(72, Math.min(metrics.max, metrics.pad * 2 + Math.max(0, (repo.result?.maxLanes ?? 1) - 1) * metrics.lane + 6)),
+  // Largeur que demanderaient toutes les voies, jamais moins que l'en-tête de colonne.
+  const lanesW = $derived(
+    Math.max(GRAPH_MIN, Math.min(metrics.max, metrics.pad * 2 + Math.max(0, (repo.result?.maxLanes ?? 1) - 1) * metrics.lane + 6)),
   );
+
+  // --- Colonnes (charte, section 10.1) ------------------------------------------------------
+  // Le message passe d'abord. Quand il aurait moins de 200 px, les autres colonnes cèdent, dans
+  // l'ordre : le SHA, le nom de l'auteur, la date, puis « Branche / Tag » jusqu'à 164 px, puis le
+  // graphe, dont les voies de droite sont coupées, jusqu'à ce que le message ait 120 px. Le calcul
+  // part de la place qui reste après le graphe : un dépôt à nombreuses voies montre moins de colonnes.
+  let cardW = $state(0);
+  const columns = $derived.by(() => {
+    // Colonnes à droite du message, de la plus complète à la plus réduite. `who` : le nom de
+    // l'auteur est écrit ; le rendu « Classique » garde la place de ses initiales.
+    const initials = ribbon ? 0 : 34;
+    const levels = [
+      { author: 150, who: true, date: 92, sha: 66 },
+      { author: 150, who: true, date: 92, sha: 0 },
+      { author: initials, who: false, date: 92, sha: 0 },
+      { author: initials, who: false, date: 0, sha: 0 },
+    ];
+    const rest = (level: (typeof levels)[number]) => level.author + level.date + level.sha;
+    if (cardW <= 0) return { ...levels[0], labels: LABELS.max, graph: lanesW };
+    const room = cardW - ROW_END;
+    const level = levels.find((l) => room - rest(l) - LABELS.max - lanesW >= MESSAGE.wanted) ?? levels[levels.length - 1];
+    const left = room - rest(level);
+    const labels = Math.max(LABELS.min, Math.min(LABELS.max, left - lanesW - MESSAGE.wanted));
+    const graph = Math.max(GRAPH_MIN, Math.min(lanesW, left - labels - MESSAGE.min));
+    return { ...level, labels, graph };
+  });
+  const graphW = $derived(columns.graph);
   // Fenêtre de rendu : seules ces lignes existent dans le DOM et sur le canvas.
   const winStart = $derived(Math.max(0, Math.floor((scrollTop / ROW - BUFFER) / STEP) * STEP));
   const winEnd = $derived(Math.min(commits.length, winStart + Math.ceil(viewH / ROW) + 2 * BUFFER + STEP));
@@ -401,7 +432,21 @@
   </span>
 {/snippet}
 
-<div class="graph" class:ribbon style:--graph="{graphW}px" style:--row="{ROW}px" style:--band="{BAND}px">
+<div
+  class="graph"
+  class:ribbon
+  class:no-who={!columns.who}
+  class:no-date={!columns.date}
+  class:no-sha={!columns.sha}
+  bind:clientWidth={cardW}
+  style:--labels="{columns.labels}px"
+  style:--graph="{graphW}px"
+  style:--author="{columns.author}px"
+  style:--date="{columns.date}px"
+  style:--sha="{columns.sha}px"
+  style:--row="{ROW}px"
+  style:--band="{BAND}px"
+>
   <div class="head">
     <span>Branche / Tag</span><span>Graphe</span><span>Message</span><span>Auteur</span><span>Date</span><span>SHA</span>
   </div>
@@ -434,7 +479,7 @@
         style:height="{(winEnd - winStart) * ROW}px"
         aria-hidden="true"
       ></canvas>
-      {#if ribbon && headIndex >= winStart && headIndex < winEnd && repo.head}
+      {#if ribbon && headIndex >= winStart && headIndex < winEnd && repo.head && metrics.pad + repo.head.lane * metrics.lane < graphW}
         <!-- Halo animé sur le commit courant : un élément CSS, pour ne pas redessiner le canvas à chaque image. -->
         <span
           class="pulse"
@@ -514,86 +559,27 @@
     min-width: 0;
     min-height: 0;
     position: relative;
-    container-type: inline-size;
   }
-  /* Colonne « Branche / Tag » : 220 px. Quand le message aurait moins de 200 px, elle lui rend
-     sa largeur, jusqu'à 164 px (charte, section 10.1). `--rest` est la largeur des colonnes à
-     droite du message ; les 10 px sont la marge droite d'une ligne. */
-  .head,
-  .spacer {
-    --rest: 308px;
-    --labels: clamp(164px, calc(100cqw - var(--graph) - var(--rest) - 10px - 200px), 220px);
-  }
+  /* Largeurs calculées dans le script (charte, section 10.1). Une colonne qui cède garde sa
+     place dans la grille, à 0 px, et son contenu est caché. */
   .head,
   .row {
     display: grid;
-    grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 150px 92px 66px;
+    grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) var(--author) var(--date) var(--sha);
     align-items: center;
   }
-  /* Quand la place manque, le message passe avant le reste : le SHA disparaît d'abord
-     (il reste dans le panneau de détail), puis le nom de l'auteur, puis la date. */
-  @container (max-width: 860px) {
-    .head,
-    .spacer {
-      --rest: 242px;
-    }
-    .head,
-    .row {
-      grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 150px 92px;
-    }
-    .head span:nth-child(6),
-    .sha {
-      display: none;
-    }
+  .head span:nth-child(n + 4) {
+    overflow: hidden;
+    white-space: nowrap;
   }
-  @container (max-width: 740px) {
-    .head,
-    .spacer {
-      --rest: 126px;
-    }
-    .ribbon .head,
-    .ribbon .spacer {
-      --rest: 92px;
-    }
-    .head,
-    .row {
-      grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 34px 92px;
-    }
-    .head span:nth-child(4) {
-      visibility: hidden;
-    }
-    .who {
-      display: none;
-    }
-    /* Le rendu « Ruban » montre déjà l'auteur sur le graphe : sa colonne disparaît entièrement. */
-    .ribbon .head,
-    .ribbon .row {
-      grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 0 92px;
-    }
-  }
-  @container (max-width: 600px) {
-    .head,
-    .spacer {
-      --rest: 34px;
-    }
-    .ribbon .head,
-    .ribbon .spacer {
-      --rest: 0px;
-    }
-    .head,
-    .row,
-    .ribbon .head,
-    .ribbon .row {
-      grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 34px;
-    }
-    .ribbon .head,
-    .ribbon .row {
-      grid-template-columns: var(--labels) var(--graph) minmax(0, 1fr) 0;
-    }
-    .head span:nth-child(5),
-    .date {
-      display: none;
-    }
+  /* `visibility`, et non `display` : une cellule retirée décalerait les suivantes d'une colonne. */
+  .no-who .head span:nth-child(4),
+  .no-who .who,
+  .no-date .head span:nth-child(5),
+  .no-date .date,
+  .no-sha .head span:nth-child(6),
+  .no-sha .sha {
+    visibility: hidden;
   }
   .head {
     border-bottom: 1px solid var(--line-soft);
@@ -935,6 +921,7 @@
   }
   .sha {
     padding-left: 10px;
+    overflow: hidden;
     color: var(--muted);
     font-size: var(--fs-code);
   }
