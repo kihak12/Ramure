@@ -709,19 +709,23 @@ diff. Nothing has to be opened to compare them.
 
 ### 10.1 Columns
 
-In order: Branche / Tag (220 px), Graphe (420 px at most), Message, Auteur (150 px), Date
-(92 px) and SHA (66 px).
+In order: Branche / Tag (220 px), Graphe (420 px at most, 340 px in "Classique"), Message,
+Auteur (150 px), Date (92 px) and SHA (66 px).
 
 **The message comes first.** It wants 200 px. When it would get less, the other columns give
 way, in this order, each only as far as needed:
 
-1. the SHA goes (it stays in the detail panel);
+1. the SHA goes (it stays in the detail panel and in the menu of the commit);
 2. the name of the author goes; the "Classique" style keeps the 34 px of its initials, and
    "Ruban" already shows them on the graph;
 3. the date goes;
 4. "Branche / Tag" narrows, down to 164 px;
-5. last, "Graphe" narrows, down to 72 px, until the message has 120 px. The lanes that no
-   longer fit are cut at its right edge; hiding a side card (9.17) gives them back.
+5. last, "Graphe" narrows, down to 72 px, until the message has 120 px. At the narrowest
+   centre card (360 px, 9.16), the message takes what is left, 80 px at the least.
+
+The lanes that no longer fit are cut at the right edge of "Graphe"; hiding a side card (9.17)
+gives them back. A commit on a cut lane has no dot: its band starts at the edge of the column,
+and the tooltip of its message adds its author.
 
 These steps follow the room the message would really have, after the graph: a repository with
 many parallel branches has a wide graph, and a card of the same width shows fewer columns.

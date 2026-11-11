@@ -73,10 +73,20 @@
     const level = levels.find((l) => room - rest(l) - LABELS.max - lanesW >= MESSAGE.wanted) ?? levels[levels.length - 1];
     const left = room - rest(level);
     const labels = Math.max(LABELS.min, Math.min(LABELS.max, left - lanesW - MESSAGE.wanted));
-    const graph = Math.max(GRAPH_MIN, Math.min(lanesW, left - labels - MESSAGE.min));
+    let graph = Math.max(GRAPH_MIN, Math.min(lanesW, left - labels - MESSAGE.min));
+    // Graphe coupé : il s'arrête juste après la dernière voie entière, pour ne pas montrer une voie
+    // sans ses points. La place gagnée revient au message.
+    if (graph < lanesW) {
+      const { pad, node, lane } = metrics;
+      const whole = Math.max(1, Math.floor((graph - pad - node - 4) / lane) + 1);
+      graph = Math.max(GRAPH_MIN, pad + (whole - 1) * lane + node + 4);
+    }
     return { ...level, labels, graph };
   });
   const graphW = $derived(columns.graph);
+  // Voies qui tiennent dans la colonne, point et anneau du commit courant compris. Au-delà, elles
+  // sont coupées : leurs commits n'ont pas de point, et leur bande part du bord de la colonne.
+  const shownLanes = $derived(Math.max(1, Math.floor((graphW - metrics.pad - metrics.node - 4) / metrics.lane) + 1));
   // Fenêtre de rendu : seules ces lignes existent dans le DOM et sur le canvas.
   const winStart = $derived(Math.max(0, Math.floor((scrollTop / ROW - BUFFER) / STEP) * STEP));
   const winEnd = $derived(Math.min(commits.length, winStart + Math.ceil(viewH / ROW) + 2 * BUFFER + STEP));
@@ -145,8 +155,7 @@
       ctx.globalAlpha = BAND_ALPHA;
       for (let i = winStart; i < winEnd; i++) {
         const commit = commits[i];
-        const cx = x(commit.lane);
-        if (cx >= width) continue;
+        const cx = commit.lane < shownLanes ? x(commit.lane) : width - pad;
         ctx.fillStyle = color(commit.lane);
         ctx.fillRect(cx, y(i) - BAND / 2, width - cx, BAND);
       }
@@ -196,6 +205,7 @@
     ctx.textBaseline = 'middle';
     for (let i = winStart; i < winEnd; i++) {
       const commit = commits[i];
+      if (commit.lane >= shownLanes) continue;
       const cx = x(commit.lane);
       const cy = y(i);
       const tint = color(commit.lane);
@@ -438,7 +448,6 @@
   class:no-who={!columns.who}
   class:no-date={!columns.date}
   class:no-sha={!columns.sha}
-  bind:clientWidth={cardW}
   style:--labels="{columns.labels}px"
   style:--graph="{graphW}px"
   style:--author="{columns.author}px"
@@ -462,6 +471,7 @@
   <div
     class="scroller"
     bind:this={scroller}
+    bind:clientWidth={cardW}
     onscroll={onScroll}
     onkeydown={onKey}
     onfocus={onFocus}
@@ -479,7 +489,7 @@
         style:height="{(winEnd - winStart) * ROW}px"
         aria-hidden="true"
       ></canvas>
-      {#if ribbon && headIndex >= winStart && headIndex < winEnd && repo.head && metrics.pad + repo.head.lane * metrics.lane < graphW}
+      {#if ribbon && headIndex >= winStart && headIndex < winEnd && repo.head && repo.head.lane < shownLanes - 1}
         <!-- Halo animé sur le commit courant : un élément CSS, pour ne pas redessiner le canvas à chaque image. -->
         <span
           class="pulse"
@@ -532,7 +542,8 @@
                 <span class="subject muted">{repo.wipCount} fichier{repo.wipCount > 1 ? 's' : ''} modifié{repo.wipCount > 1 ? 's' : ''}</span>
               {/if}
             {:else}
-              <span class="subject" title={commit.subject}>{commit.subject}</span>
+              <!-- Voie coupée : le point et les initiales manquent, l'auteur est dans l'infobulle. -->
+              <span class="subject" title={commit.lane < shownLanes ? commit.subject : `${commit.subject} — ${commit.author}`}>{commit.subject}</span>
             {/if}
           </span>
           <span class="author">
@@ -916,6 +927,7 @@
     padding-left: 10px;
     color: var(--muted);
     font-size: var(--fs-label);
+    font-variant-numeric: tabular-nums;
     overflow: hidden;
     text-overflow: ellipsis;
   }
