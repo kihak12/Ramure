@@ -242,6 +242,7 @@ Ardoise.
 - Both fonts are embedded in the application. No font is loaded from the network.
 - **The code font** is for what gets copied or typed in a terminal: SHAs, git commands, file
   content (diff, conflict editor), the terminal, the name of the current branch in the toolbar.
+  The detail of a notification is in it too, whatever it says (9.11).
 - In a list of files, the path is in the interface font: the folder in `--muted`, the file name
   in `--ink`.
 - DM Mono stops at weight 500. Emphasised code text is rendered at 500; the browser does not
