@@ -4,13 +4,14 @@
   import { listen } from '@tauri-apps/api/event';
   import { FitAddon } from '@xterm/addon-fit';
   import { SearchAddon, type ISearchOptions } from '@xterm/addon-search';
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { Terminal } from '@xterm/xterm';
   import '@xterm/xterm/css/xterm.css';
   import { onMount } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { prefs } from '../git/prefs.svelte';
   import { STATUS, type Session } from './ssh.svelte';
+  import { focusWithRing } from '../ui/focus';
   import { explain } from './reasons';
   import type { Closed, Connected, SshError } from './types';
 
@@ -42,7 +43,8 @@
     | { step: 'passphrase'; path: string; error: string }
     | { step: 'password'; error: string }
     | { step: 'error'; message: string }
-    | { step: 'closed'; message: string; lost?: boolean }
+    /** `brief` : la même chose en une ligne, pour la bande d'un terminal de dépôt. */
+    | { step: 'closed'; message: string; lost?: boolean; brief?: string }
     /** Connexion perdue : la tentative `attempt` (de 1 à 5) part à l'instant `at`. */
     | { step: 'lost'; attempt: number; at: number; reason: string };
 
@@ -84,15 +86,19 @@
   let endButton = $state<HTMLButtonElement>();
   // Un panneau de fin apparaît : le focus va sur son bouton principal, que le clavier n'atteindrait
   // pas autrement, le terminal gardant la touche Tab (charte, section 9.15).
+  let rootEl = $state<HTMLElement>();
   $effect(() => {
     if (phase.step !== 'closed' && phase.step !== 'error') return;
-    void tick().then(() => endButton?.focus());
+    // Sous le graphe, le terminal ne prend jamais le clavier de lui-même (section 9.20) : le bouton
+    // ne le prend que si le clavier était déjà dans ce terminal.
+    if (bare && !untrack(() => rootEl?.contains(document.activeElement))) return;
+    void tick().then(() => focusWithRing(endButton));
   });
   // La carte apparaît : le focus va sur « Reconnecter maintenant ». Le terminal, coupé, ne sert plus,
   // et il garde la touche Tab pour lui : sans cela, le clavier n'atteindrait pas la carte.
   $effect(() => {
     if (phase.step !== 'lost' || phase.attempt !== 1) return;
-    void tick().then(() => retryButton?.focus());
+    void tick().then(() => focusWithRing(retryButton));
   });
 
   /** Programme la tentative `attempt`, ou s'arrête après la dernière. */
@@ -241,6 +247,8 @@
   });
   // Hors réactivité : lus dans les rappels du terminal, à chaque frappe.
   let sessionId: number | null = null;
+  /** Quelque chose a été tapé dans ce shell : un arrêt en erreur n'est alors pas un échec de démarrage. */
+  let typed = false;
   let lastKey = 0;
   let echoes: number[] = [];
   let attempt: Attempt = {};
@@ -250,6 +258,8 @@
   // La nature d'un onglet ne change pas : la lire une fois suffit.
   // svelte-ignore state_referenced_locally
   const local = session.kind === 'local';
+  // Le terminal d'un dépôt dit l'état de son shell dans une bande, pas sur un voile.
+  const strip = $derived(bare && local);
   const API = local
     ? { write: 'local_write', resize: 'local_resize', close: 'local_close', closed: 'local-closed' }
     : { write: 'ssh_write', resize: 'ssh_resize', close: 'ssh_close', closed: 'ssh-closed' };
@@ -278,6 +288,8 @@
       sessionId = result.id;
       opened = { shell: result.shell, cwd: result.cwd };
       session.opened = opened;
+      session.localId = result.id;
+      typed = false;
       phase = { step: 'connected' };
       session.status = 'connected';
       if (autofocus || relaunched) term.focus();
@@ -451,6 +463,7 @@
     terminal.onData((data) => {
       if (sessionId === null) return;
       if (!lastKey) lastKey = performance.now();
+      typed = true;
       void invoke(API.write, { id: sessionId, data }).catch(() => {});
     });
     // Le pseudo-terminal ne suit qu'une fois le geste fini : pendant qu'on glisse une poignée, le
@@ -481,14 +494,19 @@
       if (event.payload.id !== sessionId) return;
       sessionId = null;
       info = null;
-      const { exitStatus, reason, ending } = event.payload;
-      // Terminal local : une fin normale ferme l'onglet ; une erreur le garde, avec « Relancer ».
+      const { exitStatus, reason, ending, signal } = event.payload;
+      // Terminal local : un shell qu'on quitte (`exit`, Ctrl + D) ferme son onglet, quel que soit son
+      // code de sortie, qui n'est que celui de la dernière commande. L'onglet reste, avec « Relancer »,
+      // quand le shell est arrêté par un signal, ou s'arrête en erreur avant qu'on y ait rien tapé.
       if (local) {
-        if (exitStatus === 0) return onclose();
+        session.localId = undefined;
+        if (!signal && (exitStatus === 0 || typed)) return onclose();
         session.status = 'closed';
+        const how = signal ? ` (signal${NB}: ${signal})` : exitStatus === null ? '' : ` (code de sortie ${exitStatus})`;
         phase = {
           step: 'closed',
-          message: `${exitStatus === null ? 'Le shell s’est arrêté.' : `Le shell s’est arrêté (code de sortie ${exitStatus}).`} Relance-le, ou ferme l’onglet.`,
+          message: `Le shell s’est arrêté${how}. Relance-le, ou ferme l’onglet.`,
+          brief: `Shell arrêté${how}.`,
         };
         return;
       }
@@ -536,7 +554,7 @@
   });
 </script>
 
-<div class="session">
+<div class="session" bind:this={rootEl}>
   {#if !bare}
   <header>
     {#if local}
@@ -611,7 +629,7 @@
   <div class="stage">
     <div class="term" bind:this={termEl}></div>
 
-    {#if phase.step !== 'connected'}
+    {#if phase.step !== 'connected' && !strip}
       <div class="veil">
         <div class="card" class:bad={phase.step === 'hostKeyChanged'}>
           {#if phase.step === 'connecting'}
@@ -697,6 +715,22 @@
       </div>
     {/if}
   </div>
+
+  {#if strip && phase.step !== 'connected'}
+    <!-- Sous le graphe, ni voile ni carte : une bande d'une ligne, qui laisse lire les dernières
+         lignes de sortie, celles qui disent pourquoi le shell s'est arrêté (charte, section 9.20). -->
+    <div class="strip">
+      {#if phase.step === 'connecting'}
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="said" role="status">Ouverture du terminal local…</span>
+      {:else if phase.step === 'closed' || phase.step === 'error'}
+        {@const said = phase.step === 'closed' ? (phase.brief ?? phase.message) : phase.message}
+        <span class="said" class:bad={phase.step === 'error'} role="alert" title={said}>{said}</span>
+        <button class="btn primary small" type="button" bind:this={endButton} onclick={reconnect}>Relancer</button>
+        <button class="btn ghost small" type="button" onclick={onclose}>Fermer l’onglet</button>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -827,6 +861,27 @@
   .term {
     position: absolute;
     inset: 8px 4px 4px 10px;
+  }
+  /* Terminal d'un dépôt : l'état du shell tient en une ligne, sous le terminal. */
+  .strip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-top: 1px solid var(--line-soft);
+    background: var(--panel);
+    color: var(--muted);
+    font-size: var(--fs-small);
+  }
+  .said {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .said.bad {
+    color: var(--bad);
   }
   .veil {
     position: absolute;

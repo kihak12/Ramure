@@ -21,6 +21,8 @@ export interface Session {
   searchAsk: number;
   /** Ce que le cœur dit d'un terminal local ouvert : son shell et son dossier de départ. */
   opened?: { shell: string; cwd: string };
+  /** L'identifiant du terminal local côté cœur, tant que son shell tourne. */
+  localId?: number;
 }
 
 /** L'état d'une session en mots : le point d'un onglet ou d'un en-tête ne le dit jamais par sa seule couleur. */

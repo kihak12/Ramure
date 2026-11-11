@@ -1,5 +1,6 @@
 // Menu flottant : un seul à la fois. Il s'ouvre à l'endroit du clic droit, ou sous le bouton qui
 // le déroule (charte, section 9.9).
+import { focusWithRing } from './focus';
 import type { IconName } from './Icon.svelte';
 
 export type MenuItem =
@@ -48,16 +49,12 @@ class Menu {
     return !!anchor && this.current?.anchor === anchor;
   }
 
-  /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre (classe `.focus-ring`, app.css). */
+  /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre. */
   close(keyboard = false) {
     const anchor = this.current?.anchor;
     this.current = null;
-    if (!anchor) return;
-    anchor.focus();
-    if (!keyboard) return;
-    // Un focus donné par le script n'a pas toujours l'anneau du navigateur : on le pose, le temps du focus.
-    anchor.classList.add('focus-ring');
-    anchor.addEventListener('blur', () => anchor.classList.remove('focus-ring'), { once: true });
+    if (keyboard) focusWithRing(anchor);
+    else anchor?.focus();
   }
 }
 

@@ -79,6 +79,7 @@ pub fn run() {
             local::local_write,
             local::local_resize,
             local::local_close,
+            local::local_busy,
             ssh::store::hosts_list,
             ssh::store::host_save,
             ssh::store::host_delete,

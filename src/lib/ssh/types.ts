@@ -45,6 +45,8 @@ export interface Closed {
   reason: string | null;
   /** `user` : fermée par l'utilisateur ; `exit` : terminée par le serveur ; `lost` : connexion perdue. */
   ending: 'user' | 'exit' | 'lost';
+  /** Terminal local : le signal qui a arrêté le shell, s'il n'a pas fini de lui-même. */
+  signal?: string | null;
 }
 
 export type SshError =

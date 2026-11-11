@@ -3,6 +3,7 @@
   import Icon from '../ui/Icon.svelte';
   import { display, keys } from '../ui/keys.svelte';
   import Terminal from '../ssh/Terminal.svelte';
+  import { mayCloseTerminal } from '../ssh/guard';
   import type { Session } from '../ssh/ssh.svelte';
   import type { Repo } from './repo.svelte';
 
@@ -18,6 +19,11 @@
   const combo = $derived(keys.binding('toggle-terminal'));
   const hideTitle = $derived(`Masquer le terminal${combo ? ` (${display(combo)})` : ''}`);
   const NEW = 'Nouveau terminal dans le dépôt';
+
+  /** La croix ou le clic du milieu : si un programme tourne dans le terminal, on demande d'abord. */
+  async function closeTab(session: Session) {
+    if (await mayCloseTerminal(session)) terminals.close(session.key);
+  }
 
   /** Ce qu'un onglet dit au survol : le shell et son dossier de départ, que l'en-tête ne montre pas. */
   function about(session: Session) {
@@ -85,7 +91,7 @@
             onclick={() => terminals.activate(session.key)}
             onauxclick={(e) => {
               // Clic du milieu : ferme l'onglet.
-              if (e.button === 1) terminals.close(session.key);
+              if (e.button === 1) void closeTab(session);
             }}
           >
             <!-- Un terminal local porte l'ordinateur, comme partout où « local » est dit (charte, section 7). -->
@@ -94,7 +100,7 @@
             </span>
             <span class="name">{session.title}</span>
           </button>
-          <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => terminals.close(session.key)}>
+          <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => void closeTab(session)}>
             <Icon name="x" size={14} />
           </button>
         </div>
