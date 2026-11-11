@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { veil } from './veil';
   import Icon from './Icon.svelte';
   import { fold, palette, score, type Command } from './palette.svelte';
 
@@ -80,9 +81,7 @@
     e.preventDefault();
     palette.hide();
   }}
-  onclick={(e) => {
-    if (e.target === element) palette.hide();
-  }}
+  use:veil={() => palette.hide()}
 >
   {#if commands}
     <div class="box">

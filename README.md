@@ -147,7 +147,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   trousseau du système" and Ramure keeps the secret in the keyring of the system, the Credential
   Manager on Windows or the Secret Service (GNOME Keyring, KWallet) on Ubuntu, and nowhere else.
   The next connection does not ask. A kept secret that the server refuses is forgotten and asked
-  for again. The form of a host and "Gérer les clés" show what is kept, and forget it; deleting
+  for again. The form of a host and "Gérer les clés…" show what is kept, and forget it; deleting
   a host forgets its password. Without a keyring, nothing is offered, and Ramure says so.
 
 ### Settings, shortcuts and command log

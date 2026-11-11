@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { veil } from '../ui/veil';
   import { Channel, invoke } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
@@ -30,7 +31,6 @@
   const ready = $derived(url.trim() !== '' && parent.trim() !== '' && nameValid && !running);
   // « Receiving objects:  42% (…) » → 42
   const percent = $derived(Number(/(\d+)%/.exec(progress)?.[1] ?? NaN));
-  const phase = $derived(progress.split(':')[0]);
 
   $effect(() => {
     if (!element) return;
@@ -98,8 +98,14 @@
     e.preventDefault();
     cancel();
   }}
+  use:veil={() => {
+    // Pendant un clonage, un clic de travers sur le voile ne doit pas l'arrêter (charte, 9.10).
+    if (!running) cancel();
+  }}
 >
   <form onsubmit={run}>
+    <!-- Le contenu défile si la fenêtre est trop basse ; la dernière ligne reste en vue (charte, 9.10). -->
+    <div class="content">
     <h2>Cloner un dépôt</h2>
 
     <label class="row">
@@ -128,21 +134,27 @@
     <label class="row">
       <span class="label">Nom du dossier</span>
       <input class="field mono" type="text" spellcheck="false" disabled={running} bind:value={name} oninput={() => (nameEdited = true)} />
-      <small>{dest ? `Le dépôt sera cloné dans ${dest}` : 'Le nom est proposé à partir de l’adresse.'}</small>
     </label>
 
-    {#if running}
-      <div class="progress" role="status">
-        <div class="bar" class:known={!Number.isNaN(percent)}><span style:width="{Number.isNaN(percent) ? 35 : percent}%"></span></div>
-        <small class="mono">{progress}</small>
-      </div>
-    {:else if error}
-      <p class="error" role="alert"><Icon name="warning" /> <span>{error}</span></p>
-    {/if}
+    <!-- Une place gardée sous les champs : la phrase de destination, puis la progression du clonage à
+         sa place, sans que les boutons bougent au clic sur « Cloner » (charte, 9.1, « Hierarchy »). -->
+    <div class="status">
+      {#if running}
+        <div class="progress" role="status">
+          <div class="bar" class:known={!Number.isNaN(percent)}><span style:width="{Number.isNaN(percent) ? 35 : percent}%"></span></div>
+          <small class="mono">{progress}</small>
+        </div>
+      {:else if error}
+        <p class="error" role="alert"><Icon name="warning" /> <span>{error}</span></p>
+      {:else}
+        <small>{dest ? `Le dépôt sera cloné dans ${dest}` : 'Le nom est proposé à partir de l’adresse.'}</small>
+      {/if}
+    </div>
+    </div>
 
     <footer>
       <button class="btn" type="button" onclick={cancel}>{running ? 'Interrompre le clonage' : 'Annuler'}</button>
-      <button class="btn primary" type="submit" disabled={!ready}>{running ? `${phase || 'Clonage'}…` : 'Cloner'}</button>
+      <button class="btn primary" type="submit" disabled={!ready}>{running ? 'Clonage en cours…' : 'Cloner'}</button>
     </footer>
   </form>
 </dialog>
@@ -158,6 +170,8 @@
     box-shadow: var(--shadow-pop);
   }
   dialog[open] {
+    display: flex;
+    flex-direction: column;
     animation: pop-in var(--t-med) var(--ease);
   }
   dialog::backdrop {
@@ -169,7 +183,28 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 18px 20px 16px;
+    min-height: 0;
+    padding: 16px 20px;
+  }
+  /* 3 px de marge rendus : le halo du focus d'un champ n'est pas rogné par le défilement. */
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    margin: -3px;
+    padding: 3px;
+    overflow-y: auto;
+  }
+  /* Assez haute pour la progression (une barre et une ligne) et pour une erreur d'une ligne : la
+     phrase, la barre, puis l'erreur y tiennent sans pousser les boutons. */
+  .status {
+    min-height: 36px;
+  }
+  .status > small {
+    color: var(--muted);
+    font-size: var(--fs-small);
+    overflow-wrap: anywhere;
   }
   h2 {
     margin: 0;
@@ -179,12 +214,7 @@
   .row {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-  }
-  .row small {
-    color: var(--muted);
-    font-size: var(--fs-small);
-    overflow-wrap: anywhere;
+    gap: 6px;
   }
   .pair {
     display: flex;

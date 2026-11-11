@@ -458,7 +458,7 @@
             <button class="btn small" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: true })}>
               Faire confiance et mémoriser
             </button>
-            <button class="btn small ghost" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: false })}>
+            <button class="btn small" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: false })}>
               Faire confiance cette fois
             </button>
           </div>
@@ -510,7 +510,6 @@
   dialog {
     width: min(600px, calc(100vw - 48px));
     /* Dans une fenêtre basse (1000 × 600), la fiche défile plutôt que de sortir de l'écran. */
-    max-height: calc(100vh - 48px);
     overflow-y: auto;
     padding: 0;
     border: 1px solid var(--line);

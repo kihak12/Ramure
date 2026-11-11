@@ -24,11 +24,12 @@ export interface DialogSpec {
   /** Mise en garde, affichée dans un encadré. */
   warning?: string;
   fields?: Field[];
-  confirmLabel?: string;
+  /** Le libellé du bouton qui confirme : un verbe et son objet, jamais « Valider » (charte, 9.1). */
+  confirmLabel: string;
   cancelLabel?: string;
   /** Action destructrice : le bouton de confirmation passe en rouge. */
   danger?: boolean;
-  /** Action annexe, à gauche des boutons : la boîte se ferme, puis l'action s'exécute. */
+  /** Action annexe, entre « Annuler » et le principal : la boîte se ferme, puis l'action s'exécute. */
   extra?: { label: string; run: () => void };
 }
 
