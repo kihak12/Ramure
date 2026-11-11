@@ -1,7 +1,10 @@
 // État du module SSH : carnet d'hôtes, clés, et terminaux ouverts, distants ou locaux.
 
 import { invoke } from '@tauri-apps/api/core';
+import { tick } from 'svelte';
+import { dialogs } from '../ui/dialogs.svelte';
 import { toasts } from '../ui/toasts.svelte';
+import { secretsHeld } from './secrets';
 import type { Host, KeyInfo } from './types';
 
 export interface Session {
@@ -96,7 +99,7 @@ class Ssh {
     try {
       this.hosts = await invoke<Host[]>('hosts_list');
     } catch (e) {
-      toasts.err("Le carnet d'hôtes n'a pas pu être lu", message(e));
+      toasts.err('Le carnet d’hôtes n’a pas pu être lu', message(e));
     }
     try {
       this.defaultUser = (await invoke<{ user: string }>('ssh_defaults')).user;
@@ -121,19 +124,61 @@ class Ssh {
       this.hosts = await invoke<Host[]>('hosts_list');
       return saved;
     } catch (e) {
-      toasts.err("L'hôte n'a pas pu être enregistré", message(e));
+      toasts.err('L’hôte n’a pas pu être enregistré', message(e));
       return null;
     }
   }
 
-  async remove(host: Host) {
+  /** Vrai si la fiche a été supprimée. */
+  async remove(host: Host): Promise<boolean> {
     try {
       await invoke('host_delete', { id: host.id });
       this.hosts = this.hosts.filter((h) => h.id !== host.id);
       toasts.ok('Hôte supprimé', host.alias);
+      return true;
     } catch (e) {
-      toasts.err("L'hôte n'a pas pu être supprimé", message(e));
+      toasts.err('L’hôte n’a pas pu être supprimé', message(e));
+      return false;
     }
+  }
+
+  /** Le compte d'un hôte sur son serveur : c'est à lui qu'appartient un mot de passe retenu. */
+  #account(host: Host) {
+    return `${host.user || this.defaultUser}@${host.hostname}:${host.port || 22}`;
+  }
+
+  /**
+   * Demande confirmation, puis supprime la fiche : du clic droit sur sa ligne, ou de la fiche
+   * elle-même. Vrai si elle a été supprimée.
+   */
+  async removeAsked(host: Host): Promise<boolean> {
+    // Le mot de passe retenu pour ce compte part avec sa dernière fiche : la confirmation le dit.
+    const last = !this.hosts.some((other) => other.id !== host.id && this.#account(other) === this.#account(host));
+    const [kept] =
+      host.auth === 'password' && last
+        ? await secretsHeld([{ kind: 'password', user: host.user || this.defaultUser, host: host.hostname, port: host.port || 22 }])
+        : [false];
+    const confirmed = await dialogs.confirm({
+      title: `Supprimer ${host.alias} du carnet ?`,
+      body: `${
+        kept
+          ? 'La fiche est supprimée, et le mot de passe que le trousseau du système retient pour ce compte est oublié : ni l’un ni l’autre ne pourra être récupéré.'
+          : 'La fiche est supprimée et ne pourra pas être récupérée.'
+      } Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.`,
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    return confirmed && (await this.remove(host));
+  }
+
+  /**
+   * Après une suppression, la ligne de l'hôte est partie, et avec elle ce qui avait le focus : il va
+   * au filtre du carnet, qui est toujours là, même carnet vide (charte, section 9.21). À appeler
+   * une fois les boîtes fermées : en se fermant, une boîte rend le focus à ce qui l'avait avant elle.
+   */
+  async focusBook() {
+    await tick();
+    document.querySelector<HTMLElement>('.book input[type="search"]')?.focus();
   }
 
   async importConfig() {
@@ -144,7 +189,7 @@ class Ssh {
       const added = report.added ? `${report.added} hôte${plural(report.added)} importé${plural(report.added)}` : 'Aucun nouvel hôte';
       toasts.ok(added, report.skipped ? `${report.skipped} déjà présent${plural(report.skipped)} dans le carnet.` : '');
     } catch (e) {
-      toasts.err("L'import de ~/.ssh/config a échoué", message(e));
+      toasts.err('L’import de ~/.ssh/config a échoué', message(e));
     }
   }
 
