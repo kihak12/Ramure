@@ -146,7 +146,4 @@
     color: var(--muted);
     font-size: var(--fs-label);
   }
-  .field.invalid {
-    border-color: var(--bad);
-  }
 </style>

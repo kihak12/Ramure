@@ -80,9 +80,11 @@
         : [false];
     const confirmed = await dialogs.confirm({
       title: `Supprimer ${host.alias} du carnet ?`,
-      body: `La fiche est supprimée et ne pourra pas être récupérée. Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.${
-        kept ? ' Le mot de passe retenu pour ce compte dans le trousseau du système est oublié.' : ''
-      }`,
+      body: `${
+        kept
+          ? 'La fiche est supprimée, et le mot de passe que le trousseau du système retient pour ce compte est oublié : ni l’un ni l’autre ne pourra être récupéré.'
+          : 'La fiche est supprimée et ne pourra pas être récupérée.'
+      } Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.`,
       confirmLabel: 'Supprimer',
       danger: true,
     });

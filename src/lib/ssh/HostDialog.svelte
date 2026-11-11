@@ -557,12 +557,17 @@
   .note {
     color: var(--warn);
   }
-  /* Un secret retenu : ce que le trousseau garde, et le bouton qui l'oublie. */
+  /* Un secret retenu : ce que le trousseau garde et, dessous, le bouton qui l'oublie. Le bouton,
+     sans fond ni bordure, est tiré de sa marge intérieure (8 px et 1 px de bordure) : son texte
+     s'aligne sur la phrase. */
   .kept {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .kept .btn {
+    margin-left: -9px;
   }
   /* Six colonnes : l'adresse en prend cinq, le port une. */
   .full {
@@ -690,14 +695,6 @@
     margin: 0;
     color: var(--bad);
     font-size: var(--fs-small);
-  }
-  /* Secret refusé : bordure et halo en --bad (charte, section 9.3). */
-  .field.invalid,
-  .field.invalid:focus-visible {
-    border-color: var(--bad);
-  }
-  .field.invalid:focus-visible {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent);
   }
   .row {
     display: flex;

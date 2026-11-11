@@ -128,7 +128,10 @@
               <!-- Ce que le trousseau retient pour cette clé, et de quoi l'oublier. -->
               <span class="kept">
                 <small>Sa phrase secrète est retenue dans le trousseau du système.</small>
-                <button class="btn ghost small" type="button" onclick={() => void forgetPassphrase(key)}>Oublier la phrase secrète</button>
+                <!-- Deux clés peuvent porter ce bouton : son nom accessible dit laquelle. -->
+                <button class="btn ghost small" type="button" aria-label="Oublier la phrase secrète de {key.name}" onclick={() => void forgetPassphrase(key)}>
+                  Oublier la phrase secrète
+                </button>
               </span>
             {/if}
           </div>
@@ -271,12 +274,20 @@
   .locked {
     color: var(--ok);
   }
+  /* Le bouton, sans fond ni bordure, est tiré de sa marge intérieure (8 px et 1 px de bordure) :
+     son texte s'aligne sur la phrase. */
   .kept {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
     margin-top: 4px;
+  }
+  .kept small {
+    white-space: normal;
+  }
+  .kept .btn {
+    margin-left: -9px;
   }
   .none {
     padding: 14px 6px;
@@ -301,9 +312,6 @@
     gap: 4px;
     font-size: var(--fs-label);
     color: var(--muted);
-  }
-  .field.invalid {
-    border-color: var(--bad);
   }
   .err {
     font-size: var(--fs-small);

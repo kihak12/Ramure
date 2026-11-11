@@ -69,8 +69,12 @@
   // Le trousseau du système : s'il répond, la demande d'un secret propose de le retenir (9.15).
   let keyring = $state<boolean | null>(null);
   let keep = $state(false);
+  // Demandé dès l'ouverture d'une session, pour que la demande d'un secret s'affiche d'un bloc, et
+  // à nouveau quand elle s'affiche : le trousseau a pu arriver ou partir entre-temps.
   $effect(() => {
-    if (phase.step !== 'passphrase' && phase.step !== 'password') return;
+    if (session.kind !== 'ssh') return;
+    void phase.step;
+    if (phase.step !== 'connecting' && phase.step !== 'passphrase' && phase.step !== 'password') return;
     void keyringAvailable().then((answer) => (keyring = answer));
   });
   // Un secret est demandé : son champ prend le clavier, dès que l'onglet est à l'écran. L'attribut
@@ -713,8 +717,21 @@
                   Pour <span class="mono">{target}</span>.
                 {/if}
               </p>
-              {#if phase.error}<p class="err" role="alert">{phase.error}</p>{/if}
-              <input class="field" type="password" autocomplete="off" bind:this={secretEl} aria-label={phase.step === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'} bind:value={secret} />
+              <!-- Secret refusé : le champ passe en erreur, son message dessous (charte, section 9.3). -->
+              <div class="secret">
+                <input
+                  class="field"
+                  class:invalid={!!phase.error}
+                  type="password"
+                  autocomplete="off"
+                  bind:this={secretEl}
+                  aria-label={phase.step === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'}
+                  aria-invalid={phase.error ? 'true' : undefined}
+                  aria-describedby={phase.error ? `secret-error-${session.key}` : undefined}
+                  bind:value={secret}
+                />
+                {#if phase.error}<p class="err small" id="secret-error-{session.key}" role="alert">{phase.error}</p>{/if}
+              </div>
               <!-- Retenir le secret : proposé si le trousseau du système répond ; sinon on le dit. -->
               {#if keyring}
                 <label class="keep">
@@ -989,6 +1006,14 @@
   .err {
     color: var(--bad);
     white-space: pre-wrap;
+  }
+  .err.small {
+    font-size: var(--fs-small);
+  }
+  /* Le champ d'un secret et, dessous, le message de son refus. */
+  .secret {
+    display: grid;
+    gap: 4px;
   }
   .print {
     padding: 8px 10px;
