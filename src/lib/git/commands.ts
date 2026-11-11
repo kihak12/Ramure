@@ -33,7 +33,7 @@ export function gitCommands(): Command[] {
     add({ id: 'wip', group: 'Actions', icon: 'pencil', title: 'Voir les modifications en cours', keywords: 'index wip commit', hint: repo.wipCount ? `${repo.wipCount} fichier(s)` : 'aucune', disabled: repo.wipCount === 0, run: () => repo.showWip() });
     add({ id: 'stage-all', group: 'Actions', icon: 'plus', title: 'Tout indexer', keywords: 'stage add', disabled: !idle || !status?.unstaged.length, run: () => void repo.stage(status?.unstaged ?? []) });
     add({ id: 'stash', group: 'Actions', icon: 'stash', title: 'Remiser les modifications…', keywords: 'stash', disabled: !idle || repo.wipCount === 0, run: () => void stashChanges(repo) });
-    add({ id: 'pop', group: 'Actions', icon: 'pop', title: 'Dépiler la dernière remise', keywords: 'stash pop', disabled: !idle || !repo.refs?.stashes.length, run: () => void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', "La remise n'a pas pu être appliquée") });
+    add({ id: 'pop', group: 'Actions', icon: 'pop', title: 'Dépiler la dernière remise', keywords: 'stash pop', disabled: !idle || !repo.refs?.stashes.length, run: () => void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', 'La remise n’a pas pu être appliquée') });
     add({ id: 'reload', group: 'Actions', icon: 'refresh', title: 'Recharger le dépôt', disabled: !idle, run: () => void repo.reload() });
     // Le titre dit ce que la commande fera : il suit l'état de la carte.
     add({ id: 'toggle-sidebar', group: 'Affichage', icon: 'panel-left', title: layout.sidebarHidden ? 'Afficher la liste des branches' : 'Masquer la liste des branches', keywords: 'panneau barre laterale replier', run: () => toggleSide('sidebar') });
@@ -52,6 +52,17 @@ export function gitCommands(): Command[] {
       run: () => terminals.toggle(repo.path),
       key: () => terminals.key(repo.path, !!document.activeElement?.closest('[data-terminals]')),
     });
+    add({
+      id: 'toggle-graph',
+      group: 'Affichage',
+      icon: 'commit',
+      title: terminals.alone ? 'Afficher le graphe des commits' : 'Masquer le graphe des commits',
+      keywords: 'terminal en grand historique',
+      // Le centre n'est jamais vide : le graphe ne se masque que devant le terminal.
+      hint: terminals.shown ? undefined : 'le terminal doit être affiché',
+      disabled: !terminals.shown || !!repo.conflictFile,
+      run: () => terminals.toggleGraph(),
+    });
     add({ id: 'terminal-repo', group: 'Affichage', icon: 'laptop', title: 'Nouveau terminal dans le dépôt', keywords: 'console shell ligne de commande', disabled: !!repo.conflictFile, run: () => terminals.open(repo.path) });
     add({ id: 'toggle-sides', group: 'Affichage', icon: 'panels', title: layout.sidebarHidden && layout.detailHidden ? 'Réafficher les panneaux latéraux' : 'Masquer les panneaux latéraux', keywords: 'graphe en grand replier', run: toggleSides });
   }
@@ -59,7 +70,7 @@ export function gitCommands(): Command[] {
   add({ id: 'clone', group: 'Actions', icon: 'cloud', title: 'Cloner un dépôt…', keywords: 'clone', run: () => (workspace.cloning = true) });
   add({ id: 'init', group: 'Actions', icon: 'plus', title: 'Initialiser un dépôt…', keywords: 'init nouveau', run: () => void workspace.init() });
   add({ id: 'tab-new', group: 'Actions', icon: 'plus', title: 'Nouvel onglet', run: () => workspace.newTab() });
-  if (tab) add({ id: 'tab-close', group: 'Actions', icon: 'x', title: "Fermer l'onglet", run: () => workspace.closeTab(tab.id) });
+  if (tab) add({ id: 'tab-close', group: 'Actions', icon: 'x', title: 'Fermer l’onglet', run: () => workspace.closeTab(tab.id) });
   if (workspace.tabs.length > 1) {
     add({ id: 'tab-next', group: 'Actions', icon: 'chevron', title: 'Onglet suivant', run: () => workspace.cycle(1) });
     add({ id: 'tab-prev', group: 'Actions', icon: 'chevron', title: 'Onglet précédent', run: () => workspace.cycle(-1) });
@@ -100,7 +111,7 @@ export function gitCommands(): Command[] {
 
   for (const other of workspace.tabs) {
     if (other === tab || !other.repo.path) continue;
-    add({ id: `tab:${other.id}`, group: 'Onglets', icon: 'branch', title: `Aller à l'onglet ${workspace.title(other)}`, hint: other.repo.path, run: () => workspace.activate(other.id) });
+    add({ id: `tab:${other.id}`, group: 'Onglets', icon: 'branch', title: `Aller à l’onglet ${workspace.title(other)}`, hint: other.repo.path, run: () => workspace.activate(other.id) });
   }
   const opened = new Set(workspace.tabs.map((t) => t.repo.path));
   for (const recent of workspace.recents) {

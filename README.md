@@ -38,11 +38,12 @@ the French label in quotes.
 - **Resizable cards**: the branch list on the left and the detail panel on the right are resized
   by dragging the handle between them and the graph, or from the keyboard. Widths are kept from
   one launch to the next; a double-click restores the default width.
-- **Cards that can be hidden**: each of the two is hidden and shown again with the button at its
-  end of the toolbar, with Ctrl + Shift + B (branch list) or Ctrl + Shift + E (detail panel), or
-  from the command palette, to read the graph on the whole width. A hidden detail panel only
-  comes back when asked for: Enter or a double-click on a commit, a click on the "WIP" row, or
-  "Voir les modifications en cours".
+- **Cards to show**: the "Affichage" button at the right end of the toolbar opens a menu with
+  one box per card: the branch list, the graph, the terminal and the detail panel. The side
+  cards are also hidden and shown with Ctrl + Shift + B (branch list) and Ctrl + Shift + E
+  (detail panel), or from the command palette, to read the graph on the whole width. A hidden
+  detail panel only comes back when asked for: Enter or a double-click on a commit, a click on
+  the "WIP" row, or "Voir les modifications en cours".
 
 ### Graph
 
@@ -110,6 +111,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - Several terminals per repository, in tabs; each repository keeps its own. Hiding the terminal
   or switching tabs does not stop its shells; closing the tab of the repository does.
 - The height is set with the handle above the terminal and restored at the next launch.
+- Unchecking the graph in the "Affichage" menu gives the terminal the whole height. The graph
+  comes back when the terminal is hidden, or when a diff is opened.
 - After a command, the graph, the counters and the changes are read again on their own.
 
 ### SSH

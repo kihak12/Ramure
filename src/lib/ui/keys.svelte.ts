@@ -29,6 +29,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'terminal-new', group: 'Général', title: 'Nouveau terminal local', keys: 'Ctrl+Shift+N' },
   { id: 'toggle-sidebar', group: 'Affichage', title: 'Afficher ou masquer la liste des branches', keys: 'Ctrl+Shift+B', scope: 'git' },
   { id: 'toggle-detail', group: 'Affichage', title: 'Afficher ou masquer le panneau de détail', keys: 'Ctrl+Shift+E', scope: 'git' },
+  { id: 'toggle-graph', group: 'Affichage', title: 'Afficher ou masquer le graphe des commits', keys: '', scope: 'git' },
   { id: 'toggle-sides', group: 'Affichage', title: 'Afficher ou masquer les panneaux latéraux', keys: '', scope: 'git' },
   { id: 'toggle-terminal', group: 'Affichage', title: 'Afficher ou masquer le terminal du dépôt', keys: 'Ctrl+Shift+J', scope: 'git' },
   { id: 'terminal-repo', group: 'Affichage', title: 'Nouveau terminal dans le dépôt', keys: '', scope: 'git' },

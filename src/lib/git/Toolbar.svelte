@@ -1,8 +1,9 @@
 <script lang="ts">
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import { display, keys } from '../ui/keys.svelte';
+  import { menu, type MenuItem } from '../ui/menu.svelte';
   import { createBranch, stashChanges } from './actions';
-  import { layout, toggleSide, type Side } from './layout.svelte';
+  import { layout, toggleSide } from './layout.svelte';
   import type { Repo } from './repo.svelte';
 
   let { repo, onpick }: { repo: Repo; onpick: () => void } = $props();
@@ -16,10 +17,34 @@
   const terminalCombo = $derived(keys.binding('toggle-terminal'));
   const terminalBadge = $derived(!terminals.shown && terminals.running ? String(terminals.running) : undefined);
 
-  const VIEWS = {
-    sidebar: { icon: 'panel-left', name: 'Liste des branches', what: 'la liste des branches', command: 'toggle-sidebar' },
-    detail: { icon: 'panel-right', name: 'Panneau de détail', what: 'le panneau de détail', command: 'toggle-detail' },
-  } as const;
+  // Menu « Affichage » : une case par carte de la vue, de gauche à droite (charte, sections 9.2 et 9.17).
+  // Le centre garde toujours le graphe ou le terminal : la case de celui qui y est seul est désactivée.
+  let viewsEl = $state<HTMLButtonElement>();
+  function views(): MenuItem[] {
+    const graphAlone = !terminals.shown;
+    return [
+      { label: 'Liste des branches', icon: 'panel-left', checked: !layout.sidebarHidden, keys: keys.binding('toggle-sidebar'), run: () => toggleSide('sidebar') },
+      {
+        label: 'Graphe des commits',
+        icon: 'commit',
+        checked: !terminals.alone,
+        keys: keys.binding('toggle-graph'),
+        disabled: graphAlone,
+        hint: graphAlone ? 'Le graphe reste affiché tant que le terminal ne l’est pas.' : undefined,
+        run: () => terminals.toggleGraph(),
+      },
+      {
+        label: 'Terminal',
+        icon: 'terminal',
+        checked: terminals.shown,
+        keys: terminalCombo,
+        disabled: terminals.alone,
+        hint: terminals.alone ? 'Le terminal reste affiché tant que le graphe ne l’est pas.' : undefined,
+        run: () => terminals.toggle(repo.path),
+      },
+      { label: 'Panneau de détail', icon: 'panel-right', checked: !layout.detailHidden, keys: keys.binding('toggle-detail'), run: () => toggleSide('detail') },
+    ];
+  }
 
   function popStash() {
     void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', 'La remise n’a pas pu être appliquée');
@@ -36,26 +61,7 @@
   </button>
 {/snippet}
 
-<!-- Bouton de vue : enfoncé quand la carte est affichée. L'infobulle dit ce qu'un clic fera. -->
-{#snippet view(side: Side)}
-  {@const spec = VIEWS[side]}
-  {@const hidden = layout[`${side}Hidden`]}
-  {@const combo = keys.binding(spec.command)}
-  <button
-    class="view"
-    type="button"
-    aria-label={spec.name}
-    aria-pressed={!hidden}
-    title="{hidden ? 'Afficher' : 'Masquer'} {spec.what}{combo ? ` (${display(combo)})` : ''}"
-    disabled={!repo.result}
-    onclick={() => toggleSide(side)}
-  >
-    <Icon name={spec.icon} size={18} />
-  </button>
-{/snippet}
-
 <header class="toolbar">
-  {@render view('sidebar')}
   <button
     class="crumb"
     type="button"
@@ -113,7 +119,22 @@
     {@render tool('refresh', 'Recharger', 'Relire l’historique du dépôt', !ready, () => void repo.reload())}
     {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
   </div>
-  {@render view('detail')}
+  <!-- « Affichage » : le seul bouton de vue, il déroule le choix des cartes. Menu ouvert, son
+       infobulle se tait : elle couvrirait le premier élément. L'éditeur d'un conflit couvre les
+       cartes : il n'y a rien à choisir tant qu'il est ouvert. -->
+  <button
+    class="view"
+    type="button"
+    bind:this={viewsEl}
+    aria-label="Affichage"
+    aria-haspopup="menu"
+    aria-expanded={menu.isUnder(viewsEl)}
+    title={menu.isUnder(viewsEl) ? undefined : 'Choisir les cartes à afficher'}
+    disabled={!repo.result || !!repo.conflictFile}
+    onclick={(event) => viewsEl && menu.openUnder(viewsEl, views, event.detail === 0)}
+  >
+    <Icon name="panels" size={18} />
+  </button>
 </header>
 
 <style>
@@ -122,7 +143,8 @@
     display: flex;
     align-items: stretch;
     gap: 4px;
-    padding: 6px 10px;
+    /* 8 px sur les côtés : le fil d'Ariane et « Affichage » s'alignent sur les bords des cartes. */
+    padding: 6px 8px;
     min-width: 0;
   }
   .crumb {
@@ -160,7 +182,7 @@
   }
   .small {
     color: var(--muted);
-    font-size: var(--fs-micro);
+    font-size: var(--fs-small);
   }
   .sep {
     display: grid;
@@ -204,7 +226,7 @@
   .tool:active:not(:disabled) {
     transform: scale(0.97);
   }
-  /* « Terminal » enfoncé : la teinte d'un bouton de vue, l'icône en accent, le libellé tel quel. */
+  /* « Terminal » enfoncé : la teinte du module actif dans le rail, l'icône en accent, le libellé tel quel. */
   .tool[aria-pressed='true'] {
     background: var(--accent-soft);
   }
@@ -220,7 +242,7 @@
     opacity: 0.45;
     cursor: not-allowed;
   }
-  /* Boutons de vue, aux deux bouts de la barre : une icône seule (charte, section 9.2). */
+  /* « Affichage », au bout droit de la barre : une icône seule (charte, section 9.2). */
   .view {
     flex: none;
     align-self: center;
@@ -238,20 +260,13 @@
       color var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
-  .view:hover:not(:disabled) {
+  .view:hover:not(:disabled),
+  .view[aria-expanded='true'] {
     background: var(--hover);
     color: var(--ink);
   }
   .view:active:not(:disabled) {
     transform: scale(0.97);
-  }
-  .view[aria-pressed='true'] {
-    background: var(--accent-soft);
-    color: var(--accent);
-  }
-  .view[aria-pressed='true']:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
-    color: var(--accent);
   }
   .glyph {
     position: relative;
