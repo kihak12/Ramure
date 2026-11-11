@@ -38,7 +38,7 @@
 
   const address = (host: Host) => `${host.user || ssh.defaultUser}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`;
 
-  const STATUS = { connecting: 'Connexion en cours', connected: 'Connecté', closed: 'Session terminée' } as const;
+  const STATUS = { connecting: 'Connexion en cours', reconnecting: 'Reconnexion en cours', connected: 'Connecté', closed: 'Session terminée' } as const;
 
   async function remove(host: Host) {
     const confirmed = await dialogs.confirm({
@@ -432,7 +432,8 @@
   .dot.s-connected {
     background: var(--c);
   }
-  .dot.s-connecting {
+  .dot.s-connecting,
+  .dot.s-reconnecting {
     background: var(--warn);
     animation: blink var(--t-wait) var(--ease) infinite;
   }

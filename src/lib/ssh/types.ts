@@ -43,6 +43,8 @@ export interface Closed {
   id: number;
   exitStatus: number | null;
   reason: string | null;
+  /** `user` : fermée par l'utilisateur ; `exit` : terminée par le serveur ; `lost` : connexion perdue. */
+  ending: 'user' | 'exit' | 'lost';
 }
 
 export type SshError =

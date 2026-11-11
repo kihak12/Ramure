@@ -619,6 +619,23 @@ in the terminal of the current tab.
   `--bad`, and the count says "Expression non valide", announced at once (`role="alert"`). In
   this bar the message stands beside the field rather than under it: the bar is one line high.
 
+**A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
+the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server
+no longer answering). Only a lost connection comes back on its own, and only if "Reconnexion
+automatique" is on in the settings.
+
+- Five tries, 2, 5, 10, 20 and 30 s apart. While it waits, the terminal keeps its text under
+  the veil, and a card says "Connexion perdue", when the next try comes and which one it is
+  ("Nouvelle tentative dans 4 s, 2 sur 5"), with "Reconnecter maintenant" (main button) and
+  "Arrêter".
+- The dot of the tab and of the header blinks in `--warn` while it waits and tries, as when it
+  connects; its tooltip says "Reconnexion en cours".
+- A try that needs the user stops the series: a password, a passphrase, a server fingerprint.
+  The card asks for it once and waits.
+- After five failed tries, the card says so, with "Reconnecter" and "Fermer l’onglet".
+- When the session comes back, the terminal keeps the text it had, and the startup command of
+  the host runs again.
+
 ### 9.16 Resize handle
 
 Between two cards whose width can be set: in the view of a repository, on either side of the
@@ -677,7 +694,7 @@ after Escape, the focus is on the "Réglages" button of the rail.
 - On the right, the content, which scrolls on its own. Its column is 640 px wide at most and
   has an inner margin of 24 px.
 - A section appears in the navigation when it holds its first setting: "Général", "Git",
-  "Raccourcis clavier". No tabs at the top of the page: tabs are repositories.
+  "Terminal et SSH", "Raccourcis clavier". No tabs at the top of the page: tabs are repositories.
 
 **A section.** Its title in 15 px, weight 650, the one title of a section that is not in 12 px
 (9.8): it heads the whole card. A note may follow it, in 11.5 px, `--muted`. On the right,

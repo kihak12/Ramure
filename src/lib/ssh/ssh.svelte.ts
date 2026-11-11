@@ -9,7 +9,7 @@ export interface Session {
   key: number;
   host: Host;
   title: string;
-  status: 'connecting' | 'connected' | 'closed';
+  status: 'connecting' | 'reconnecting' | 'connected' | 'closed';
   /** La barre de recherche du terminal est ouverte. */
   searching: boolean;
   /** Compte les demandes d'ouverture : chacune rend le focus au champ, même barre ouverte. */

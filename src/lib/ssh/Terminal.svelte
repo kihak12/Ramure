@@ -9,6 +9,7 @@
   import '@xterm/xterm/css/xterm.css';
   import { onMount } from 'svelte';
   import Icon from '../ui/Icon.svelte';
+  import { prefs } from '../git/prefs.svelte';
   import type { Session } from './ssh.svelte';
   import type { Closed, Connected, SshError } from './types';
 
@@ -23,7 +24,13 @@
     | { step: 'passphrase'; path: string; error: string }
     | { step: 'password'; error: string }
     | { step: 'error'; message: string }
-    | { step: 'closed'; message: string };
+    | { step: 'closed'; message: string; lost?: boolean }
+    /** Connexion perdue : la tentative `attempt` (de 1 à 5) part à l'instant `at`. */
+    | { step: 'lost'; attempt: number; at: number; reason: string };
+
+  // Délais entre deux tentatives de reconnexion, en secondes (charte, section 9.15).
+  const RETRIES = [2, 5, 10, 20, 30];
+  const NB = '\u00a0'; // espace insécable, avant « : » et entre un nombre et son unité
 
   /** Ce qu'on sait déjà pour cette tentative : rien n'est conservé une fois la session ouverte. */
   interface Attempt {
@@ -35,6 +42,54 @@
   }
 
   let phase = $state<Phase>({ step: 'connecting' });
+  // Reconnexion automatique : la tentative en cours (0 quand il n'y en a pas), son minuteur, et
+  // l'heure, rafraîchie chaque seconde pour le compte à rebours.
+  let retry = $state(0);
+  let retryTimer: number | undefined;
+  let now = $state(Date.now());
+  $effect(() => {
+    if (phase.step !== 'lost') return;
+    const tick = window.setInterval(() => (now = Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  });
+  const waitText = $derived.by(() => {
+    if (phase.step !== 'lost') return '';
+    const seconds = Math.max(0, Math.ceil((phase.at - now) / 1000));
+    const which = `${phase.attempt}${NB}sur${NB}${RETRIES.length}`;
+    return seconds > 0 ? `Nouvelle tentative dans ${seconds}${NB}s, ${which}.` : `Tentative ${which}…`;
+  });
+
+  /** Programme la tentative `attempt`, ou s'arrête après la dernière. */
+  function scheduleRetry(attempt: number, reason: string) {
+    window.clearTimeout(retryTimer);
+    if (attempt > RETRIES.length) {
+      retry = 0;
+      session.status = 'closed';
+      phase = { step: 'closed', lost: true, message: `Les ${RETRIES.length} tentatives de reconnexion ont échoué${reason ? `${NB}: ${reason}` : '.'}` };
+      return;
+    }
+    retry = attempt;
+    session.status = 'reconnecting';
+    const delay = RETRIES[attempt - 1] * 1000;
+    now = Date.now();
+    phase = { step: 'lost', attempt, at: now + delay, reason };
+    retryTimer = window.setTimeout(() => void connect({}, attempt), delay);
+  }
+
+  /** « Reconnecter maintenant » : la tentative prévue part sans attendre. */
+  function retryNow() {
+    if (phase.step !== 'lost') return;
+    window.clearTimeout(retryTimer);
+    void connect({}, phase.attempt);
+  }
+
+  /** « Arrêter » : plus de tentative, l'onglet attend un clic. */
+  function stopRetrying() {
+    window.clearTimeout(retryTimer);
+    retry = 0;
+    session.status = 'closed';
+    phase = { step: 'closed', lost: true, message: 'La reconnexion automatique est arrêtée.' };
+  }
   let info = $state.raw<Connected | null>(null);
   let echo = $state<number | null>(null);
   let secret = $state('');
@@ -167,8 +222,10 @@
     return { kind: 'other', message: typeof e === 'string' ? e : String(e) };
   }
 
-  async function connect(next: Attempt = {}) {
+  /** Ouvre la session. `auto` : numéro de la tentative de reconnexion automatique, 0 sinon. */
+  async function connect(next: Attempt = {}, auto = 0) {
     if (!term || !fit) return;
+    retry = auto;
     attempt = { ...attempt, ...next };
     if (host.proxyJump) {
       phase = { step: 'error', message: 'Cet hôte passe par un bastion (ProxyJump). Le rebond par bastion n’est pas encore pris en charge.' };
@@ -187,7 +244,7 @@
     }
 
     phase = { step: 'connecting' };
-    session.status = 'connecting';
+    session.status = auto ? 'reconnecting' : 'connecting';
     secret = '';
     fit.fit();
     echoes = [];
@@ -233,6 +290,7 @@
       session.status = 'connected';
       // Les secrets ne survivent pas à l'ouverture de la session.
       attempt = {};
+      retry = 0;
       term.focus();
     } catch (e) {
       const problem = normalize(e);
@@ -248,6 +306,9 @@
       } else if (problem.kind === 'auth' && host.auth === 'password') {
         attempt.password = undefined;
         phase = { step: 'password', error: problem.message };
+      } else if (auto) {
+        // Le serveur ne répond toujours pas : la tentative suivante est programmée.
+        scheduleRetry(auto + 1, problem.message);
       } else {
         phase = { step: 'error', message: problem.message };
       }
@@ -261,6 +322,7 @@
   }
 
   function reconnect() {
+    window.clearTimeout(retryTimer);
     attempt = {};
     term?.reset();
     void connect();
@@ -324,16 +386,25 @@
       if (event.payload.id !== sessionId) return;
       sessionId = null;
       info = null;
+      const { exitStatus, reason, ending } = event.payload;
+      // Seule une connexion perdue se rouvre d'elle-même, et seulement si le réglage le permet.
+      if (ending === 'lost' && prefs.sshReconnect) {
+        term?.write('\r\n');
+        scheduleRetry(1, reason ?? '');
+        return;
+      }
       session.status = 'closed';
-      const { exitStatus, reason } = event.payload;
-      phase = {
-        step: 'closed',
-        message: reason
-          ? `Connexion interrompue : ${reason}`
-          : exitStatus === null || exitStatus === 0
-            ? 'Session terminée.'
-            : `Session terminée (code de sortie ${exitStatus}).`,
-      };
+      phase =
+        ending === 'lost'
+          ? { step: 'closed', lost: true, message: reason ?? 'La connexion au serveur a été coupée.' }
+          : {
+              step: 'closed',
+              message: reason
+                ? `Connexion interrompue\u00a0: ${reason}`
+                : exitStatus === null || exitStatus === 0
+                  ? 'Session terminée.'
+                  : `Session terminée (code de sortie ${exitStatus}).`,
+            };
     });
 
     void connect();
@@ -342,6 +413,7 @@
       observer.disconnect();
       stopTheme();
       void unlisten.then((stop) => stop());
+      window.clearTimeout(retryTimer);
       if (sessionId !== null) void invoke('ssh_close', { id: sessionId }).catch(() => {});
       terminal.dispose();
     };
@@ -419,7 +491,7 @@
         <div class="card" class:bad={phase.step === 'hostKeyChanged'}>
           {#if phase.step === 'connecting'}
             <span class="spinner wait" aria-hidden="true"></span>
-            <p class="lead">Connexion à <b class="mono">{target}</b>…</p>
+            <p class="lead">{retry ? 'Reconnexion' : 'Connexion'} à <b class="mono">{target}</b>…</p>
           {:else if phase.step === 'hostKey'}
             <h3><Icon name="warning" /> Serveur inconnu</h3>
             <p>
@@ -467,8 +539,16 @@
                 <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
               </div>
             </form>
+          {:else if phase.step === 'lost'}
+            <h3><Icon name="warning" /> Connexion perdue</h3>
+            <p role="status">{waitText}</p>
+            {#if phase.reason}<p class="muted">{phase.reason}</p>{/if}
+            <div class="row">
+              <button class="btn primary" type="button" onclick={retryNow}><Icon name="refresh" size={14} /> Reconnecter maintenant</button>
+              <button class="btn ghost" type="button" onclick={stopRetrying}>Arrêter</button>
+            </div>
           {:else}
-            <h3>{phase.step === 'error' ? 'Connexion impossible' : 'Session terminée'}</h3>
+            <h3>{phase.step === 'error' ? 'Connexion impossible' : phase.lost ? 'Connexion perdue' : 'Session terminée'}</h3>
             <p class:err={phase.step === 'error'}>{phase.message}</p>
             <div class="row">
               <button class="btn primary" type="button" onclick={reconnect}><Icon name="refresh" size={14} /> Reconnecter</button>
@@ -586,7 +666,8 @@
     background: var(--ok);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent);
   }
-  .dot.s-connecting {
+  .dot.s-connecting,
+  .dot.s-reconnecting {
     background: var(--warn);
     animation: blink var(--t-wait) var(--ease) infinite;
   }

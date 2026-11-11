@@ -3,6 +3,7 @@
   import GeneralSection from './GeneralSection.svelte';
   import GitSection from './GitSection.svelte';
   import KeysSection from './KeysSection.svelte';
+  import SshSection from './SshSection.svelte';
   import { SECTIONS, settingsPage } from './settings.svelte';
 
   // La page de réglages (charte, section 9.18) : la navigation à gauche, la section à droite.
@@ -52,6 +53,8 @@
         <GeneralSection />
       {:else if settingsPage.section === 'git'}
         <GitSection />
+      {:else if settingsPage.section === 'ssh'}
+        <SshSection />
       {:else}
         <KeysSection />
       {/if}
