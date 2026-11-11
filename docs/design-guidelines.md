@@ -139,6 +139,7 @@ Every theme must meet them, in light and in dark.
 | `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
 | `--ok`, `--warn`, `--bad` on `--panel` and `--bg` | 4.5:1 |
 | `--accent` and each branch colour on `--panel` | 3:1 |
+| `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 
 ### 2.5 Colour themes
 
@@ -381,6 +382,8 @@ States are the same everywhere:
 | Small | 24 px high, 12 px text. | In a card header or a row. |
 
 - 6 px corners. Inner margins: 5 px at the top and bottom, 12 px on the sides.
+- A toggle is a small ghost button that keeps a state (`aria-pressed`). Pressed: an
+  `--accent-soft` background and an `--accent` border, the text staying in `--ink`.
 - Hover: `--hover` background and a stronger border. A primary or danger button moves 10%
   towards `--ink`, darker in light and lighter in dark, like the label of the current branch
   (9.4): its text gains contrast in both themes, where a lighter background lost it.
@@ -608,11 +611,13 @@ in the terminal of the current tab.
   take an `--accent-soft` background and an `--accent` border when pressed, their text staying in
   `--ink`; and a close button.
 - The search runs as the user types. Enter goes to the next result, Shift + Enter to the
-  previous one, Escape closes the bar and gives the keyboard back to the terminal.
-- Every result has an `--accent-soft` background; the current one has an `--accent` border too.
-  Both are marked in the scroll bar of the terminal.
-- A regular expression that is not valid turns the field to its error state, and the count says
-  "Expression non valide".
+  previous one. Escape, from anywhere in the bar, closes it and gives the keyboard back to the
+  terminal. Ctrl + Shift + F while the bar is open brings the focus back to its field.
+- Every result has a background of the accent at 30% over `--term-bg`; the current one has an
+  `--accent` border too. Both are marked in a thin margin on the right of the terminal.
+- A regular expression that is not valid turns the field to its error state, border and halo in
+  `--bad`, and the count says "Expression non valide", announced at once (`role="alert"`). In
+  this bar the message stands beside the field rather than under it: the bar is one line high.
 
 ### 9.16 Resize handle
 
@@ -706,6 +711,8 @@ keys (9.12), and a button that restores the default.
   that a combination is awaited. Backspace removes the shortcut, Escape cancels.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
+- A group whose shortcuts act in one module only says so after its name, in weight 400:
+  "Synchronisation · module Git", "Terminal · module SSH" (11).
 
 ### 9.19 Choice
 

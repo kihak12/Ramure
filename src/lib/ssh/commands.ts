@@ -14,8 +14,11 @@ export function sshCommands(): Command[] {
       title: 'Chercher dans le terminal',
       keywords: 'rechercher trouver texte',
       disabled: !session,
+      hint: session ? undefined : 'aucun terminal ouvert',
       run: () => {
-        if (session) session.searching = true;
+        if (!session) return;
+        session.searching = true;
+        session.searchAsk++;
       },
     },
   ];

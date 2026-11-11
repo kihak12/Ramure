@@ -31,7 +31,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'toggle-sides', group: 'Affichage', title: 'Afficher ou masquer les panneaux latéraux', keys: '', scope: 'git' },
   { id: 'terminal-search', group: 'Terminal', title: 'Chercher dans le terminal', keys: 'Ctrl+Shift+F', scope: 'ssh' },
   { id: 'tab-new', group: 'Onglets', title: 'Nouvel onglet', keys: 'Ctrl+T', scope: 'git' },
-  { id: 'tab-close', group: 'Onglets', title: "Fermer l'onglet", keys: 'Ctrl+W', scope: 'git' },
+  { id: 'tab-close', group: 'Onglets', title: 'Fermer l’onglet', keys: 'Ctrl+W', scope: 'git' },
   { id: 'tab-next', group: 'Onglets', title: 'Onglet suivant', keys: 'Ctrl+Tab', scope: 'git' },
   { id: 'tab-prev', group: 'Onglets', title: 'Onglet précédent', keys: 'Ctrl+Shift+Tab', scope: 'git' },
   { id: 'open', group: 'Dépôt', title: 'Ouvrir un dépôt', keys: 'Ctrl+O', scope: 'git' },
@@ -47,8 +47,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'stage-all', group: 'Travail en cours', title: 'Tout indexer', keys: 'Ctrl+Shift+A', scope: 'git' },
   { id: 'stash', group: 'Travail en cours', title: 'Remiser les modifications', keys: 'Ctrl+Shift+S', scope: 'git' },
   { id: 'pop', group: 'Travail en cours', title: 'Dépiler la dernière remise', keys: '', scope: 'git' },
-  { id: 'op-continue', group: 'Travail en cours', title: "Continuer l'opération en suspens", keys: '', scope: 'git' },
-  { id: 'op-abort', group: 'Travail en cours', title: "Abandonner l'opération en suspens", keys: '', scope: 'git' },
+  { id: 'op-continue', group: 'Travail en cours', title: 'Continuer l’opération en suspens', keys: '', scope: 'git' },
+  { id: 'op-abort', group: 'Travail en cours', title: 'Abandonner l’opération en suspens', keys: '', scope: 'git' },
 ];
 
 const DEFAULTS = new Map(SHORTCUTS.map((s) => [s.id, s.keys]));

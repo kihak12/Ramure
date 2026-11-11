@@ -45,6 +45,7 @@
   let search: SearchAddon | undefined;
 
   // --- Recherche dans le terminal (charte, section 9.15) -------------------------------------
+  const MATCH = 0.3; // part de l'accent dans le fond d'un résultat, comme dans verifier-contrastes.mjs
   let query = $state('');
   let caseSensitive = $state(false);
   let regex = $state(false);
@@ -61,9 +62,7 @@
     }
   });
   const countText = $derived(
-    invalid
-      ? 'Expression non valide'
-      : !query || !results
+    !query || !results
         ? ''
         : results.count === 0
           ? 'Aucun résultat'
@@ -72,18 +71,27 @@
             : `${results.index + 1} sur ${results.count}`,
   );
 
-  /** Les couleurs des résultats, lues dans les jetons au moment de chercher : elles suivent le thème. */
+  /** `#rrggbb` mêlé à `p` sur `#rrggbb` : le terminal veut une couleur pleine, pas `color-mix()`. */
+  function blend(hex: string, p: number, over: string) {
+    const channels = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const [a, b] = [channels(hex), channels(over)];
+    return `#${a.map((v, i) => Math.round(v * p + b[i] * (1 - p)).toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  /** Les couleurs des résultats, lues dans les jetons au moment de chercher : elles suivent le thème.
+   *  Un résultat est l'accent à 30 % sur le fond du terminal (charte, section 9.15). */
   function searchOptions(incremental = false): ISearchOptions {
     const css = getComputedStyle(document.documentElement);
     const v = (name: string) => css.getPropertyValue(name).trim();
+    const match = blend(v('--accent'), MATCH, v('--term-bg'));
     return {
       caseSensitive,
       regex,
       incremental,
       decorations: {
-        matchBackground: v('--accent-soft'),
+        matchBackground: match,
         matchOverviewRuler: v('--accent'),
-        activeMatchBackground: v('--accent-soft'),
+        activeMatchBackground: match,
         activeMatchBorder: v('--accent'),
         activeMatchColorOverviewRuler: v('--accent'),
       },
@@ -108,19 +116,25 @@
     term?.focus();
   }
 
-  function onSearchKey(e: KeyboardEvent) {
+  function onFieldKey(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
       find(e.shiftKey ? 'previous' : 'next');
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      closeSearch();
     }
   }
 
-  // Ouverture demandée (raccourci, palette) : le champ prend le focus, son texte est sélectionné.
+  /** Échap ferme la barre, d'où que vienne la frappe : le champ, un bouton ou une bascule. */
+  function onBarKey(e: KeyboardEvent) {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeSearch();
+  }
+
+  // Ouverture demandée (raccourci, palette), même barre déjà ouverte : le champ prend le focus et
+  // son texte est sélectionné.
   $effect(() => {
+    void session.searchAsk;
     if (!session.searching) return;
     void tick().then(() => {
       searchEl?.focus();
@@ -315,7 +329,7 @@
       phase = {
         step: 'closed',
         message: reason
-          ? `Connexion interrompue : ${reason}`
+          ? `Connexion interrompue : ${reason}`
           : exitStatus === null || exitStatus === 0
             ? 'Session terminée.'
             : `Session terminée (code de sortie ${exitStatus}).`,
@@ -360,7 +374,8 @@
   </header>
 
   {#if session.searching}
-    <div class="search" role="search" aria-label="Chercher dans le terminal">
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div class="search" role="search" aria-label="Chercher dans le terminal" onkeydown={onBarKey}>
       <label class="filter" class:invalid>
         <Icon name="search" size={14} />
         <input
@@ -374,19 +389,23 @@
           autocomplete="off"
           bind:value={query}
           oninput={() => find('next', true)}
-          onkeydown={onSearchKey}
+          onkeydown={onFieldKey}
         />
       </label>
-      <span class="count" class:bad={invalid} id="search-count-{session.key}" role="status">{countText}</span>
-      <button class="icon" type="button" aria-label="Résultat précédent" title="Résultat précédent (Maj + Entrée)" disabled={!results?.count} onclick={() => find('previous')}>
+      {#if invalid}
+        <span class="count bad" id="search-count-{session.key}" role="alert">Expression non valide</span>
+      {:else}
+        <span class="count" id="search-count-{session.key}" role="status">{countText}</span>
+      {/if}
+      <button class="btn ghost small" type="button" aria-label="Résultat précédent" title="Résultat précédent (Maj + Entrée)" disabled={!results?.count} onclick={() => find('previous')}>
         <Icon name="up" size={14} />
       </button>
-      <button class="icon" type="button" aria-label="Résultat suivant" title="Résultat suivant (Entrée)" disabled={!results?.count} onclick={() => find('next')}>
+      <button class="btn ghost small" type="button" aria-label="Résultat suivant" title="Résultat suivant (Entrée)" disabled={!results?.count} onclick={() => find('next')}>
         <Icon name="down" size={14} />
       </button>
-      <button class="toggle" type="button" aria-pressed={caseSensitive} title="Respecter la casse" aria-label="Respecter la casse" onclick={() => (caseSensitive = !caseSensitive)}>Aa</button>
-      <button class="toggle mono" type="button" aria-pressed={regex} title="Expression régulière" aria-label="Expression régulière" onclick={() => (regex = !regex)}>.*</button>
-      <button class="icon close" type="button" aria-label="Fermer la recherche" title="Fermer la recherche (Échap)" onclick={closeSearch}>
+      <button class="btn ghost small toggle" type="button" aria-pressed={caseSensitive} title="Respecter la casse" aria-label="Respecter la casse" onclick={() => (caseSensitive = !caseSensitive)}>Aa</button>
+      <button class="btn ghost small toggle mono" type="button" aria-pressed={regex} title="Expression régulière" aria-label="Expression régulière" onclick={() => (regex = !regex)}>.*</button>
+      <button class="btn ghost small close" type="button" aria-label="Fermer la recherche" title="Fermer la recherche (Échap)" onclick={closeSearch}>
         <Icon name="x" size={14} />
       </button>
     </div>
@@ -399,13 +418,13 @@
       <div class="veil">
         <div class="card" class:bad={phase.step === 'hostKeyChanged'}>
           {#if phase.step === 'connecting'}
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="spinner wait" aria-hidden="true"></span>
             <p class="lead">Connexion à <b class="mono">{target}</b>…</p>
           {:else if phase.step === 'hostKey'}
             <h3><Icon name="warning" /> Serveur inconnu</h3>
             <p>
-              <b class="mono">{host.hostname}</b> n'est pas dans <code>known_hosts</code>. Vérifie que cette empreinte
-              {phase.algorithm} est bien celle du serveur avant de lui faire confiance :
+              <b class="mono">{host.hostname}</b> n’est pas dans <code>known_hosts</code>. Vérifie que cette empreinte
+              {phase.algorithm} est bien celle du serveur avant de lui faire confiance :
             </p>
             <p class="print mono">{phase.fingerprint}</p>
             <div class="row">
@@ -418,17 +437,17 @@
               <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
             </div>
           {:else if phase.step === 'hostKeyChanged'}
-            <h3><Icon name="warning" /> L'empreinte du serveur a changé</h3>
+            <h3><Icon name="warning" /> L’empreinte du serveur a changé</h3>
             <p>
-              L'empreinte présentée par <b class="mono">{host.hostname}</b> ne correspond plus à celle enregistrée à la ligne
-              {phase.line} de <code>known_hosts</code>. La connexion est bloquée : le serveur a peut-être été réinstallé, ou
-              quelqu'un s'interpose entre toi et lui.
+              L’empreinte présentée par <b class="mono">{host.hostname}</b> ne correspond plus à celle enregistrée à la ligne
+              {phase.line} de <code>known_hosts</code>. La connexion est bloquée : le serveur a peut-être été réinstallé, ou
+              quelqu’un s’interpose entre toi et lui.
             </p>
             <p class="print mono">{phase.fingerprint}</p>
-            <p class="muted">Si le changement est légitime, retire l'ancienne ligne de <code>known_hosts</code>, puis reconnecte-toi.</p>
+            <p class="muted">Si le changement est légitime, retire l’ancienne ligne de <code>known_hosts</code>, puis reconnecte-toi.</p>
             <div class="row">
               <button class="btn" type="button" onclick={reconnect}>Réessayer</button>
-              <button class="btn ghost" type="button" onclick={onclose}>Fermer l'onglet</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
             </div>
           {:else if phase.step === 'passphrase' || phase.step === 'password'}
             <form onsubmit={submitSecret}>
@@ -437,7 +456,7 @@
                 {#if phase.step === 'passphrase'}
                   La clé <span class="mono">{phase.path}</span> est protégée.
                 {:else}
-                  Pour <span class="mono">{target}</span>. Il n'est pas enregistré.
+                  Pour <span class="mono">{target}</span>. Il n’est pas enregistré.
                 {/if}
               </p>
               {#if phase.error}<p class="err">{phase.error}</p>{/if}
@@ -453,7 +472,7 @@
             <p class:err={phase.step === 'error'}>{phase.message}</p>
             <div class="row">
               <button class="btn primary" type="button" onclick={reconnect}><Icon name="refresh" size={14} /> Reconnecter</button>
-              <button class="btn ghost" type="button" onclick={onclose}>Fermer l'onglet</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
             </div>
           {/if}
         </div>
@@ -474,7 +493,7 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     padding: 6px 12px;
     border-bottom: 1px solid var(--line-soft);
     background: var(--panel);
@@ -501,8 +520,12 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
   }
-  .filter.invalid {
+  .filter.invalid,
+  .filter.invalid:focus-within {
     border-color: var(--bad);
+  }
+  .filter.invalid:focus-within {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent);
   }
   .filter input {
     flex: 1;
@@ -525,46 +548,11 @@
   .count.bad {
     color: var(--bad);
   }
-  .icon,
-  .toggle {
-    flex: none;
-    display: grid;
-    place-items: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 4px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-s);
-    background: none;
-    color: var(--muted);
-    cursor: pointer;
-    transition:
-      background var(--t-fast) var(--ease),
-      border-color var(--t-fast) var(--ease),
-      color var(--t-fast) var(--ease);
-  }
-  .toggle {
-    min-width: 28px;
-    color: var(--ink);
-    font-size: var(--fs-label);
-    font-weight: var(--fw-strong);
-  }
-  .icon:hover:not(:disabled),
-  .toggle:hover {
-    background: var(--hover);
-    color: var(--ink);
-  }
-  .toggle[aria-pressed='true'] {
+  /* Bascule : un bouton fantôme, enfoncé en --accent-soft bordé d'accent (charte, section 9.1). */
+  .toggle[aria-pressed='true'],
+  .toggle[aria-pressed='true']:hover {
     background: var(--accent-soft);
     border-color: var(--accent);
-  }
-  .icon:active:not(:disabled),
-  .toggle:active {
-    transform: scale(0.97);
-  }
-  .icon:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
   }
   .close {
     margin-left: auto;
@@ -572,7 +560,7 @@
   header {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     padding: 5px 12px;
     min-height: 34px;
     border-bottom: 1px solid var(--line-soft);
@@ -631,7 +619,7 @@
     width: min(520px, 100%);
     display: grid;
     gap: 10px;
-    padding: 18px 20px;
+    padding: 16px 20px;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
     background: var(--raised);
@@ -652,6 +640,7 @@
     gap: 8px;
     margin: 0;
     font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
   }
   p {
     margin: 0;
@@ -685,18 +674,7 @@
     gap: 8px;
     margin-top: 4px;
   }
-  .spinner {
+  .wait {
     justify-self: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
-    border-top-color: var(--accent);
-    animation: spin var(--t-spin) linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>
