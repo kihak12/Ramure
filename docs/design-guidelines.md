@@ -45,7 +45,7 @@ What the interface favours:
 3. **Surfaces rather than lines.** Areas are separated by their background and by space. Lines
    are only used inside a card.
 4. **One shape, one role.** A slightly rounded rectangle can be clicked. A pill or a circle
-   informs.
+   informs. One exception: a colour swatch, a round dot of colour that is chosen (9.21).
 5. **Dense and readable.** A lot of information on screen, but no text under 10.5 px and no
    target under 24 px.
 6. **Calm.** A movement is brief and explains a change. Nothing moves without an action from the
@@ -267,10 +267,12 @@ From left to right and from top to bottom:
 | `--radius-card` | 14 px | Cards. |
 | `--radius-pill` | 999 px | What informs: counters, the capsule of a commit message. |
 
-- **Everything that can be clicked is a slightly rounded rectangle.** The pill is reserved for
-  what informs without being clicked.
+- **Everything that can be clicked is a slightly rounded rectangle**, except a colour swatch
+  (below). The pill is reserved for what informs without being clicked.
 - The circle is reserved for the dot of a commit, the badge of a toolbar button, the icon of a
-  notification and the waiting ring.
+  notification, the waiting ring, and the colour swatches of a choice of colour (the colour of
+  an SSH host). A swatch is a dot of colour that can be clicked: it is round, and it is the one
+  element that grows on hover (8).
 - An element placed inside another never has a larger radius than the one that contains it.
 
 ## 6. Surfaces and shadows
@@ -330,7 +332,8 @@ The interface has four levels. Each is recognised by its background.
 Transitions written in script read the same tokens, through `src/lib/ui/motion.ts`.
 
 **What is animated.** Opacity, position (`transform`) and colours. An appearance comes from
-close by: an offset of 6 to 10 px at most.
+close by: an offset of 6 to 10 px at most. One scale besides the press effect: a colour swatch
+grows to 112% on hover, in `--t-fast` (9.21).
 
 **The press effect.** A button shrinks to 97% while it is clicked. This applies to buttons,
 toolbar buttons and rail buttons, and to nothing else.
@@ -850,6 +853,59 @@ A local terminal under the graph, opened in the folder of the repository, to run
 - **What it does not cover.** The editor of a conflict covers the view, the terminal with it.
   While it is open, the "Terminal" action, its shortcut and its commands are disabled: nothing
   opens under it.
+
+### 9.21 Host form
+
+The dialog that adds a host to the book or changes one (9.10). It is 600 px wide: its fields
+need the room.
+
+- **Buttons.** "Tester la connexion", a secondary button, alone on its line under the fields,
+  with its result right under it. Below, 24 px apart, the last line: "Annuler" alone on the
+  left, and on the right "Enregistrer et connecter" then "Enregistrer", the main button. This
+  dialog parts from 9.10 ("Annuler" first, at the bottom right) because it has two ways to save,
+  which stay together. Nothing opens a session without saving the host: a host one connects to
+  belongs in the book.
+- **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
+  not, authenticates, and closes the connection at once: no terminal opens, nothing is saved. It
+  is disabled until the form is valid (a name and an address).
+- **While it runs**, the button says "Test en cours…" with the 12 px waiting ring and cannot be
+  clicked; the form stays usable. "Annuler" closes the dialog and the result of the test is
+  dropped.
+- **The result** sits in a line under "Tester la connexion", never in a notification: the dialog
+  is where the user looks.
+  - Success: the check icon and "Connexion réussie", in `--ok`, then how it authenticated, in
+    `--muted` ("clé id_ed25519", "agent SSH", "mot de passe") and how long it took.
+  - Failure: the warning icon and the reason in `--bad`, in French when it is known (the server
+    refuses, does not answer, cannot be reached, the key or the password is refused), as in
+    9.15.
+  - Success is announced as a status (`role="status"`), failure as an alert (`role="alert"`).
+  - The result goes away as soon as a field of the connection changes: the address, the port,
+    the user, the authentication, the key, the bastion. The name, the group, the tags, the colour
+    and the startup command do not touch it.
+- **What a connection asks, the test asks too**, in the same line, in place of the result:
+  - an unknown server: its fingerprint in the code font, with "Faire confiance et mémoriser"
+    and "Faire confiance cette fois", as when a session connects (9.15); a fingerprint that has
+    changed blocks the test, as it blocks a connection;
+  - a protected key or a password: a password field and "Tester", Enter tests. The secret is
+    forgotten after the test, whatever its result; a password is never stored. A secret that is
+    refused asks again, with the field in its error state (9.3): `--bad` border, the message
+    under it.
+  - The question sits in a box on `--bg`, 6 px corners, 10 px and 12 px of inner margins. Its
+    sentence says what is asked and stands for the label of the field, whose accessible name
+    repeats it.
+- **The keyboard.** The field of a secret takes the focus when it appears. When the test ends
+  and the focus has nowhere to be (the button clicked is gone, or "Tester la connexion" was
+  disabled while the test ran), it goes back to "Tester la connexion".
+- **A low window.** The dialog never leaves the screen: past the height of the window, it
+  scrolls.
+- **A host behind a bastion** (ProxyJump) cannot be tested yet: the button is disabled, and the
+  warning of the form already says why.
+- **The colour of the host** is a row of swatches, a group of radio buttons: "Aucune", a dashed
+  circle in `--line`, then the eight branch colours (2.2). A swatch is a 24 px circle. Hover: it
+  grows to 112%, in `--t-fast`; the colour itself says what it is, so no `--hover` background.
+  Chosen: a 2 px ring of its own colour (of `--muted` for "Aucune"), 2 px away from it, drawn
+  with a flat shadow, not an elevation. Keyboard focus: the ring of the application, 2 px of
+  `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Couleur 3".
 
 ## 10. Commit graph
 

@@ -64,6 +64,28 @@ pub struct ConnectParams {
     startup_command: Option<String>,
 }
 
+/// Ce qu'il faut pour tester un hôte : se connecter et s'authentifier, sans ouvrir de terminal.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestParams {
+    host: String,
+    port: u16,
+    user: String,
+    auth: Auth,
+    accept_fingerprint: Option<String>,
+    #[serde(default)]
+    remember_host: bool,
+}
+
+/// Résultat d'un test réussi : comment le serveur a été reconnu et l'utilisateur authentifié.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Tested {
+    known_host: bool,
+    auth_method: String,
+    connect_ms: f64,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum SshError {
@@ -369,14 +391,24 @@ pub fn ssh_defaults() -> Defaults {
     Defaults { user, hosts, key_files }
 }
 
-#[tauri::command]
-pub async fn ssh_connect(
-    app: AppHandle,
-    state: State<'_, SshState>,
-    params: ConnectParams,
-    on_data: Channel,
-) -> Result<Connected, SshError> {
-    let started = Instant::now();
+/// Une connexion ouverte et authentifiée, prête à recevoir un canal.
+struct Opened {
+    handle: Handle<ClientHandler>,
+    fingerprint: String,
+    known_host: bool,
+    auth_method: String,
+}
+
+/// Se connecte à `host:port`, vérifie l'empreinte du serveur et authentifie `user`. Commun à une
+/// session et au test d'un hôte.
+async fn open_authenticated(
+    host: &str,
+    port: u16,
+    user: &str,
+    auth: &Auth,
+    accept_fingerprint: Option<String>,
+    remember_host: bool,
+) -> Result<Opened, SshError> {
     let verdict = Arc::new(Mutex::new(None));
     let config = Arc::new(client::Config {
         keepalive_interval: Some(Duration::from_secs(30)),
@@ -385,19 +417,19 @@ pub async fn ssh_connect(
         ..Default::default()
     });
     let handler = ClientHandler {
-        host: params.host.clone(),
-        port: params.port,
-        accepted: params.accept_fingerprint.clone(),
-        remember: params.remember_host,
+        host: host.to_string(),
+        port,
+        accepted: accept_fingerprint,
+        remember: remember_host,
         verdict: verdict.clone(),
     };
 
-    let connecting = client::connect(config, (params.host.as_str(), params.port), handler);
+    let connecting = client::connect(config, (host, port), handler);
     let connection = tokio::time::timeout(Duration::from_secs(15), connecting).await;
     let seen = verdict.lock().ok().and_then(|mut slot| slot.take());
 
     let mut handle = match connection {
-        Err(_) => return Err(other(format!("{}:{} ne répond pas (délai de 15 s dépassé).", params.host, params.port))),
+        Err(_) => return Err(other(format!("{host}:{port} ne répond pas (délai de 15 s dépassé)."))),
         Ok(Err(e)) => {
             return Err(match seen {
                 Some(HostVerdict::Unknown { fingerprint, algorithm }) => {
@@ -417,13 +449,55 @@ pub async fn ssh_connect(
         _ => (String::new(), false),
     };
 
-    let auth_method = match authenticate(&mut handle, &params.user, &params.auth).await {
-        Ok(method) => method,
+    match authenticate(&mut handle, user, auth).await {
+        Ok(auth_method) => Ok(Opened { handle, fingerprint, known_host, auth_method }),
         Err(e) => {
             let _ = handle.disconnect(Disconnect::ByApplication, "", "fr").await;
-            return Err(e);
+            Err(e)
         }
-    };
+    }
+}
+
+/// Teste un hôte : connexion, empreinte et authentification, puis déconnexion aussitôt.
+/// Aucun terminal n'est ouvert, rien n'est enregistré, sauf l'empreinte que l'utilisateur
+/// demande de mémoriser.
+#[tauri::command]
+pub async fn ssh_test(params: TestParams) -> Result<Tested, SshError> {
+    let started = Instant::now();
+    let opened = open_authenticated(
+        &params.host,
+        params.port,
+        &params.user,
+        &params.auth,
+        params.accept_fingerprint,
+        params.remember_host,
+    )
+    .await?;
+    let _ = opened.handle.disconnect(Disconnect::ByApplication, "", "fr").await;
+    Ok(Tested {
+        known_host: opened.known_host,
+        auth_method: opened.auth_method,
+        connect_ms: started.elapsed().as_secs_f64() * 1000.0,
+    })
+}
+
+#[tauri::command]
+pub async fn ssh_connect(
+    app: AppHandle,
+    state: State<'_, SshState>,
+    params: ConnectParams,
+    on_data: Channel,
+) -> Result<Connected, SshError> {
+    let started = Instant::now();
+    let Opened { handle, fingerprint, known_host, auth_method } = open_authenticated(
+        &params.host,
+        params.port,
+        &params.user,
+        &params.auth,
+        params.accept_fingerprint.clone(),
+        params.remember_host,
+    )
+    .await?;
 
     let channel = handle.channel_open_session().await.map_err(other)?;
     channel

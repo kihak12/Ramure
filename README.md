@@ -122,6 +122,9 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
 - **Keys**: the list of keys in `~/.ssh`, generation of an ed25519 key with an optional
   passphrase, copy of the public key. Keys stay in `~/.ssh`.
+- **Testing a host**: "Tester la connexion", in its form, connects with the values typed so far,
+  authenticates and disconnects, without saving anything or opening a terminal. The result shows
+  in the form; an unknown server, a passphrase or a password is asked for as when connecting.
 - **A host's key**: in its form, the key file is typed or picked with "Parcourir…", which opens
   the system file dialog in `~/.ssh`.
 - A password or a passphrase is asked for at connection time and is never stored.

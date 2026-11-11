@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { invoke } from '@tauri-apps/api/core';
   import { homeDir, join } from '@tauri-apps/api/path';
+  import { tick, untrack } from 'svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
   import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
-  import type { Host } from './types';
+  import { explain } from './reasons';
+  import type { Host, SshError } from './types';
 
   let element = $state<HTMLDialogElement>();
   let form = $state<Host | null>(null);
@@ -22,13 +25,18 @@
       form = { ...editing, tags: [...editing.tags] };
       tags = editing.tags.join(', ');
       keyNote = '';
+      forget();
       element.showModal();
     } else if (!editing && element.open) {
       element.close();
     }
   });
 
-  const close = () => (ssh.editing = null);
+  // Fermer la fiche abandonne un test en cours : son résultat ne s'affichera nulle part.
+  const close = () => {
+    forget();
+    ssh.editing = null;
+  };
 
   /** Fiche à jour, tags compris. */
   function current(): Host | null {
@@ -59,7 +67,7 @@
     try {
       picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: folder });
     } catch (e) {
-      toasts.err("La fenêtre de fichiers n'a pas pu s'ouvrir", e instanceof Error ? e.message : String(e));
+      toasts.err('La fenêtre de fichiers n’a pas pu s’ouvrir', e instanceof Error ? e.message : String(e));
       return;
     }
     // Fenêtre annulée, ou fiche fermée entre-temps : le champ ne change pas.
@@ -75,13 +83,137 @@
     form.keyPath = picked;
   }
 
-  /** Connexion ponctuelle : rien n'est inscrit dans le carnet. */
-  function connectOnce() {
-    const host = current();
-    if (!host || !valid) return;
-    close();
-    ssh.open(host);
+  // --- Tester la connexion (charte, section 9.21) ---------------------------------------------
+  /** Ce que le test montre, entre les champs et les boutons. */
+  type Test =
+    | { step: 'idle' }
+    | { step: 'running' }
+    | { step: 'ok'; method: string; ms: number }
+    | { step: 'fail'; message: string }
+    | { step: 'hostKey'; fingerprint: string; algorithm: string }
+    | { step: 'secret'; kind: 'passphrase' | 'password'; path: string; error: string };
+
+  /** Ce qu'on sait pour ce test : rien n'est gardé une fois le résultat connu. */
+  interface Attempt {
+    accept?: string;
+    remember?: boolean;
+    keyPath?: string;
+    passphrase?: string;
+    password?: string;
   }
+
+  let test = $state<Test>({ step: 'idle' });
+  let attempt: Attempt = {};
+  let secret = $state('');
+  // Chaque test porte un numéro : le résultat d'un test abandonné (fiche fermée, champ changé) est ignoré.
+  let run = 0;
+  let secretEl = $state<HTMLInputElement>();
+  let testButton = $state<HTMLButtonElement>();
+
+  // Le bouton cliqué a disparu (une question), ou s'est désactivé pendant le test : une fois le
+  // résultat affiché, le clavier revient sur « Tester la connexion » plutôt que de se perdre.
+  $effect(() => {
+    if (test.step !== 'ok' && test.step !== 'fail') return;
+    const lost = !document.activeElement || document.activeElement === document.body || document.activeElement === element;
+    if (lost) void tick().then(() => testButton?.focus());
+  });
+
+  /** Oublie le test : son résultat, ses secrets, et celui qui serait encore en cours. */
+  function forget() {
+    run++;
+    attempt = {};
+    secret = '';
+    test = { step: 'idle' };
+  }
+
+  // Un champ de la connexion change : le résultat ne dit plus rien de la fiche, il s'efface.
+  $effect(() => {
+    if (!form) return;
+    void [form.hostname, form.port, form.user, form.auth, form.keyPath, form.proxyJump];
+    untrack(forget);
+  });
+
+  // Un secret est demandé : son champ prend le focus.
+  $effect(() => {
+    if (test.step === 'secret') secretEl?.focus();
+  });
+
+  const testable = $derived(valid && !form?.proxyJump && test.step !== 'running');
+
+  async function startTest(next: Attempt = {}) {
+    const host = current();
+    if (!host || !valid || host.proxyJump) return;
+    attempt = { ...attempt, ...next };
+    secret = '';
+    const user = host.user || ssh.defaultUser;
+    if (!user) {
+      test = { step: 'fail', message: `Indique un utilisateur${NB}: le compte de cette machine n’a pas pu être lu.` };
+      return;
+    }
+    // Un mot de passe n'est jamais enregistré : il est demandé à chaque test, comme à chaque connexion.
+    if (host.auth === 'password' && !attempt.password) {
+      test = { step: 'secret', kind: 'password', path: '', error: '' };
+      return;
+    }
+    const keyPath = attempt.keyPath ?? (host.auth === 'keyFile' ? host.keyPath : '');
+    const auth =
+      host.auth === 'password'
+        ? { kind: 'password', password: attempt.password }
+        : keyPath
+          ? { kind: 'keyFile', path: keyPath, passphrase: attempt.passphrase ?? null }
+          : { kind: 'auto' };
+    const mine = ++run;
+    test = { step: 'running' };
+    try {
+      const done = await invoke<{ knownHost: boolean; authMethod: string; connectMs: number }>('ssh_test', {
+        params: {
+          host: host.hostname.trim(),
+          port: host.port || 22,
+          user,
+          auth,
+          acceptFingerprint: attempt.accept ?? null,
+          rememberHost: attempt.remember ?? false,
+        },
+      });
+      if (mine !== run) return;
+      attempt = {};
+      test = { step: 'ok', method: done.authMethod, ms: done.connectMs };
+    } catch (e) {
+      if (mine !== run) return;
+      const problem: SshError = e && typeof e === 'object' && 'kind' in e ? (e as SshError) : { kind: 'other', message: String(e) };
+      if (problem.kind === 'hostKeyUnknown') {
+        test = { step: 'hostKey', fingerprint: problem.fingerprint, algorithm: problem.algorithm };
+        return;
+      }
+      if (problem.kind === 'needPassphrase') {
+        const wrong = attempt.passphrase !== undefined;
+        attempt = { ...attempt, passphrase: undefined };
+        test = { step: 'secret', kind: 'passphrase', path: problem.path, error: wrong ? 'Cette phrase secrète ne déverrouille pas la clé.' : '' };
+        return;
+      }
+      if (problem.kind === 'auth' && host.auth === 'password') {
+        attempt = { ...attempt, password: undefined };
+        test = { step: 'secret', kind: 'password', path: '', error: problem.message };
+        return;
+      }
+      attempt = {};
+      test = {
+        step: 'fail',
+        message:
+          problem.kind === 'hostKeyChanged'
+            ? `L’empreinte du serveur ne correspond plus à celle de la ligne ${problem.line} de known_hosts${NB}: le test est bloqué, comme une connexion.`
+            : explain(problem.message),
+      };
+    }
+  }
+
+  function submitSecret() {
+    if (test.step !== 'secret' || !secret) return;
+    if (test.kind === 'passphrase') void startTest({ keyPath: test.path, passphrase: secret });
+    else void startTest({ password: secret });
+  }
+
+  const NB = '\u00a0';
 </script>
 
 <dialog
@@ -98,12 +230,12 @@
         void save(false);
       }}
     >
-      <h2>{form.id ? `Modifier ${editing?.alias ?? "l'hôte"}` : 'Nouvel hôte'}</h2>
+      <h2>{form.id ? `Modifier ${editing?.alias ?? 'l’hôte'}` : 'Nouvel hôte'}</h2>
 
       {#if form.proxyJump}
         <p class="warning">
           <Icon name="warning" />
-          <span>Cet hôte passe par un bastion (ProxyJump). Il est dans le carnet, mais le rebond par bastion n'est pas encore pris en charge.</span>
+          <span>Cet hôte passe par un bastion (ProxyJump). Il est dans le carnet, mais le rebond par bastion n’est pas encore pris en charge.</span>
         </p>
       {/if}
 
@@ -193,11 +325,79 @@
         </fieldset>
       </div>
 
-      <footer>
-        <button class="btn ghost once" type="button" disabled={!valid} onclick={connectOnce} title="Ouvre un terminal sans inscrire l'hôte dans le carnet">
-          Connecter sans enregistrer
+      <!-- Le test, seul sur sa ligne sous les champs ; son résultat juste dessous (charte, section 9.21). -->
+      <div class="testing">
+        <button
+          bind:this={testButton}
+          class="btn"
+          type="button"
+          disabled={!testable}
+          title={form.proxyJump ? 'Le rebond par bastion n’est pas encore pris en charge' : 'Se connecter avec ces valeurs, sans rien enregistrer ni ouvrir de terminal'}
+          onclick={() => {
+            attempt = {};
+            void startTest();
+          }}
+        >
+          {#if test.step === 'running'}<span class="spinner" aria-hidden="true"></span> Test en cours…{:else}Tester la connexion{/if}
         </button>
-        <button class="btn" type="button" onclick={close}>Annuler</button>
+      </div>
+
+      {#if test.step === 'ok'}
+        <p class="test ok" role="status">
+          <Icon name="check" size={14} />
+          <span><b>Connexion réussie</b> <span class="how">{test.method}, en {Math.round(test.ms)}{NB}ms</span></span>
+        </p>
+      {:else if test.step === 'fail'}
+        <p class="test bad" role="alert"><Icon name="warning" size={14} /> <span>{test.message}</span></p>
+      {:else if test.step === 'hostKey'}
+        <div class="test ask" role="group" aria-label="Serveur inconnu">
+          <p>
+            <b class="mono">{form.hostname}</b> n’est pas dans <span class="mono">known_hosts</span>. Vérifie que cette empreinte {test.algorithm} est
+            bien celle du serveur avant de lui faire confiance{NB}:
+          </p>
+          <p class="print mono">{test.fingerprint}</p>
+          <div class="row">
+            <button class="btn small" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: true })}>
+              Faire confiance et mémoriser
+            </button>
+            <button class="btn small ghost" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: false })}>
+              Faire confiance cette fois
+            </button>
+          </div>
+        </div>
+      {:else if test.step === 'secret'}
+        <div class="test ask" role="group" aria-label={test.kind === 'passphrase' ? 'Phrase secrète de la clé' : 'Mot de passe'}>
+          <p>
+            {#if test.kind === 'passphrase'}La clé <span class="mono">{test.path}</span> est protégée{NB}: sa phrase secrète est demandée pour le test, puis oubliée.
+            {:else}Le mot de passe est demandé pour le test, puis oublié{NB}: il n’est jamais enregistré.{/if}
+          </p>
+          <div class="row">
+            <input
+              bind:this={secretEl}
+              class="field"
+              class:invalid={!!test.error}
+              aria-invalid={test.error ? 'true' : undefined}
+              aria-describedby={test.error ? 'host-secret-error' : undefined}
+              type="password"
+              autocomplete="off"
+              aria-label={test.kind === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'}
+              bind:value={secret}
+              onkeydown={(e) => {
+                // Entrée teste : elle n'enregistre pas la fiche.
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submitSecret();
+                }
+              }}
+            />
+            <button class="btn small" type="button" disabled={!secret} onclick={submitSecret}>Tester</button>
+          </div>
+          {#if test.error}<p class="err" id="host-secret-error" role="alert">{test.error}</p>{/if}
+        </div>
+      {/if}
+
+      <footer>
+        <button class="btn cancel" type="button" onclick={close}>Annuler</button>
         <button class="btn" type="button" disabled={!valid} onclick={() => void save(true)}>Enregistrer et connecter</button>
         <button class="btn primary" type="submit" disabled={!valid}>Enregistrer</button>
       </footer>
@@ -208,6 +408,9 @@
 <style>
   dialog {
     width: min(600px, calc(100vw - 48px));
+    /* Dans une fenêtre basse (1000 × 600), la fiche défile plutôt que de sortir de l'écran. */
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
     padding: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
@@ -226,8 +429,8 @@
   form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 18px 20px 16px;
+    gap: 12px;
+    padding: 16px 20px;
   }
   h2 {
     margin: 0;
@@ -236,7 +439,7 @@
   }
   .warning {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
     padding: 8px 10px;
     border-radius: var(--radius-s);
@@ -249,14 +452,14 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 10px 12px;
+    gap: 12px;
   }
   .grid label,
   .key,
   fieldset {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
     min-width: 0;
   }
   /* Le champ de la clé et son bouton « Parcourir… » côte à côte. */
@@ -325,6 +528,11 @@
       0 0 0 2px var(--raised),
       0 0 0 4px var(--c, var(--muted));
   }
+  /* Une pastille prise au clavier montre l'anneau de focus : son bouton radio, lui, est invisible. */
+  .swatch:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
   .swatch input {
     position: absolute;
     opacity: 0;
@@ -337,13 +545,75 @@
     overflow: hidden;
     clip-path: inset(50%);
   }
+  /* Les boutons du bas se tiennent un peu à l'écart du test et de son résultat : 24 px au lieu de 12. */
   footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    margin-top: 12px;
   }
-  .once {
+  .testing {
+    display: flex;
+  }
+  /* « Annuler » seul à gauche, les deux enregistrements à droite. */
+  .cancel {
     margin-right: auto;
-    color: var(--accent);
+  }
+  /* Le résultat du test, entre les champs et les boutons (charte, section 9.21). */
+  .test {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    font-size: var(--fs-small);
+  }
+  .test :global(svg) {
+    flex: none;
+    margin-top: 2px;
+  }
+  .test.ok {
+    color: var(--ok);
+  }
+  .test.ok .how {
+    color: var(--muted);
+  }
+  .test.bad {
+    color: var(--bad);
+  }
+  .test.ask {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: var(--radius-s);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .test.ask p {
+    margin: 0;
+  }
+  .print {
+    overflow-wrap: anywhere;
+  }
+  .err {
+    margin: 0;
+    color: var(--bad);
+    font-size: var(--fs-small);
+  }
+  /* Secret refusé : bordure et halo en --bad (charte, section 9.3). */
+  .field.invalid,
+  .field.invalid:focus-visible {
+    border-color: var(--bad);
+  }
+  .field.invalid:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .row .field {
+    flex: 1;
   }
 </style>
