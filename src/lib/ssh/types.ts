@@ -35,6 +35,8 @@ export interface Connected {
   id: number;
   fingerprint: string;
   knownHost: boolean;
+  /** L'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit : pourquoi. */
+  learnFailed?: string | null;
   authMethod: string;
   connectMs: number;
   /** Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit. */
