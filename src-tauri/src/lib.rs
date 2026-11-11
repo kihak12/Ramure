@@ -89,6 +89,7 @@ pub fn run() {
             ssh::store::hosts_import,
             ssh::keyfiles::ssh_keys_list,
             ssh::keyfiles::ssh_key_generate,
+            ssh::keyfiles::ssh_key_import,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de Ramure");

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
+  import { homeDir } from '@tauri-apps/api/path';
+  import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
   import { veil } from '../ui/veil';
-  import { toasts } from '../ui/toasts.svelte';
   import { focusWithRing } from '../ui/focus';
   import { forgetSecret, secretsHeld } from './secrets';
   import { ssh } from './ssh.svelte';
@@ -16,6 +17,10 @@
   let confirm = $state('');
   let comment = $state('');
   let error = $state('');
+  /** Le résultat de la dernière action, dit dans la dernière ligne de la boîte et non dans une
+   *  notification, que le voile de la boîte recouvrirait (charte, 9.11 et 9.15, « Keys »). */
+  let result = $state<{ ok: boolean; text: string } | null>(null);
+  const said = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
 
   // Les clés dont le trousseau du système retient la phrase secrète (charte, section 9.15).
   let held = $state<Record<string, boolean>>({});
@@ -35,7 +40,7 @@
       // Le bouton a disparu : le focus va au bouton voisin de la même clé.
       focusWithRing(listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key.name)}"] .copy`));
     } catch (e) {
-      toasts.err('Le trousseau du système n’a pas pu l’oublier', typeof e === 'string' ? e : String(e));
+      result = { ok: false, text: `Le trousseau du système n’a pas pu l’oublier : ${said(e)}` };
     }
   }
 
@@ -47,6 +52,7 @@
     if (ssh.showKeys && !element.open) {
       creating = false;
       error = '';
+      result = null;
       void ssh.loadKeys();
       element.showModal();
     } else if (!ssh.showKeys && element.open) {
@@ -64,6 +70,7 @@
     confirm = '';
     comment = ssh.defaultUser ? `${ssh.defaultUser}@ramure` : '';
     error = '';
+    result = null;
     creating = true;
   }
 
@@ -78,7 +85,7 @@
       creating = false;
       passphrase = '';
       confirm = '';
-      toasts.ok('Clé créée', `${key.path}\n${key.fingerprint}`);
+      result = { ok: true, text: `Clé créée : ${key.path}` };
     } catch (err) {
       error = typeof err === 'string' ? err : String(err);
     } finally {
@@ -89,9 +96,39 @@
   async function copy(key: KeyInfo) {
     try {
       await navigator.clipboard.writeText(key.public);
-      toasts.ok('Clé publique copiée', `${key.name}.pub — à coller sur le serveur (~/.ssh/authorized_keys) ou sur la forge.`);
+      result = { ok: true, text: `Clé publique de ${key.name} copiée, à coller sur le serveur ou la forge.` };
     } catch {
-      toasts.err('Copie impossible', 'Le presse-papiers a refusé l’écriture.');
+      result = { ok: false, text: 'Copie impossible : le presse-papiers a refusé l’écriture.' };
+    }
+  }
+
+  // Importer une clé venue d'ailleurs : elle est copiée dans ~/.ssh avec sa clé publique.
+  let importing = $state(false);
+  async function importKey() {
+    let home: string | undefined;
+    try {
+      home = await homeDir();
+    } catch {
+      home = undefined; // dossier personnel introuvable : la fenêtre s'ouvre où le système le décide
+    }
+    let picked: string | null;
+    try {
+      picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: home });
+    } catch (e) {
+      result = { ok: false, text: `La fenêtre de fichiers n’a pas pu s’ouvrir : ${said(e)}` };
+      return;
+    }
+    if (!picked) return;
+    importing = true;
+    result = null;
+    try {
+      const key = await invoke<KeyInfo>('ssh_key_import', { path: picked });
+      await ssh.loadKeys();
+      result = { ok: true, text: `Clé importée : ${key.path}` };
+    } catch (err) {
+      result = { ok: false, text: said(err) };
+    } finally {
+      importing = false;
     }
   }
 
@@ -176,11 +213,16 @@
          le bouton principal : au repos, la boîte n'en a pas ; pendant une création, c'est « Générer
          la clé », et « Annuler » revient à la liste. -->
     <footer>
+      <!-- Le résultat de la dernière action, à gauche des boutons, qui restent en haut de la ligne. -->
+      <p class="result" class:bad={result?.ok === false} role="status" aria-live={result?.ok === false ? 'assertive' : 'polite'}>
+        {#if result && !creating}<Icon name={result.ok ? 'check' : 'warning'} size={14} /><span>{result.text}</span>{/if}
+      </p>
       {#if creating}
         <button class="btn" type="button" onclick={() => (creating = false)}>Annuler</button>
         <button class="btn primary" type="submit" form="new-key" disabled={!ready}>{busy ? 'Création…' : 'Générer la clé'}</button>
       {:else}
         <button class="btn" type="button" onclick={close}>Fermer</button>
+        <button class="btn" type="button" disabled={importing} onclick={() => void importKey()}><Icon name="import" size={14} /> Importer une clé…</button>
         <button class="btn" type="button" onclick={startCreating}><Icon name="plus" size={14} /> Générer une clé</button>
       {/if}
     </footer>
@@ -322,8 +364,32 @@
   }
   footer {
     display: flex;
-    justify-content: flex-end;
+    align-items: flex-start;
     gap: 8px;
     padding: 16px 20px;
+  }
+  footer .btn {
+    flex: none;
+  }
+  .result {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    /* Le texte s'aligne sur celui des boutons, de 30 px de haut. */
+    padding-top: 7px;
+    font-size: var(--fs-small);
+    line-height: 1.35;
+    color: var(--ok);
+    overflow-wrap: anywhere;
+  }
+  .result.bad {
+    color: var(--bad);
+  }
+  .result :global(svg) {
+    flex: none;
+    margin-top: 1px;
   }
 </style>

@@ -752,6 +752,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 - At the bottom, in the centre of the window, 40 px from the edge. Five at most, stacked.
   480 px wide at most.
+- **Never for an action done in a dialog.** A modal dialog lays its veil over the notifications
+  and makes them unreachable: a click on one falls on the veil and closes the dialog. The dialog
+  says the result itself, in its body or on the left of its last line (9.15, "Keys"; 9.21).
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
   coloured bar on the edge.
@@ -938,6 +941,27 @@ panel shows.
 - **A secret is never shown or written**: not in the host book, not in a notification, not in
   the header. If the keyring refuses to keep one, a warning notification says "Le secret n’a pas
   pu être retenu" and why; the session stays open.
+
+**Keys.** "Gérer les clés…" lists the keys of `~/.ssh` that have their `.pub`. They stay there:
+Ramure keeps no copy of them. Its last line, at rest: "Fermer", "Importer une clé…", "Générer une
+clé", all standard, since no action is expected more than the others (9.1).
+
+- **Generating** opens a form in the dialog, under the list (9.6).
+- **Importing** opens the file picker of the system, "Choisir une clé privée". The key is copied
+  into `~/.ssh` under the same name, readable by its owner only, with its public key: the `.pub`
+  beside it, or the one the private key carries. A PuTTY key (`.ppk`) without a passphrase is
+  converted to the OpenSSH format, which `ssh` reads; one with a passphrase is refused, with the
+  way to export it from PuTTYgen. Nothing is ever overwritten.
+- **The result** sits on the left of the last line, before the buttons, in 11.5 px, never in a
+  notification (9.11). Success: the check icon and the sentence in `--ok`, "Clé importée :
+  ~/.ssh/id_portable", "Clé créée : ~/.ssh/id_ed25519_2", "Clé publique de id_portable copiée,
+  à coller sur le serveur ou la forge.", announced as a status.
+  Failure: the warning icon and why and what to do in `--bad`, announced at once: "C’est une clé
+  publique : choisis le fichier sans « .pub ».", "Un fichier nommé « id_ed25519 » existe déjà dans
+  ~/.ssh : renomme la clé avant de l’importer." The line stays until the next action. It wraps
+  under itself while the buttons stay at the top of the line: they do not move (9.1). A key
+  imported or generated takes its row in the list, in the order of the names: the list grows by
+  one row and pushes the last line down with it, since what the action produced is that row.
 
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server
