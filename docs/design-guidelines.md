@@ -1008,8 +1008,9 @@ never a synchronisation: nothing is written before the dialog has shown what wil
   est vide : rien à exporter.". With nothing to export, the list gives way to one sentence, "Tous
   les hôtes sont déjà à jour dans ~/.ssh/config.", and the line has only "Fermer".
 - **The result.** A failure is said on the left of the last line, with what to do, the dialog
-  staying open (9.11); while it writes, the main button says "Export en cours…" and a click on the
-  veil does not close it (9.10). Once written, the dialog closes and a notification says "2 hôtes
+  staying open (9.11); while it writes, the main button says "Export en cours…", and neither a
+  click on the veil, Escape nor "Annuler" closes the dialog: a write cannot be stopped halfway,
+  and lasts an instant (9.10). Once written, the dialog closes and a notification says "2 hôtes
   exportés vers ~/.ssh/config", with the copy of the old file in its detail and "Annuler", which
   puts the old file back, unless it has changed since. One host gives "vps exporté vers
   ~/.ssh/config"; a file that did not exist gives "~/.ssh/config a été créé." in the detail.

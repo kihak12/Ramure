@@ -131,10 +131,10 @@
   aria-labelledby="export-title"
   oncancel={(e) => {
     e.preventDefault();
-    close();
+    if (!busy) close();
   }}
   use:veil={() => {
-    // Un clic de travers n'arrête pas une écriture en cours ; Échap et « Annuler » la laissent finir.
+    // Une écriture ne s'arrête pas en cours de route : rien ne ferme la boîte avant qu'elle finisse.
     if (!busy) close();
   }}
 >
@@ -210,7 +210,7 @@
       </div>
       <!-- La dernière ligne paraît une fois le fichier lu : ses boutons ne changent pas sous le pointeur. -->
       {#if loaded && writable.length}
-        <button class="btn" type="button" onclick={close}>Annuler</button>
+        <button class="btn" type="button" disabled={busy} onclick={close}>Annuler</button>
         <button
           class="btn primary"
           type="submit"
