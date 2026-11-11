@@ -596,6 +596,24 @@ Sidebar, file lists, graph, palette results.
 - `--term-bg` background, `--term-ink` text, code font at 13 px.
 - Terminal tabs follow the rule for tabs (9.7).
 
+**Search.** Ctrl + Shift + F, or "Chercher dans le terminal" in the palette, opens a search bar
+in the terminal of the current tab.
+
+- The bar is a strip under the header of the session, on `--panel`, with a `--line-soft`
+  separator: it pushes the terminal down and never hides its text.
+- From left to right: a filter field (9.3), 240 px wide, whose hint is "Chercher dans le
+  terminal"; the count of results, in 11.5 px, `--muted`, tabular figures ("3 sur 12", "Aucun
+  résultat"); two buttons made of an icon alone, "Résultat précédent" and "Résultat suivant";
+  two toggles, "Aa" for the case and ".*" for a regular expression, small ghost buttons that
+  take an `--accent-soft` background and an `--accent` border when pressed, their text staying in
+  `--ink`; and a close button.
+- The search runs as the user types. Enter goes to the next result, Shift + Enter to the
+  previous one, Escape closes the bar and gives the keyboard back to the terminal.
+- Every result has an `--accent-soft` background; the current one has an `--accent` border too.
+  Both are marked in the scroll bar of the terminal.
+- A regular expression that is not valid turns the field to its error state, and the count says
+  "Expression non valide".
+
 ### 9.16 Resize handle
 
 Between two cards whose width can be set: in the view of a repository, on either side of the
@@ -780,6 +798,10 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   removed without another marker replacing it.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element.
+- **Shortcuts.** A shortcut belongs to the whole application or to one module, Git or SSH. A
+  combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
+  searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
+  function key are active: the others belong to the shell.
 - **Targets.** 24 × 24 px at least.
 - **Never colour alone.** A state is backed by an icon, a sign or text: "+" and "−" in a diff, a
   letter for the state of a file, an icon for local and remote.

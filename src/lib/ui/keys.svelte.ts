@@ -3,6 +3,9 @@
 
 const STORAGE_KEY = 'ramure.keys';
 
+/** Module où un raccourci agit ; sans module, il agit partout (charte, section 11). */
+export type Scope = 'git' | 'ssh';
+
 export interface Shortcut {
   /** Identifiant de la commande déclenchée (le même que dans la palette). */
   id: string;
@@ -10,7 +13,11 @@ export interface Shortcut {
   group: string;
   /** Raccourci par défaut, comme `Ctrl+Shift+F` ; vide s'il n'y en a pas. */
   keys: string;
+  scope?: Scope;
 }
+
+/** Deux raccourcis se gênent s'ils peuvent agir au même endroit. */
+const overlap = (a: Shortcut, b: Shortcut) => !a.scope || !b.scope || a.scope === b.scope;
 
 /** Actions auxquelles un raccourci peut être attribué, avec leur raccourci par défaut. */
 export const SHORTCUTS: Shortcut[] = [
@@ -19,28 +26,29 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'view-ssh', group: 'Général', title: 'Afficher le terminal SSH', keys: 'Ctrl+Shift+T' },
   { id: 'settings', group: 'Général', title: 'Réglages', keys: 'Ctrl+,' },
   { id: 'shortcuts', group: 'Général', title: 'Raccourcis clavier', keys: '' },
-  { id: 'toggle-sidebar', group: 'Affichage', title: 'Afficher ou masquer la liste des branches', keys: 'Ctrl+Shift+B' },
-  { id: 'toggle-detail', group: 'Affichage', title: 'Afficher ou masquer le panneau de détail', keys: 'Ctrl+Shift+E' },
-  { id: 'toggle-sides', group: 'Affichage', title: 'Afficher ou masquer les panneaux latéraux', keys: '' },
-  { id: 'tab-new', group: 'Onglets', title: 'Nouvel onglet', keys: 'Ctrl+T' },
-  { id: 'tab-close', group: 'Onglets', title: "Fermer l'onglet", keys: 'Ctrl+W' },
-  { id: 'tab-next', group: 'Onglets', title: 'Onglet suivant', keys: 'Ctrl+Tab' },
-  { id: 'tab-prev', group: 'Onglets', title: 'Onglet précédent', keys: 'Ctrl+Shift+Tab' },
-  { id: 'open', group: 'Dépôt', title: 'Ouvrir un dépôt', keys: 'Ctrl+O' },
-  { id: 'clone', group: 'Dépôt', title: 'Cloner un dépôt', keys: '' },
-  { id: 'init', group: 'Dépôt', title: 'Initialiser un dépôt', keys: '' },
-  { id: 'reload', group: 'Dépôt', title: 'Recharger le dépôt', keys: 'F5' },
-  { id: 'fetch', group: 'Synchronisation', title: 'Récupérer', keys: 'Ctrl+Shift+F' },
-  { id: 'pull', group: 'Synchronisation', title: 'Tirer', keys: 'Ctrl+Shift+D' },
-  { id: 'push', group: 'Synchronisation', title: 'Pousser', keys: 'Ctrl+Shift+U' },
-  { id: 'push-force', group: 'Synchronisation', title: 'Pousser en forçant', keys: '' },
-  { id: 'branch', group: 'Travail en cours', title: 'Nouvelle branche', keys: 'Ctrl+B' },
-  { id: 'wip', group: 'Travail en cours', title: 'Voir les modifications en cours', keys: 'Ctrl+Shift+M' },
-  { id: 'stage-all', group: 'Travail en cours', title: 'Tout indexer', keys: 'Ctrl+Shift+A' },
-  { id: 'stash', group: 'Travail en cours', title: 'Remiser les modifications', keys: 'Ctrl+Shift+S' },
-  { id: 'pop', group: 'Travail en cours', title: 'Dépiler la dernière remise', keys: '' },
-  { id: 'op-continue', group: 'Travail en cours', title: "Continuer l'opération en suspens", keys: '' },
-  { id: 'op-abort', group: 'Travail en cours', title: "Abandonner l'opération en suspens", keys: '' },
+  { id: 'toggle-sidebar', group: 'Affichage', title: 'Afficher ou masquer la liste des branches', keys: 'Ctrl+Shift+B', scope: 'git' },
+  { id: 'toggle-detail', group: 'Affichage', title: 'Afficher ou masquer le panneau de détail', keys: 'Ctrl+Shift+E', scope: 'git' },
+  { id: 'toggle-sides', group: 'Affichage', title: 'Afficher ou masquer les panneaux latéraux', keys: '', scope: 'git' },
+  { id: 'terminal-search', group: 'Terminal', title: 'Chercher dans le terminal', keys: 'Ctrl+Shift+F', scope: 'ssh' },
+  { id: 'tab-new', group: 'Onglets', title: 'Nouvel onglet', keys: 'Ctrl+T', scope: 'git' },
+  { id: 'tab-close', group: 'Onglets', title: "Fermer l'onglet", keys: 'Ctrl+W', scope: 'git' },
+  { id: 'tab-next', group: 'Onglets', title: 'Onglet suivant', keys: 'Ctrl+Tab', scope: 'git' },
+  { id: 'tab-prev', group: 'Onglets', title: 'Onglet précédent', keys: 'Ctrl+Shift+Tab', scope: 'git' },
+  { id: 'open', group: 'Dépôt', title: 'Ouvrir un dépôt', keys: 'Ctrl+O', scope: 'git' },
+  { id: 'clone', group: 'Dépôt', title: 'Cloner un dépôt', keys: '', scope: 'git' },
+  { id: 'init', group: 'Dépôt', title: 'Initialiser un dépôt', keys: '', scope: 'git' },
+  { id: 'reload', group: 'Dépôt', title: 'Recharger le dépôt', keys: 'F5', scope: 'git' },
+  { id: 'fetch', group: 'Synchronisation', title: 'Récupérer', keys: 'Ctrl+Shift+F', scope: 'git' },
+  { id: 'pull', group: 'Synchronisation', title: 'Tirer', keys: 'Ctrl+Shift+D', scope: 'git' },
+  { id: 'push', group: 'Synchronisation', title: 'Pousser', keys: 'Ctrl+Shift+U', scope: 'git' },
+  { id: 'push-force', group: 'Synchronisation', title: 'Pousser en forçant', keys: '', scope: 'git' },
+  { id: 'branch', group: 'Travail en cours', title: 'Nouvelle branche', keys: 'Ctrl+B', scope: 'git' },
+  { id: 'wip', group: 'Travail en cours', title: 'Voir les modifications en cours', keys: 'Ctrl+Shift+M', scope: 'git' },
+  { id: 'stage-all', group: 'Travail en cours', title: 'Tout indexer', keys: 'Ctrl+Shift+A', scope: 'git' },
+  { id: 'stash', group: 'Travail en cours', title: 'Remiser les modifications', keys: 'Ctrl+Shift+S', scope: 'git' },
+  { id: 'pop', group: 'Travail en cours', title: 'Dépiler la dernière remise', keys: '', scope: 'git' },
+  { id: 'op-continue', group: 'Travail en cours', title: "Continuer l'opération en suspens", keys: '', scope: 'git' },
+  { id: 'op-abort', group: 'Travail en cours', title: "Abandonner l'opération en suspens", keys: '', scope: 'git' },
 ];
 
 const DEFAULTS = new Map(SHORTCUTS.map((s) => [s.id, s.keys]));
@@ -108,17 +116,26 @@ class Keys {
     return id in this.overrides;
   }
 
-  /** Commande attachée à une combinaison, s'il y en a une. */
-  find(combo: string): string | null {
-    return SHORTCUTS.find((s) => this.binding(s.id) === combo)?.id ?? null;
+  /** Commande attachée à une combinaison dans le module `scope`, s'il y en a une. */
+  find(combo: string, scope: Scope): string | null {
+    return SHORTCUTS.find((s) => this.binding(s.id) === combo && (!s.scope || s.scope === scope))?.id ?? null;
   }
 
-  /** Attribue `combo` à `id`. Une combinaison n'a qu'un rôle : elle est retirée de l'action qui l'avait. */
+  /** L'action qui perdrait `combo` si on la donnait à `id`, s'il y en a une. */
+  rival(id: string, combo: string): Shortcut | null {
+    const own = SHORTCUTS.find((s) => s.id === id);
+    if (!own || !combo) return null;
+    return SHORTCUTS.find((s) => s.id !== id && this.binding(s.id) === combo && overlap(own, s)) ?? null;
+  }
+
+  /** Attribue `combo` à `id`. Une combinaison n'a qu'un rôle par module : elle est retirée de
+   *  l'action qui l'avait là où les deux agissent. */
   set(id: string, combo: string) {
     const next = { ...this.overrides };
-    if (combo) {
+    const own = SHORTCUTS.find((s) => s.id === id);
+    if (combo && own) {
       for (const other of SHORTCUTS) {
-        if (other.id !== id && this.binding(other.id) === combo) next[other.id] = '';
+        if (other.id !== id && this.binding(other.id) === combo && overlap(own, other)) next[other.id] = '';
       }
     }
     next[id] = combo;
@@ -130,9 +147,10 @@ class Keys {
     delete next[id];
     // Le raccourci par défaut qui revient peut avoir été donné à une autre action entre-temps.
     const restored = DEFAULTS.get(id) ?? '';
-    if (restored) {
+    const own = SHORTCUTS.find((s) => s.id === id);
+    if (restored && own) {
       for (const other of SHORTCUTS) {
-        if (other.id !== id && (next[other.id] ?? DEFAULTS.get(other.id)) === restored) next[other.id] = '';
+        if (other.id !== id && (next[other.id] ?? DEFAULTS.get(other.id)) === restored && overlap(own, other)) next[other.id] = '';
       }
     }
     this.#save(next);

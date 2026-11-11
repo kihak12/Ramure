@@ -3,6 +3,8 @@
   import { Channel, invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { FitAddon } from '@xterm/addon-fit';
+  import { SearchAddon, type ISearchOptions } from '@xterm/addon-search';
+  import { tick } from 'svelte';
   import { Terminal } from '@xterm/xterm';
   import '@xterm/xterm/css/xterm.css';
   import { onMount } from 'svelte';
@@ -40,6 +42,98 @@
   let termEl = $state<HTMLDivElement>();
   let term: Terminal | undefined;
   let fit: FitAddon | undefined;
+  let search: SearchAddon | undefined;
+
+  // --- Recherche dans le terminal (charte, section 9.15) -------------------------------------
+  let query = $state('');
+  let caseSensitive = $state(false);
+  let regex = $state(false);
+  /** Résultats de la dernière recherche ; `index` vaut -1 au-delà de 1 000 résultats surlignés. */
+  let results = $state<{ index: number; count: number } | null>(null);
+  let searchEl = $state<HTMLInputElement>();
+  const invalid = $derived.by(() => {
+    if (!regex || !query) return false;
+    try {
+      new RegExp(query);
+      return false;
+    } catch {
+      return true;
+    }
+  });
+  const countText = $derived(
+    invalid
+      ? 'Expression non valide'
+      : !query || !results
+        ? ''
+        : results.count === 0
+          ? 'Aucun résultat'
+          : results.index < 0
+            ? `${results.count} résultats`
+            : `${results.index + 1} sur ${results.count}`,
+  );
+
+  /** Les couleurs des résultats, lues dans les jetons au moment de chercher : elles suivent le thème. */
+  function searchOptions(incremental = false): ISearchOptions {
+    const css = getComputedStyle(document.documentElement);
+    const v = (name: string) => css.getPropertyValue(name).trim();
+    return {
+      caseSensitive,
+      regex,
+      incremental,
+      decorations: {
+        matchBackground: v('--accent-soft'),
+        matchOverviewRuler: v('--accent'),
+        activeMatchBackground: v('--accent-soft'),
+        activeMatchBorder: v('--accent'),
+        activeMatchColorOverviewRuler: v('--accent'),
+      },
+    };
+  }
+
+  function find(direction: 'next' | 'previous', incremental = false) {
+    if (!search) return;
+    if (!query || invalid) {
+      search.clearDecorations();
+      results = null;
+      return;
+    }
+    if (direction === 'next') search.findNext(query, searchOptions(incremental));
+    else search.findPrevious(query, searchOptions());
+  }
+
+  function closeSearch() {
+    session.searching = false;
+    search?.clearDecorations();
+    results = null;
+    term?.focus();
+  }
+
+  function onSearchKey(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      find(e.shiftKey ? 'previous' : 'next');
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeSearch();
+    }
+  }
+
+  // Ouverture demandée (raccourci, palette) : le champ prend le focus, son texte est sélectionné.
+  $effect(() => {
+    if (!session.searching) return;
+    void tick().then(() => {
+      searchEl?.focus();
+      searchEl?.select();
+    });
+  });
+
+  // Les options changent : la recherche est refaite sur place.
+  $effect(() => {
+    void caseSensitive;
+    void regex;
+    if (session.searching && query) find('next', true);
+  });
   // Hors réactivité : lus dans les rappels du terminal, à chaque frappe.
   let sessionId: number | null = null;
   let lastKey = 0;
@@ -169,6 +263,9 @@
     });
 
     const terminal = new Terminal({
+      // La recherche surligne ses résultats par des décorations, une API encore « proposée ».
+      allowProposedApi: true,
+      overviewRuler: { width: 8 },
       fontFamily: v('--f-mono'),
       fontSize: parseFloat(v('--fs-term')),
       lineHeight: 1.2,
@@ -178,6 +275,10 @@
     });
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
+    const searchAddon = new SearchAddon();
+    terminal.loadAddon(searchAddon);
+    searchAddon.onDidChangeResults((e) => (results = { index: e.resultIndex, count: e.resultCount }));
+    search = searchAddon;
     if (termEl) terminal.open(termEl);
     term = terminal;
     fit = fitAddon;
@@ -258,6 +359,39 @@
     {/if}
   </header>
 
+  {#if session.searching}
+    <div class="search" role="search" aria-label="Chercher dans le terminal">
+      <label class="filter" class:invalid>
+        <Icon name="search" size={14} />
+        <input
+          bind:this={searchEl}
+          type="search"
+          placeholder="Chercher dans le terminal"
+          aria-label="Chercher dans le terminal"
+          aria-invalid={invalid ? 'true' : undefined}
+          aria-describedby="search-count-{session.key}"
+          spellcheck="false"
+          autocomplete="off"
+          bind:value={query}
+          oninput={() => find('next', true)}
+          onkeydown={onSearchKey}
+        />
+      </label>
+      <span class="count" class:bad={invalid} id="search-count-{session.key}" role="status">{countText}</span>
+      <button class="icon" type="button" aria-label="Résultat précédent" title="Résultat précédent (Maj + Entrée)" disabled={!results?.count} onclick={() => find('previous')}>
+        <Icon name="up" size={14} />
+      </button>
+      <button class="icon" type="button" aria-label="Résultat suivant" title="Résultat suivant (Entrée)" disabled={!results?.count} onclick={() => find('next')}>
+        <Icon name="down" size={14} />
+      </button>
+      <button class="toggle" type="button" aria-pressed={caseSensitive} title="Respecter la casse" aria-label="Respecter la casse" onclick={() => (caseSensitive = !caseSensitive)}>Aa</button>
+      <button class="toggle mono" type="button" aria-pressed={regex} title="Expression régulière" aria-label="Expression régulière" onclick={() => (regex = !regex)}>.*</button>
+      <button class="icon close" type="button" aria-label="Fermer la recherche" title="Fermer la recherche (Échap)" onclick={closeSearch}>
+        <Icon name="x" size={14} />
+      </button>
+    </div>
+  {/if}
+
   <div class="stage">
     <div class="term" bind:this={termEl}></div>
 
@@ -330,10 +464,110 @@
 
 <style>
   .session {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     height: 100%;
     min-height: 0;
+  }
+  /* Barre de recherche : une bande sous l'en-tête, qui pousse le terminal sans cacher son texte. */
+  .search {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--panel);
+  }
+  .filter {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 240px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--bg);
+    color: var(--muted);
+    transition:
+      border-color var(--t-fast) var(--ease),
+      box-shadow var(--t-fast) var(--ease);
+  }
+  .filter:hover:not(:focus-within) {
+    border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
+  }
+  .filter:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .filter.invalid {
+    border-color: var(--bad);
+  }
+  .filter input {
+    flex: 1;
+    min-width: 0;
+    min-height: 30px;
+    padding: 5px 0;
+    border: 0;
+    background: none;
+    outline: none;
+    color: var(--ink);
+  }
+  /* Assez large pour « Expression non valide » : les boutons ne bougent pas quand le texte change. */
+  .count {
+    min-width: 124px;
+    color: var(--muted);
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .count.bad {
+    color: var(--bad);
+  }
+  .icon,
+  .toggle {
+    flex: none;
+    display: grid;
+    place-items: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-s);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      background var(--t-fast) var(--ease),
+      border-color var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease);
+  }
+  .toggle {
+    min-width: 28px;
+    color: var(--ink);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-strong);
+  }
+  .icon:hover:not(:disabled),
+  .toggle:hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .toggle[aria-pressed='true'] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .icon:active:not(:disabled),
+  .toggle:active {
+    transform: scale(0.97);
+  }
+  .icon:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .close {
+    margin-left: auto;
   }
   header {
     display: flex;
@@ -374,6 +608,7 @@
     }
   }
   .stage {
+    flex: 1;
     position: relative;
     min-height: 0;
     background: var(--term-bg);

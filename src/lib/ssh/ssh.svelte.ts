@@ -10,6 +10,8 @@ export interface Session {
   host: Host;
   title: string;
   status: 'connecting' | 'connected' | 'closed';
+  /** La barre de recherche du terminal est ouverte. */
+  searching: boolean;
 }
 
 const message = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
@@ -97,6 +99,7 @@ class Ssh {
       host: { ...host, user },
       title: host.alias || `${user}@${host.hostname}`,
       status: 'connecting',
+      searching: false,
     };
     this.sessions.push(session);
     this.activeKey = session.key;

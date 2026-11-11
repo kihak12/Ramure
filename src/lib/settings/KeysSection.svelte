@@ -56,8 +56,7 @@
       notice = { id, text: `${display(combo)} : ${problem}` };
       return;
     }
-    const previous = keys.find(combo);
-    const taken = previous && previous !== id ? SHORTCUTS.find((s) => s.id === previous) : null;
+    const taken = keys.rival(id, combo);
     keys.set(id, combo);
     notice = taken ? { id, text: `${display(combo)} était le raccourci de « ${taken.title} », qui n’en a plus.` } : null;
     recording = null;
