@@ -139,6 +139,7 @@ Every theme must meet them, in light and in dark.
 | `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
 | `--ok`, `--warn`, `--bad` on `--panel` and `--bg` | 4.5:1 |
 | `--accent` and each branch colour on `--panel` | 3:1 |
+| `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 
 ### 2.5 Colour themes
 
@@ -381,6 +382,8 @@ States are the same everywhere:
 | Small | 24 px high, 12 px text. | In a card header or a row. |
 
 - 6 px corners. Inner margins: 5 px at the top and bottom, 12 px on the sides.
+- A toggle is a small ghost button that keeps a state (`aria-pressed`). Pressed: an
+  `--accent-soft` background and an `--accent` border, the text staying in `--ink`.
 - Hover: `--hover` background and a stronger border. A primary or danger button moves 10%
   towards `--ink`, darker in light and lighter in dark, like the label of the current branch
   (9.4): its text gains contrast in both themes, where a lighter background lost it.
@@ -596,6 +599,26 @@ Sidebar, file lists, graph, palette results.
 - `--term-bg` background, `--term-ink` text, code font at 13 px.
 - Terminal tabs follow the rule for tabs (9.7).
 
+**Search.** Ctrl + Shift + F, or "Chercher dans le terminal" in the palette, opens a search bar
+in the terminal of the current tab.
+
+- The bar is a strip under the header of the session, on `--panel`, with a `--line-soft`
+  separator: it pushes the terminal down and never hides its text.
+- From left to right: a filter field (9.3), 240 px wide, whose hint is "Chercher dans le
+  terminal"; the count of results, in 11.5 px, `--muted`, tabular figures ("3 sur 12", "Aucun
+  résultat"); two buttons made of an icon alone, "Résultat précédent" and "Résultat suivant";
+  two toggles, "Aa" for the case and ".*" for a regular expression, small ghost buttons that
+  take an `--accent-soft` background and an `--accent` border when pressed, their text staying in
+  `--ink`; and a close button.
+- The search runs as the user types. Enter goes to the next result, Shift + Enter to the
+  previous one. Escape, from anywhere in the bar, closes it and gives the keyboard back to the
+  terminal. Ctrl + Shift + F while the bar is open brings the focus back to its field.
+- Every result has a background of the accent at 30% over `--term-bg`; the current one has an
+  `--accent` border too. Both are marked in a thin margin on the right of the terminal.
+- A regular expression that is not valid turns the field to its error state, border and halo in
+  `--bad`, and the count says "Expression non valide", announced at once (`role="alert"`). In
+  this bar the message stands beside the field rather than under it: the bar is one line high.
+
 ### 9.16 Resize handle
 
 Between two cards whose width can be set: in the view of a repository, on either side of the
@@ -688,6 +711,8 @@ keys (9.12), and a button that restores the default.
   that a combination is awaited. Backspace removes the shortcut, Escape cancels.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
+- A group whose shortcuts act in one module only says so after its name, in weight 400:
+  "Synchronisation · module Git", "Terminal · module SSH" (11).
 
 ### 9.19 Choice
 
@@ -780,6 +805,10 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   removed without another marker replacing it.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element.
+- **Shortcuts.** A shortcut belongs to the whole application or to one module, Git or SSH. A
+  combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
+  searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
+  function key are active: the others belong to the shell.
 - **Targets.** 24 × 24 px at least.
 - **Never colour alone.** A state is backed by an icon, a sign or text: "+" and "−" in a diff, a
   letter for the state of a file, an icon for local and remote.

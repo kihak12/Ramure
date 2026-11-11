@@ -3,6 +3,8 @@
   import { Channel, invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { FitAddon } from '@xterm/addon-fit';
+  import { SearchAddon, type ISearchOptions } from '@xterm/addon-search';
+  import { tick } from 'svelte';
   import { Terminal } from '@xterm/xterm';
   import '@xterm/xterm/css/xterm.css';
   import { onMount } from 'svelte';
@@ -40,6 +42,112 @@
   let termEl = $state<HTMLDivElement>();
   let term: Terminal | undefined;
   let fit: FitAddon | undefined;
+  let search: SearchAddon | undefined;
+
+  // --- Recherche dans le terminal (charte, section 9.15) -------------------------------------
+  const MATCH = 0.3; // part de l'accent dans le fond d'un résultat, comme dans verifier-contrastes.mjs
+  let query = $state('');
+  let caseSensitive = $state(false);
+  let regex = $state(false);
+  /** Résultats de la dernière recherche ; `index` vaut -1 au-delà de 1 000 résultats surlignés. */
+  let results = $state<{ index: number; count: number } | null>(null);
+  let searchEl = $state<HTMLInputElement>();
+  const invalid = $derived.by(() => {
+    if (!regex || !query) return false;
+    try {
+      new RegExp(query);
+      return false;
+    } catch {
+      return true;
+    }
+  });
+  const countText = $derived(
+    !query || !results
+        ? ''
+        : results.count === 0
+          ? 'Aucun résultat'
+          : results.index < 0
+            ? `${results.count} résultats`
+            : `${results.index + 1} sur ${results.count}`,
+  );
+
+  /** `#rrggbb` mêlé à `p` sur `#rrggbb` : le terminal veut une couleur pleine, pas `color-mix()`. */
+  function blend(hex: string, p: number, over: string) {
+    const channels = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const [a, b] = [channels(hex), channels(over)];
+    return `#${a.map((v, i) => Math.round(v * p + b[i] * (1 - p)).toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  /** Les couleurs des résultats, lues dans les jetons au moment de chercher : elles suivent le thème.
+   *  Un résultat est l'accent à 30 % sur le fond du terminal (charte, section 9.15). */
+  function searchOptions(incremental = false): ISearchOptions {
+    const css = getComputedStyle(document.documentElement);
+    const v = (name: string) => css.getPropertyValue(name).trim();
+    const match = blend(v('--accent'), MATCH, v('--term-bg'));
+    return {
+      caseSensitive,
+      regex,
+      incremental,
+      decorations: {
+        matchBackground: match,
+        matchOverviewRuler: v('--accent'),
+        activeMatchBackground: match,
+        activeMatchBorder: v('--accent'),
+        activeMatchColorOverviewRuler: v('--accent'),
+      },
+    };
+  }
+
+  function find(direction: 'next' | 'previous', incremental = false) {
+    if (!search) return;
+    if (!query || invalid) {
+      search.clearDecorations();
+      results = null;
+      return;
+    }
+    if (direction === 'next') search.findNext(query, searchOptions(incremental));
+    else search.findPrevious(query, searchOptions());
+  }
+
+  function closeSearch() {
+    session.searching = false;
+    search?.clearDecorations();
+    results = null;
+    term?.focus();
+  }
+
+  function onFieldKey(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      find(e.shiftKey ? 'previous' : 'next');
+    }
+  }
+
+  /** Échap ferme la barre, d'où que vienne la frappe : le champ, un bouton ou une bascule. */
+  function onBarKey(e: KeyboardEvent) {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeSearch();
+  }
+
+  // Ouverture demandée (raccourci, palette), même barre déjà ouverte : le champ prend le focus et
+  // son texte est sélectionné.
+  $effect(() => {
+    void session.searchAsk;
+    if (!session.searching) return;
+    void tick().then(() => {
+      searchEl?.focus();
+      searchEl?.select();
+    });
+  });
+
+  // Les options changent : la recherche est refaite sur place.
+  $effect(() => {
+    void caseSensitive;
+    void regex;
+    if (session.searching && query) find('next', true);
+  });
   // Hors réactivité : lus dans les rappels du terminal, à chaque frappe.
   let sessionId: number | null = null;
   let lastKey = 0;
@@ -169,6 +277,9 @@
     });
 
     const terminal = new Terminal({
+      // La recherche surligne ses résultats par des décorations, une API encore « proposée ».
+      allowProposedApi: true,
+      overviewRuler: { width: 8 },
       fontFamily: v('--f-mono'),
       fontSize: parseFloat(v('--fs-term')),
       lineHeight: 1.2,
@@ -178,6 +289,10 @@
     });
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
+    const searchAddon = new SearchAddon();
+    terminal.loadAddon(searchAddon);
+    searchAddon.onDidChangeResults((e) => (results = { index: e.resultIndex, count: e.resultCount }));
+    search = searchAddon;
     if (termEl) terminal.open(termEl);
     term = terminal;
     fit = fitAddon;
@@ -214,7 +329,7 @@
       phase = {
         step: 'closed',
         message: reason
-          ? `Connexion interrompue : ${reason}`
+          ? `Connexion interrompue : ${reason}`
           : exitStatus === null || exitStatus === 0
             ? 'Session terminée.'
             : `Session terminée (code de sortie ${exitStatus}).`,
@@ -258,6 +373,44 @@
     {/if}
   </header>
 
+  {#if session.searching}
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div class="search" role="search" aria-label="Chercher dans le terminal" onkeydown={onBarKey}>
+      <label class="filter" class:invalid>
+        <Icon name="search" size={14} />
+        <input
+          bind:this={searchEl}
+          type="search"
+          placeholder="Chercher dans le terminal"
+          aria-label="Chercher dans le terminal"
+          aria-invalid={invalid ? 'true' : undefined}
+          aria-describedby="search-count-{session.key}"
+          spellcheck="false"
+          autocomplete="off"
+          bind:value={query}
+          oninput={() => find('next', true)}
+          onkeydown={onFieldKey}
+        />
+      </label>
+      {#if invalid}
+        <span class="count bad" id="search-count-{session.key}" role="alert">Expression non valide</span>
+      {:else}
+        <span class="count" id="search-count-{session.key}" role="status">{countText}</span>
+      {/if}
+      <button class="btn ghost small" type="button" aria-label="Résultat précédent" title="Résultat précédent (Maj + Entrée)" disabled={!results?.count} onclick={() => find('previous')}>
+        <Icon name="up" size={14} />
+      </button>
+      <button class="btn ghost small" type="button" aria-label="Résultat suivant" title="Résultat suivant (Entrée)" disabled={!results?.count} onclick={() => find('next')}>
+        <Icon name="down" size={14} />
+      </button>
+      <button class="btn ghost small toggle" type="button" aria-pressed={caseSensitive} title="Respecter la casse" aria-label="Respecter la casse" onclick={() => (caseSensitive = !caseSensitive)}>Aa</button>
+      <button class="btn ghost small toggle mono" type="button" aria-pressed={regex} title="Expression régulière" aria-label="Expression régulière" onclick={() => (regex = !regex)}>.*</button>
+      <button class="btn ghost small close" type="button" aria-label="Fermer la recherche" title="Fermer la recherche (Échap)" onclick={closeSearch}>
+        <Icon name="x" size={14} />
+      </button>
+    </div>
+  {/if}
+
   <div class="stage">
     <div class="term" bind:this={termEl}></div>
 
@@ -265,13 +418,13 @@
       <div class="veil">
         <div class="card" class:bad={phase.step === 'hostKeyChanged'}>
           {#if phase.step === 'connecting'}
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="spinner wait" aria-hidden="true"></span>
             <p class="lead">Connexion à <b class="mono">{target}</b>…</p>
           {:else if phase.step === 'hostKey'}
             <h3><Icon name="warning" /> Serveur inconnu</h3>
             <p>
-              <b class="mono">{host.hostname}</b> n'est pas dans <code>known_hosts</code>. Vérifie que cette empreinte
-              {phase.algorithm} est bien celle du serveur avant de lui faire confiance :
+              <b class="mono">{host.hostname}</b> n’est pas dans <code>known_hosts</code>. Vérifie que cette empreinte
+              {phase.algorithm} est bien celle du serveur avant de lui faire confiance :
             </p>
             <p class="print mono">{phase.fingerprint}</p>
             <div class="row">
@@ -284,17 +437,17 @@
               <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
             </div>
           {:else if phase.step === 'hostKeyChanged'}
-            <h3><Icon name="warning" /> L'empreinte du serveur a changé</h3>
+            <h3><Icon name="warning" /> L’empreinte du serveur a changé</h3>
             <p>
-              L'empreinte présentée par <b class="mono">{host.hostname}</b> ne correspond plus à celle enregistrée à la ligne
-              {phase.line} de <code>known_hosts</code>. La connexion est bloquée : le serveur a peut-être été réinstallé, ou
-              quelqu'un s'interpose entre toi et lui.
+              L’empreinte présentée par <b class="mono">{host.hostname}</b> ne correspond plus à celle enregistrée à la ligne
+              {phase.line} de <code>known_hosts</code>. La connexion est bloquée : le serveur a peut-être été réinstallé, ou
+              quelqu’un s’interpose entre toi et lui.
             </p>
             <p class="print mono">{phase.fingerprint}</p>
-            <p class="muted">Si le changement est légitime, retire l'ancienne ligne de <code>known_hosts</code>, puis reconnecte-toi.</p>
+            <p class="muted">Si le changement est légitime, retire l’ancienne ligne de <code>known_hosts</code>, puis reconnecte-toi.</p>
             <div class="row">
               <button class="btn" type="button" onclick={reconnect}>Réessayer</button>
-              <button class="btn ghost" type="button" onclick={onclose}>Fermer l'onglet</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
             </div>
           {:else if phase.step === 'passphrase' || phase.step === 'password'}
             <form onsubmit={submitSecret}>
@@ -303,7 +456,7 @@
                 {#if phase.step === 'passphrase'}
                   La clé <span class="mono">{phase.path}</span> est protégée.
                 {:else}
-                  Pour <span class="mono">{target}</span>. Il n'est pas enregistré.
+                  Pour <span class="mono">{target}</span>. Il n’est pas enregistré.
                 {/if}
               </p>
               {#if phase.error}<p class="err">{phase.error}</p>{/if}
@@ -319,7 +472,7 @@
             <p class:err={phase.step === 'error'}>{phase.message}</p>
             <div class="row">
               <button class="btn primary" type="button" onclick={reconnect}><Icon name="refresh" size={14} /> Reconnecter</button>
-              <button class="btn ghost" type="button" onclick={onclose}>Fermer l'onglet</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
             </div>
           {/if}
         </div>
@@ -330,15 +483,84 @@
 
 <style>
   .session {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     height: 100%;
     min-height: 0;
+  }
+  /* Barre de recherche : une bande sous l'en-tête, qui pousse le terminal sans cacher son texte. */
+  .search {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--panel);
+  }
+  .filter {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 240px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--bg);
+    color: var(--muted);
+    transition:
+      border-color var(--t-fast) var(--ease),
+      box-shadow var(--t-fast) var(--ease);
+  }
+  .filter:hover:not(:focus-within) {
+    border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
+  }
+  .filter:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .filter.invalid,
+  .filter.invalid:focus-within {
+    border-color: var(--bad);
+  }
+  .filter.invalid:focus-within {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent);
+  }
+  .filter input {
+    flex: 1;
+    min-width: 0;
+    min-height: 30px;
+    padding: 5px 0;
+    border: 0;
+    background: none;
+    outline: none;
+    color: var(--ink);
+  }
+  /* Assez large pour « Expression non valide » : les boutons ne bougent pas quand le texte change. */
+  .count {
+    min-width: 124px;
+    color: var(--muted);
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .count.bad {
+    color: var(--bad);
+  }
+  /* Bascule : un bouton fantôme, enfoncé en --accent-soft bordé d'accent (charte, section 9.1). */
+  .toggle[aria-pressed='true'],
+  .toggle[aria-pressed='true']:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .close {
+    margin-left: auto;
   }
   header {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     padding: 5px 12px;
     min-height: 34px;
     border-bottom: 1px solid var(--line-soft);
@@ -374,6 +596,7 @@
     }
   }
   .stage {
+    flex: 1;
     position: relative;
     min-height: 0;
     background: var(--term-bg);
@@ -396,7 +619,7 @@
     width: min(520px, 100%);
     display: grid;
     gap: 10px;
-    padding: 18px 20px;
+    padding: 16px 20px;
     border: 1px solid var(--line);
     border-radius: var(--radius-l);
     background: var(--raised);
@@ -417,6 +640,7 @@
     gap: 8px;
     margin: 0;
     font-size: var(--fs-title);
+    font-weight: var(--fw-strong);
   }
   p {
     margin: 0;
@@ -450,18 +674,7 @@
     gap: 8px;
     margin-top: 4px;
   }
-  .spinner {
+  .wait {
     justify-self: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
-    border-top-color: var(--accent);
-    animation: spin var(--t-spin) linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>

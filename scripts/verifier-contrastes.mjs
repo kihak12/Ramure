@@ -43,6 +43,7 @@ const LABEL_REST = 0.24; // fond d'une étiquette
 const LABEL_HOVER = 0.28; // fond d'une étiquette survolée
 const TOWARD_INK = 0.9; // survol d'un fond plein : 10 % vers --ink
 const CAPSULE = 0.15; // capsule d'un message : un voile de la couleur, sur la ligne nue, survolée ou choisie
+const MATCH = 0.3; // résultat d'une recherche dans le terminal : l'accent sur --term-bg (Terminal.svelte)
 
 const findings = [];
 
@@ -57,6 +58,8 @@ function check(name, t) {
     for (const bg of ['--panel', '--bg']) need(`${state} sur ${bg}`, contrast(t[state], t[bg]), 4.5);
   }
   need('--accent sur --panel', contrast(t['--accent'], t['--panel']), 3);
+  need('--term-ink sur --term-bg', contrast(t['--term-ink'], t['--term-bg']), 7);
+  need('--term-ink sur un résultat de recherche', contrast(t['--term-ink'], mix(t['--accent'], MATCH, t['--term-bg'])), 7);
   for (const fill of ['--accent', '--bad']) {
     need(`--on-accent sur ${fill}`, contrast(t['--on-accent'], t[fill]), 4.5);
     need(`--on-accent sur ${fill} survolé`, contrast(t['--on-accent'], mix(t[fill], TOWARD_INK, t['--ink'])), 4.5);

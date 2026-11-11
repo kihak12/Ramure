@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gitCommands } from './lib/git/commands';
+  import { sshCommands } from './lib/ssh/commands';
   import GitWorkspace from './lib/git/GitWorkspace.svelte';
   import SshWorkspace from './lib/ssh/SshWorkspace.svelte';
   import ContextMenu from './lib/ui/ContextMenu.svelte';
@@ -33,7 +34,7 @@
       { id: 'shortcuts', group: 'Modules', icon: 'settings', title: 'Raccourcis clavier', keywords: 'touches clavier reglages', run: () => settingsPage.show('keys') },
     ];
     // Les actions Git n'ont de sens que devant un dépôt.
-    const all = shown === 'git' ? [...gitCommands(), ...general] : general;
+    const all = shown === 'git' ? [...gitCommands(), ...general] : shown === 'ssh' ? [...sshCommands(), ...general] : general;
     return all.map((command) => {
       const combo = keys.binding(command.id);
       return combo ? { ...command, shortcut: display(combo) } : command;
@@ -58,7 +59,7 @@
     const combo = comboOf(e);
     if (!combo) return;
     // Ctrl + Maj + P ouvre toujours la palette, quel que soit le raccourci choisi pour elle.
-    const id = combo === 'Ctrl+Shift+P' ? 'palette' : keys.find(combo);
+    const id = combo === 'Ctrl+Shift+P' ? 'palette' : keys.find(combo, view);
     if (!id) return;
     const inTerminal = e.target instanceof Element && e.target.closest('.xterm') !== null;
     if (inTerminal && !allowedInTerminal(combo)) return;

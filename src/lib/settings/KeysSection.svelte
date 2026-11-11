@@ -10,6 +10,9 @@
   let notice = $state<{ id: string; text: string } | null>(null);
   let filter = $state('');
 
+  // Un raccourci qui n'agit que dans un module le dit à côté de son groupe (charte, section 9.18).
+  const MODULES = { git: 'Git', ssh: 'SSH' } as const;
+
   const custom = $derived(Object.keys(keys.overrides).length > 0);
   const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   const needle = $derived(fold(filter.trim()));
@@ -56,8 +59,7 @@
       notice = { id, text: `${display(combo)} : ${problem}` };
       return;
     }
-    const previous = keys.find(combo);
-    const taken = previous && previous !== id ? SHORTCUTS.find((s) => s.id === previous) : null;
+    const taken = keys.rival(id, combo);
     keys.set(id, combo);
     notice = taken ? { id, text: `${display(combo)} était le raccourci de « ${taken.title} », qui n’en a plus.` } : null;
     recording = null;
@@ -95,7 +97,7 @@
 <div class="list">
   {#each shown as shortcut, i (shortcut.id)}
     {#if i === 0 || shown[i - 1].group !== shortcut.group}
-      <h3>{shortcut.group}</h3>
+      <h3>{shortcut.group}{#if shortcut.scope}<span class="scope"> · module {MODULES[shortcut.scope]}</span>{/if}</h3>
     {/if}
     {@const combo = keys.binding(shortcut.id)}
     <div class="row" class:recording={recording === shortcut.id}>
@@ -180,6 +182,9 @@
     font-size: var(--fs-label);
     font-weight: var(--fw-strong);
     color: var(--muted);
+  }
+  .scope {
+    font-weight: var(--fw-regular);
   }
   h3:first-child {
     padding-top: 0;
