@@ -91,12 +91,25 @@ pub struct Connected {
     connect_ms: f64,
 }
 
+/// Pourquoi une session s'est terminée. Seule une connexion perdue se rouvre d'elle-même.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+enum Ending {
+    /// L'utilisateur a fermé l'onglet ou cliqué « Déconnecter ».
+    User,
+    /// Le serveur a fermé la session : `exit`, fin du shell, code de sortie.
+    Exit,
+    /// La connexion est tombée sans que personne ne la ferme : réseau coupé, veille, délai dépassé.
+    Lost,
+}
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Closed {
     id: u32,
     exit_status: Option<u32>,
     reason: Option<String>,
+    ending: Ending,
 }
 
 #[derive(Serialize)]
@@ -270,26 +283,28 @@ async fn pump(
     mut rx: mpsc::UnboundedReceiver<Cmd>,
     on_data: Channel,
     mut startup: Option<String>,
-) -> (Option<u32>, Option<String>) {
+) -> (Option<u32>, Option<String>, Ending) {
     let mut exit_status = None;
+    // Le serveur a dit que la session finissait (code de sortie, fin de flux) : elle n'est pas perdue.
+    let mut ended_by_server = false;
     // La commande de démarrage part quand le shell s'est tu 250 ms, et au plus tard après 3 s.
     let quiet = tokio::time::sleep(Duration::from_secs(3));
     tokio::pin!(quiet);
 
-    let reason = loop {
+    let (reason, ending) = loop {
         tokio::select! {
             _ = &mut quiet, if startup.is_some() => {
                 if let Some(command) = startup.take() {
                     let line = format!("{command}\n");
                     if let Err(e) = channel.data(line.as_bytes()).await {
-                        break Some(e.to_string());
+                        break (Some(e.to_string()), Ending::Lost);
                     }
                 }
             }
             cmd = rx.recv() => match cmd {
                 Some(Cmd::Data(bytes)) => {
                     if let Err(e) = channel.data(&bytes[..]).await {
-                        break Some(e.to_string());
+                        break (Some(e.to_string()), Ending::Lost);
                     }
                 }
                 Some(Cmd::Resize(cols, rows)) => {
@@ -298,7 +313,7 @@ async fn pump(
                 Some(Cmd::Close) | None => {
                     let _ = channel.eof().await;
                     let _ = channel.close().await;
-                    break None;
+                    break (None, Ending::User);
                 }
             },
             msg = channel.wait() => match msg {
@@ -311,13 +326,24 @@ async fn pump(
                 Some(ChannelMsg::ExtendedData { data, .. }) => {
                     let _ = on_data.send(InvokeResponseBody::Raw(data.to_vec()));
                 }
-                Some(ChannelMsg::ExitStatus { exit_status: code }) => exit_status = Some(code),
-                Some(ChannelMsg::Close) | None => break None,
+                Some(ChannelMsg::ExitStatus { exit_status: code }) => {
+                    exit_status = Some(code);
+                    ended_by_server = true;
+                }
+                Some(ChannelMsg::ExitSignal { .. }) | Some(ChannelMsg::Eof) => ended_by_server = true,
+                Some(ChannelMsg::Close) => break (None, Ending::Exit),
+                None => break (None, ending_without_close(ended_by_server)),
                 _ => {}
             },
         }
     };
-    (exit_status, reason)
+    (exit_status, reason, ending)
+}
+
+/// Le canal s'est tu sans message de fermeture : la session finissait si le serveur l'avait
+/// annoncé, sinon la connexion est perdue.
+fn ending_without_close(ended_by_server: bool) -> Ending {
+    if ended_by_server { Ending::Exit } else { Ending::Lost }
 }
 
 /// Valeurs proposées par le formulaire : utilisateur courant, hôtes de `~/.ssh/config`, clés présentes.
@@ -416,12 +442,12 @@ pub async fn ssh_connect(
 
     let startup = params.startup_command.filter(|command| !command.trim().is_empty());
     tauri::async_runtime::spawn(async move {
-        let (exit_status, reason) = pump(channel, rx, on_data, startup).await;
+        let (exit_status, reason, ending) = pump(channel, rx, on_data, startup).await;
         let _ = handle.disconnect(Disconnect::ByApplication, "", "fr").await;
         if let Ok(mut sessions) = app.state::<SshState>().sessions.lock() {
             sessions.remove(&id);
         }
-        let _ = app.emit("ssh-closed", Closed { id, exit_status, reason });
+        let _ = app.emit("ssh-closed", Closed { id, exit_status, reason, ending });
     });
 
     Ok(Connected {
@@ -452,4 +478,15 @@ pub fn ssh_resize(state: State<'_, SshState>, id: u32, cols: u32, rows: u32) -> 
 #[tauri::command]
 pub fn ssh_close(state: State<'_, SshState>, id: u32) -> Result<(), String> {
     send(&state, id, Cmd::Close)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_channel_that_falls_silent_is_lost_unless_the_server_ended_it() {
+        assert_eq!(ending_without_close(false), Ending::Lost);
+        assert_eq!(ending_without_close(true), Ending::Exit);
+    }
 }

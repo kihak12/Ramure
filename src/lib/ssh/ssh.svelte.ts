@@ -9,12 +9,20 @@ export interface Session {
   key: number;
   host: Host;
   title: string;
-  status: 'connecting' | 'connected' | 'closed';
+  status: 'connecting' | 'reconnecting' | 'connected' | 'closed';
   /** La barre de recherche du terminal est ouverte. */
   searching: boolean;
   /** Compte les demandes d'ouverture : chacune rend le focus au champ, même barre ouverte. */
   searchAsk: number;
 }
+
+/** L'état d'une session en mots : le point d'un onglet ou d'un en-tête ne le dit jamais par sa seule couleur. */
+export const STATUS: Record<Session['status'], string> = {
+  connecting: 'Connexion en cours',
+  reconnecting: 'Reconnexion en cours',
+  connected: 'Connecté',
+  closed: 'Session terminée',
+};
 
 const message = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
 

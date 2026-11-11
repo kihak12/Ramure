@@ -23,9 +23,11 @@ export interface Settings {
   diffMode: DiffMode;
   theme: ThemeChoice;
   palette: Palette;
+  /** Une connexion SSH perdue se rouvre d'elle-même (charte, section 9.15). */
+  sshReconnect: boolean;
 }
 
-export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'ardoise' };
+export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'ardoise', sshReconnect: true };
 
 /** Bornes de la récupération automatique, en minutes. */
 export const AUTO_FETCH = { min: 0, max: 60 } as const;

@@ -3,6 +3,7 @@
 export const SECTIONS = [
   { id: 'general', title: 'Général' },
   { id: 'git', title: 'Git' },
+  { id: 'ssh', title: 'Terminal et SSH' },
   { id: 'keys', title: 'Raccourcis clavier' },
 ] as const;
 
