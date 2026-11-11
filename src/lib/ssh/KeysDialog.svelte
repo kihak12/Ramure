@@ -302,7 +302,7 @@
     display: grid;
     gap: 12px;
     margin: 4px 20px 0;
-    padding-top: 14px;
+    padding-top: 12px;
     border-top: 1px solid var(--line);
   }
   .two {

@@ -66,7 +66,7 @@ What the interface favours:
 2. **Colour means something.** A bright colour stands for a branch, a state or the main action.
    Nothing else.
 3. **Surfaces rather than lines.** Areas are separated by their background and by space. Lines
-   are only used inside a card.
+   are only used inside a card or a dialog.
 4. **One shape, one role.** A slightly rounded rectangle can be clicked. A pill or a circle
    informs. One exception: a colour swatch, a round dot of colour that is chosen (9.21).
 5. **Dense and readable.** A lot of information on screen, but no text under 10.5 px and no
@@ -363,7 +363,8 @@ The interface has four levels. Each is recognised by its background.
 
 - A shadow says "this floats". A card never has one.
 - No card inside a card. Inside a card, things are separated by space or by a `--line-soft`
-  line.
+  line; inside a dialog, by space or by a `--line` line, since `--line-soft` does not show on
+  `--raised` in dark (9.6).
 - Shadows are neutral: they do not take the tint of the theme.
 - A dialog sits on the `--scrim` veil, with a 2 px blur.
 
@@ -462,7 +463,7 @@ States are the same everywhere:
 | Large | A standard button, 12 px inner margins: a 20 px icon in a 38 px square of `--hover`, then its label, weight 650, over a line in `--muted` at 11.5 px that says from what or where. | The actions of the start page, the only thing to do there. Never mixed with buttons of another size. |
 
 - 6 px corners, the large button included. Inner margins: 5 px at the top and bottom, 12 px on
-  the sides.
+  the sides; 12 px all around for the large button.
 - A toggle is a small ghost button that keeps a state (`aria-pressed`). Pressed: an
   `--accent-soft` background and an `--accent` border, the text staying in `--ink`.
 - Hover: `--hover` background and a stronger border. A primary or danger button moves 10%
@@ -503,8 +504,9 @@ its own buttons.
 - **Danger** confirms a destructive action, in a dialog only. It takes the place of the
   primary, last on the line, and repeats the verb of the title: "Supprimer" under "Supprimer
   atelier-prod du carnet ?". **Ghost danger** is the entry that opens that dialog: "Supprimer
-  l’hôte…", or "Abandonner…" in the banner of a rebase or a merge that has stopped, whose dialog
-  says what is lost: the conflicts already resolved, the commits already replayed.
+  l’hôte…", or "Abandonner…" in the banner of a rebase, a merge, a cherry-pick or a revert that
+  has stopped, whose dialog says what is lost and that git keeps it nowhere: "Les conflits déjà
+  résolus seront perdus définitivement."
 - **The last line of a dialog**, from left to right: the way out, then a secondary action if
   there is one, then the primary or the danger button, last, all at the right. A destructive
   entry stands alone at the far left. Four buttons at most: what does not fit goes into the
@@ -591,7 +593,9 @@ its own buttons.
   turned down, 14 px, in `--muted`, 9 px from the edge. The value never runs under the chevron:
   it is cut with an ellipsis. Open, its menu is the system's. A list is for options that are
   many, or that are plain values; a few options that need a word of explanation are a choice
-  (9.19).
+  (9.19). In a dense row, where a choice would not fit (the action of each commit of an
+  interactive rebase), a list keeps them, and the explanation of the chosen option is its
+  tooltip.
 - A filter field carries a 14 px magnifier on its left, in `--muted`; its hint names what it
   filters, and so does its accessible name.
 - A unit follows the field it belongs to, 6 px away, in 12 px, `--muted`: "min".
@@ -632,7 +636,7 @@ buttons.
 
 ### 9.6 Rows and lists
 
-Sidebar, file lists, graph, palette results.
+Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 - Hover: a rounded `--hover` background under the row, 8 px corners.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
@@ -649,13 +653,15 @@ Sidebar, file lists, graph, palette results.
 - The state of a file is a letter on a tinted background (M, A, D, R), never a colour alone.
 - A file that is only partly staged carries the words "en partie" after its name, in `--muted`
   at 11.5 px, in both lists.
-- **A list inside a dialog** (the keys of "Gérer les clés…", the commits of an interactive rebase)
-  is made of plain rows: no border and no background of their own, since a framed row inside a
-  dialog would be a card in a card (6). The rows are separated by a `--line` line, as in a menu or
-  the palette: on `--raised`, `--line-soft` does not show. A form that opens under the list
-  ("Générer une clé") is separated from it the same way. A row that cannot be selected takes no
-  hover background. A row being dragged keeps its place in the list at half opacity, while the
-  system draws it under the pointer.
+- **A list inside a dialog** (the keys of "Gérer les clés…", the commits of an interactive
+  rebase) is made of plain rows: no border and no background of their own, since a framed row
+  inside a dialog would be a card in a card (6). The rows are separated by a `--line` line: on
+  `--raised`, `--line-soft` does not show in dark. A form that opens under the list ("Générer une
+  clé") is separated from it the same way. A row that cannot be selected takes no hover
+  background. A row being dragged keeps its place in the list at half opacity, while the system
+  draws it under the pointer. In the interactive rebase, a commit melded into the one above it
+  (squash, fixup) is indented by 24 px, the width of the grip and its gap, and a dropped commit
+  keeps its subject, struck through, in `--muted`.
 
 ### 9.7 Tabs
 

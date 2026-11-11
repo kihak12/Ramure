@@ -243,14 +243,16 @@
   li.dragging {
     opacity: 0.5;
   }
+  /* Un commit supprimé reste lisible : barré, en --muted (--faint ne porte rien d'utile, 2.3). */
   li.a-drop .subject {
     text-decoration: line-through;
-    color: var(--faint);
+    color: var(--muted);
   }
-  /* Un commit fondu dans le précédent est en retrait sous lui. */
+  /* Un commit fondu dans le précédent est en retrait sous lui, de la poignée et de son écart :
+     sa poignée tombe sous la liste du commit qui le reçoit (charte, 9.6). */
   li.a-squash,
   li.a-fixup {
-    margin-left: 22px;
+    margin-left: 24px;
   }
   .grip {
     display: grid;
@@ -270,8 +272,9 @@
     gap: 10px;
     min-width: 0;
   }
+  /* Assez large pour le plus long des cinq libellés, « Fusionner (messages réunis) ». */
   .action {
-    width: 210px;
+    width: 240px;
     flex: none;
   }
   .sha {

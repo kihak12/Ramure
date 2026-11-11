@@ -270,23 +270,25 @@ export async function forcePush(repo: Repo) {
   if (confirmed) await repo.sync('push-force');
 }
 
-/** Ce que perd l'abandon d'une opération arrêtée : `git <opération> --abort` revient à l'état d'avant. */
-const ABORT: Record<Operation, { what: string; lost: string }> = {
-  merge: { what: 'la fusion', lost: 'Les conflits déjà résolus seront perdus.' },
-  rebase: { what: 'le rebase', lost: 'Les commits déjà rejoués et les conflits déjà résolus seront perdus.' },
-  'cherry-pick': { what: 'le cherry-pick', lost: 'Les commits déjà repris et les conflits déjà résolus seront perdus.' },
-  revert: { what: 'le revert', lost: 'Les commits déjà annulés et les conflits déjà résolus seront perdus.' },
+/** L'opération arrêtée, dans une phrase : « Abandonner le rebase ». */
+const ABORTED: Record<Operation, string> = {
+  merge: 'la fusion',
+  rebase: 'le rebase',
+  'cherry-pick': 'le cherry-pick',
+  revert: 'le revert',
 };
 
 /** Abandonne l'opération en cours, après une confirmation qui dit ce qui est perdu (charte, 9.1). */
 export async function abortOperation(repo: Repo) {
   const operation = repo.status?.operation;
   if (!operation) return;
-  const { what, lost } = ABORT[operation];
+  const what = ABORTED[operation];
+  // `git <opération> --abort` rend aux branches leurs commits d'origine : seul le travail fait
+  // pendant l'opération, les conflits résolus, est perdu, et git ne le garde nulle part.
   const confirmed = await dialogs.confirm({
-    title: `Abandonner ${what} ?`,
+    title: `Abandonner ${what}\u00a0?`,
     body: `Le dépôt revient à son état d’avant ${what} (git ${operation} --abort).`,
-    warning: lost,
+    warning: 'Les conflits déjà résolus seront perdus définitivement.',
     confirmLabel: `Abandonner ${what}`,
     danger: true,
   });

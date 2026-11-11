@@ -41,6 +41,13 @@
     white-space: nowrap;
     cursor: pointer;
   }
+  /* Désactivée, comme tout élément désactivé (charte, section 9). */
+  .select:has(select:disabled) {
+    opacity: 0.45;
+  }
+  select:disabled {
+    cursor: not-allowed;
+  }
   .chevron {
     position: absolute;
     top: 50%;

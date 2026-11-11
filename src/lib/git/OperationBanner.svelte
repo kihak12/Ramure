@@ -34,7 +34,7 @@
       </button>
     {/if}
     <!-- L'abandon perd les conflits déjà résolus : une boîte le confirme (charte, 9.1, « Hierarchy »). -->
-    <button class="btn ghost bad" type="button" disabled={repo.locked} onclick={() => void abortOperation(repo)} title="Revient à l'état d'avant l'opération">
+    <button class="btn ghost bad" type="button" disabled={repo.locked} onclick={() => void abortOperation(repo)} title="Revient à l’état d’avant l’opération">
       <Icon name="stop" size={14} /> Abandonner…
     </button>
   </div>

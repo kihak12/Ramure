@@ -52,7 +52,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'stash', group: 'Travail en cours', title: 'Remiser les modifications', keys: 'Ctrl+Shift+S', scope: 'git' },
   { id: 'pop', group: 'Travail en cours', title: 'Dépiler la dernière remise', keys: '', scope: 'git' },
   { id: 'op-continue', group: 'Travail en cours', title: 'Continuer l’opération en suspens', keys: '', scope: 'git' },
-  { id: 'op-abort', group: 'Travail en cours', title: 'Abandonner l’opération en suspens', keys: '', scope: 'git' },
+  { id: 'op-abort', group: 'Travail en cours', title: 'Abandonner l’opération en suspens…', keys: '', scope: 'git' },
 ];
 
 const DEFAULTS = new Map(SHORTCUTS.map((s) => [s.id, s.keys]));
