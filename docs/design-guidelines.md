@@ -63,8 +63,8 @@ What the interface favours:
 
 1. **Content first.** The graph, the diff and the terminal fill the screen. Everything else
    steps back: no decoration on working screens.
-2. **Colour means something.** A bright colour stands for a branch, a state or the main action.
-   Nothing else.
+2. **Colour means something.** A bright colour stands for a branch, a state or the main action,
+   or for a marker that the user chose: the colour of an SSH host. Nothing else.
 3. **Surfaces rather than lines.** Areas are separated by their background and by space. Lines
    are only used inside a card or a dialog.
 4. **One shape, one role.** A slightly rounded rectangle can be clicked. A pill or a circle
@@ -159,7 +159,7 @@ Every theme must meet them, in light and in dark.
 |---|---|
 | `--ink` on `--panel`, `--bg`, `--sel`, `--hover` | 7:1 |
 | `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
-| `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover` | 4.5:1 |
+| `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--warn-soft` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
 | `--ok`, `--warn`, `--bad` on `--panel`, `--bg` and `--raised` (the result of a test in a dialog) | 4.5:1 |
 | `--bad` on `--bad-soft` and `--warn-soft` (ghost danger button, destructive menu item, the banner of an operation) | 4.5:1 |
@@ -380,7 +380,8 @@ The interface has four levels. Each is recognised by its background.
 |---|---|
 | 14 px | In a label, a counter or a dense row. |
 | 16 px | By default: menus, buttons, lists. |
-| 18 px | Toolbar and rail. |
+| 18 px | Toolbar and rail, and the icon of a banner. |
+| 20 px | The large button of the start page (9.1). |
 
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import. An icon that
@@ -1255,11 +1256,12 @@ need the room.
   Chosen: a 2 px ring of its own colour (of `--muted` for "Aucune"), 2 px away from it, drawn
   with a flat shadow, not an elevation. Keyboard focus: the ring of the application, 2 px of
   `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Couleur 3".
-- **In the host book**, the chosen colour is a 4 px bar with round ends on the left of the row,
-  as high as its two lines of text. It names the host and never says its state, which is why it
-  is the one coloured bar allowed on the edge of a row (1): the selection is the background of
-  the row (9.6), and the state of a session is the dot of its tab. A host without a colour keeps
-  the place empty, so that the names stay aligned.
+- **In the host book**, the chosen colour is a 4 px bar with round ends on the left of the row, as
+  high as the row. It names the host and never says its state, which is why it is the one coloured
+  bar allowed on the edge of a row (1): the selection is the background of the row (9.6), and the
+  state of a session is the dot of its tab. It is hidden from screen readers, since the name of
+  the host says which it is. A host without a colour keeps the place empty, so that the names stay
+  aligned.
 
 ## 10. Commit graph
 

@@ -55,8 +55,9 @@ function check(name, t, dark) {
   };
   const lanes = Array.from({ length: 8 }, (_, i) => [`--l${i}`, t[`--l${i}`]]);
   for (const bg of ['--panel', '--bg', '--sel', '--hover']) need(`--ink sur ${bg}`, contrast(t['--ink'], t[bg]), 7);
-  // Le texte secondaire : dans une carte, sur la fenêtre, sur ce qui flotte, et sur une ligne survolée.
-  for (const bg of ['--panel', '--side', '--sel', '--raised', '--hover']) need(`--muted sur ${bg}`, contrast(t['--muted'], t[bg]), 4.5);
+  // Le texte secondaire : dans une carte, sur la fenêtre, sur ce qui flotte, sur une ligne survolée,
+  // et dans le bandeau d'une opération arrêtée.
+  for (const bg of ['--panel', '--side', '--sel', '--raised', '--hover', '--warn-soft']) need(`--muted sur ${bg}`, contrast(t['--muted'], t[bg]), 4.5);
   // Les états : dans une carte, dans un champ, et dans une boîte (le résultat d'un test).
   for (const state of ['--ok', '--warn', '--bad']) {
     for (const bg of ['--panel', '--bg', '--raised']) need(`${state} sur ${bg}`, contrast(t[state], t[bg]), 4.5);

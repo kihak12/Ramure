@@ -20,16 +20,21 @@
       <span class="line">
         <span>
           {#if conflicts}
-            {conflicts} fichier{conflicts > 1 ? 's' : ''} en conflit : résous-les dans le panneau des modifications, puis continue.
+            {conflicts} fichier{conflicts > 1 ? 's' : ''} en conflit : résous-les dans le panneau des modifications, puis continue.
           {:else}
-            Tous les conflits sont résolus : tu peux continuer.
+            Tous les conflits sont résolus : tu peux continuer.
           {/if}
         </span>
         <button class="btn ghost small" type="button" onclick={() => repo.showWip()}>Voir les fichiers</button>
       </span>
     </div>
     <!-- Le principal d'abord, la sortie en dernier, comme la ligne d'un panneau (charte, 9.1). -->
-    <button class="btn primary" type="button" disabled={repo.locked || conflicts > 0} onclick={() => void repo.operate('continue')}>
+    <button
+      class="btn primary"
+      type="button"
+      disabled={repo.locked || conflicts > 0}
+      title={conflicts > 0 ? 'Résous d’abord les conflits' : undefined}
+      onclick={() => void repo.operate('continue')}>
       <Icon name="play" size={14} /> Continuer
     </button>
     {#if operation !== 'merge'}
