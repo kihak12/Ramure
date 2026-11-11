@@ -599,6 +599,24 @@ Sidebar, file lists, graph, palette results.
 - `--term-bg` background, `--term-ink` text, code font at 13 px.
 - Terminal tabs follow the rule for tabs (9.7).
 
+**A local terminal.** The shell of the user on their own machine (PowerShell on Windows, the
+`SHELL` of the user on Ubuntu), in their home folder. It is a tab of the SSH module, with the same
+terminal, colours, search and resizing as a session.
+
+- Opened by Ctrl + Shift + N or "Nouveau terminal local" in the palette, from either module (the
+  SSH module is then shown); by the "+" after the last tab (9.7); and from the empty screen of the
+  module, by "Ouvrir un terminal local", next to "Ajouter un hôte".
+- Its tab carries the "computer" icon instead of the dot of a host (7: the computer means
+  "local"), and its tooltip and accessible name say "Terminal local". Its title is "Terminal",
+  then "Terminal 2", "Terminal 3", the smallest free number.
+- Its header has the same height as that of a session: the computer icon, "Terminal local" in
+  weight 650, the name of the shell in the code font and `--muted`, and "ouvert dans" with its
+  starting folder. No "Déconnecter": the cross of the tab closes it.
+- When the shell ends normally (`exit`, Ctrl + D, exit code 0), the tab closes. When it stops on
+  an error, or cannot start, the tab stays with its text under the veil, and the panel says "Shell
+  arrêté", the exit code or the reason, what to do, and offers "Relancer" (main button) and
+  "Fermer l’onglet". A local terminal is never "reconnected": it is started again.
+
 **Search.** Ctrl + Shift + F, or "Chercher dans le terminal" in the palette, opens a search bar
 in the terminal of the current tab.
 

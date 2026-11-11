@@ -26,6 +26,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'view-ssh', group: 'Général', title: 'Afficher le terminal SSH', keys: 'Ctrl+Shift+T' },
   { id: 'settings', group: 'Général', title: 'Réglages', keys: 'Ctrl+,' },
   { id: 'shortcuts', group: 'Général', title: 'Raccourcis clavier', keys: '' },
+  { id: 'terminal-new', group: 'Général', title: 'Nouveau terminal local', keys: 'Ctrl+Shift+N' },
   { id: 'toggle-sidebar', group: 'Affichage', title: 'Afficher ou masquer la liste des branches', keys: 'Ctrl+Shift+B', scope: 'git' },
   { id: 'toggle-detail', group: 'Affichage', title: 'Afficher ou masquer le panneau de détail', keys: 'Ctrl+Shift+E', scope: 'git' },
   { id: 'toggle-sides', group: 'Affichage', title: 'Afficher ou masquer les panneaux latéraux', keys: '', scope: 'git' },

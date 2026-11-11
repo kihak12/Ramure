@@ -7,6 +7,7 @@
   import { menu } from '../ui/menu.svelte';
   import HostDialog from './HostDialog.svelte';
   import KeysDialog from './KeysDialog.svelte';
+  import { display, keys } from '../ui/keys.svelte';
   import { ssh, STATUS } from './ssh.svelte';
   import Terminal from './Terminal.svelte';
   import { emptyHost, type Host } from './types';
@@ -38,6 +39,9 @@
 
   const address = (host: Host) => `${host.user || ssh.defaultUser}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`;
 
+
+  // « + » des onglets : un terminal local, d'un clic. L'infobulle dit le raccourci.
+  const newLocal = $derived(`Nouveau terminal local${keys.binding('terminal-new') ? ` (${display(keys.binding('terminal-new'))})` : ''}`);
 
   async function remove(host: Host) {
     const confirmed = await dialogs.confirm({
@@ -146,14 +150,27 @@
                 if (e.button === 1) ssh.close(session.key);
               }}
             >
-              <!-- L'état de la session est dit en mots, pas seulement par la couleur du point. -->
-              <span
-                class="dot s-{session.status}"
-                role="img"
-                aria-label={STATUS[session.status]}
-                title={STATUS[session.status]}
-                style:--c={session.host.color ? `var(--l${session.host.color})` : 'var(--ok)'}
-              ></span>
+              {#if session.kind === 'local'}
+                <!-- Un terminal local porte l'ordinateur, comme partout où « local » est dit. -->
+                <span
+                  class="local"
+                  class:stopped={session.status === 'closed'}
+                  role="img"
+                  aria-label={session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local'}
+                  title={session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local'}
+                >
+                  <Icon name="laptop" size={14} />
+                </span>
+              {:else}
+                <!-- L'état de la session est dit en mots, pas seulement par la couleur du point. -->
+                <span
+                  class="dot s-{session.status}"
+                  role="img"
+                  aria-label={STATUS[session.status]}
+                  title={STATUS[session.status]}
+                  style:--c={session.host.color ? `var(--l${session.host.color})` : 'var(--ok)'}
+                ></span>
+              {/if}
               <span class="name">{session.title}</span>
             </button>
             <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => ssh.close(session.key)}>
@@ -161,6 +178,9 @@
             </button>
           </div>
         {/each}
+        <button class="add" type="button" aria-label={newLocal} title={newLocal} onclick={() => ssh.openLocal()}>
+          <Icon name="plus" size={16} />
+        </button>
       </div>
       <div class="views">
         {#each ssh.sessions as session (session.key)}
@@ -173,9 +193,10 @@
     {:else}
       <div class="empty">
         <span class="art"><Icon name="terminal" size={30} /></span>
-        <p>Double-clique un hôte pour ouvrir un terminal.</p>
+        <p>Double-clique un hôte pour ouvrir un terminal distant, ou ouvre un terminal sur cette machine.</p>
         <div class="row">
           <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte</button>
+          <button class="btn" type="button" onclick={() => ssh.openLocal()}><Icon name="laptop" size={14} /> Ouvrir un terminal local</button>
           {#if ssh.loaded && !ssh.hosts.length}
             <button class="btn" type="button" onclick={() => void ssh.importConfig()}>Importer ~/.ssh/config</button>
           {/if}
@@ -379,6 +400,34 @@
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
+  }
+  /* « + » après le dernier onglet (charte, section 9.7) : il reste visible quand les onglets débordent. */
+  .add {
+    position: sticky;
+    right: 0;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: var(--radius-s);
+    background: var(--side);
+    color: var(--muted);
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease);
+  }
+  .add:hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .local {
+    flex: none;
+    display: grid;
+    margin-left: 4px;
+  }
+  .local.stopped {
+    color: var(--faint);
   }
   .tab {
     flex: 0 1 180px;

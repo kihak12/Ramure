@@ -2,6 +2,7 @@
 //! L'interface n'appelle que les commandes déclarées dans `invoke_handler`.
 
 mod git;
+mod local;
 mod ssh;
 
 use tauri::Manager;
@@ -11,6 +12,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(ssh::SshState::default())
+        .manage(local::LocalState::default())
         .manage(git::clone::CloneState::default())
         .setup(|app| {
             // Carnet d'hôtes : %APPDATA%\Ramure sous Windows, ~/.config/ramure ailleurs.
@@ -72,6 +74,10 @@ pub fn run() {
             ssh::ssh_write,
             ssh::ssh_resize,
             ssh::ssh_close,
+            local::local_open,
+            local::local_write,
+            local::local_resize,
+            local::local_close,
             ssh::store::hosts_list,
             ssh::store::host_save,
             ssh::store::host_delete,
