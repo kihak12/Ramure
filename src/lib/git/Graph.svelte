@@ -12,6 +12,8 @@
   import type { CommitRow } from './types';
 
   let { repo }: { repo: Repo } = $props();
+  // Les onglets masqués restent montés : les identifiants des lignes sont propres à chacun.
+  const uid = $props.id();
 
   // Deux rendus du graphe, au choix dans les réglages (charte graphique, section 10).
   // « Ruban » : pastilles d'auteur sur le graphe, courbes souples, message dans une capsule de
@@ -478,7 +480,7 @@
     tabindex="0"
     role="listbox"
     aria-label="Historique des commits"
-    aria-activedescendant={repo.current ? `commit-${repo.selected}` : undefined}
+    aria-activedescendant={repo.current ? `${uid}-commit-${repo.selected}` : undefined}
   >
     <div class="spacer" class:fresh style:height="{commits.length * ROW}px">
       <canvas
@@ -506,7 +508,7 @@
         <div
           class="row"
           class:sel={index === repo.selected}
-          id="commit-{index}"
+          id="{uid}-commit-{index}"
           role="option"
           tabindex="-1"
           aria-selected={index === repo.selected}

@@ -62,7 +62,8 @@ if (typeof window !== 'undefined') {
       if (!fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
       if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
       const current = focused.getAttribute('aria-activedescendant');
-      const row = current ? document.getElementById(current) : null;
+      // Cherchée dans la liste : un onglet masqué garde ses lignes, sous les mêmes identifiants.
+      const row = current ? focused.querySelector<HTMLElement>(`#${CSS.escape(current)}`) : null;
       // La ligne courante n'est pas en vue (la liste a défilé loin d'elle ; le graphe garde aussi des
       // lignes rendues hors de la vue) : rien ne s'ouvre, ni le menu du moteur, ni celui de la ligne
       // qui se trouverait sous le coin de la liste.

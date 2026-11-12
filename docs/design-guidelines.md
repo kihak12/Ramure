@@ -653,8 +653,8 @@ buttons.
   drop target.
 - Double-click: switch to the branch. Right-click: the branch menu.
 - From the keyboard, a label is reached through its row in the branch list (9.17), which holds
-  every local branch, remote branch and tag of the graph, with the same menu: Tab to the row,
-  then the Menu key or Shift + F10 (9.9). Past 200 rows in a section, its filter finds the rest;
+  every local branch, remote branch and tag of the graph, with the same menu: Tab to the list,
+  the arrows to the row (9.6), then the Menu key or Shift + F10 (9.9). Past 200 rows in a section, its filter finds the rest;
   a hidden list comes back with Ctrl + Shift + B; a detached HEAD, which has no row there, is the
   commit itself, whose menu is that of its row in the graph. The labels of the graph are not
   stops of the tab order.
@@ -677,6 +677,13 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the selected row. **Never an outline
   around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
   selected when it receives focus, the first one becomes selected.
+- **A list in sections**, such as the branch list, is a tree: the title of a section is a row too,
+  which folds and unfolds it. ↑ and ↓ go from row to row, titles included, Home and End to the
+  ends; → unfolds a title, or goes down to its first row; ← goes back up to the title, or folds
+  it; Enter and Space act as a click: a title folds or unfolds, a row shows its commit; the Menu
+  key opens the menu of the row (9.9). The current row shows the ring, and `--sel` still marks the
+  current branch. When the current row goes away (deleted, renamed, filtered out), its neighbour
+  takes its place, and the focus stays on the list. From the filter above it, ↓ goes to the list.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
 - An area that scrolls (a list, a card, a dialog) has the thin scrollbar of `src/app.css`, its
   thumb in `--muted` at 45%. On Linux it is always visible and takes its room from the area: the
