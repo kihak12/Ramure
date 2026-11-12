@@ -473,6 +473,7 @@
   <div
     class="scroller"
     bind:this={scroller}
+    class:asked={!!scroller && menu.current?.origin === scroller}
     bind:clientWidth={cardW}
     onscroll={onScroll}
     onkeydown={onKey}
@@ -640,6 +641,7 @@
      clavier (lib/ui/focus.ts). Il se montre comme celui de Tab, sur la ligne sélectionnée. */
   .scroller:focus-visible .row.sel::before,
   .scroller:global(.focus-ring):focus .row.sel::before,
+  .scroller.asked .row.sel::before,
   .scroller:has(.row:focus-visible) .row.sel::before {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }

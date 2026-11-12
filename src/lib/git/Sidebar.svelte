@@ -123,10 +123,21 @@
   $effect(() => {
     if (cursorIndex >= 0) lastIndex = cursorIndex;
     else if (cursor && nodes.length) {
-      const next = nodes[Math.min(lastIndex, nodes.length - 1)];
+      // La suivante de sa section, sinon celle d'avant, sinon le titre de la section.
+      const old = cursor.section;
+      const at = Math.min(lastIndex, nodes.length - 1);
+      const mine = (n: Node | undefined) => (n && n.section === old ? n : undefined);
+      const next =
+        (mine(nodes[at]) && !nodes[at].heading ? nodes[at] : undefined) ??
+        mine(nodes[at - 1]) ??
+        nodes.find((n) => n.heading && n.section === old) ??
+        nodes[at];
       cursor = { section: next.section, key: next.key };
     }
   });
+
+  // Un menu demandé au clavier depuis la liste est ouvert : sa ligne garde l'anneau (charte, 9.9).
+  const asked = $derived(!!tree && menu.current?.origin === tree);
 
   /** Fait de `node` la ligne courante, et la montre si la liste a défilé. */
   function point(node: Node | undefined) {
@@ -245,6 +256,7 @@
     tabindex="0"
     aria-label="Branches, tags et remises"
     aria-activedescendant={cursorNode?.id}
+    class:asked
     bind:this={tree}
     onkeydown={onKey}
     onfocus={onFocus}
@@ -258,6 +270,7 @@
               type="button"
               class="item"
               class:current={branch.current}
+              aria-current={branch.current ? 'true' : undefined}
               class:cursor={cursorNode?.id === rowId('local', i)}
               class:drop={dropOn === branch.name}
               id={rowId('local', i)}
@@ -456,15 +469,19 @@
     outline: none;
   }
   .scroll:focus-visible .cursor,
-  .scroll:global(.focus-ring):focus .cursor {
+  .scroll:global(.focus-ring):focus .cursor,
+  .scroll.asked .cursor {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
   .heading {
     display: flex;
     align-items: center;
     gap: 6px;
-    width: 100%;
-    padding: 8px 12px 6px;
+    /* En retrait de 6 px des bords de la carte, comme les lignes : l'anneau et le survol ne les
+       touchent pas (charte, 9.6). Le titre garde sa place, 12 px du bord. */
+    width: calc(100% - 12px);
+    margin: 0 6px;
+    padding: 8px 6px 6px;
     border: 0;
     background: none;
     cursor: pointer;
@@ -501,7 +518,7 @@
   .item {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     width: 100%;
     padding: 5px 10px 5px 6px;
     border: 0;
@@ -546,8 +563,9 @@
   .gone {
     color: var(--warn);
   }
+  /* 28 px, une valeur dérivée : le début du nom d'une ligne (6 de marge, 16 de marque, 6 d'écart). */
   .none {
-    padding: 3px 8px 3px 28px;
+    padding: 4px 8px 4px 28px;
     color: var(--muted);
     font-size: var(--fs-label);
   }

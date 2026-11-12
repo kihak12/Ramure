@@ -678,13 +678,16 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
   selected when it receives focus, the first one becomes selected.
 - **A list in sections**, such as the branch list, is a tree: the title of a section is a row too,
-  which folds and unfolds it. ↑ and ↓ go from row to row, titles included, Home and End to the
-  ends; → unfolds a title, or goes down to its first row; ← goes back up to the title, or folds
-  it; Enter and Space act as a click: a title folds or unfolds, a row shows its commit; the Menu
-  key opens the menu of the row (9.9). The current row shows the ring, and `--sel` still marks the
-  current branch. When the current row goes away (deleted, renamed, filtered out), its neighbour
-  takes its place, and the focus stays on the list. From the filter above it, ↓ goes to the list,
-  and during a search to the first row found.
+  which folds and unfolds it, inset 6 px from the edges of the card like the rows. ↑ and ↓ go from
+  row to row, titles included, Home and End to the ends; → unfolds a title, or goes down to its
+  first row; ← goes back up to the title, or folds it (during a search, every section stays
+  unfolded); Enter and Space act as a click: a title folds or unfolds, a row shows its commit; the
+  Menu key opens the menu of the row, and a title, which has none, opens nothing (9.9). The
+  current row shows the ring, and `--sel` still marks the current branch; for a screen reader, the
+  current row is the selected one (`aria-selected`), and `aria-current` names the current branch.
+  When the current row goes away (deleted, renamed, filtered out), the next row of its section
+  takes its place, or else the one before it, or else its title, and the focus stays on the list.
+  From the filter above it, ↓ goes to the list, and during a search to the first row found.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
 - An area that scrolls (a list, a card, a dialog) has the thin scrollbar of `src/app.css`, its
   thumb in `--muted` at 45%. On Linux it is always visible and takes its room from the area: the
@@ -752,13 +755,14 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Opened with the mouse, a menu has no current item: Space and Enter do nothing until an item
   is hovered or reached, and ↓ goes to the first one, ↑ to the last. Opened from the keyboard,
   its first item has the focus.
-- A context menu opens from the keyboard too, with the Menu key or Shift + F10 on the element
-  that has the focus, or on the current row of a list that keeps the focus (the graph), when
-  that row is in view: 4 px under that element, on its left edge, its first enabled item
-  focused. Escape, or an item chosen from the keyboard, gives the focus back to the element that
-  had it, with its ring (11); the mouse (a click outside, the wheel, an item chosen with a click)
-  gives it back without the ring, as for the button of a menu. A text field keeps the menu of the
-  system, to cut, copy and paste.
+- A context menu opens from the keyboard too, with the Menu key or Shift + F10 on the element that
+  has the focus, or on the current row of a list that keeps the focus (the graph, the branch
+  list), when that row is in view: 4 px under that element, on its left edge, its first enabled
+  item focused. Escape, or an item chosen from the keyboard, gives the focus back to the element
+  that had it, with its ring (11); the mouse (a click outside, the wheel, an item chosen with a
+  click) gives it back without the ring, as for the button of a menu. While the menu is open, the
+  row it was asked for keeps its ring. A text field keeps the menu of the system, to cut, copy and
+  paste.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.

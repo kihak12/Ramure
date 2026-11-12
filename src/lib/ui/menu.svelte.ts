@@ -79,10 +79,18 @@ if (typeof window !== 'undefined') {
       const target = row || focused;
       event.preventDefault();
       event.stopPropagation();
+      // Un `contextmenu` que personne n'a pris en charge a pour action par défaut le menu du moteur :
+      // la fenêtre l'annule en dernier, s'il remonte jusqu'à elle sans qu'un menu l'ait arrêté.
+      const resent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
+      const quiet = (e: Event) => {
+        if (e === resent) e.preventDefault();
+      };
       resending = true;
+      window.addEventListener('contextmenu', quiet);
       try {
-        target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+        target.dispatchEvent(resent);
       } finally {
+        window.removeEventListener('contextmenu', quiet);
         resending = false;
       }
     },
