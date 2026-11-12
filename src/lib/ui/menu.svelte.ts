@@ -110,12 +110,14 @@ class Menu {
   }
 
   /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre, comme l'élément
-   *  d'où un menu contextuel a été demandé au clavier. */
-  close(keyboard = false) {
+   *  d'où un menu contextuel a été demandé au clavier. `outside` : fermé par un clic à côté ; cet
+   *  élément retrouve le focus sans l'anneau, comme le bouton (charte, 9.9). */
+  close(keyboard = false, outside = false) {
     const anchor = this.current?.anchor;
     const origin = this.current?.origin;
     this.current = null;
-    if (origin) focusWithRing(origin);
+    if (origin && !outside) focusWithRing(origin);
+    else if (origin) origin.focus();
     else if (keyboard) focusWithRing(anchor);
     else anchor?.focus();
   }

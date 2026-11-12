@@ -85,10 +85,14 @@
   <div
     class="veil"
     bind:this={veil}
-    onmousedown={() => menu.close()}
+    onmousedown={(e) => {
+      // Le clic sur le voile ne déplace pas le focus : le menu le rend à qui l'avait.
+      e.preventDefault();
+      menu.close(false, true);
+    }}
     oncontextmenu={(e) => {
       e.preventDefault();
-      menu.close();
+      menu.close(false, true);
     }}
     onwheel={() => menu.close()}
   >
