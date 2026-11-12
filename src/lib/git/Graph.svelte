@@ -641,10 +641,14 @@
   }
   /* Au clavier, le focus se lit sur le commit sélectionné, pas par un cadre autour de la liste. */
   .scroller:focus-visible,
+  .scroller:global(.focus-ring):focus,
   .row:focus-visible {
     outline: none;
   }
+  /* `.focus-ring` : le focus rendu à la liste par le script, à la fermeture d'un menu demandé au
+     clavier (lib/ui/focus.ts). Il se montre comme celui de Tab, sur la ligne sélectionnée. */
   .scroller:focus-visible .row.sel::before,
+  .scroller:global(.focus-ring):focus .row.sel::before,
   .scroller:has(.row:focus-visible) .row.sel::before {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
