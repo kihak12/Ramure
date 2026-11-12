@@ -584,7 +584,8 @@
     position: relative;
   }
   /* Largeurs calculées dans le script (charte, section 10.1). Une colonne qui cède garde sa
-     place dans la grille, à 0 px, et son contenu est caché. */
+     place dans la grille, à 0 px, et son contenu ne se voit plus : le nom de l'auteur et la date
+     restent lus par un lecteur d'écran (voir plus bas). */
   .head,
   .row {
     display: grid;
