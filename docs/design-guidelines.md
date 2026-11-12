@@ -663,6 +663,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
   selected when it receives focus, the first one becomes selected.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
+- A list that scrolls has the classic scrollbar of the system, on Linux as on Windows: always
+  visible, it takes its room from the list. The overlay scrollbar of Linux is turned off, since
+  WebKitGTK paints it over everything, an open menu included (9.9).
 - A click leaves no hover behind: a row that keeps the focus of a click shows neither the hover
   background nor its actions once the pointer has left. Only the keyboard focus shows them. This
   holds for the rows that hold a button of their own: the host book, the file lists, the recent
@@ -726,6 +729,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.
 - Appears in `--t-fast`, from the point of the click.
+- Nothing is drawn over an open menu: neither the tooltip of the element that opened it (below)
+  nor the scrollbar of a list next to it (9.6).
 - A menu may also open under a button, such as "Affichage" in the toolbar (9.2): 4 px below it,
   its right edge on the right edge of the button, and it appears from that corner. Escape, or a
   click outside, closes it and gives the focus back to the button; after Escape, the button
