@@ -51,10 +51,11 @@
     return () => window.removeEventListener('mouseup', nudge, { capture: true });
   });
 
-  function pick(item: MenuItem) {
+  /** `pointer` : choisi au clic, et non au clavier (Entrée ou Espace donnent un clic sans `detail`). */
+  function pick(item: MenuItem, pointer = false) {
     if ('separator' in item || item.disabled) return;
     // Une case à cocher s'applique tout de suite et laisse le menu ouvert : on en change plusieurs d'affilée.
-    if (item.checked === undefined) menu.close();
+    if (item.checked === undefined) menu.close(false, pointer);
     item.run();
   }
 
@@ -94,7 +95,7 @@
       e.preventDefault();
       menu.close(false, true);
     }}
-    onwheel={() => menu.close()}
+    onwheel={() => menu.close(false, true)}
   >
     <div class="room"></div>
   </div>
@@ -121,7 +122,7 @@
           class:danger={item.danger}
           disabled={item.disabled}
           title={item.hint}
-          onclick={() => pick(item)}
+          onclick={(e) => pick(item, e.detail > 0)}
           onpointerenter={(event) => event.currentTarget.focus()}
         >
           <span class="glyph">{#if item.icon}<Icon name={item.icon} size={16} />{/if}</span>

@@ -36,6 +36,12 @@ interface Open {
 // retient l'heure de la touche pour reconnaître un menu contextuel demandé au clavier.
 let contextKeyAt = -Infinity;
 const fromKeyboard = (event: Event) => event.timeStamp - contextKeyAt < 500;
+/** Vrai si `element` se voit, au moins en partie, dans la zone visible de `list`. */
+function inView(element: HTMLElement, list: HTMLElement) {
+  const box = element.getBoundingClientRect();
+  const frame = list.getBoundingClientRect();
+  return box.bottom > frame.top && box.top < frame.bottom;
+}
 if (typeof window !== 'undefined') {
   window.addEventListener(
     'keydown',
@@ -57,9 +63,10 @@ if (typeof window !== 'undefined') {
       if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
       const current = focused.getAttribute('aria-activedescendant');
       const row = current ? document.getElementById(current) : null;
-      // La ligne courante n'est pas affichée (la liste a défilé loin d'elle) : rien ne s'ouvre, ni le
-      // menu du moteur, ni celui de la ligne qui se trouverait sous le coin de la liste.
-      if (current && !row) {
+      // La ligne courante n'est pas en vue (la liste a défilé loin d'elle ; le graphe garde aussi des
+      // lignes rendues hors de la vue) : rien ne s'ouvre, ni le menu du moteur, ni celui de la ligne
+      // qui se trouverait sous le coin de la liste.
+      if (current && (!row || !inView(row, focused))) {
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -110,8 +117,9 @@ class Menu {
   }
 
   /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre, comme l'élément
-   *  d'où un menu contextuel a été demandé au clavier. `outside` : fermé par un clic à côté ; cet
-   *  élément retrouve le focus sans l'anneau, comme le bouton (charte, 9.9). */
+   *  d'où un menu contextuel a été demandé au clavier. `outside` : fermé à la souris (un clic à
+   *  côté, la molette, un élément choisi au clic) ; cet élément retrouve le focus sans l'anneau,
+   *  comme le bouton (charte, 9.9). */
   close(keyboard = false, outside = false) {
     const anchor = this.current?.anchor;
     const origin = this.current?.origin;

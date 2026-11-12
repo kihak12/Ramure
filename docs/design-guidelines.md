@@ -731,9 +731,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A context menu opens from the keyboard too, with the Menu key or Shift + F10 on the element
   that has the focus, or on the current row of a list that keeps the focus (the graph), when
   that row is in view: 4 px under that element, on its left edge, its first enabled item
-  focused. Escape, or choosing an item, gives the focus back to the element that had it, with its
-  ring (11), until the next click; a click outside gives it back without the ring, as for the
-  button of a menu. A text field keeps the menu of the system, to cut, copy and paste.
+  focused. Escape, or an item chosen from the keyboard, gives the focus back to the element that
+  had it, with its ring (11); the mouse (a click outside, the wheel, an item chosen with a click)
+  gives it back without the ring, as for the button of a menu. A text field keeps the menu of the
+  system, to cut, copy and paste.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.
@@ -1503,7 +1504,7 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Visible focus.** Every element that takes keyboard focus shows it. An outline is never
   removed without another marker replacing it. A focus given by the application, to the main
   button of a panel or back to the button of a menu, shows the same ring as one reached with
-  Tab.
+  Tab, until the next click.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element. The labels of the graph are reached through
   the branch list (9.4).
