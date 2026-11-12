@@ -657,17 +657,18 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 - Hover: a rounded `--hover` background under the row, 8 px corners.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
-  the card.
+  the area that scrolls, its scrollbar apart.
 - **No coloured bar on the edge** to mark the selection.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the selected row. **Never an outline
   around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
   selected when it receives focus, the first one becomes selected.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
-- An area that scrolls (a list, a card, a dialog, the terminal) has the thin scrollbar of
-  `src/app.css`, its thumb in `--muted` at 45%, on Linux as on Windows: always visible, it takes
-  its room from the area. The overlay scrollbar of Linux is turned off, unless the user asked for
-  it (`GTK_OVERLAY_SCROLLING`), since WebKitGTK paints it over everything, an open menu included
-  (9.9). A tab bar hides its scrollbar (9.7).
+- An area that scrolls (a list, a card, a dialog) has the thin scrollbar of `src/app.css`, its
+  thumb in `--muted` at 45%. On Linux it is always visible and takes its room from the area: the
+  overlay scrollbar of Linux is turned off, unless the user asked for it
+  (`GTK_OVERLAY_SCROLLING`), since WebKitGTK paints it over everything, an open menu included
+  (9.9). A tab bar hides its scrollbar (9.7); the terminal keeps the one its emulator draws, which
+  shows while it scrolls.
 - A click leaves no hover behind: a row that keeps the focus of a click shows neither the hover
   background nor its actions once the pointer has left. Only the keyboard focus shows them. This
   holds for the rows that hold a button of their own: the host book, the file lists, the recent
