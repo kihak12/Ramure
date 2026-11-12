@@ -681,13 +681,15 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   which folds and unfolds it, inset 6 px from the edges of the card like the rows. ↑ and ↓ go from
   row to row, titles included, Home and End to the ends; → unfolds a title, or goes down to its
   first row; ← goes back up to the title, or folds it (during a search, every section stays
-  unfolded); Enter and Space act as a click: a title folds or unfolds, a row shows its commit; the
-  Menu key opens the menu of the row, and a title, which has none, opens nothing (9.9). The
-  current row shows the ring, and `--sel` still marks the current branch; for a screen reader, the
-  current row is the selected one (`aria-selected`), and `aria-current` names the current branch.
-  When the current row goes away (deleted, renamed, filtered out), the next row of its section
-  takes its place, or else the one before it, or else its title, and the focus stays on the list.
-  From the filter above it, ↓ goes to the list, and during a search to the first row found.
+  unfolded, and its title folds nothing); Enter and Space act as a click: a title folds or
+  unfolds, a row shows its commit; the Menu key opens the menu of the row, and a title, which has
+  none, opens nothing, nor does a right click on it (9.9). The text of an empty section starts at
+  28 px, where the name of a row starts: a derived value, not a gap of 4.1. The current row shows
+  the ring, and `--sel` still marks the current branch; for a screen reader, the current row is
+  the selected one (`aria-selected`), and `aria-current` names the current branch. When the
+  current row goes away (deleted, renamed, filtered out), the next row of its section takes its
+  place, or else the one before it, or else its title, and the focus stays on the list. From the
+  filter above it, ↓ goes to the list, and during a search to the first row found.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
 - An area that scrolls (a list, a card, a dialog) has the thin scrollbar of `src/app.css`, its
   thumb in `--muted` at 45%. On Linux it is always visible and takes its room from the area: the

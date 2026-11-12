@@ -215,8 +215,10 @@
     tabindex="-1"
     onclick={() => {
       pick(section, '');
-      toggle(section);
+      // Pendant une recherche, toutes les sections restent dépliées : un pli ne s'enregistre pas.
+      if (!needle) toggle(section);
     }}
+    oncontextmenu={(e) => e.preventDefault()}
   >
     <span class="caret" class:open={isOpen(section)}><Icon name="chevron" size={14} /></span>
     <Icon name={icon} size={14} />
