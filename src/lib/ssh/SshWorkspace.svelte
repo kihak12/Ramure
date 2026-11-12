@@ -594,9 +594,10 @@
   .close:focus-visible {
     opacity: 1;
   }
-  /* Sur un onglet survolé ou actif, --hover ne se verrait pas : la croix prend --line (charte, 9.7). */
+  /* Sur un onglet survolé (--hover-side) ou actif (--panel), un voile de --ink se voit sur l'un et
+     l'autre, en clair et en sombre (charte, 9.7). */
   .close:hover {
-    background: var(--line);
+    background: color-mix(in srgb, var(--ink) 12%, transparent);
     color: var(--ink);
   }
   .views {

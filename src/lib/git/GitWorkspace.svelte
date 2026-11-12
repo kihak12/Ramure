@@ -179,10 +179,11 @@
     /* Les 8 px de marge à sa droite gardent le fond de la barre : aucun onglet n'y dépasse. */
     box-shadow: 8px 0 0 var(--side);
   }
-  /* La croix est sur un onglet survolé ou actif, où --hover ne se verrait pas : elle prend --line.
-     Le « + » est sur le fond de la fenêtre : --hover (charte, section 9.7). */
+  /* La croix est sur un onglet survolé (--hover-side) ou actif (--panel) : un voile de --ink se voit
+     sur l'un et l'autre, en clair et en sombre. Le « + » est sur le fond de la fenêtre : --hover-side
+     (charte, section 9.7). */
   .close:hover {
-    background: var(--line);
+    background: color-mix(in srgb, var(--ink) 12%, transparent);
     color: var(--ink);
   }
   .add:hover {

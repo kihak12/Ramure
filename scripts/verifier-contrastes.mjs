@@ -58,6 +58,10 @@ function check(name, t, dark) {
   // Le texte secondaire : dans une carte, sur la fenêtre, sur ce qui flotte, sur une ligne survolée,
   // et dans le bandeau d'une opération arrêtée.
   for (const bg of ['--panel', '--side', '--sel', '--raised', '--hover', '--hover-side', '--warn-soft']) need(`--muted sur ${bg}`, contrast(t['--muted'], t[bg]), 4.5);
+  // Les fonds teintés : le texte courant s'y lit (élément de menu survolé, bandeau, ligne ajoutée
+  // ou retirée), et l'icône en --accent d'un module actif ou d'une action enfoncée s'y voit.
+  for (const bg of ['--accent-soft', '--ok-soft', '--warn-soft', '--bad-soft']) need(`--ink sur ${bg}`, contrast(t['--ink'], t[bg]), 7);
+  need('--accent sur --accent-soft', contrast(t['--accent'], t['--accent-soft']), 3);
   // Les états : dans une carte, dans un champ, et dans une boîte (le résultat d'un test).
   for (const state of ['--ok', '--warn', '--bad']) {
     for (const bg of ['--panel', '--bg', '--raised']) need(`${state} sur ${bg}`, contrast(t[state], t[bg]), 4.5);
