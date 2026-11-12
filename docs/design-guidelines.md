@@ -1507,7 +1507,9 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Screen readers.** An icon on its own has an accessible name. An error is announced at once
   (`role="alert"`), other notifications without interrupting (`role="status"`). Menus and the
   palette declare their role. A row of the graph says its message, its author and its date, even
-  when their columns have given way (10.1): they are then hidden from the eye only.
+  when their columns have given way (10.1): they are then hidden from the eye only. A text meant
+  for screen readers alone takes the shared class `.spoken` of `src/app.css`: hidden from the
+  eye, never from the accessibility tree, which `visibility: hidden` or `display: none` would do.
 - **Both themes.** A screen is not finished until it has been checked in light and in dark.
 
 ## 12. Tone of the interface text

@@ -1158,14 +1158,6 @@
     justify-self: center;
   }
   /* Hors de l'écran, mais lu : l'annonce d'une tentative de reconnexion. */
-  .spoken {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
   .what {
     flex: none;
     display: inline-flex;

@@ -955,6 +955,17 @@ strong {
   font-weight: var(--fw-strong);
 }
 
+/* Un texte pour les lecteurs d'écran seulement : caché à l'œil, jamais à l'arbre d'accessibilité,
+   ce que `visibility: hidden` ou `display: none` feraient (charte, section 11). */
+.spoken {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* Petite pastille : compteur, nombre de commits en avance ou en retard. */
 .chip {
   display: inline-flex;

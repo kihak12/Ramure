@@ -469,11 +469,11 @@
         <fieldset class="full">
           <legend class="label">Couleur</legend>
           <label class="swatch none" class:on={form.color === ''} title="Aucune">
-            <input type="radio" name="host-color" value="" bind:group={form.color} /><span class="sr">Aucune</span>
+            <input type="radio" name="host-color" value="" bind:group={form.color} /><span class="spoken">Aucune</span>
           </label>
           {#each COLORS as color (color)}
             <label class="swatch" class:on={form.color === color} style:--c="var(--l{color})" title="Couleur {Number(color) + 1}">
-              <input type="radio" name="host-color" value={color} bind:group={form.color} /><span class="sr">Couleur {Number(color) + 1}</span>
+              <input type="radio" name="host-color" value={color} bind:group={form.color} /><span class="spoken">Couleur {Number(color) + 1}</span>
             </label>
           {/each}
         </fieldset>
@@ -760,13 +760,6 @@
     position: absolute;
     opacity: 0;
     pointer-events: none;
-  }
-  .sr {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
   }
   /* Les boutons du bas se tiennent un peu à l'écart du test et de son résultat : 24 px au lieu de 12. */
   /* 24 px au-dessus de la dernière ligne (charte, 9.21). */
