@@ -16,7 +16,7 @@
   import { keyringAvailable, NO_KEYRING } from './secrets';
   import { explain } from './reasons';
   import { newJournal, resumed, shown, type JournalOpen } from './journal';
-  import type { Closed, Connected, SshError } from './types';
+  import { addressOf, type Closed, type Connected, type SshError } from './types';
 
   let {
     session,
@@ -420,7 +420,7 @@
       phase = { step: 'error', message: `${typeof e === 'string' ? e : String(e)} ${what}` };
     }
   }
-  const target = $derived(`${host.user}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`);
+  const target = $derived(addressOf(host.user, host.hostname, host.port));
 
   function median(values: number[]) {
     const sorted = [...values].sort((a, b) => a - b);

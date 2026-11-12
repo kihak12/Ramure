@@ -12,7 +12,7 @@
   import { mayCloseTerminal } from './guard';
   import { ssh, STATUS, type Session } from './ssh.svelte';
   import Terminal from './Terminal.svelte';
-  import { emptyHost, type Host } from './types';
+  import { addressOf, emptyHost, type Host } from './types';
   import { motion } from '../ui/motion';
 
   /** Vrai quand le module SSH est à l'écran. */
@@ -57,7 +57,7 @@
     ),
   );
 
-  const address = (host: Host) => `${host.user || ssh.defaultUser}@${host.hostname}${host.port !== 22 ? `:${host.port}` : ''}`;
+  const address = (host: Host) => addressOf(host.user || ssh.defaultUser, host.hostname, host.port);
 
 
   // « + » des onglets : un terminal local, d'un clic. L'infobulle dit le raccourci.

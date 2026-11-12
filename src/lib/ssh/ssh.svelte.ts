@@ -5,7 +5,7 @@ import { tick } from 'svelte';
 import { dialogs } from '../ui/dialogs.svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { secretsHeld } from './secrets';
-import type { Host, KeyInfo } from './types';
+import { addressOf, type Host, type KeyInfo } from './types';
 
 export interface Session {
   /** Identifiant de l'onglet (différent de celui de la connexion côté Rust). */
@@ -215,7 +215,7 @@ class Ssh {
       kind: 'ssh',
       cwd: '',
       host: { ...host, user },
-      title: host.alias || `${user}@${host.hostname}`,
+      title: host.alias || addressOf(user, host.hostname),
       status: 'connecting',
       searching: false,
       searchAsk: 0,
