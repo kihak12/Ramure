@@ -156,7 +156,7 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
   and `--sel`, more saturated, so that the selection stays apart from the hover. Every theme
   makes them so, in the hue of its accent; their lightness is kept where `--ink` and `--muted`
   stay readable, the hover far enough from its background to be seen, and the selection far
-  enough from the card and from the hover (2.4).
+  enough from its background and from the hover (2.4).
 
 ### 2.4 Minimum contrasts and colour distances
 
@@ -176,14 +176,15 @@ Every theme must meet them, in light and in dark.
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | Each terminal colour (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
-A hover has to be seen, and the selection has to stand apart from the card and from the hover.
-The second table gives the minimum distance between each hover and its background, between the
-selection and the card, and between the selection and the hover. The distance is the ΔE CIE76,
-in CIELAB, from sRGB with a D65 white: below 2 it cannot be seen, around 10 it is plain.
+A hover has to be seen, and the selection has to stand apart from its background and from the
+hover. The second table gives the minimum distance between each hover and its background,
+between the selection and its background (a card, or what floats, such as the command palette),
+and between the selection and the hover. The distance is the ΔE CIE76, in CIELAB, from sRGB with
+a D65 white: below 2 it cannot be seen, around 10 it is plain.
 
 Each minimum is the lowest value of the four themes, rounded down to a whole number: a later
-change cannot make a hover or the selection more discreet than in the themes checked on screen. A
-dark screen shows the same distance less: in dark, a hover at 7 to 10 from the card was judged
+change cannot make a hover or the selection more discreet than the four themes make them. A dark
+screen shows the same distance less: in dark, a hover at 7 to 10 from the card was judged
 discreet, and was strengthened to 10 at least. In dark, what floats is lighter than a card, so
 closer to the hover: there, a hover at 7 was seen, discreet but visible.
 
@@ -194,6 +195,7 @@ closer to the hover: there, a hover at 7 was seen, discreet but visible.
 | `--hover-side` from `--side` (a hovered element on the window background) | 5 | 9 |
 | `--accent-soft` from `--raised` (a hovered menu item, 9.9) | 10 | 18 |
 | `--sel` from `--panel` (a selected row in a card) | 18 | 24 |
+| `--sel` from `--raised` (a selected row in what floats, such as the command palette) | 18 | 21 |
 | `--sel` from `--hover` (the selection next to a hovered row) | 9 | 15 |
 
 `npm run check` checks the contrasts and the distances of every theme, in light and in dark

@@ -57,14 +57,15 @@ const CAPSULE = 0.15; // capsule d'un message : un voile de la couleur, sur la l
 const MATCH = 0.3; // résultat d'une recherche dans le terminal : l'accent sur --term-bg (Terminal.svelte)
 
 // Les écarts de couleur minimaux, en clair puis en sombre : un survol se voit sur son fond, et la
-// sélection reste à part de la carte et du survol. Chacun est la plus basse valeur des quatre
-// thèmes, vérifiés à l'écran, arrondie à l'entier inférieur.
+// sélection reste à part de son fond et du survol. Chacun est la plus basse valeur des quatre
+// thèmes, arrondie à l'entier inférieur.
 const DISTANCES = [
   ['--hover', '--panel', 6, 10], // une ligne survolée dans une carte
   ['--hover', '--raised', 8, 6], // un élément survolé dans ce qui flotte
   ['--hover-side', '--side', 5, 9], // un élément survolé sur le fond de la fenêtre
   ['--accent-soft', '--raised', 10, 18], // un élément de menu survolé
   ['--sel', '--panel', 18, 24], // une ligne sélectionnée dans une carte
+  ['--sel', '--raised', 18, 21], // une ligne sélectionnée dans ce qui flotte (la palette de commandes)
   ['--sel', '--hover', 9, 15], // la sélection à côté d'une ligne survolée
 ];
 
