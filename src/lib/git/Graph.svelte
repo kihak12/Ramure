@@ -530,11 +530,12 @@
             {/if}
           </span>
           <span>
-            {#if ribbon && !commit.wip && commit.parents.length < 2 && commit.lane < shownLanes}
-              <!-- Les initiales sont dessinées sur le canevas, qui ne reçoit pas le pointeur : cette
-                   pastille transparente, posée dessus, porte le nom de l'auteur (charte, 10.2). -->
+            {#if ribbon && !commit.wip && commit.lane < shownLanes}
+              <!-- Le point est dessiné sur le canevas, qui ne reçoit pas le pointeur : cette pastille
+                   transparente, posée dessus, porte le nom de l'auteur, celui d'une fusion compris
+                   (charte, 10.2). -->
               <span
-                class="initials"
+                class="dot"
                 style:--x="{metrics.pad + commit.lane * metrics.lane}px"
                 title={commit.author}
                 aria-hidden="true"
@@ -690,8 +691,8 @@
     }
   }
 
-  /* Posée sur la pastille d'un commit, en « Ruban » : elle ne montre rien, elle porte l'infobulle. */
-  .initials {
+  /* Posée sur le point d'un commit, en « Ruban » : elle ne montre rien, elle porte l'infobulle. */
+  .dot {
     position: absolute;
     top: 50%;
     left: calc(var(--labels) + var(--x));
