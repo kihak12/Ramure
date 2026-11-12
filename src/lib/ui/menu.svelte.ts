@@ -36,6 +36,8 @@ interface Open {
 // retient l'heure de la touche pour reconnaître un menu contextuel demandé au clavier.
 let contextKeyAt = -Infinity;
 const fromKeyboard = (event: Event) => event.timeStamp - contextKeyAt < 500;
+/** Vrai pendant que l'on renvoie un `contextmenu` demandé au clavier : il ne doit pas l'être deux fois. */
+let resending = false;
 /** Vrai si `element` se voit, au moins en partie, dans la zone visible de `list`. */
 function inView(element: HTMLElement, list: HTMLElement) {
   const box = element.getBoundingClientRect();
@@ -59,10 +61,11 @@ if (typeof window !== 'undefined') {
     'contextmenu',
     (event) => {
       const focused = document.activeElement;
-      if (!fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
+      if (resending || !fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
       if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
       const current = focused.getAttribute('aria-activedescendant');
-      const row = current ? document.getElementById(current) : null;
+      // Cherchée dans la liste : un onglet masqué garde ses lignes, sous les mêmes identifiants.
+      const row = current ? focused.querySelector<HTMLElement>(`#${CSS.escape(current)}`) : null;
       // La ligne courante n'est pas en vue (la liste a défilé loin d'elle ; le graphe garde aussi des
       // lignes rendues hors de la vue) : rien ne s'ouvre, ni le menu du moteur, ni celui de la ligne
       // qui se trouverait sous le coin de la liste.
@@ -71,12 +74,25 @@ if (typeof window !== 'undefined') {
         event.stopPropagation();
         return;
       }
+      // Toujours renvoyé, même quand le moteur visait déjà le bon élément : un élément sans menu
+      // (un titre de section) n'ouvre alors rien, et jamais le menu du moteur.
       const target = row || focused;
-      if (event.target === target || (target === focused && event.target instanceof Node && focused.contains(event.target)))
-        return;
       event.preventDefault();
       event.stopPropagation();
-      target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+      // Un `contextmenu` que personne n'a pris en charge a pour action par défaut le menu du moteur :
+      // la fenêtre l'annule en dernier, s'il remonte jusqu'à elle sans qu'un menu l'ait arrêté.
+      const resent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
+      const quiet = (e: Event) => {
+        if (e === resent) e.preventDefault();
+      };
+      resending = true;
+      window.addEventListener('contextmenu', quiet);
+      try {
+        target.dispatchEvent(resent);
+      } finally {
+        window.removeEventListener('contextmenu', quiet);
+        resending = false;
+      }
     },
     true,
   );
