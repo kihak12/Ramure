@@ -335,7 +335,7 @@ From left to right and from top to bottom:
 | `--radius-xs` | 4 px | Small markers: shortcut key, file status letter, highlight inside a diff line; the 15 px checkbox. |
 | `--radius-s` | 6 px | What can be clicked: buttons, fields, branch and tag labels, menu items. |
 | `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels. |
-| `--radius-l` | 12 px | What floats: dialogs, menus, command palette. |
+| `--radius-l` | 12 px | What floats: dialogs, menus, command palette; notifications and the unfolded labels of a commit excepted (8 px). |
 | `--radius-card` | 14 px | Cards. |
 | `--radius-pill` | 999 px | What informs: counters, the capsule of a commit message. |
 
