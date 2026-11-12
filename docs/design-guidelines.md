@@ -282,10 +282,9 @@ Two weights, no more.
   (`font-variant-numeric: tabular-nums`).
 - Text that is too long is cut on the right with an ellipsis, and its full value appears in a
   tooltip. The title of a notification is the one exception (section 9.11).
-- **Tooltips** are those of the system, the `title` of an element: their look, a dark box with
-  square corners, the same in light and in dark, and their delay are the system's, and Ramure
-  draws none of its own. A tooltip holds text only, never an action, and keeps quiet while a menu
-  is open (9.9).
+- **Tooltips** are those of the system, the `title` of an element: their look and their delay
+  are the system's, and Ramure draws none of its own. A tooltip holds text only, never an action.
+  The tooltip of the element that opened a menu keeps quiet while the menu is open (9.9).
 
 ## 4. Spacing and dimensions
 
@@ -1001,9 +1000,9 @@ never a synchronisation: nothing is written before the dialog has shown what wil
   11.5 px. "Ajouté", with what will be written, in the code font: `deploy@10.0.0.9 · port 2222 ·
   clé ~/.ssh/id_ed25519`. "Modifié", with only what changes, in the code font: `Port 22 → 2222`.
   "Non exporté", in `--warn` with the warning icon in place of the checkbox, with why and what to
-  do, in `--muted`. These lines detail what will be written in the file, field by field, hence
-  their own notation: the address of 9.21 is for reading a host, these lines for checking an entry
-  before it is written. The hosts already up to date are not listed: a line in `--muted` under the
+  do, in `--muted`. The "Ajouté" and "Modifié" lines detail what will be written in the file,
+  field by field, hence their own notation: the address of 9.21 is for reading a host, these
+  lines for checking an entry before it is written. The hosts already up to date are not listed: a line in `--muted` under the
   list counts them, "3 hôtes sont déjà à jour dans le fichier." A detail line wraps rather than
   being cut: what changes and why are read whole. The list and the last line show once the file
   has been read, at once: their buttons never change under the pointer.
@@ -1428,7 +1427,8 @@ need the room.
   the book and in the header and the panels of its session; the port shows when it is not 22. A
   host without a name gives it to its tab as a title, without the port. The user is that of the
   host, or the user of the system when the host has none; without any user, the address alone,
-  `vps.example.net`: never an "@" on its own.
+  `vps.example.net`: never an "@" on its own. In a sentence, the address alone is in the code
+  font: "Connexion à `deploy@serveur`…".
 
 ## 10. Commit graph
 
