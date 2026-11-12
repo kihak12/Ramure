@@ -1504,7 +1504,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Reduced motion.** See section 8.
 - **Screen readers.** An icon on its own has an accessible name. An error is announced at once
   (`role="alert"`), other notifications without interrupting (`role="status"`). Menus and the
-  palette declare their role.
+  palette declare their role. A row of the graph says its message, its author and its date, even
+  when their columns have given way (10.1): they are then hidden from the eye only.
 - **Both themes.** A screen is not finished until it has been checked in light and in dark.
 
 ## 12. Tone of the interface text
