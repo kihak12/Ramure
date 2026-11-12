@@ -340,7 +340,7 @@ From left to right and from top to bottom:
 | `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels. |
 | `--radius-l` | 12 px | What floats: dialogs, menus, command palette; notifications and the unfolded labels of a commit excepted (8 px). |
 | `--radius-card` | 14 px | Cards. |
-| `--radius-pill` | 999 px | What informs: counters, the capsule of a commit message. |
+| `--radius-pill` | 999 px | What informs: counters, the "+N" of the labels of a commit (9.4), the capsule of a commit message. |
 
 - **Everything that can be clicked is a slightly rounded rectangle**, except a colour swatch
   (below). The pill is reserved for what informs without being clicked.
@@ -640,7 +640,11 @@ buttons.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
 - A local branch and its remote branch on the same commit share one label, with both icons.
 - When a commit carries several labels, the first is shown and the others are counted in a "+N"
-  pill. Hovering the column unfolds them all in a floating list, over the rows below: `--raised`
+  pill: `--side` background, `--line` border, 10.5 px text in tabular figures, in `--muted`.
+  Unlike a counter (9.5), it keeps a border, so that it stays visible on a hovered or selected
+  row, whose background is `--hover` or `--sel` (9.6): in light, its border sets it apart from
+  the row; in dark, its background does. Hovering the column unfolds them all in a
+  floating list, over the rows below: `--raised`
   background, `--line` border, `--shadow-pop` shadow, as what floats (6), but 8 px corners
   (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays within the
   "Branche / Tag" column, 6 px from each edge, so that the graph never covers it: a long name is
