@@ -643,6 +643,9 @@ buttons.
   the pointer is on it, and its labels behave like the others: hover, double-click, right-click,
   drop target.
 - Double-click: switch to the branch. Right-click: the branch menu.
+- From the keyboard, a label is reached through its row in the branch list (9.17), which holds
+  every local branch, remote branch and tag of the graph, with the same menu: Tab to the row,
+  then the Menu key or Shift + F10 (9.9). The labels of the graph are not stops of the tab order.
 - During the switch, the waiting ring takes the place of the icon of the label, centred in the
   same 14 px box.
 
@@ -722,6 +725,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Opened with the mouse, a menu has no current item: Space and Enter do nothing until an item
   is hovered or reached, and ↓ goes to the first one, ↑ to the last. Opened from the keyboard,
   its first item has the focus.
+- A context menu opens from the keyboard too, with the Menu key or Shift + F10 on the element
+  that has the focus: 4 px under that element, on its left edge, its first item focused. Closing
+  it gives the focus back to the element, with its ring (11).
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.
@@ -1493,7 +1499,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   button of a panel or back to the button of a menu, shows the same ring as one reached with
   Tab.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
-  order. Escape closes the topmost floating element.
+  order. Escape closes the topmost floating element. The labels of the graph are reached through
+  the branch list (9.4).
 - **Shortcuts.** A shortcut belongs to the whole application or to one module, Git or SSH. A
   combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
   searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a

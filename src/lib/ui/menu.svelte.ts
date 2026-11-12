@@ -27,6 +27,21 @@ interface Open {
   anchor?: HTMLElement;
   /** Ouvert au clavier : le premier élément montre tout de suite qu'il a le focus. */
   keyboard?: boolean;
+  /** L'élément d'où un menu contextuel a été demandé au clavier : il retrouve le focus à la fermeture. */
+  origin?: HTMLElement;
+}
+
+// La touche Menu, ou Maj + F10 : le navigateur envoie l'événement `contextmenu` juste après. On
+// retient l'heure de la touche pour reconnaître un menu contextuel demandé au clavier.
+let contextKeyAt = -Infinity;
+if (typeof window !== 'undefined') {
+  window.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) contextKeyAt = event.timeStamp;
+    },
+    true,
+  );
 }
 
 class Menu {
@@ -35,7 +50,19 @@ class Menu {
   open(event: MouseEvent, items: MenuItem[]) {
     event.preventDefault();
     event.stopPropagation();
-    this.current = items.length ? { x: event.clientX, y: event.clientY, items } : null;
+    if (!items.length) {
+      this.current = null;
+      return;
+    }
+    // Demandé au clavier : sous l'élément qui a le focus, sur son bord gauche, et le premier élément
+    // a le focus ; à la fermeture, l'élément le retrouve (charte, 9.9).
+    const origin = event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined;
+    if (origin && event.timeStamp - contextKeyAt < 500) {
+      const box = origin.getBoundingClientRect();
+      this.current = { x: box.left, y: box.bottom + 4, items, keyboard: true, origin };
+      return;
+    }
+    this.current = { x: event.clientX, y: event.clientY, items };
   }
 
   /** Déroule le menu sous `anchor`, aligné sur son bord droit. */
@@ -49,11 +76,14 @@ class Menu {
     return !!anchor && this.current?.anchor === anchor;
   }
 
-  /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre. */
+  /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre, comme l'élément
+   *  d'où un menu contextuel a été demandé au clavier. */
   close(keyboard = false) {
     const anchor = this.current?.anchor;
+    const origin = this.current?.origin;
     this.current = null;
-    if (keyboard) focusWithRing(anchor);
+    if (origin) focusWithRing(origin);
+    else if (keyboard) focusWithRing(anchor);
     else anchor?.focus();
   }
 }
