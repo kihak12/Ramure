@@ -4,6 +4,7 @@
   import { menu, type MenuItem } from './menu.svelte';
 
   let element = $state<HTMLDivElement>();
+  let veil = $state<HTMLDivElement>();
   let position = $state({ x: 0, y: 0 });
   // On parcourt le menu au clavier : l'élément qui a le focus le montre. La souris reprend la main en bougeant.
   let keyboard = $state(false);
@@ -32,6 +33,22 @@
       if (keyboard) element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
       else element.focus();
     });
+  });
+
+  // L'infobulle de l'élément qui a ouvert le menu se tait tant qu'il est ouvert (charte, 9.9) : le
+  // voile la couvre. Mais WebKitGTK ne relit l'infobulle qu'à un mouvement du pointeur, et un clic
+  // droit donné en bougeant encore la souris ouvre le menu avant que celle de la ligne arrive : elle
+  // s'afficherait par-dessus jusqu'au mouvement suivant. Le voile défile d'un pixel, bouton relâché :
+  // WebKit simule alors un mouvement, trouve le voile sous le pointeur, et l'infobulle se tait.
+  $effect(() => {
+    if (!open) return;
+    const nudge = () =>
+      setTimeout(() => {
+        if (veil) veil.scrollTop = veil.scrollTop ? 0 : 1;
+      });
+    nudge();
+    window.addEventListener('mouseup', nudge, { capture: true, once: true });
+    return () => window.removeEventListener('mouseup', nudge, { capture: true });
   });
 
   function pick(item: MenuItem) {
@@ -67,13 +84,16 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="veil"
+    bind:this={veil}
     onmousedown={() => menu.close()}
     oncontextmenu={(e) => {
       e.preventDefault();
       menu.close();
     }}
     onwheel={() => menu.close()}
-  ></div>
+  >
+    <div class="room"></div>
+  </div>
   <div
     class="menu"
     class:under={!!open.anchor}
@@ -120,6 +140,11 @@
     position: fixed;
     inset: 0;
     z-index: 70;
+    overflow: hidden;
+  }
+  /* Un pixel de plus que le voile : de quoi le faire défiler (voir plus haut). */
+  .room {
+    height: calc(100% + 1px);
   }
   .menu {
     position: fixed;

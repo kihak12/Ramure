@@ -571,8 +571,8 @@ its own buttons.
   cards to show (9.17).
   - At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a `--hover`
     background and the icon in `--ink`. It has no pressed state: the menu says what is shown.
-  - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher"; the
-    tooltip keeps quiet while the menu is open, where it would cover the first item.
+  - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher", which
+    keeps quiet while the menu is open (9.9).
     `aria-haspopup` says that it opens a menu, `aria-expanded` whether the menu is open.
   - Disabled, at 45%, when no repository is open, and while the editor of a conflict covers the
     cards.
@@ -726,6 +726,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   its right edge on the right edge of the button, and it appears from that corner. Escape, or a
   click outside, closes it and gives the focus back to the button; after Escape, the button
   shows its focus ring.
+- While a menu is open, the tooltip of the element that opened it, a row or a button, keeps
+  quiet, where it would cover the first items. This holds even when the click came while the
+  pointer was still moving, before the tooltip was due.
 - An item may recall the shortcut of its action, on its right, drawn as keys (9.12).
 - A checkable item (`menuitemcheckbox`) shows or hides something. Its check mark is on the
   right, after the shortcut, 16 px, in `--accent`; its place is kept when the item is unchecked,
