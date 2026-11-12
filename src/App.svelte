@@ -180,7 +180,7 @@
       transform var(--t-fast) var(--ease);
   }
   .rail button:hover {
-    background: var(--hover);
+    background: var(--hover-side);
     color: var(--ink);
   }
   .rail .last {

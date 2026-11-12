@@ -482,7 +482,7 @@
       transform var(--t-fast) var(--ease);
   }
   .add:hover {
-    background: var(--hover);
+    background: var(--hover-side);
     color: var(--ink);
   }
   /* 6 px entre l'icône et le nom : l'écart de l'onglet (8 px) moins 2. */
@@ -507,7 +507,7 @@
       color var(--t-fast) var(--ease);
   }
   .tab:hover {
-    background: var(--hover);
+    background: var(--hover-side);
     color: var(--ink);
   }
   .tab.current {

@@ -105,7 +105,7 @@
       color var(--t-fast) var(--ease);
   }
   .tab:hover {
-    background: var(--hover);
+    background: var(--hover-side);
     color: var(--ink);
   }
   /* L'onglet actif est une petite carte, de la même matière que les panneaux : ni cadre ni trait. */
@@ -186,7 +186,7 @@
     color: var(--ink);
   }
   .add:hover {
-    background: var(--hover);
+    background: var(--hover-side);
     color: var(--ink);
   }
   .spinner {
