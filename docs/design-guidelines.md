@@ -639,7 +639,9 @@ buttons.
 - When a commit carries several labels, the first is shown and the others are counted in a "+N"
   pill. Hovering the column unfolds them all in a floating list, over the rows below: `--raised`
   background, `--line` border, `--shadow-pop` shadow, as what floats (6), but 8 px corners
-  (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays open as long as
+  (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays within the
+  "Branche / Tag" column, 6 px from each edge, so that the graph never covers it: a long name is
+  cut with an ellipsis, and is whole in the tooltip of its label (3.4). It stays open as long as
   the pointer is on it, and its labels behave like the others: hover, double-click, right-click,
   drop target.
 - Double-click: switch to the branch. Right-click: the branch menu.

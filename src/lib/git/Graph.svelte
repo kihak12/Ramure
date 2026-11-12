@@ -874,7 +874,13 @@
     border-radius: var(--radius);
     background: var(--raised);
     box-shadow: var(--shadow-pop);
-    max-width: 320px;
+    /* Elle reste dans sa colonne, 6 px de chaque côté : le canevas, posé au-dessus des lignes,
+       couvrirait sinon la part qui déborde sur le graphe. Un nom long y est coupé, entier dans
+       l'infobulle de son étiquette (charte, 9.4). */
+    max-width: calc(100% - 12px);
+  }
+  .all .ref {
+    max-width: 100%;
   }
   .labels:hover .all {
     display: flex;
