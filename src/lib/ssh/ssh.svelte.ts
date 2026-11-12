@@ -22,6 +22,14 @@ export interface Session {
   searching: boolean;
   /** Compte les demandes d'ouverture : chacune rend le focus au champ, même barre ouverte. */
   searchAsk: number;
+  /** Le journal de l'onglet : son fichier, s'il enregistre, et s'il a déjà été ouvert (une
+   *  reprise y ajoute alors sa ligne). Il reste après l'arrêt : l'en-tête dit où il est. */
+  journal?: { path: string; header: string; live: boolean; opened: boolean } | null;
+  /** Le journal a été arrêté à la main : une reconnexion ne le reprend pas, même pour un hôte
+   *  qui enregistre chaque session. */
+  journalStopped?: boolean;
+  /** Compte les demandes de bascule du journal venues de la palette ou d'un raccourci. */
+  journalAsk?: number;
   /** Ce que le cœur dit d'un terminal local ouvert : son shell et son dossier de départ. */
   opened?: { shell: string; cwd: string };
   /** L'identifiant du terminal local côté cœur, tant que son shell tourne. */
@@ -50,6 +58,7 @@ const LOCAL_HOST: Host = {
   color: '',
   startupCommand: '',
   proxyJump: false,
+  logSessions: false,
   updatedAt: 0,
 };
 

@@ -445,6 +445,15 @@
           <small>Envoyée dans le terminal dès que le shell est prêt.</small>
         </label>
 
+        <!-- Le journal de chaque session : son dossier est dans les réglages, un seul endroit (9.18). -->
+        <div class="full journal">
+          <label class="check">
+            <input type="checkbox" bind:checked={form.logSessions} />
+            <span>Enregistrer le journal de chaque session</span>
+          </label>
+          <small>Un fichier texte par session, dans le dossier des journaux des réglages. Il contient tout ce que le terminal affiche, données sensibles comprises.</small>
+        </div>
+
         <label class="half">
           <span class="label">Groupe</span>
           <input class="field" type="text" list="host-groups" placeholder="Production" autocomplete="off" bind:value={form.group} />
@@ -659,6 +668,21 @@
   }
   small.bad {
     color: var(--bad);
+  }
+  /* Une case et son texte, 6 px plus loin, puis son aide (charte, 9.3 et 9.21). */
+  .journal {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  /* Plus précis que `.grid label`, qui empile un libellé au-dessus de son champ. */
+  .grid .check {
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    font-size: var(--fs-body);
+    color: var(--ink);
   }
   /* Un secret retenu : ce que le trousseau garde et, dessous, le bouton qui l'oublie. Le bouton,
      sans fond ni bordure, est tiré de sa marge intérieure (8 px et 1 px de bordure) : son texte

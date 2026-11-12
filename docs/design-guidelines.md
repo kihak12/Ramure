@@ -386,8 +386,9 @@ The interface has four levels. Each is recognised by its background.
 
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
-  leaves it, the same sheet turned over, for an export. An icon that stands for a git command
-  (pull, push, stash) is never borrowed for something else.
+  leaves it, the same sheet turned over, for an export, the sheet with lines for the journal of a
+  session. An icon that stands for a git command (pull, push, stash) is never borrowed for
+  something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
 - An icon never carries a state on its own: it is backed by text or by a tooltip.
@@ -680,6 +681,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - The active tab is a small card: `--panel` background, 8 px corners, no frame and no line.
 - An inactive tab is `--muted` text on the window background; on hover, a `--hover` background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
+- A terminal that records its journal carries the "journal" icon, 14 px in `--muted`, between its
+  name and its cross, with "Journal en cours d’enregistrement" as tooltip and accessible name
+  (9.15).
 - The close cross is visible on the active tab, and on hover on the others. On hover it takes
   a `--line` background, not `--hover`: it sits on a tab that is hovered or active, where
   `--hover` would not show.
@@ -1018,6 +1022,39 @@ never a synchronisation: nothing is written before the dialog has shown what wil
   for a file the export had created; when it cannot, an error notification says why. When the
   export was started from the keyboard, the focus goes to "Annuler" (9.11).
 
+**The journal of a session.** What a terminal showed, kept in a text file beyond its 5,000 lines
+and after its tab is closed. Only what is shown is written, never what is typed on its own: a
+password typed without echo is not in it.
+
+- **On demand**: "Enregistrer le journal", a small ghost toggle (9.1), in the header of the
+  session before "Déconnecter", at the right of the header of a local terminal; and in the
+  palette, "Enregistrer le journal du terminal", which becomes "Arrêter le journal du terminal"
+  while it records. Its tooltip says "Enregistre ce qui est affiché et la suite, dans un fichier
+  texte.": a journal started during a session begins with what the terminal shows already.
+- **For every session of a host**: the checkbox of its form, "Enregistrer le journal de chaque
+  session" (9.21). The session opens recording. The toggle stops that session only: the next one
+  records again.
+- **While it records**, the toggle is pressed; the header says "journal en cours", in `--muted`
+  like its other words, its tooltip giving the path of the file; the tab carries the "journal"
+  icon (9.7). No colour of its own and no animation: `--bad` is for errors (2.3), and nothing
+  loops (8).
+- **Stopping**, with the toggle or the palette, closes the file, and a notification says "Journal
+  enregistré", the path in its detail. Closing the tab, or the end of the session, closes it too,
+  without a question: nothing is lost. After a lost connection comes back (9.15, "A lost
+  connection"), the same file goes on, after the line "— connexion perdue, reprise à 23:07 —". A
+  journal that cannot be opened does not stop the session: a warning notification says why.
+- **The file**: one per session, named after the host, the date and the time,
+  `serveur-test_2026-11-11_23-05-12.log` (`terminal-local_…` for a local terminal; a character
+  that a file name cannot hold becomes "_"), in the folder chosen in the settings (9.18),
+  `Documents/Ramure/Journaux` by default, or `Ramure/Journaux` in the personal folder when the
+  system has no Documents folder. Its first line: "Journal de serveur-test, commencé le 11 nov.
+  2026 à 23:05". The control sequences are removed, a progress bar keeps its last state, and the
+  display of a full-screen program (vim, htop, less) gives way to one line, "[affichage plein
+  écran omis]". On Linux, only its owner can read it.
+- **The header gives way.** Its words are cut with an ellipsis before its buttons, which stay in
+  view down to a window 1000 px wide.
+- The terminals of a repository (9.20) have no header: they do not record a journal yet.
+
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server
 no longer answering). Only a lost connection comes back on its own, and only if "Reconnexion
@@ -1149,6 +1186,14 @@ is left or on Enter.
 - When applying takes time, the waiting ring (8) appears under the control, with words that say
   what is happening.
 
+**A folder** is a setting like the others: its control is the path, in a read-only field in the
+code font, cut with an ellipsis and whole in its tooltip; under it, "Parcourir…", a small
+standard button that opens the folder picker of the system, and "Ouvrir le dossier", a small
+ghost button that shows it in the file manager. Empty, the setting shows the folder used by
+default. A folder chosen applies at once; a failure is said under the control (9.3). In "Terminal
+et SSH", group "Journaux de session": "Dossier des journaux", "Là où Ramure écrit un fichier par
+session enregistrée." (9.15).
+
 **Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
 keys (9.12), and a button that restores the default.
 
@@ -1258,6 +1303,10 @@ A local terminal under the graph, opened in the folder of the repository, to run
 The dialog that adds a host to the book or changes one (9.10). It is 600 px wide: its fields
 need the room.
 
+- **The journal.** Under "Commande au démarrage", the checkbox "Enregistrer le journal de chaque
+  session" (9.3), with its help under it, in 11.5 px, `--muted`: "Un fichier texte par session,
+  dans le dossier des journaux des réglages. Il contient tout ce que le terminal affiche, données
+  sensibles comprises." No folder in the form: a setting has one place (9.18).
 - **Buttons.** "Tester la connexion", a secondary button, alone on its line under the fields,
   with its result right under it. Below, 24 px apart, the last line follows the common order
   (9.1, "Hierarchy"): "Supprimer l’hôte…" alone on the left for a host already in the book

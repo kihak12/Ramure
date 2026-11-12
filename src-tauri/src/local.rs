@@ -39,6 +39,8 @@ pub struct Opened {
     shell: String,
     /// Le dossier de départ.
     cwd: String,
+    /// Le journal demandé n'a pas pu être ouvert : pourquoi. Le terminal s'ouvre quand même.
+    journal_failed: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -102,6 +104,7 @@ pub fn local_open(
     cols: u16,
     rows: u16,
     cwd: Option<String>,
+    journal: Option<crate::journal::JournalOpen>,
     on_data: Channel,
 ) -> Result<Opened, String> {
     let size = PtySize { rows: rows.max(2), cols: cols.max(2), pixel_width: 0, pixel_height: 0 };
@@ -135,19 +138,25 @@ pub fn local_open(
         .map_err(|_| "état des terminaux indisponible".to_string())?
         .insert(id, Local { writer, master: pair.master, killer, shell_pid });
 
-    // La lecture est bloquante : un fil à part relaie la sortie vers l'interface.
+    // Le journal de chaque session de l'hôte s'ouvre avant la première lecture.
+    let key = format!("local:{id}");
+    let journal_failed = journal.as_ref().and_then(|open| crate::journal::start(&key, open).err());
+
+    // La lecture est bloquante : un fil à part relaie la sortie vers l'interface, et le journal.
     std::thread::spawn(move || {
         let mut buffer = [0u8; 16 * 1024];
         loop {
             match reader.read(&mut buffer) {
                 Ok(0) | Err(_) => break,
                 Ok(n) => {
+                    crate::journal::feed(&key, &buffer[..n]);
                     if on_data.send(InvokeResponseBody::Raw(buffer[..n].to_vec())).is_err() {
                         break;
                     }
                 }
             }
         }
+        crate::journal::stop(&key);
     });
 
     // Un second fil attend la fin du shell, range le terminal, et le dit à l'interface.
@@ -164,7 +173,7 @@ pub fn local_open(
         let _ = app.emit("local-closed", closed);
     });
 
-    Ok(Opened { id, shell: shell_name(&shell), cwd: shown(&dir) })
+    Ok(Opened { id, shell: shell_name(&shell), cwd: shown(&dir), journal_failed })
 }
 
 #[tauri::command]

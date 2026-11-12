@@ -2,6 +2,7 @@
 //! L'interface n'appelle que les commandes déclarées dans `invoke_handler`.
 
 mod git;
+mod journal;
 mod local;
 mod ssh;
 
@@ -79,6 +80,10 @@ pub fn run() {
             ssh::ssh_resize,
             ssh::ssh_close,
             local::local_open,
+            journal::journal_start,
+            journal::journal_stop,
+            journal::journal_default_dir,
+            journal::journal_open_dir,
             local::local_write,
             local::local_resize,
             local::local_close,

@@ -22,6 +22,18 @@ export function sshCommands(): Command[] {
       },
     },
     {
+      id: 'terminal-journal',
+      group: 'Terminal',
+      icon: 'journal',
+      title: session?.journal?.live ? 'Arrêter le journal du terminal' : 'Enregistrer le journal du terminal',
+      keywords: 'journal log enregistrer fichier sortie',
+      disabled: !session || session.status !== 'connected',
+      hint: !session ? 'aucun terminal ouvert' : session.status !== 'connected' ? 'le terminal n’est pas connecté' : undefined,
+      run: () => {
+        if (session) session.journalAsk = (session.journalAsk ?? 0) + 1;
+      },
+    },
+    {
       id: 'ssh-export',
       group: 'SSH',
       icon: 'export',

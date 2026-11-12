@@ -207,6 +207,12 @@
                 ></span>
               {/if}
               <span class="name">{session.title}</span>
+              {#if session.journal?.live}
+                <!-- Le journal en cours : une icône, dite en mots, sans couleur ni animation (9.7). -->
+                <span class="journal" role="img" aria-label="Journal en cours d’enregistrement" title="Journal en cours d’enregistrement">
+                  <Icon name="journal" size={14} />
+                </span>
+              {/if}
             </button>
             <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => void closeTab(session)}>
               <Icon name="x" size={14} />
@@ -531,6 +537,11 @@
   }
   .current .name {
     font-weight: var(--fw-strong);
+  }
+  .tab .journal {
+    flex: none;
+    display: grid;
+    color: var(--muted);
   }
   .dot {
     flex: none;
