@@ -726,8 +726,6 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.
 - Appears in `--t-fast`, from the point of the click.
-- Nothing is drawn over an open menu: neither the tooltip of the element that opened it (below)
-  nor the scrollbar of a list next to it.
 - A menu may also open under a button, such as "Affichage" in the toolbar (9.2): 4 px below it,
   its right edge on the right edge of the button, and it appears from that corner. Escape, or a
   click outside, closes it and gives the focus back to the button; after Escape, the button

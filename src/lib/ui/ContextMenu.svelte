@@ -158,9 +158,6 @@
     box-shadow: var(--shadow-pop);
     transform-origin: top left;
     animation: pop-in var(--t-fast) var(--ease);
-    /* Une couche de composition à lui, que l'animation finie ne lui retire pas : sans elle, WebKitGTK
-       peint la barre de défilement superposée d'une liste voisine par-dessus le menu (charte, 9.9). */
-    will-change: transform;
   }
   /* Déroulé sous un bouton, il vient de ce bouton : son coin haut droit. */
   .menu.under {
