@@ -645,7 +645,10 @@ buttons.
 - Double-click: switch to the branch. Right-click: the branch menu.
 - From the keyboard, a label is reached through its row in the branch list (9.17), which holds
   every local branch, remote branch and tag of the graph, with the same menu: Tab to the row,
-  then the Menu key or Shift + F10 (9.9). The labels of the graph are not stops of the tab order.
+  then the Menu key or Shift + F10 (9.9). Past 200 rows in a section, its filter finds the rest;
+  a hidden list comes back with Ctrl + Shift + B; a detached HEAD, which has no row there, is the
+  commit itself, whose menu is that of its row in the graph. The labels of the graph are not
+  stops of the tab order.
 - During the switch, the waiting ring takes the place of the icon of the label, centred in the
   same 14 px box.
 
@@ -726,8 +729,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   is hovered or reached, and ↓ goes to the first one, ↑ to the last. Opened from the keyboard,
   its first item has the focus.
 - A context menu opens from the keyboard too, with the Menu key or Shift + F10 on the element
-  that has the focus: 4 px under that element, on its left edge, its first item focused. Closing
-  it gives the focus back to the element, with its ring (11).
+  that has the focus, or on the current row of a list that keeps the focus (the graph): 4 px
+  under that element, on its left edge, its first enabled item focused. Closing it gives the
+  focus back to the element, with its ring (11). A text field keeps the menu of the system, to
+  cut, copy and paste.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.

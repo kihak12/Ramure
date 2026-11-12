@@ -45,17 +45,22 @@ if (typeof window !== 'undefined') {
   );
   // WebKitGTK envoie ce `contextmenu` à l'élément qui se trouve sous le coin bas gauche de celui qui
   // a le focus, pas toujours à lui : son propre menu ne s'ouvrait pas, et le moteur montrait le sien.
-  // On le lui renvoie. Un champ de texte garde le menu du système (copier, coller).
+  // On le renvoie à l'élément qui a le focus, ou, pour une liste qui garde le focus et désigne sa
+  // ligne courante (`aria-activedescendant`, le graphe), à cette ligne. Un champ de texte garde le
+  // menu du système (couper, copier, coller).
   window.addEventListener(
     'contextmenu',
     (event) => {
       const focused = document.activeElement;
       if (!fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
       if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
-      if (event.target instanceof Node && focused.contains(event.target)) return;
+      const current = focused.getAttribute('aria-activedescendant');
+      const target = (current && document.getElementById(current)) || focused;
+      if (event.target === target || (target === focused && event.target instanceof Node && focused.contains(event.target)))
+        return;
       event.preventDefault();
       event.stopPropagation();
-      focused.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+      target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
     },
     true,
   );
