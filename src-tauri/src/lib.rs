@@ -10,6 +10,14 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Sous Linux, des barres de défilement classiques, comme sous Windows : WebKitGTK peint ses
+    // barres superposées après tout le reste, par-dessus un menu ouvert (charte, 9.6 et 9.9). Une
+    // valeur déjà donnée par l'utilisateur est respectée.
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("GTK_OVERLAY_SCROLLING").is_none() {
+        // SAFETY: au démarrage, avant que Tauri ne lance GTK ni aucun autre fil.
+        unsafe { std::env::set_var("GTK_OVERLAY_SCROLLING", "0") };
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(ssh::SshState::default())
