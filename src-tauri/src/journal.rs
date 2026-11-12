@@ -212,7 +212,7 @@ impl Journal {
     pub fn open(open: &JournalOpen) -> Result<Self, String> {
         let path = PathBuf::from(&open.path);
         let shown = path.display().to_string();
-        let failed = |e: std::io::Error| format!("{shown}\u{a0}: {e}");
+        let failed = |e: std::io::Error| format!("{shown}\u{a0}: {}", explain(&e));
         if let Some(dir) = path.parent() {
             fs::create_dir_all(dir).map_err(failed)?;
         }
@@ -266,6 +266,23 @@ impl Journal {
         }
         let _ = self.file.flush();
         self.path
+    }
+}
+
+/// Pourquoi un journal ne s'ouvre pas, et quoi faire, quand la cause est connue ; sinon le texte du
+/// système, tel quel.
+fn explain(e: &std::io::Error) -> String {
+    use std::io::ErrorKind;
+    match e.kind() {
+        ErrorKind::PermissionDenied => {
+            "accès refusé. Choisis dans les réglages un dossier où ton compte peut écrire.".into()
+        }
+        ErrorKind::ReadOnlyFilesystem => "le disque est en lecture seule. Choisis un autre dossier dans les réglages.".into(),
+        ErrorKind::StorageFull | ErrorKind::QuotaExceeded => "le disque est plein. Libère de la place, ou choisis un autre dossier.".into(),
+        ErrorKind::NotADirectory | ErrorKind::AlreadyExists => {
+            "un fichier porte le nom du dossier. Renomme-le, ou choisis un autre dossier dans les réglages.".into()
+        }
+        _ => e.to_string(),
     }
 }
 
@@ -420,6 +437,19 @@ mod tests {
             use std::os::unix::fs::PermissionsExt;
             assert_eq!(fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
         }
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn dit_pourquoi_un_journal_ne_s_ouvre_pas() {
+        let dir = std::env::temp_dir().join(format!("ramure-journal-refus-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        // Un fichier à la place du dossier des journaux.
+        fs::write(dir.join("Journaux"), b"").unwrap();
+        let open = JournalOpen { path: dir.join("Journaux").join("a.log").display().to_string(), header: "x".into(), note: None, backlog: None };
+        let error = start("refus", &open).unwrap_err();
+        assert!(error.contains("un fichier porte le nom du dossier"), "{error}");
         let _ = fs::remove_dir_all(&dir);
     }
 

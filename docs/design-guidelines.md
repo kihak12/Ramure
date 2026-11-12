@@ -1030,19 +1030,27 @@ password typed without echo is not in it.
   session before "Déconnecter", at the right of the header of a local terminal; and in the
   palette, "Enregistrer le journal du terminal", which becomes "Arrêter le journal du terminal"
   while it records. Its tooltip says "Enregistre ce qui est affiché et la suite, dans un fichier
-  texte.": a journal started during a session begins with what the terminal shows already.
+  texte.", and while it records "Arrête l’enregistrement : le fichier reste.": a journal started
+  during a session begins with what the terminal shows already. A shortcut can be given to it in
+  "Raccourcis clavier" (9.18); it has none by default.
 - **For every session of a host**: the checkbox of its form, "Enregistrer le journal de chaque
   session" (9.21). The session opens recording. The toggle stops that session only: the next one
   records again.
 - **While it records**, the toggle is pressed; the header says "journal en cours", in `--muted`
   like its other words, its tooltip giving the path of the file; the tab carries the "journal"
   icon (9.7). No colour of its own and no animation: `--bad` is for errors (2.3), and nothing
-  loops (8).
+  loops (8). While a lost connection is being retried, the journal stays "en cours": it goes on in
+  the same file as soon as the session is back.
 - **Stopping**, with the toggle or the palette, closes the file, and a notification says "Journal
   enregistré", the path in its detail. Closing the tab, or the end of the session, closes it too,
-  without a question: nothing is lost. After a lost connection comes back (9.15, "A lost
-  connection"), the same file goes on, after the line "— connexion perdue, reprise à 23:07 —". A
-  journal that cannot be opened does not stop the session: a warning notification says why.
+  without a question: nothing is lost. Then the header says "journal enregistré", in `--muted`,
+  its tooltip giving the path, until a journal starts again. After a lost connection comes back,
+  by itself or with "Reconnecter" (9.15, "A lost connection"), the same file goes on, after the
+  line "— connexion perdue, reprise à 23:07 —". A session that ended by itself or by "Déconnecter"
+  is over: reopened in the same tab, it is a new session, with a new file when its host records
+  every session. A journal that cannot be opened does not stop the session: a warning notification
+  says why and what to do ("accès refusé. Choisis dans les réglages un dossier où ton compte peut
+  écrire."), or gives the text of the system when the cause is not known.
 - **The file**: one per session, named after the host, the date and the time,
   `serveur-test_2026-11-11_23-05-12.log` (`terminal-local_…` for a local terminal; a character
   that a file name cannot hold becomes "_"), in the folder chosen in the settings (9.18),
@@ -1052,7 +1060,8 @@ password typed without echo is not in it.
   display of a full-screen program (vim, htop, less) gives way to one line, "[affichage plein
   écran omis]". On Linux, only its owner can read it.
 - **The header gives way.** Its words are cut with an ellipsis before its buttons, which stay in
-  view down to a window 1000 px wide.
+  view down to a window 1000 px wide, and their tooltip gives them whole (3.4). The header speaks
+  in `--muted`; its buttons keep the text of a button, in `--ink`.
 - The terminals of a repository (9.20) have no header: they do not record a journal yet.
 
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
@@ -1190,9 +1199,10 @@ is left or on Enter.
 code font, cut with an ellipsis and whole in its tooltip; under it, "Parcourir…", a small
 standard button that opens the folder picker of the system, and "Ouvrir le dossier", a small
 ghost button that shows it in the file manager. Empty, the setting shows the folder used by
-default. A folder chosen applies at once; a failure is said under the control (9.3). In "Terminal
-et SSH", group "Journaux de session": "Dossier des journaux", "Là où Ramure écrit un fichier par
-session enregistrée." (9.15).
+default. A folder chosen applies at once. A failure of "Parcourir…" or "Ouvrir le dossier" is
+said under the control, with what to do, and announced; the field keeps its look, its value not
+being at fault. In "Terminal et SSH", group "Journaux de session": "Dossier des journaux", "Là où
+Ramure écrit un fichier par session enregistrée." (9.15).
 
 **Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
 keys (9.12), and a button that restores the default.

@@ -130,7 +130,7 @@
     window.clearTimeout(retryTimer);
     if (attempt > RETRIES.length) {
       retry = 0;
-      journalEnded();
+      journalEnded(true);
       session.status = 'closed';
       phase = { step: 'closed', lost: true, message: `Les ${RETRIES.length} tentatives de reconnexion ont échoué${reason ? `${NB}: ${explain(reason)}` : '.'}` };
       return;
@@ -154,7 +154,7 @@
   function stopRetrying() {
     window.clearTimeout(retryTimer);
     retry = 0;
-    journalEnded();
+    journalEnded(true);
     session.status = 'closed';
     phase = { step: 'closed', lost: true, message: 'La reconnexion automatique est arrêtée.' };
   }
@@ -305,12 +305,13 @@
    *  session. */
   async function journalToOpen(): Promise<JournalOpen | null> {
     if (session.journalStopped) return null;
-    if (!session.journal) {
-      if (local || !host.logSessions) return null;
-      session.journal = { ...(await newJournal(stem(), title())), live: false, opened: false };
-    }
-    const journal = session.journal;
-    return { path: journal.path, header: journal.header, note: journal.opened ? resumed(local) : null };
+    const previous = session.journal;
+    // Une connexion perdue qui revient continue son fichier, après une ligne de reprise.
+    if (previous?.resumable) return { path: previous.path, header: previous.header, note: previous.opened ? resumed() : null };
+    // Sinon, c'est une session nouvelle : un fichier neuf, pour un hôte qui enregistre chacune.
+    if (local || !host.logSessions) return null;
+    session.journal = { ...(await newJournal(stem(), title())), live: false, opened: false, resumable: true };
+    return { path: session.journal.path, header: session.journal.header, note: null };
   }
 
   /** Le cœur a ouvert le journal demandé, ou dit pourquoi il n'a pas pu : la session s'ouvre quand
@@ -326,10 +327,27 @@
     }
   }
 
-  /** La session s'est terminée pour de bon : le cœur a fermé le fichier, l'en-tête dit où il est. */
-  function journalEnded() {
-    if (session.journal) session.journal.live = false;
+  /** La session s'est terminée : le cœur a fermé le fichier, l'en-tête dit où il est. Après une
+   *  connexion perdue, « Reconnecter » le reprendra ; après une fin normale, non. */
+  function journalEnded(lost = false) {
+    if (!lost) session.journalStopped = false; // la session suivante enregistre de nouveau
+    if (!session.journal) return;
+    session.journal.live = false;
+    session.journal.resumable = lost && session.journal.resumable;
   }
+
+  /** Les mots de l'en-tête, après le nom : ils cèdent la place aux boutons, coupés par une
+   *  ellipse, et l'infobulle les redonne en entier (charte, 3.4 et 9.15). */
+  const metaWords = $derived.by(() => {
+    if (local) return opened ? [opened.shell, `ouvert dans ${opened.cwd}`] : [];
+    if (phase.step === 'connected' && info) {
+      const words = [info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session', info.authMethod, `connexion en ${Math.round(info.connectMs)} ms`];
+      if (echo !== null) words.push(`écho ${Math.round(echo)} ms`);
+      return words;
+    }
+    if (phase.step === 'connecting') return [session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…'];
+    return [];
+  });
 
   /** « Enregistrer le journal » : commence, avec ce que le terminal montre déjà, ou s'arrête. */
   async function toggleJournal() {
@@ -344,7 +362,7 @@
     try {
       const fresh = await newJournal(stem(), title());
       const path = await invoke<string>('journal_start', { key: journalKey(), open: { ...fresh, backlog: term ? shown(term) : null } });
-      session.journal = { ...fresh, path, live: true, opened: true };
+      session.journal = { ...fresh, path, live: true, opened: true, resumable: true };
       session.journalStopped = false;
     } catch (e) {
       toasts.warn('Le journal n’a pas pu être ouvert', typeof e === 'string' ? e : String(e));
@@ -632,7 +650,7 @@
         scheduleRetry(1, reason ?? '');
         return;
       }
-      journalEnded();
+      journalEnded(ending === 'lost');
       session.status = 'closed';
       phase =
         ending === 'lost'
@@ -687,23 +705,9 @@
       {/if}
       <b class="mono">{target}</b>
     {/if}
-    <!-- Les mots de l'en-tête cèdent la place avant les boutons, coupés par une ellipse (9.15). -->
-    <span class="meta">
-      {#if local}
-        <!-- Pas de « Déconnecter » : la croix de l'onglet ferme le terminal. -->
-        {#if opened}
-          <span class="mono">{opened.shell}</span>
-          <span>ouvert dans <span class="mono">{opened.cwd}</span></span>
-        {/if}
-      {:else if phase.step === 'connected' && info}
-        <span>{info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session'}</span>
-        <span>{info.authMethod}</span>
-        <span>connexion en {Math.round(info.connectMs)} ms</span>
-        {#if echo !== null}<span title="Délai médian entre une frappe et son affichage">écho {Math.round(echo)} ms</span>{/if}
-      {:else if phase.step === 'connecting'}
-        <span>{session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…'}</span>
-      {/if}
-    </span>
+    <!-- Les mots de l'en-tête cèdent la place avant les boutons, coupés par une ellipse (9.15) : un
+         seul texte, séparé par des espaces cadratins, pour que l'ellipse se dessine. -->
+    <span class="meta" title={metaWords.join(' · ')}>{metaWords.join('\u2003')}</span>
     {#if session.journal}
       <span class="journal" title={session.journal.path}>{recording ? 'journal en cours' : 'journal enregistré'}</span>
     {/if}
@@ -712,7 +716,7 @@
         class="btn ghost small toggle"
         type="button"
         aria-pressed={recording}
-        title="Enregistre ce qui est affiché et la suite, dans un fichier texte."
+        title={recording ? 'Arrête l’enregistrement\u00a0: le fichier reste.' : 'Enregistre ce qui est affiché et la suite, dans un fichier texte.'}
         onclick={() => void toggleJournal()}
       >
         Enregistrer le journal
@@ -989,12 +993,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .meta > span + span {
-    margin-left: 12px;
-  }
   header .btn,
   .journal {
     flex: none;
+  }
+  /* L'en-tête parle en --muted ; ses boutons gardent le texte d'un bouton (9.1). */
+  header .btn {
+    color: var(--ink);
   }
   .dot {
     flex: none;

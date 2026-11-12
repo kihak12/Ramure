@@ -37,9 +37,8 @@ export function header(title: string, d: Date): string {
   return `${title}, commencé le ${day} à ${time(d)}`;
 }
 
-/** La ligne qui marque la reprise d'une session, dans le même fichier. */
-export const resumed = (local: boolean, d = new Date()) =>
-  local ? `— terminal relancé à ${time(d)} —` : `— connexion perdue, reprise à ${time(d)} —`;
+/** La ligne qui marque la reprise d'une connexion perdue, dans le même fichier. */
+export const resumed = (d = new Date()) => `— connexion perdue, reprise à ${time(d)} —`;
 
 /** Un journal neuf : `stem` nomme le fichier, `title` commence sa première ligne. */
 export async function newJournal(stem: string, title: string): Promise<JournalOpen> {

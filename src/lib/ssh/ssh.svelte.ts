@@ -22,9 +22,10 @@ export interface Session {
   searching: boolean;
   /** Compte les demandes d'ouverture : chacune rend le focus au champ, même barre ouverte. */
   searchAsk: number;
-  /** Le journal de l'onglet : son fichier, s'il enregistre, et s'il a déjà été ouvert (une
-   *  reprise y ajoute alors sa ligne). Il reste après l'arrêt : l'en-tête dit où il est. */
-  journal?: { path: string; header: string; live: boolean; opened: boolean } | null;
+  /** Le journal de l'onglet : son fichier, s'il enregistre, s'il a déjà été ouvert, et s'il peut
+   *  reprendre (après une connexion perdue, pas après une fin normale : une session, un fichier).
+   *  Il reste après l'arrêt : l'en-tête dit « journal enregistré » et où il est. */
+  journal?: { path: string; header: string; live: boolean; opened: boolean; resumable: boolean } | null;
   /** Le journal a été arrêté à la main : une reconnexion ne le reprend pas, même pour un hôte
    *  qui enregistre chaque session. */
   journalStopped?: boolean;

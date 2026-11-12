@@ -30,7 +30,7 @@
       const picked = await open({ title: 'Choisir le dossier des journaux', directory: true, multiple: false, defaultPath: folder || undefined });
       if (typeof picked === 'string') savePrefs({ journalDir: picked });
     } catch (e) {
-      folderError = `La fenêtre de dossiers n’a pas pu s’ouvrir : ${e instanceof Error ? e.message : String(e)}`;
+      folderError = `La fenêtre de dossiers n’a pas pu s’ouvrir : réessaie, ou garde le dossier par défaut. (${e instanceof Error ? e.message : String(e)})`;
     }
   }
 
@@ -77,7 +77,7 @@
   <h3 id="group-journal">Journaux de session</h3>
   <SettingRow id="set-journal" name="Dossier des journaux" help="Là où Ramure écrit un fichier par session enregistrée." error={folderError}>
     <div class="folder">
-      <input id="set-journal" class="field mono" type="text" readonly value={folder} title={folder} aria-describedby="set-journal-help" />
+      <input id="set-journal" class="field mono" type="text" readonly value={folder} title={folder} aria-describedby={folderError ? 'set-journal-help set-journal-error' : 'set-journal-help'} />
       <div class="actions">
         <button class="btn small" type="button" onclick={() => void browse()}><Icon name="folder" size={14} /> Parcourir…</button>
         <button class="btn ghost small" type="button" onclick={() => void openFolder()}>Ouvrir le dossier</button>
