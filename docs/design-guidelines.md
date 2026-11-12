@@ -155,9 +155,10 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
   `--hover-side` on the window background, darker in light and lighter in dark than the surface,
   and `--sel`, more saturated, so that the selection stays apart from the hover. Every theme
   makes them so, in the hue of its accent; their lightness is kept where `--ink` and `--muted`
-  stay readable (2.4).
+  stay readable, the hover far enough from its background to be seen, and the selection far
+  enough from its background and from the hover (2.4).
 
-### 2.4 Minimum contrasts
+### 2.4 Minimum contrasts and colour distances
 
 Every theme must meet them, in light and in dark.
 
@@ -175,6 +176,31 @@ Every theme must meet them, in light and in dark.
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | Each terminal colour (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
+A hover has to be seen, and the selection has to stand apart from its background and from the
+hover. The second table gives the minimum distance between each hover and its background,
+between the selection and its background (a card, or what floats, such as the command palette),
+and between the selection and the hover. The distance is the ΔE CIE76, in CIELAB, from sRGB with
+a D65 white: below 2 it cannot be seen, around 10 it is plain.
+
+Each minimum is the lowest value of the four themes, rounded down to a whole number: a later
+change cannot make a hover or the selection more discreet than the four themes make them. A dark
+screen shows the same distance less: in dark, a hover at 7 to 10 from the card was judged
+discreet, and was strengthened to 10 at least. In dark, what floats is lighter than a card, so
+closer to the hover: there, a hover at 7 was seen, discreet but visible.
+
+| Pair | Light | Dark |
+|---|---|---|
+| `--hover` from `--panel` (a hovered row in a card) | 6 | 10 |
+| `--hover` from `--raised` (a hovered element in what floats) | 8 | 6 |
+| `--hover-side` from `--side` (a hovered element on the window background) | 5 | 9 |
+| `--accent-soft` from `--raised` (a hovered menu item, 9.9) | 10 | 18 |
+| `--sel` from `--panel` (a selected row in a card) | 18 | 24 |
+| `--sel` from `--raised` (a selected row in what floats, such as the command palette) | 18 | 21 |
+| `--sel` from `--hover` (the selection next to a hovered row) | 9 | 15 |
+
+`npm run check` checks the contrasts and the distances of every theme, in light and in dark
+(`scripts/verifier-contrastes.mjs`).
+
 ### 2.5 Colour themes
 
 - Light or dark is a setting: "Système" (the default) follows the system, "Clair" and "Sombre"
@@ -186,8 +212,9 @@ Every theme must meet them, in light and in dark.
   "Couleurs" in the settings, and the choice applies at once. Their values are in `src/app.css`,
   selected by the `data-palette` attribute: on the root for the whole window, on an element for
   a preview.
-- A theme enters the application only if it meets the contrasts of section 2.4, in light and in
-  dark. `npm run check` computes them for every theme, branch labels and capsules included.
+- A theme enters the application only if it meets the contrasts and the colour distances of
+  section 2.4, in light and in dark. `npm run check` computes them for every theme, branch
+  labels and capsules included.
 - In the settings, "Thème" is the choice of light or dark, and "Couleurs" the choice of the
   colour theme. The interface keeps these two words.
 - Worth knowing: in Sous-bois the accent is also the colour of success, and in Braise it is close
@@ -1546,7 +1573,7 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 
 ## 11. Accessibility
 
-- **Contrasts.** Those of section 2.4, checked in light and in dark.
+- **Contrasts.** Those of section 2.4, and its colour distances, checked in light and in dark.
 - **Visible focus.** Every element that takes keyboard focus shows it. An outline is never
   removed without another marker replacing it. A focus given by the application, to the main
   button of a panel or back to the button of a menu, shows the same ring as one reached with

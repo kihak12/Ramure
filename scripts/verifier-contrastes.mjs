@@ -1,8 +1,8 @@
-// Vérifie que chaque thème de couleurs de src/app.css tient les contrastes de la charte
-// (docs/design-guidelines.md, section 2.4), en clair et en sombre, étiquettes de branche et
-// capsules comprises. Vérifie aussi que le sombre de chaque thème, écrit deux fois (pour qui suit
-// le système, pour qui a choisi « Sombre »), donne les mêmes valeurs.
-// Lancé par `npm run check`. Sort avec le code 1 et la liste des écarts s'il en trouve.
+// Vérifie que chaque thème de couleurs de src/app.css tient les contrastes et les écarts de couleur
+// de la charte (docs/design-guidelines.md, section 2.4), en clair et en sombre, étiquettes de
+// branche et capsules comprises. Vérifie aussi que le sombre de chaque thème, écrit deux fois
+// (pour qui suit le système, pour qui a choisi « Sombre »), donne les mêmes valeurs.
+// Lancé par `npm run check`. Sort avec le code 1 et la liste des problèmes s'il en trouve.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -37,6 +37,17 @@ const contrast = (a, b) => {
 };
 /** `color-mix(in srgb, a p, b)`. */
 const mix = (a, p, b) => a.map((v, i) => v * p + b[i] * (1 - p));
+/** La couleur en CIELAB, blanc D65. */
+const lab = (rgb) => {
+  const [r, g, b] = rgb.map(channel);
+  const f = (v) => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116);
+  const x = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047);
+  const y = f(0.2126 * r + 0.7152 * g + 0.0722 * b);
+  const z = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+};
+/** L'écart de couleur ΔE CIE76 : sous 2, il ne se voit pas ; vers 10, il se voit franchement. */
+const distance = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
 
 // Teintes des composants qui posent du texte sur une couleur de branche (Graph.svelte).
 const LABEL_REST = 0.24; // fond d'une étiquette
@@ -44,6 +55,19 @@ const LABEL_HOVER = 0.28; // fond d'une étiquette survolée
 const TOWARD_INK = 0.9; // survol d'un fond plein : 10 % vers --ink
 const CAPSULE = 0.15; // capsule d'un message : un voile de la couleur, sur la ligne nue, survolée ou choisie
 const MATCH = 0.3; // résultat d'une recherche dans le terminal : l'accent sur --term-bg (Terminal.svelte)
+
+// Les écarts de couleur minimaux, en clair puis en sombre : un survol se voit sur son fond, et la
+// sélection reste à part de son fond et du survol. Chacun est la plus basse valeur des quatre
+// thèmes, arrondie à l'entier inférieur.
+const DISTANCES = [
+  ['--hover', '--panel', 6, 10], // une ligne survolée dans une carte
+  ['--hover', '--raised', 8, 6], // un élément survolé dans ce qui flotte
+  ['--hover-side', '--side', 5, 9], // un élément survolé sur le fond de la fenêtre
+  ['--accent-soft', '--raised', 10, 18], // un élément de menu survolé
+  ['--sel', '--panel', 18, 24], // une ligne sélectionnée dans une carte
+  ['--sel', '--raised', 18, 21], // une ligne sélectionnée dans ce qui flotte (la palette de commandes)
+  ['--sel', '--hover', 9, 15], // la sélection à côté d'une ligne survolée
+];
 
 const findings = [];
 
@@ -70,6 +94,11 @@ function check(name, t, dark) {
   // d'une opération arrêtée.
   for (const bg of ['--bad-soft', '--warn-soft']) need(`--bad sur ${bg}`, contrast(t['--bad'], t[bg]), 4.5);
   need('--accent sur --panel', contrast(t['--accent'], t['--panel']), 3);
+  for (const [a, b, day, night] of DISTANCES) {
+    const minimum = dark ? night : day;
+    const value = distance(t[a], t[b]);
+    if (value < minimum) findings.push(`${name} : écart entre ${a} et ${b} à ${value.toFixed(1)}, il faut ${minimum}`);
+  }
   need('--term-ink sur --term-bg', contrast(t['--term-ink'], t['--term-bg']), 7);
   for (let i = 0; i < 16; i++) {
     const token = `--ansi-${i}`;
@@ -113,8 +142,8 @@ for (const palette of PALETTES) {
 }
 
 if (findings.length > 0) {
-  console.error(`Contrastes : ${findings.length} écart(s).\n`);
+  console.error(`Contrastes et écarts : ${findings.length} problème(s).\n`);
   console.error(findings.join('\n'));
   process.exit(1);
 }
-console.log(`Contrastes : les ${PALETTES.length} thèmes tiennent ceux de la charte, en clair et en sombre.`);
+console.log(`Contrastes et écarts : les ${PALETTES.length} thèmes tiennent ceux de la charte, en clair et en sombre.`);
