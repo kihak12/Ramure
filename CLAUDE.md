@@ -6,8 +6,8 @@ Tauri 2, Rust, Svelte 5.
 ## Check
 
 - `npm run check`: types, then design tokens (no hard-coded style value in a component), then
-  the contrasts of every colour theme, then file names (no two files of `src/` that differ only
-  by case: Windows would confuse them).
+  the contrasts and colour distances of every colour theme, then file names (no two files of
+  `src/` that differ only by case: Windows would confuse them).
 - `cd src-tauri && cargo test`.
 
 ## Design
