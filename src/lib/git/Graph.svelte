@@ -529,7 +529,19 @@
               <span class="wire"></span>
             {/if}
           </span>
-          <span></span>
+          <span>
+            {#if ribbon && !commit.wip && commit.lane < shownLanes}
+              <!-- Le point est dessiné sur le canevas, qui ne reçoit pas le pointeur : cette pastille
+                   transparente, posée dessus, porte le nom de l'auteur, celui d'une fusion compris
+                   (charte, 10.2). -->
+              <span
+                class="dot"
+                style:--x="{metrics.pad + commit.lane * metrics.lane}px"
+                title={commit.author}
+                aria-hidden="true"
+              ></span>
+            {/if}
+          </span>
           <span class="msg">
             {#if commit.wip}
               <span class="wip-tag mono">// WIP</span>
@@ -549,7 +561,7 @@
           <span class="author">
             {#if !commit.wip}
               {#if !ribbon}
-                <span class="avatar" style:--c="var(--l{hue(commit.author)})" aria-hidden="true">{initials(commit.author)}</span>
+                <span class="avatar" style:--c="var(--l{hue(commit.author)})" title={commit.author} aria-hidden="true">{initials(commit.author)}</span>
               {/if}
               <span class="who" title={commit.author}>{commit.author}</span>
             {/if}
@@ -679,6 +691,17 @@
       opacity: 0;
       transform: translateX(-10px);
     }
+  }
+
+  /* Posée sur le point d'un commit, en « Ruban » : elle ne montre rien, elle porte l'infobulle. */
+  .dot {
+    position: absolute;
+    top: 50%;
+    left: calc(var(--labels) + var(--x));
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border-radius: 50%;
   }
 
   /* Halo du commit courant */

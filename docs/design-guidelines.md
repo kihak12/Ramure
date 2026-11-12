@@ -1435,7 +1435,8 @@ way, in this order, each only as far as needed:
 
 1. the SHA goes (it stays in the detail panel and in the menu of the commit);
 2. the name of the author goes; the "Classique" style keeps the 34 px of its initials, and
-   "Ruban" already shows them on the graph;
+   "Ruban" already shows them on the graph, where the point of a merge commit, with no initial,
+   gives its author in a tooltip (10.2);
 3. the date goes;
 4. "Branche / Tag" narrows, down to 164 px;
 5. last, "Graphe" narrows, down to 72 px, until the message has 120 px. At the narrowest
@@ -1462,6 +1463,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **A commit** is a round dot in the colour of its branch, with the initial of its author in
   `--on-accent`. A ring in the colour of the card sets it apart from the lines.
 - **A merge commit** is a smaller point, with no initial.
+- **Hovering a dot**, in "Ruban", gives the full name of its author in a tooltip, the point of a
+  merge commit included. In "Classique", the initials of the "Auteur" column do (10.3).
 - **Lines** are straight as long as the branch keeps its column. A change of column is a soft
   curve, with no corner.
 - **The message** sits in a capsule: a background at 15% of the branch colour, rounded like a
@@ -1478,7 +1481,9 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - The graph is not animated on scroll.
 - No text on the lines, no gradient, no more than eight colours.
 - The "Classique" style, offered in the settings, keeps points and more compact curves. It
-  follows the same colours and the same selection rules.
+  follows the same colours and the same selection rules. Its points carry no initial: those of
+  the author come before the name, in the "Auteur" column, and give it whole in a tooltip, all
+  the more needed when the column has narrowed to the initials (10.1).
 
 ## 11. Accessibility
 
