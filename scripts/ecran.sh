@@ -23,8 +23,20 @@ home=${TMPDIR:-/tmp}/ramure-ecran
 size=1440x880 # la taille de la fenêtre, dans src-tauri/tauri.conf.json
 export DISPLAY=:99
 
+# Attend qu'aucun processus de ce nom ne reste, 5 secondes au plus, puis l'arrête de force : un
+# « fermer » suivi d'un « ouvrir » ne doit pas trouver l'écran ou l'application d'avant en train de
+# s'éteindre.
+wait_gone() {
+  for _ in $(seq 50); do
+    pgrep -x "$1" >/dev/null || return 0
+    sleep 0.1
+  done
+  pkill -9 -x "$1" 2>/dev/null || true
+}
+
 stop() {
   pkill -x ramure 2>/dev/null || true
+  wait_gone ramure
 }
 
 case ${1:-} in
@@ -35,7 +47,11 @@ case ${1:-} in
     stop
     if ! pgrep -x Xvfb >/dev/null; then
       Xvfb :99 -screen 0 1500x920x24 >/dev/null 2>&1 &
-      sleep 1
+      # L'écran répond quand xdotool peut en lire la taille.
+      for _ in $(seq 50); do
+        xdotool getdisplaygeometry >/dev/null 2>&1 && break
+        sleep 0.1
+      done
     fi
     # Les onglets à rouvrir sont lus dans le stockage local de la page : on y écrit les dépôts.
     # On ne vide que les données de l'application : le reste du dossier peut être tenu par le système.
@@ -98,6 +114,7 @@ CONF
   fermer)
     stop
     pkill -x Xvfb 2>/dev/null || true
+    wait_gone Xvfb
     ;;
   *)
     sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
