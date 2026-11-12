@@ -1456,7 +1456,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 | Band behind a commit | 24 px high, 15% of the branch colour |
 
 - **A commit** is a round dot in the colour of its branch, with the initial of its author in
-  `--on-accent`. A ring in the colour of the card sets it apart from the lines.
+  `--on-accent`. A ring in the colour of the card sets it apart from the lines. Hovering the dot
+  gives the full name of the author in a tooltip.
 - **A merge commit** is a smaller point, with no initial.
 - **Lines** are straight as long as the branch keeps its column. A change of column is a soft
   curve, with no corner.
@@ -1474,7 +1475,9 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - The graph is not animated on scroll.
 - No text on the lines, no gradient, no more than eight colours.
 - The "Classique" style, offered in the settings, keeps points and more compact curves. It
-  follows the same colours and the same selection rules.
+  follows the same colours and the same selection rules. Its points carry no initial: those of
+  the author come before the name, in the "Auteur" column, and give it whole in a tooltip, all
+  the more needed when the column has narrowed to the initials (10.1).
 
 ## 11. Accessibility
 
