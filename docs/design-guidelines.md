@@ -729,10 +729,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   is hovered or reached, and ↓ goes to the first one, ↑ to the last. Opened from the keyboard,
   its first item has the focus.
 - A context menu opens from the keyboard too, with the Menu key or Shift + F10 on the element
-  that has the focus, or on the current row of a list that keeps the focus (the graph): 4 px
-  under that element, on its left edge, its first enabled item focused. Closing it gives the
-  focus back to the element, with its ring (11). A text field keeps the menu of the system, to
-  cut, copy and paste.
+  that has the focus, or on the current row of a list that keeps the focus (the graph), when
+  that row is in view: 4 px under that element, on its left edge, its first enabled item
+  focused. However it closes, it gives the focus back to the element that had it, with its ring
+  (11), until the next click. A text field keeps the menu of the system, to cut, copy and paste.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.

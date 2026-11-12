@@ -6,5 +6,13 @@ export function focusWithRing(element: HTMLElement | null | undefined) {
   if (!element) return;
   element.focus();
   element.classList.add('focus-ring');
-  element.addEventListener('blur', () => element.classList.remove('focus-ring'), { once: true });
+  // L'anneau part avec le focus, ou au premier clic : la souris reprend la main, et un élément qui
+  // garde le focus (la liste du graphe, à qui l'on clique une ligne) ne le montre plus.
+  const off = () => {
+    element.classList.remove('focus-ring');
+    element.removeEventListener('blur', off);
+    window.removeEventListener('pointerdown', off, true);
+  };
+  element.addEventListener('blur', off);
+  window.addEventListener('pointerdown', off, true);
 }

@@ -56,7 +56,15 @@ if (typeof window !== 'undefined') {
       if (!fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
       if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
       const current = focused.getAttribute('aria-activedescendant');
-      const target = (current && document.getElementById(current)) || focused;
+      const row = current ? document.getElementById(current) : null;
+      // La ligne courante n'est pas affichée (la liste a défilé loin d'elle) : rien ne s'ouvre, ni le
+      // menu du moteur, ni celui de la ligne qui se trouverait sous le coin de la liste.
+      if (current && !row) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      const target = row || focused;
       if (event.target === target || (target === focused && event.target instanceof Node && focused.contains(event.target)))
         return;
       event.preventDefault();
