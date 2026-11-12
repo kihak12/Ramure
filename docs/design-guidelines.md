@@ -385,8 +385,10 @@ The interface has four levels. Each is recognised by its background.
 | 20 px | The large button of the start page (9.1). |
 
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
-  for a tag, the key for an SSH key, the arrow that enters a sheet for an import. An icon that
-  stands for a git command (pull, push, stash) is never borrowed for something else.
+  for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
+  leaves it, the same sheet turned over, for an export, the sheet with lines for the journal of a
+  session. An icon that stands for a git command (pull, push, stash) is never borrowed for
+  something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
 - An icon never carries a state on its own: it is backed by text or by a tooltip.
@@ -494,7 +496,7 @@ its own buttons.
 - **Primary.** The action the user came to the surface to do. One per surface at most; two
   surfaces in view may each have theirs. It is never destructive, and never a mere way out. A
   surface where no action is expected more than the others has no primary: "Gérer les clés…" at
-  rest, where one may copy a key, create one or leave, and its "Fermer" is standard.
+  rest, where one may copy a key, import one, create one or leave, and its "Fermer" is standard.
 - **Standard.** Every other action that moves forward, a second way to do the main thing
   included ("Faire confiance cette fois" beside "Faire confiance et mémoriser", "Basculer sans
   mettre à jour" beside "Basculer et rebaser"), and the way out of a dialog ("Annuler",
@@ -536,11 +538,13 @@ its own buttons.
   leaves. Escape and a click on the veil leave (9.10). The tab order follows the visual order. A
   shortcut, when there is one, is in the tooltip: "Ctrl + Entrée".
 - **The button just pressed does not move.** What it produces, a result, an error, a question, a
-  progress, appears below it, or in a place kept for it beforehand and as high as its usual size,
-  and pushes down only what is under it; nothing above the button moves. On a line aligned to the
-  right, the primary keeps its right edge: a label that changes while it works ("Clonage en cours…")
-  may shift what stands to its left. A dialog is anchored at the top of the window for that reason
-  (9.10). A form that opens in a dialog, as a new step, may push the last line down as it opens.
+  progress, appears below it, or on the left of the last line of a dialog, the buttons staying at
+  the top of that line (9.15, "Keys"), or in a place kept for it beforehand and as high as its
+  usual size, and pushes down only what is under it; nothing above the button moves. On a line
+  aligned to the right, the primary keeps its right edge: a label that changes while it works
+  ("Clonage en cours…") may shift what stands to its left. A dialog is anchored at the top of the
+  window for that reason (9.10). A form that opens in a dialog, as a new step, may push the last
+  line down as it opens.
 - **Toolbar.** No primary: every action has the same weight, icon above label (9.2), and the
   pressed state is its only emphasis.
 
@@ -567,8 +571,8 @@ its own buttons.
   cards to show (9.17).
   - At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a `--hover`
     background and the icon in `--ink`. It has no pressed state: the menu says what is shown.
-  - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher"; the
-    tooltip keeps quiet while the menu is open, where it would cover the first item.
+  - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher", which
+    keeps quiet while the menu is open (9.9).
     `aria-haspopup` says that it opens a menu, `aria-expanded` whether the menu is open.
   - Disabled, at 45%, when no repository is open, and while the editor of a conflict covers the
     cards.
@@ -589,7 +593,11 @@ its own buttons.
     `--muted`.
   - Checked: the `--accent` background and border, and a check mark in `--on-accent`: the path
     of the "check" icon, drawn at 13 px with a 2 px stroke so that it reads at that size.
-  - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked.
+  - Partly checked, for a box that checks a whole list when only some of its rows are ("Tout
+    cocher"): the same as checked, with a dash in place of the check mark, the path of the
+    "minus" icon drawn the same way.
+  - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked or partly
+    checked.
   - Focus: the focus ring of the application (the states of section 9). Disabled: 45%, and its
     text too.
 - A list is drawn by the application when it is closed, like the checkbox: the system's is
@@ -673,6 +681,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - The active tab is a small card: `--panel` background, 8 px corners, no frame and no line.
 - An inactive tab is `--muted` text on the window background; on hover, a `--hover` background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
+- A terminal that records its journal carries the "journal" icon, 14 px in `--muted`, between its
+  name and its cross, with "Journal en cours d’enregistrement" as tooltip and accessible name
+  (9.15).
 - The close cross is visible on the active tab, and on hover on the others. On hover it takes
   a `--line` background, not `--hover`: it sits on a tab that is hovered or active, where
   `--hover` would not show.
@@ -715,6 +726,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   its right edge on the right edge of the button, and it appears from that corner. Escape, or a
   click outside, closes it and gives the focus back to the button; after Escape, the button
   shows its focus ring.
+- While a menu is open, the tooltip of the element that opened it, a row or a button, keeps
+  quiet, where it would cover the first items. This holds even when the click came while the
+  pointer was still moving, before the tooltip was due.
 - An item may recall the shortcut of its action, on its right, drawn as keys (9.12).
 - A checkable item (`menuitemcheckbox`) shows or hides something. Its check mark is on the
   right, after the shortcut, 16 px, in `--accent`; its place is kept when the item is unchecked,
@@ -730,7 +744,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
   takes the width it needs, up to 760 px: the clone 560 px, the form of a host 600 px (9.21),
-  "Gérer les clés…" 640 px, the interactive rebase 760 px.
+  "Gérer les clés…" and the export to `~/.ssh/config` 640 px, the interactive rebase 760 px.
 - **Place.** Centred across the window, and anchored 11% from its top, as the command palette
   (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
@@ -752,6 +766,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 - At the bottom, in the centre of the window, 40 px from the edge. Five at most, stacked.
   480 px wide at most.
+- **Never for an action done in a dialog.** A modal dialog lays its veil over the notifications
+  and makes them unreachable: a click on one falls on the veil and closes the dialog. The dialog
+  says the result itself, in its body or on the left of its last line (9.15, "Keys"; 9.21). One
+  exception: a dialog that closes once its action is done, to offer undoing it (the export to
+  `~/.ssh/config`, 9.15).
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
   coloured bar on the edge.
@@ -939,6 +958,116 @@ panel shows.
   the header. If the keyring refuses to keep one, a warning notification says "Le secret n’a pas
   pu être retenu" and why; the session stays open.
 
+**Keys.** "Gérer les clés…" lists the keys of `~/.ssh` that have their `.pub`. They stay there:
+Ramure keeps no copy of them. Its last line, at rest: "Fermer", "Importer une clé…", "Générer une
+clé", all standard, since no action is expected more than the others (9.1).
+
+- **Generating** opens a form in the dialog, under the list (9.6).
+- **Importing** opens the file picker of the system, "Choisir une clé privée". The key is copied
+  into `~/.ssh` under the same name, readable by its owner only, with its public key: the `.pub`
+  beside it, or the one the private key carries. A PuTTY key (`.ppk`) without a passphrase is
+  converted to the OpenSSH format, which `ssh` reads; one with a passphrase is refused, with the
+  way to export it from PuTTYgen. Nothing is ever overwritten.
+- **The result** sits on the left of the last line, before the buttons, in 11.5 px, never in a
+  notification (9.11). Success: the check icon and the sentence in `--ok`, "Clé importée :
+  ~/.ssh/id_portable", "Clé créée : ~/.ssh/id_ed25519_2", "Clé publique de id_portable copiée,
+  à coller sur le serveur ou la forge.", announced as a status.
+  Failure: the warning icon and why and what to do in `--bad`, announced at once: "C’est une clé
+  publique : choisis le fichier sans « .pub ».", "Un fichier nommé « id_ed25519 » existe déjà dans
+  ~/.ssh : renomme la clé avant de l’importer." The line stays until the next action. It wraps
+  under itself while the buttons stay at the top of the line: they do not move (9.1). A key
+  imported or generated takes its row in the list, in the order of the names: the list grows by
+  one row and pushes the last line down with it, since what the action produced is that row.
+
+**Exporting to `~/.ssh/config`.** So that a host of the book opens with `ssh <name>` too, in a
+terminal or in any tool that reads that file. "Exporter vers ~/.ssh/config…", a small standard
+button in the foot of the book under "Importer ~/.ssh/config", opens a dialog for every host; the
+same entry in the menu of a host opens it for that host alone. It is an export done when asked,
+never a synchronisation: nothing is written before the dialog has shown what will change.
+
+- **The dialog**, "Exporter vers ~/.ssh/config", says what Ramure does: "Ramure ajoute ou met à
+  jour ces hôtes. Le reste du fichier n’est pas touché, et l’ancien fichier est copié dans
+  ~/.ssh/config.ramure.bak." Then a list inside a dialog (9.6), one row per host to add, to change
+  or that cannot be exported: a checkbox, the name, its state in words, and under them a line in
+  11.5 px. "Ajouté", with what will be written, in the code font: `deploy@10.0.0.9 · port 2222 ·
+  clé ~/.ssh/id_ed25519`. "Modifié", with only what changes, in the code font: `Port 22 → 2222`.
+  "Non exporté", in `--warn` with the warning icon in place of the checkbox, with why and what to
+  do, in `--muted`. The hosts already up to date are not listed: a line in `--muted` under the
+  list counts them, "3 hôtes sont déjà à jour dans le fichier." A detail line wraps rather than
+  being cut: what changes and why are read whole. The list and the last line show once the file
+  has been read, at once: their buttons never change under the pointer.
+- **Checked at first**: the hosts to add. The hosts to change are not, since the file may have
+  been edited by hand, and a sentence under the text says so: "Une entrée modifiée garde la
+  version du fichier tant que tu ne la coches pas." Opened from the menu of a host, its row is
+  checked. "Tout cocher" heads the list when it has more than one row to check. Enter on a
+  checkbox exports, as Enter in a field does.
+- **What is written**: only HostName, User, Port and IdentityFile, in the block `Host <name>` of
+  the host, each line keeping its indentation and the spelling of its keyword; a missing line is
+  added at the end of the block, and a new block before `Host *`, since for ssh the first value
+  found wins. Nothing is ever deleted. A host whose name has a space or a pattern character, that
+  goes through a bastion, or whose name shares its `Host` line with others, is not exported. A
+  host with a password is exported without a key: the password is never written.
+- **The last line**: "Annuler", then the main button, which counts what it writes, "Exporter 2
+  hôtes". With nothing checked it is disabled, and the left of the line says why, as its tooltip
+  does: "Coche au moins un hôte."; Enter all the same turns the sentence to `--warn` with the
+  warning icon, announced. When every row is "Non exporté", the left of the line says "Aucun de
+  ces hôtes ne peut être exporté." and the line has only "Fermer". An empty book says "Le carnet
+  est vide : rien à exporter.". With nothing to export, the list gives way to one sentence, "Tous
+  les hôtes sont déjà à jour dans ~/.ssh/config.", and the line has only "Fermer".
+- **The result.** A failure is said on the left of the last line, with what to do, the dialog
+  staying open (9.11); while it writes, the main button says "Export en cours…", and neither a
+  click on the veil, Escape nor "Annuler" closes the dialog: a write cannot be stopped halfway,
+  and lasts an instant (9.10). Once written, the dialog closes and a notification says "2 hôtes
+  exportés vers ~/.ssh/config", with the copy of the old file in its detail and "Annuler", which
+  puts the old file back, unless it has changed since. One host gives "vps exporté vers
+  ~/.ssh/config"; a file that did not exist gives "~/.ssh/config a été créé." in the detail.
+  Undoing says "~/.ssh/config est revenu comme avant l’export", or "~/.ssh/config a été retiré"
+  for a file the export had created; when it cannot, an error notification says why. When the
+  export was started from the keyboard, the focus goes to "Annuler" (9.11).
+
+**The journal of a session.** What a terminal showed, kept in a text file beyond its 5,000 lines
+and after its tab is closed. Only what is shown is written, never what is typed on its own: a
+password typed without echo is not in it.
+
+- **On demand**: "Enregistrer le journal", a small ghost toggle (9.1), in the header of the
+  session before "Déconnecter", at the right of the header of a local terminal; and in the
+  palette, "Enregistrer le journal du terminal", which becomes "Arrêter le journal du terminal"
+  while it records. Its tooltip says "Enregistre ce qui est affiché et la suite, dans un fichier
+  texte.", and while it records "Arrête l’enregistrement : le fichier reste.": a journal started
+  during a session begins with what the terminal shows already. A shortcut can be given to it in
+  "Raccourcis clavier" (9.18); it has none by default.
+- **For every session of a host**: the checkbox of its form, "Enregistrer le journal de chaque
+  session" (9.21). The session opens recording. The toggle stops that session only: the next one
+  records again.
+- **While it records**, the toggle is pressed; the header says "journal en cours", in `--muted`
+  like its other words, its tooltip giving the path of the file; the tab carries the "journal"
+  icon (9.7). No colour of its own and no animation: `--bad` is for errors (2.3), and nothing
+  loops (8). While a lost connection is being retried, the journal stays "en cours": it goes on in
+  the same file as soon as the session is back.
+- **Stopping**, with the toggle or the palette, closes the file, and a notification says "Journal
+  enregistré", the path in its detail. Closing the tab, or the end of the session, closes it too,
+  without a question: nothing is lost. Then the header says "journal enregistré", in `--muted`,
+  its tooltip giving the path, until a journal starts again or the tab opens a new session. After
+  a lost connection comes back, by itself or with "Reconnecter" (9.15, "A lost connection"), the
+  same file goes on, after the line "— connexion perdue, reprise à 23:07 —". A session that ended
+  by itself or by "Déconnecter" is over: reopened in the same tab, it is a new session, with a new
+  file when its host records every session. A journal that cannot be opened does not stop the
+  session: a warning notification says why and what to do ("accès refusé. Choisis dans les
+  réglages un dossier où ton compte peut écrire."), or gives the text of the system when the cause
+  is not known.
+- **The file**: one per session, named after the host, the date and the time,
+  `serveur-test_2026-11-11_23-05-12.log` (`terminal-local_…` for a local terminal; a character
+  that a file name cannot hold becomes "_"), in the folder chosen in the settings (9.18),
+  `Documents/Ramure/Journaux` by default, or `Ramure/Journaux` in the personal folder when the
+  system has no Documents folder. Its first line: "Journal de serveur-test, commencé le 11 nov.
+  2026 à 23:05". The control sequences are removed, a progress bar keeps its last state, and the
+  display of a full-screen program (vim, htop, less) gives way to one line, "[affichage plein
+  écran omis]". On Linux, only its owner can read it.
+- **The header gives way.** Its words are cut with an ellipsis before its buttons, which stay in
+  view down to a window 1000 px wide, and their tooltip gives them whole (3.4). The header speaks
+  in `--muted`; its buttons keep the text of a button, in `--ink`.
+- The terminals of a repository (9.20) have no header: they do not record a journal yet.
+
 **A lost connection.** A session can end three ways: closed by the user ("Déconnecter", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server
 no longer answering). Only a lost connection comes back on its own, and only if "Reconnexion
@@ -1070,6 +1199,15 @@ is left or on Enter.
 - When applying takes time, the waiting ring (8) appears under the control, with words that say
   what is happening.
 
+**A folder** is a setting like the others: its control is the path, in a read-only field in the
+code font, cut with an ellipsis and whole in its tooltip; under it, "Parcourir…", a small
+standard button that opens the folder picker of the system, and "Ouvrir le dossier", a small
+ghost button that shows it in the file manager. Empty, the setting shows the folder used by
+default. A folder chosen applies at once. A failure of "Parcourir…" or "Ouvrir le dossier" is
+said under the control, with what to do, and announced; the field keeps its look, its value not
+being at fault. In "Terminal et SSH", group "Journaux de session": "Dossier des journaux", "Là où
+Ramure écrit un fichier par session enregistrée." (9.15).
+
 **Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
 keys (9.12), and a button that restores the default.
 
@@ -1179,6 +1317,10 @@ A local terminal under the graph, opened in the folder of the repository, to run
 The dialog that adds a host to the book or changes one (9.10). It is 600 px wide: its fields
 need the room.
 
+- **The journal.** Under "Commande au démarrage", the checkbox "Enregistrer le journal de chaque
+  session" (9.3), with its help under it, in 11.5 px, `--muted`: "Un fichier texte par session,
+  dans le dossier des journaux des réglages. Il contient tout ce que le terminal affiche, données
+  sensibles comprises." No folder in the form: a setting has one place (9.18).
 - **Buttons.** "Tester la connexion", a secondary button, alone on its line under the fields,
   with its result right under it. Below, 24 px apart, the last line follows the common order
   (9.1, "Hierarchy"): "Supprimer l’hôte…" alone on the left for a host already in the book
@@ -1197,6 +1339,11 @@ need the room.
   of the book, which is always there, the row of the host being gone; cancelled, the focus is
   back on the button, with its ring. A host being added, or a copy, has no such button: it is not
   in the book yet.
+- **A failure** to save or to delete the host is said on the left of the last line, between
+  "Supprimer l’hôte…" and the buttons on the right, never in a notification (9.11): the warning
+  icon and "L’hôte n’a pas pu être enregistré", then why, in `--bad` at 11.5 px, announced at
+  once. The form stays open with what was typed, and the buttons do not move. The failure goes
+  away at the next try, and when the form is opened again.
 - **Testing.** "Tester la connexion" connects with the values of the form as they are, saved or
   not, authenticates, and closes the connection at once: no terminal opens, nothing is saved.
 - **Until the form is valid** (a name and an address), "Tester la connexion" and the main button

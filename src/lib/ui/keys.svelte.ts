@@ -34,6 +34,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'toggle-terminal', group: 'Affichage', title: 'Afficher ou masquer le terminal du dépôt', keys: 'Ctrl+Shift+J', scope: 'git' },
   { id: 'terminal-repo', group: 'Affichage', title: 'Nouveau terminal dans le dépôt', keys: '', scope: 'git' },
   { id: 'terminal-search', group: 'Terminal', title: 'Chercher dans le terminal', keys: 'Ctrl+Shift+F', scope: 'ssh' },
+  { id: 'terminal-journal', group: 'Terminal', title: 'Enregistrer ou arrêter le journal du terminal', keys: '', scope: 'ssh' },
   { id: 'tab-new', group: 'Onglets', title: 'Nouvel onglet', keys: 'Ctrl+T', scope: 'git' },
   { id: 'tab-close', group: 'Onglets', title: 'Fermer l’onglet', keys: 'Ctrl+W', scope: 'git' },
   { id: 'tab-next', group: 'Onglets', title: 'Onglet suivant', keys: 'Ctrl+Tab', scope: 'git' },

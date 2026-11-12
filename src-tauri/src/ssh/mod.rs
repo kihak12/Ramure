@@ -5,6 +5,7 @@
 //! sur un canal Tauri.
 
 pub mod config;
+pub mod export;
 pub mod keyfiles;
 pub mod known_hosts;
 pub mod secrets;
@@ -70,6 +71,9 @@ pub struct ConnectParams {
     /// Vrai pour retenir dans le trousseau du système le secret tapé, une fois qu'il a servi.
     #[serde(default)]
     remember_secret: bool,
+    /// Le journal à ouvrir avant que la sortie n'arrive : l'option de l'hôte, ou une reprise.
+    #[serde(default)]
+    journal: Option<crate::journal::JournalOpen>,
 }
 
 /// Ce qu'il faut pour tester un hôte : se connecter et s'authentifier, sans ouvrir de terminal.
@@ -137,6 +141,8 @@ pub struct Connected {
     connect_ms: f64,
     /// Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit, sans le secret.
     keep_failed: Option<String>,
+    /// Le journal demandé n'a pas pu être ouvert : pourquoi. La session s'ouvre quand même.
+    journal_failed: Option<String>,
 }
 
 /// Pourquoi une session s'est terminée. Seule une connexion perdue se rouvre d'elle-même.
@@ -405,6 +411,7 @@ async fn pump(
     mut rx: mpsc::UnboundedReceiver<Cmd>,
     on_data: Channel,
     mut startup: Option<String>,
+    key: &str,
 ) -> (Option<u32>, Option<String>, Ending) {
     let mut exit_status = None;
     // Le serveur a dit que la session finissait (code de sortie, fin de flux) : elle n'est pas perdue.
@@ -443,9 +450,11 @@ async fn pump(
                     if startup.is_some() {
                         quiet.as_mut().reset(tokio::time::Instant::now() + Duration::from_millis(250));
                     }
+                    crate::journal::feed(key, &data);
                     let _ = on_data.send(InvokeResponseBody::Raw(data.to_vec()));
                 }
                 Some(ChannelMsg::ExtendedData { data, .. }) => {
+                    crate::journal::feed(key, &data);
                     let _ = on_data.send(InvokeResponseBody::Raw(data.to_vec()));
                 }
                 Some(ChannelMsg::ExitStatus { exit_status: code }) => {
@@ -646,9 +655,14 @@ pub async fn ssh_connect(
         .map_err(|_| other("état des sessions indisponible"))?
         .insert(id, tx);
 
+    // Le journal s'ouvre avant que la sortie ne soit lue : rien ne lui échappe.
+    let key = format!("ssh:{id}");
+    let journal_failed = params.journal.as_ref().and_then(|open| crate::journal::start(&key, open).err());
+
     let startup = params.startup_command.filter(|command| !command.trim().is_empty());
     tauri::async_runtime::spawn(async move {
-        let (exit_status, reason, ending) = pump(channel, rx, on_data, startup).await;
+        let (exit_status, reason, ending) = pump(channel, rx, on_data, startup, &key).await;
+        crate::journal::stop(&key);
         let _ = handle.disconnect(Disconnect::ByApplication, "", "fr").await;
         if let Ok(mut sessions) = app.state::<SshState>().sessions.lock() {
             sessions.remove(&id);
@@ -664,6 +678,7 @@ pub async fn ssh_connect(
         auth_method,
         connect_ms: started.elapsed().as_secs_f64() * 1000.0,
         keep_failed,
+        journal_failed,
     })
 }
 

@@ -22,6 +22,15 @@ export interface Session {
   searching: boolean;
   /** Compte les demandes d'ouverture : chacune rend le focus au champ, même barre ouverte. */
   searchAsk: number;
+  /** Le journal de l'onglet : son fichier, s'il enregistre, s'il a déjà été ouvert, et s'il peut
+   *  reprendre (après une connexion perdue, pas après une fin normale : une session, un fichier).
+   *  Il reste après l'arrêt : l'en-tête dit « journal enregistré » et où il est. */
+  journal?: { path: string; header: string; live: boolean; opened: boolean; resumable: boolean } | null;
+  /** Le journal a été arrêté à la main : une reconnexion ne le reprend pas, même pour un hôte
+   *  qui enregistre chaque session. */
+  journalStopped?: boolean;
+  /** Compte les demandes de bascule du journal venues de la palette ou d'un raccourci. */
+  journalAsk?: number;
   /** Ce que le cœur dit d'un terminal local ouvert : son shell et son dossier de départ. */
   opened?: { shell: string; cwd: string };
   /** L'identifiant du terminal local côté cœur, tant que son shell tourne. */
@@ -50,6 +59,7 @@ const LOCAL_HOST: Host = {
   color: '',
   startupCommand: '',
   proxyJump: false,
+  logSessions: false,
   updatedAt: 0,
 };
 
@@ -91,6 +101,8 @@ class Ssh {
   /** Hôte en cours de modification ; la fiche s'ouvre quand il existe. */
   editing = $state.raw<Host | null>(null);
   showKeys = $state(false);
+  /** La boîte d'export vers ~/.ssh/config : pour tout le carnet, pour un hôte (son id), ou fermée. */
+  exporting = $state<'all' | string | null>(null);
 
   active = $derived(this.sessions.find((s) => s.key === this.activeKey) ?? null);
   groups = $derived([...new Set(this.hosts.map((h) => h.group).filter(Boolean))]);
@@ -118,26 +130,28 @@ class Ssh {
     }
   }
 
-  async save(host: Host): Promise<Host | null> {
+  /** La fiche enregistrée, ou ce qui a empêché de l'enregistrer : la fiche le dit elle-même, une
+   *  notification restant sous son voile (charte, 9.11). */
+  async save(host: Host): Promise<Host | string> {
     try {
       const saved = await invoke<Host>('host_save', { host });
       this.hosts = await invoke<Host[]>('hosts_list');
       return saved;
     } catch (e) {
-      toasts.err('L’hôte n’a pas pu être enregistré', message(e));
-      return null;
+      return `L’hôte n’a pas pu être enregistré : ${message(e)}`;
     }
   }
 
-  /** Vrai si la fiche a été supprimée. */
-  async remove(host: Host): Promise<boolean> {
+  /** Vrai si la fiche a été supprimée. `failed` : à qui dire l'échec, à la place d'une notification. */
+  async remove(host: Host, failed?: (text: string) => void): Promise<boolean> {
     try {
       await invoke('host_delete', { id: host.id });
       this.hosts = this.hosts.filter((h) => h.id !== host.id);
       toasts.ok('Hôte supprimé', host.alias);
       return true;
     } catch (e) {
-      toasts.err('L’hôte n’a pas pu être supprimé', message(e));
+      if (failed) failed(`L’hôte n’a pas pu être supprimé : ${message(e)}`);
+      else toasts.err('L’hôte n’a pas pu être supprimé', message(e));
       return false;
     }
   }
@@ -151,7 +165,7 @@ class Ssh {
    * Demande confirmation, puis supprime la fiche : du clic droit sur sa ligne, ou de la fiche
    * elle-même. Vrai si elle a été supprimée.
    */
-  async removeAsked(host: Host): Promise<boolean> {
+  async removeAsked(host: Host, failed?: (text: string) => void): Promise<boolean> {
     // Le mot de passe retenu pour ce compte part avec sa dernière fiche : la confirmation le dit.
     const last = !this.hosts.some((other) => other.id !== host.id && this.#account(other) === this.#account(host));
     const [kept] =
@@ -168,7 +182,7 @@ class Ssh {
       confirmLabel: 'Supprimer',
       danger: true,
     });
-    return confirmed && (await this.remove(host));
+    return confirmed && (await this.remove(host, failed));
   }
 
   /**

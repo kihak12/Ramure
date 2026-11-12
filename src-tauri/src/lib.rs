@@ -2,6 +2,7 @@
 //! L'interface n'appelle que les commandes déclarées dans `invoke_handler`.
 
 mod git;
+mod journal;
 mod local;
 mod ssh;
 
@@ -79,6 +80,10 @@ pub fn run() {
             ssh::ssh_resize,
             ssh::ssh_close,
             local::local_open,
+            journal::journal_start,
+            journal::journal_stop,
+            journal::journal_default_dir,
+            journal::journal_open_dir,
             local::local_write,
             local::local_resize,
             local::local_close,
@@ -87,8 +92,12 @@ pub fn run() {
             ssh::store::host_save,
             ssh::store::host_delete,
             ssh::store::hosts_import,
+            ssh::export::ssh_config_preview,
+            ssh::export::ssh_config_export,
+            ssh::export::ssh_config_undo,
             ssh::keyfiles::ssh_keys_list,
             ssh::keyfiles::ssh_key_generate,
+            ssh::keyfiles::ssh_key_import,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de Ramure");

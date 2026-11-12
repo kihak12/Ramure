@@ -59,6 +59,9 @@ pub struct Host {
     pub startup_command: String,
     /// L'hôte passe par un bastion : importé, mais pas encore connectable.
     pub proxy_jump: bool,
+    /// Chaque session de cet hôte enregistre son journal.
+    #[serde(default)]
+    pub log_sessions: bool,
     /// Dernière modification, en millisecondes Unix.
     pub updated_at: i64,
 }
@@ -99,7 +102,7 @@ impl Store {
         let mut statement = conn
             .prepare(
                 "SELECT id, alias, hostname, port, user, auth, key_path, grp, tags, color,
-                        startup_command, proxy_jump, updated_at
+                        startup_command, proxy_jump, updated_at, log_sessions
                  FROM hosts WHERE deleted = 0
                  ORDER BY grp COLLATE NOCASE, alias COLLATE NOCASE",
             )
@@ -121,6 +124,7 @@ impl Store {
                     startup_command: row.get(10)?,
                     proxy_jump: row.get(11)?,
                     updated_at: row.get(12)?,
+                    log_sessions: row.get(13)?,
                 })
             })
             .map_err(db)?;
@@ -153,11 +157,12 @@ impl Store {
         self.conn()?
             .execute(
                 "INSERT INTO hosts (id, alias, hostname, port, user, auth, key_path, grp, tags, color,
-                                    startup_command, proxy_jump, updated_at, deleted)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 0)
+                                    startup_command, proxy_jump, updated_at, log_sessions, deleted)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 0)
                  ON CONFLICT(id) DO UPDATE SET
                     alias = ?2, hostname = ?3, port = ?4, user = ?5, auth = ?6, key_path = ?7, grp = ?8,
-                    tags = ?9, color = ?10, startup_command = ?11, proxy_jump = ?12, updated_at = ?13, deleted = 0",
+                    tags = ?9, color = ?10, startup_command = ?11, proxy_jump = ?12, updated_at = ?13,
+                    log_sessions = ?14, deleted = 0",
                 params![
                     host.id,
                     host.alias,
@@ -172,6 +177,7 @@ impl Store {
                     host.startup_command,
                     host.proxy_jump,
                     host.updated_at,
+                    host.log_sessions,
                 ],
             )
             .map_err(db)?;

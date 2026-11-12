@@ -25,9 +25,11 @@ export interface Settings {
   palette: Palette;
   /** Une connexion SSH perdue se rouvre d'elle-même (charte, section 9.15). */
   sshReconnect: boolean;
+  /** Le dossier des journaux de session ; vide pour celui par défaut (charte, 9.15, 9.18). */
+  journalDir: string;
 }
 
-export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'ardoise', sshReconnect: true };
+export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'ardoise', sshReconnect: true, journalDir: '' };
 
 /** Bornes de la récupération automatique, en minutes. */
 export const AUTO_FETCH = { min: 0, max: 60 } as const;

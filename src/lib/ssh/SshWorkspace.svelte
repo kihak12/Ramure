@@ -7,6 +7,7 @@
   import { menu } from '../ui/menu.svelte';
   import HostDialog from './HostDialog.svelte';
   import KeysDialog from './KeysDialog.svelte';
+  import ExportDialog from './ExportDialog.svelte';
   import { display, keys } from '../ui/keys.svelte';
   import { mayCloseTerminal } from './guard';
   import { ssh, STATUS, type Session } from './ssh.svelte';
@@ -78,6 +79,7 @@
       { separator: true },
       { label: 'Modifier…', icon: 'pencil', run: () => (ssh.editing = host) },
       { label: 'Dupliquer…', icon: 'copy', run: () => (ssh.editing = { ...host, id: '', alias: `${host.alias} (copie)` }) },
+      { label: 'Exporter vers ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = host.id) },
       { separator: true },
       { label: 'Supprimer…', icon: 'trash', danger: true, run: () => void removeHost(host) },
     ]);
@@ -156,6 +158,9 @@
       <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Ajoute au carnet les hôtes de ~/.ssh/config qui n’y sont pas encore">
         <Icon name="import" size={14} /> Importer ~/.ssh/config
       </button>
+      <button class="btn small" type="button" onclick={() => (ssh.exporting = 'all')} title="Écrit les hôtes du carnet dans ~/.ssh/config, après avoir montré ce qui change">
+        <Icon name="export" size={14} /> Exporter vers ~/.ssh/config…
+      </button>
       <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="key" size={14} /> Gérer les clés…</button>
     </footer>
   </aside>
@@ -202,6 +207,12 @@
                 ></span>
               {/if}
               <span class="name">{session.title}</span>
+              {#if session.journal?.live}
+                <!-- Le journal en cours : une icône, dite en mots, sans couleur ni animation (9.7). -->
+                <span class="journal" role="img" aria-label="Journal en cours d’enregistrement" title="Journal en cours d’enregistrement">
+                  <Icon name="journal" size={14} />
+                </span>
+              {/if}
             </button>
             <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => void closeTab(session)}>
               <Icon name="x" size={14} />
@@ -238,6 +249,7 @@
 
 <HostDialog />
 <KeysDialog />
+<ExportDialog />
 
 <style>
   .ssh {
@@ -525,6 +537,11 @@
   }
   .current .name {
     font-weight: var(--fw-strong);
+  }
+  .tab .journal {
+    flex: none;
+    display: grid;
+    color: var(--muted);
   }
   .dot {
     flex: none;

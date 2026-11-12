@@ -18,6 +18,8 @@ export interface Host {
   color: string;
   startupCommand: string;
   proxyJump: boolean;
+  /** Chaque session de cet hôte enregistre son journal (charte, 9.15, « Journal »). */
+  logSessions: boolean;
   updatedAt: number;
 }
 
@@ -41,6 +43,8 @@ export interface Connected {
   connectMs: number;
   /** Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit. */
   keepFailed?: string | null;
+  /** Le journal demandé n'a pas pu être ouvert : pourquoi. */
+  journalFailed?: string | null;
 }
 
 export interface Closed {
@@ -76,5 +80,6 @@ export const emptyHost = (): Host => ({
   color: '',
   startupCommand: '',
   proxyJump: false,
+  logSessions: false,
   updatedAt: 0,
 });

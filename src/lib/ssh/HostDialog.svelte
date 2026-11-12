@@ -5,7 +5,6 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
   import Select from '../ui/Select.svelte';
-  import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
   import { focusWithRing } from '../ui/focus';
   import { veil } from '../ui/veil';
@@ -18,6 +17,12 @@
   let tags = $state('');
   /** Remarque affichée sous le champ de la clé après un choix dans la fenêtre de fichiers. */
   let keyNote = $state('');
+  /** Ce qui a échoué dans la fiche, dit sous l'élément qui l'a déclenché, jamais dans une
+   *  notification, que le voile de la boîte recouvrirait (charte, 9.11). */
+  let keyError = $state('');
+  let forgetError = $state<{ password: string; passphrase: string }>({ password: '', passphrase: '' });
+  /** La fiche n'a pas pu être enregistrée ou supprimée : dit dans sa dernière ligne. */
+  let failure = $state('');
 
   const editing = $derived(ssh.editing);
   const valid = $derived(!!form && form.alias.trim() !== '' && form.hostname.trim() !== '');
@@ -39,6 +44,9 @@
       form = { ...editing, tags: [...editing.tags] };
       tags = editing.tags.join(', ');
       keyNote = '';
+      keyError = '';
+      failure = '';
+      forgetError = { password: '', passphrase: '' };
       forget();
       element.showModal();
       // À la première ouverture, les champs paraissent après la boîte : `autofocus` n'y joue pas. Le
@@ -67,7 +75,8 @@
     if (!editing?.id) return;
     // La fiche telle qu'elle est enregistrée : c'est son compte qui dit quel mot de passe part avec elle.
     const stored = ssh.hosts.find((h) => h.id === editing.id) ?? editing;
-    if (await ssh.removeAsked(stored)) {
+    failure = '';
+    if (await ssh.removeAsked(stored, (text) => (failure = text))) {
       close();
       await ssh.focusBook();
     }
@@ -78,8 +87,12 @@
   async function save(connect: boolean) {
     const host = current();
     if (!host || !valid) return;
+    failure = '';
     const saved = await ssh.save(host);
-    if (!saved) return;
+    if (typeof saved === 'string') {
+      failure = saved;
+      return;
+    }
     close();
     if (connect) ssh.open(saved);
   }
@@ -98,12 +111,13 @@
     try {
       picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: folder });
     } catch (e) {
-      toasts.err('La fenêtre de fichiers n’a pas pu s’ouvrir', e instanceof Error ? e.message : String(e));
+      keyError = `La fenêtre de fichiers n’a pas pu s’ouvrir : ${e instanceof Error ? e.message : String(e)}`;
       return;
     }
     // Fenêtre annulée, ou fiche fermée entre-temps : le champ ne change pas.
     if (!picked || !form) return;
     keyNote = '';
+    keyError = '';
     if (picked.endsWith('.pub')) {
       // La connexion se fait avec la clé privée, rangée à côté sous le même nom.
       picked = picked.slice(0, -'.pub'.length);
@@ -159,12 +173,13 @@
   async function forgetHeld(kind: 'password' | 'passphrase') {
     const ref = kind === 'password' ? passwordRef : passphraseRef;
     if (!ref) return;
+    forgetError[kind] = '';
     try {
       await forgetSecret(ref);
       held[kind] = false;
       focusWithRing(kind === 'password' ? authEl : keyEl);
     } catch (e) {
-      toasts.err('Le trousseau du système n’a pas pu l’oublier', typeof e === 'string' ? e : String(e));
+      forgetError[kind] = `Le trousseau du système n’a pas pu l’oublier : ${typeof e === 'string' ? e : String(e)}`;
     }
   }
 
@@ -376,6 +391,7 @@
             {#if held.password}
               <small role="status">Le mot de passe de ce compte est retenu dans le trousseau du système.</small>
               <button class="btn ghost small" type="button" onclick={() => void forgetHeld('password')}>Oublier le mot de passe</button>
+              {#if forgetError.password}<small class="bad" role="alert">{forgetError.password}</small>{/if}
             {:else if keyring === false}
               <small>{NO_KEYRING.password}</small>
             {:else}
@@ -397,19 +413,25 @@
                 spellcheck="false"
                 autocomplete="off"
                 bind:value={form.keyPath}
-                oninput={() => (keyNote = '')}
+                oninput={() => {
+                  keyNote = '';
+                  keyError = '';
+                }}
               />
               <button class="btn" type="button" onclick={() => void browseKey()}><Icon name="folder" size={14} /> Parcourir…</button>
             </div>
             <datalist id="host-keys">
               {#each ssh.keys as key (key.path)}<option value={key.path}>{key.algorithm}{key.comment ? ` · ${key.comment}` : ''}</option>{/each}
             </datalist>
-            {#if keyNote}
+            {#if keyError}
+              <small class="bad" role="alert">{keyError}</small>
+            {:else if keyNote}
               <small class="note" role="status">{keyNote}</small>
             {:else if held.passphrase}
               <div class="kept">
                 <small role="status">La phrase secrète de cette clé est retenue dans le trousseau du système.</small>
                 <button class="btn ghost small" type="button" onclick={() => void forgetHeld('passphrase')}>Oublier la phrase secrète</button>
+                {#if forgetError.passphrase}<small class="bad" role="alert">{forgetError.passphrase}</small>{/if}
               </div>
             {:else}
               <small>Si la clé est protégée, sa phrase secrète est demandée à la connexion.</small>
@@ -422,6 +444,15 @@
           <input class="field mono" type="text" placeholder="cd /srv/docker" spellcheck="false" autocomplete="off" bind:value={form.startupCommand} />
           <small>Envoyée dans le terminal dès que le shell est prêt.</small>
         </label>
+
+        <!-- Le journal de chaque session : son dossier est dans les réglages, un seul endroit (9.18). -->
+        <div class="full journal">
+          <label class="check">
+            <input type="checkbox" bind:checked={form.logSessions} />
+            <span>Enregistrer le journal de chaque session</span>
+          </label>
+          <small>Un fichier texte par session, dans le dossier des journaux des réglages. Il contient tout ce que le terminal affiche, données sensibles comprises.</small>
+        </div>
 
         <label class="half">
           <span class="label">Groupe</span>
@@ -542,6 +573,10 @@
         {#if editing?.id}
           <button class="btn ghost bad remove" type="button" bind:this={removeButton} onclick={() => void removeHost()}>Supprimer l’hôte…</button>
         {/if}
+        <!-- Un échec d'enregistrer ou de supprimer, à gauche des boutons, qui ne bougent pas (charte, 9.11). -->
+        <div class="failure">
+          {#if failure}<p role="alert"><Icon name="warning" size={14} /><span>{failure}</span></p>{/if}
+        </div>
         <button class="btn" type="button" onclick={close}>Annuler</button>
         <button class="btn primary" type="submit" disabled={!valid} title={valid ? undefined : MISSING}>
           {adding ? 'Enregistrer et connecter' : 'Enregistrer'}
@@ -631,6 +666,24 @@
   .note {
     color: var(--warn);
   }
+  small.bad {
+    color: var(--bad);
+  }
+  /* Une case et son texte, 6 px plus loin, puis son aide (charte, 9.3 et 9.21). */
+  .journal {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  /* Plus précis que `.grid label`, qui empile un libellé au-dessus de son champ. */
+  .grid .check {
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    font-size: var(--fs-body);
+    color: var(--ink);
+  }
   /* Un secret retenu : ce que le trousseau garde et, dessous, le bouton qui l'oublie. Le bouton,
      sans fond ni bordure, est tiré de sa marge intérieure (8 px et 1 px de bordure) : son texte
      s'aligne sur la phrase. */
@@ -719,13 +772,31 @@
   /* 24 px au-dessus de la dernière ligne (charte, 9.21). */
   footer {
     display: flex;
-    justify-content: flex-end;
+    align-items: flex-start;
     gap: 8px;
     margin-top: 24px;
   }
-  /* L'entrée destructrice, seule tout à gauche. */
-  .remove {
-    margin-right: auto;
+  footer .btn {
+    flex: none;
+  }
+  /* Entre l'entrée destructrice, tout à gauche, et les boutons de droite : l'échec, s'il y en a un. */
+  .failure {
+    flex: 1;
+    min-width: 0;
+    padding-top: 8px;
+    font-size: var(--fs-small);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .failure p {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    color: var(--bad);
+  }
+  .failure :global(svg) {
+    flex: none;
   }
   .testing {
     display: flex;

@@ -15,6 +15,7 @@
   import { toasts } from '../ui/toasts.svelte';
   import { keyringAvailable, NO_KEYRING } from './secrets';
   import { explain } from './reasons';
+  import { newJournal, resumed, shown, type JournalOpen } from './journal';
   import type { Closed, Connected, SshError } from './types';
 
   let {
@@ -129,6 +130,7 @@
     window.clearTimeout(retryTimer);
     if (attempt > RETRIES.length) {
       retry = 0;
+      journalEnded(true);
       session.status = 'closed';
       phase = { step: 'closed', lost: true, message: `Les ${RETRIES.length} tentatives de reconnexion ont échoué${reason ? `${NB}: ${explain(reason)}` : '.'}` };
       return;
@@ -152,6 +154,7 @@
   function stopRetrying() {
     window.clearTimeout(retryTimer);
     retry = 0;
+    journalEnded(true);
     session.status = 'closed';
     phase = { step: 'closed', lost: true, message: 'La reconnexion automatique est arrêtée.' };
   }
@@ -290,6 +293,97 @@
   let opened = $state<{ shell: string; cwd: string } | null>(null);
   const onWindows = navigator.userAgent.includes('Windows');
 
+  // --- Journal (charte, 9.15, « The journal of a session ») -----------------------------------
+  const recording = $derived(!!session.journal?.live);
+  /** La clé du journal dans le cœur : celle de la session en cours. */
+  const journalKey = () => `${local ? 'local' : 'ssh'}:${sessionId}`;
+  const stem = () => (local ? 'terminal-local' : host.alias || host.hostname);
+  const title = () => (local ? 'Journal du terminal local' : `Journal de ${host.alias || host.hostname}`);
+
+  /** Le journal à ouvrir avec cette connexion : celui de l'onglet tant qu'on ne l'a pas arrêté,
+   *  avec une ligne de reprise s'il a déjà servi ; ou un neuf, pour un hôte qui enregistre chaque
+   *  session. */
+  async function journalToOpen(): Promise<JournalOpen | null> {
+    if (session.journalStopped) return null;
+    const previous = session.journal;
+    // Une connexion perdue qui revient continue son fichier, après une ligne de reprise.
+    if (previous?.resumable) return { path: previous.path, header: previous.header, note: previous.opened ? resumed() : null };
+    // Une session nouvelle : l'en-tête ne parle plus du journal de la précédente.
+    session.journal = null;
+    // Sinon, c'est une session nouvelle : un fichier neuf, pour un hôte qui enregistre chacune.
+    if (local || !host.logSessions) return null;
+    session.journal = { ...(await newJournal(stem(), title())), live: false, opened: false, resumable: true };
+    return { path: session.journal.path, header: session.journal.header, note: null };
+  }
+
+  /** Le cœur a ouvert le journal demandé, ou dit pourquoi il n'a pas pu : la session s'ouvre quand
+   *  même. L'onglet ne dit « en cours » qu'une fois le fichier ouvert. */
+  function journalOpened(asked: JournalOpen | null, failed: string | null | undefined) {
+    if (!asked || !session.journal) return;
+    if (failed) {
+      session.journal = null;
+      toasts.warn('Le journal n’a pas pu être ouvert', failed);
+    } else {
+      session.journal.live = true;
+      session.journal.opened = true;
+    }
+  }
+
+  /** La session s'est terminée : le cœur a fermé le fichier, l'en-tête dit où il est. Après une
+   *  connexion perdue, « Reconnecter » le reprendra ; après une fin normale, non. */
+  function journalEnded(lost = false) {
+    if (!lost) session.journalStopped = false; // la session suivante enregistre de nouveau
+    if (!session.journal) return;
+    session.journal.live = false;
+    session.journal.resumable = lost && session.journal.resumable;
+  }
+
+  /** Les mots de l'en-tête, après le nom : ils cèdent la place aux boutons, coupés par une
+   *  ellipse, et l'infobulle les redonne en entier (charte, 3.4 et 9.15). */
+  type Word = { text: string; mono?: boolean; before?: string };
+  const metaWords = $derived.by((): Word[] => {
+    // Le shell et son dossier de départ en police de code (charte, 9.15).
+    if (local) return opened ? [{ text: opened.shell, mono: true }, { before: 'ouvert dans ', text: opened.cwd, mono: true }] : [];
+    if (phase.step === 'connected' && info) {
+      const words: Word[] = [
+        { text: info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session' },
+        { text: info.authMethod },
+        { text: `connexion en ${Math.round(info.connectMs)} ms` },
+      ];
+      if (echo !== null) words.push({ text: `écho ${Math.round(echo)} ms` });
+      return words;
+    }
+    if (phase.step === 'connecting') return [{ text: session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…' }];
+    return [];
+  });
+  const metaTitle = $derived(metaWords.map((w) => `${w.before ?? ''}${w.text}`).join(' · '));
+
+  /** « Enregistrer le journal » : commence, avec ce que le terminal montre déjà, ou s'arrête. */
+  async function toggleJournal() {
+    if (sessionId === null) return;
+    if (session.journal?.live) {
+      const path = await invoke<string | null>('journal_stop', { key: journalKey() }).catch(() => null);
+      session.journal.live = false;
+      session.journalStopped = true;
+      toasts.ok('Journal enregistré', path ?? session.journal.path);
+      return;
+    }
+    try {
+      const fresh = await newJournal(stem(), title());
+      const path = await invoke<string>('journal_start', { key: journalKey(), open: { ...fresh, backlog: term ? shown(term) : null } });
+      session.journal = { ...fresh, path, live: true, opened: true, resumable: true };
+      session.journalStopped = false;
+    } catch (e) {
+      toasts.warn('Le journal n’a pas pu être ouvert', typeof e === 'string' ? e : String(e));
+    }
+  }
+
+  // Bascule demandée par la palette ou un raccourci.
+  $effect(() => {
+    if (!session.journalAsk) return;
+    untrack(() => void toggleJournal());
+  });
+
   /** Lance le shell de cette machine dans un pseudo-terminal. */
   async function openLocal() {
     if (!term || !fit) return;
@@ -302,12 +396,15 @@
       onoutput?.();
     };
     try {
-      const result = await invoke<{ id: number; shell: string; cwd: string }>('local_open', {
+      const journal = await journalToOpen();
+      const result = await invoke<{ id: number; shell: string; cwd: string; journalFailed?: string | null }>('local_open', {
         cols: term.cols,
         rows: term.rows,
         cwd: session.cwd || null,
+        journal,
         onData,
       });
+      journalOpened(journal, result.journalFailed);
       sessionId = result.id;
       opened = { shell: result.shell, cwd: result.cwd };
       session.opened = opened;
@@ -378,6 +475,7 @@
           ? { kind: 'keyFile', path: keyPath, passphrase: attempt.passphrase ?? null }
           : { kind: 'auto' };
 
+    const journal = await journalToOpen();
     try {
       const connected = await invoke<Connected>('ssh_connect', {
         params: {
@@ -391,9 +489,11 @@
           rememberHost: attempt.remember ?? false,
           startupCommand: host.startupCommand.trim() || null,
           rememberSecret: attempt.keep ?? false,
+          journal,
         },
         onData,
       });
+      journalOpened(journal, connected.journalFailed);
       info = connected;
       sessionId = connected.id;
       phase = { step: 'connected' };
@@ -542,6 +642,7 @@
       // quand le shell est arrêté par un signal, ou s'arrête en erreur avant qu'on y ait rien tapé.
       if (local) {
         session.localId = undefined;
+        journalEnded();
         if (!signal && (exitStatus === 0 || typed)) return onclose();
         session.status = 'closed';
         const how = signal ? ` (signal${NB}: ${signal})` : exitStatus === null ? '' : ` (code de sortie ${exitStatus})`;
@@ -558,6 +659,7 @@
         scheduleRetry(1, reason ?? '');
         return;
       }
+      journalEnded(ending === 'lost');
       session.status = 'closed';
       phase =
         ending === 'lost'
@@ -602,10 +704,6 @@
     {#if local}
       <!-- Un terminal local : l'ordinateur, comme partout où « local » est dit (charte, section 7). -->
       <span class="what"><Icon name="laptop" size={14} /> <b>Terminal local</b></span>
-      {#if opened}
-        <span class="mono">{opened.shell}</span>
-        <span>ouvert dans <span class="mono">{opened.cwd}</span></span>
-      {/if}
     {:else}
       {#if session.status === 'connecting'}
         <!-- La connexion s'ouvre : l'anneau d'attente tient la place du point, comme sur l'onglet.
@@ -616,16 +714,27 @@
       {/if}
       <b class="mono">{target}</b>
     {/if}
-    {#if local}
-      <!-- Pas de « Déconnecter » : la croix de l'onglet ferme le terminal. -->
-    {:else if phase.step === 'connected' && info}
-      <span>{info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session'}</span>
-      <span>{info.authMethod}</span>
-      <span>connexion en {Math.round(info.connectMs)} ms</span>
-      {#if echo !== null}<span title="Délai médian entre une frappe et son affichage">écho {Math.round(echo)} ms</span>{/if}
+    <!-- Les mots de l'en-tête cèdent la place avant les boutons, coupés par une ellipse (9.15) : un
+         seul texte, séparé par des espaces cadratins, pour que l'ellipse se dessine. -->
+    <span class="meta" title={metaTitle}
+      >{#each metaWords as word, i (i)}{#if i}{'\u2003'}{/if}{word.before ?? ''}<span class:mono={word.mono}>{word.text}</span>{/each}</span
+    >
+    {#if session.journal}
+      <span class="journal" title={session.journal.path}>{recording ? 'journal en cours' : 'journal enregistré'}</span>
+    {/if}
+    {#if phase.step === 'connected' && (local || info)}
+      <button
+        class="btn ghost small toggle"
+        type="button"
+        aria-pressed={recording}
+        title={recording ? 'Arrête l’enregistrement\u00a0: le fichier reste.' : 'Enregistre ce qui est affiché et la suite, dans un fichier texte.'}
+        onclick={() => void toggleJournal()}
+      >
+        Enregistrer le journal
+      </button>
+    {/if}
+    {#if !local && phase.step === 'connected' && info}
       <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke(API.close, { id: sessionId })}>Déconnecter</button>
-    {:else if phase.step === 'connecting'}
-      <span>{session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…'}</span>
     {/if}
   </header>
   {/if}
@@ -889,8 +998,19 @@
   header b {
     color: var(--ink);
   }
+  .meta {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  header .btn,
+  .journal {
+    flex: none;
+  }
+  /* L'en-tête parle en --muted ; ses boutons gardent le texte d'un bouton (9.1). */
   header .btn {
-    margin-left: auto;
+    color: var(--ink);
   }
   .dot {
     flex: none;
@@ -1047,6 +1167,7 @@
     white-space: nowrap;
   }
   .what {
+    flex: none;
     display: inline-flex;
     align-items: center;
     gap: 6px;
