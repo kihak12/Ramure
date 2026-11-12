@@ -636,8 +636,10 @@ buttons.
 - The icons of a label are 14 px.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
 - A local branch and its remote branch on the same commit share one label, with both icons.
-- When a commit carries several labels, the first is shown and the others are counted in a
-  "+N" pill.
+- When a commit carries several labels, the first is shown and the others are counted in a "+N"
+  pill. Hovering the column unfolds them all in a floating list, over the rows below: `--raised`
+  background, `--line` border, `--shadow-pop` shadow. It stays open as long as the pointer is on
+  it, and its labels behave like the others: hover, double-click, right-click, drop target.
 - Double-click: switch to the branch. Right-click: the branch menu.
 - During the switch, the waiting ring takes the place of the icon of the label, centred in the
   same 14 px box.
