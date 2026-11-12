@@ -27,7 +27,8 @@ interface Open {
   anchor?: HTMLElement;
   /** Ouvert au clavier : le premier élément montre tout de suite qu'il a le focus. */
   keyboard?: boolean;
-  /** L'élément d'où un menu contextuel a été demandé au clavier : il retrouve le focus à la fermeture. */
+  /** L'élément qui avait le focus quand le menu contextuel a été demandé au clavier : il le
+   *  retrouve à la fermeture. C'est la ligne, ou la liste qui la désigne (le graphe). */
   origin?: HTMLElement;
 }
 
@@ -78,9 +79,11 @@ class Menu {
     }
     // Demandé au clavier : sous l'élément qui a le focus, sur son bord gauche, et le premier élément
     // a le focus ; à la fermeture, l'élément le retrouve (charte, 9.9).
-    const origin = event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined;
-    if (origin && fromKeyboard(event)) {
-      const box = origin.getBoundingClientRect();
+    const element = event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined;
+    if (element && fromKeyboard(event)) {
+      const box = element.getBoundingClientRect();
+      const active = document.activeElement;
+      const origin = active instanceof HTMLElement && active !== document.body ? active : element;
       this.current = { x: box.left, y: box.bottom + 4, items, keyboard: true, origin };
       return;
     }
