@@ -33,6 +33,12 @@ export interface KeyInfo {
   encrypted: boolean;
 }
 
+/** L'adresse d'un hôte, telle qu'on la montre : `deploy@vps.example.net:2222`. Sans utilisateur,
+ *  l'adresse seule, jamais un « @ » isolé ; le port, s'il est donné et n'est pas 22 (charte, 9.21). */
+export function addressOf(user: string, hostname: string, port = 22): string {
+  return `${user ? `${user}@` : ''}${hostname}${port && port !== 22 ? `:${port}` : ''}`;
+}
+
 export interface Connected {
   id: number;
   fingerprint: string;

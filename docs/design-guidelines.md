@@ -1410,6 +1410,11 @@ need the room.
   state of a session is the dot of its tab. It is hidden from screen readers, since the name of
   the host says which it is. A host without a colour keeps the place empty, so that the names stay
   aligned.
+- **The address of a host** is `deploy@vps.example.net:2222`, in the code font, under its name in
+  the book and in the header and the panels of its session; the port shows when it is not 22. A
+  host without a name gives it to its tab as a title, without the port. The user is that of the
+  host, or the user of the system when the host has none; without any user, the address alone,
+  `vps.example.net`: never an "@" on its own.
 
 ## 10. Commit graph
 
