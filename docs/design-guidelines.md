@@ -683,7 +683,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   it; Enter and Space act as a click: a title folds or unfolds, a row shows its commit; the Menu
   key opens the menu of the row (9.9). The current row shows the ring, and `--sel` still marks the
   current branch. When the current row goes away (deleted, renamed, filtered out), its neighbour
-  takes its place, and the focus stays on the list. From the filter above it, ↓ goes to the list.
+  takes its place, and the focus stays on the list. From the filter above it, ↓ goes to the list,
+  and during a search to the first row found.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
 - An area that scrolls (a list, a card, a dialog) has the thin scrollbar of `src/app.css`, its
   thumb in `--muted` at 45%. On Linux it is always visible and takes its room from the area: the

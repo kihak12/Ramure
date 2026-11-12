@@ -36,6 +36,8 @@ interface Open {
 // retient l'heure de la touche pour reconnaître un menu contextuel demandé au clavier.
 let contextKeyAt = -Infinity;
 const fromKeyboard = (event: Event) => event.timeStamp - contextKeyAt < 500;
+/** Vrai pendant que l'on renvoie un `contextmenu` demandé au clavier : il ne doit pas l'être deux fois. */
+let resending = false;
 /** Vrai si `element` se voit, au moins en partie, dans la zone visible de `list`. */
 function inView(element: HTMLElement, list: HTMLElement) {
   const box = element.getBoundingClientRect();
@@ -59,7 +61,7 @@ if (typeof window !== 'undefined') {
     'contextmenu',
     (event) => {
       const focused = document.activeElement;
-      if (!fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
+      if (resending || !fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
       if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
       const current = focused.getAttribute('aria-activedescendant');
       // Cherchée dans la liste : un onglet masqué garde ses lignes, sous les mêmes identifiants.
@@ -72,12 +74,17 @@ if (typeof window !== 'undefined') {
         event.stopPropagation();
         return;
       }
+      // Toujours renvoyé, même quand le moteur visait déjà le bon élément : un élément sans menu
+      // (un titre de section) n'ouvre alors rien, et jamais le menu du moteur.
       const target = row || focused;
-      if (event.target === target || (target === focused && event.target instanceof Node && focused.contains(event.target)))
-        return;
       event.preventDefault();
       event.stopPropagation();
-      target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+      resending = true;
+      try {
+        target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+      } finally {
+        resending = false;
+      }
     },
     true,
   );

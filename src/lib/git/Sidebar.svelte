@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import { slide } from 'svelte/transition';
   import Icon, { type IconName } from '../ui/Icon.svelte';
+  import { focusWithRing } from '../ui/focus';
   import { menu } from '../ui/menu.svelte';
   import { dropMenu, labelMenu, stashMenu, switchBranch, switchToRemote } from './actions';
   import { accepts, drag } from './drag.svelte';
@@ -222,7 +223,8 @@
 <aside class="sidebar" aria-label="Branches, tags et remises">
   <label class="search">
     <Icon name="search" size={14} />
-    <!-- ↓ passe du filtre à la liste. -->
+    <!-- ↓ passe du filtre à la liste ; pendant une recherche, à la première ligne trouvée. Le focus
+         donné par le script montre l'anneau, comme celui de Tab. -->
     <input
       type="search"
       placeholder="Filtrer"
@@ -231,7 +233,8 @@
       onkeydown={(e) => {
         if (e.key !== 'ArrowDown') return;
         e.preventDefault();
-        tree?.focus();
+        if (needle) point(nodes.find((n) => !n.heading) ?? nodes[0]);
+        focusWithRing(tree);
       }}
     />
   </label>
