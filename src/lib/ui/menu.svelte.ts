@@ -34,11 +34,28 @@ interface Open {
 // La touche Menu, ou Maj + F10 : le navigateur envoie l'événement `contextmenu` juste après. On
 // retient l'heure de la touche pour reconnaître un menu contextuel demandé au clavier.
 let contextKeyAt = -Infinity;
+const fromKeyboard = (event: Event) => event.timeStamp - contextKeyAt < 500;
 if (typeof window !== 'undefined') {
   window.addEventListener(
     'keydown',
     (event) => {
       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) contextKeyAt = event.timeStamp;
+    },
+    true,
+  );
+  // WebKitGTK envoie ce `contextmenu` à l'élément qui se trouve sous le coin bas gauche de celui qui
+  // a le focus, pas toujours à lui : son propre menu ne s'ouvrait pas, et le moteur montrait le sien.
+  // On le lui renvoie. Un champ de texte garde le menu du système (copier, coller).
+  window.addEventListener(
+    'contextmenu',
+    (event) => {
+      const focused = document.activeElement;
+      if (!fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
+      if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
+      if (event.target instanceof Node && focused.contains(event.target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      focused.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
     },
     true,
   );
@@ -57,7 +74,7 @@ class Menu {
     // Demandé au clavier : sous l'élément qui a le focus, sur son bord gauche, et le premier élément
     // a le focus ; à la fermeture, l'élément le retrouve (charte, 9.9).
     const origin = event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined;
-    if (origin && event.timeStamp - contextKeyAt < 500) {
+    if (origin && fromKeyboard(event)) {
       const box = origin.getBoundingClientRect();
       this.current = { x: box.left, y: box.bottom + 4, items, keyboard: true, origin };
       return;
