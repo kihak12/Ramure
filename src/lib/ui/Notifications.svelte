@@ -121,14 +121,6 @@
     font-weight: var(--fw-strong);
   }
   /* Hors de l'écran, mais lu : le titre entier, quand celui qui est affiché est coupé. */
-  .spoken {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
   pre {
     margin: 4px 0 0;
     font-size: var(--fs-small);

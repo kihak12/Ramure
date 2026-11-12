@@ -563,10 +563,11 @@
               {#if !ribbon}
                 <span class="avatar" style:--c="var(--l{hue(commit.author)})" title={commit.author} aria-hidden="true">{initials(commit.author)}</span>
               {/if}
-              <span class="who" title={commit.author}>{commit.author}</span>
+              <!-- Colonne qui a cédé : le nom ne se voit plus, mais la ligne l'annonce encore (charte, 11). -->
+              <span class="who" class:spoken={!columns.who} title={commit.author}>{commit.author}</span>
             {/if}
           </span>
-          <span class="date"><span>{commit.wip ? '' : dateFmt.format(commit.time * 1000)}</span></span>
+          <span class="date"><span class:spoken={!columns.date}>{commit.wip ? '' : dateFmt.format(commit.time * 1000)}</span></span>
           <span class="sha mono">{commit.wip ? '' : commit.sha.slice(0, 7)}</span>
         </div>
       {/each}
@@ -602,18 +603,6 @@
   .no-sha .head span:nth-child(6),
   .no-sha .sha {
     visibility: hidden;
-  }
-  /* L'auteur et la date d'une colonne qui a cédé ne se voient plus, mais un lecteur d'écran les lit
-     encore : la ligne annonce toujours son auteur et sa date (charte, section 11). `visibility`
-     les retirerait aussi de l'arbre d'accessibilité. */
-  .no-who .who,
-  .no-date .date > span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
   .head {
     border-bottom: 1px solid var(--line-soft);
