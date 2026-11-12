@@ -108,7 +108,7 @@ component that hard-codes one.
 | `--ink` | Body text. | `#171a21` | `#e6e9ef` |
 | `--muted` | Secondary text: captions, metadata, labels. | `#5c6370` | `#959ca9` |
 | `--faint` | Hint in an empty field, disabled element, decorative marker. | `#8f95a1` | `#676e7b` |
-| `--hover` | Background of a hovered element, on a card or on what floats. | `#eaf2fe` | `#1c2633` |
+| `--hover` | Background of a hovered element, on a card or on what floats. | `#eaf2fe` | `#1d293a` |
 | `--hover-side` | Background of a hovered element on the window background: rail, toolbar, tabs, status bar. | `#d8e2f2` | `#101a27` |
 | `--sel` | Background of a selected element. | `#cee5ff` | `#112f56` |
 | `--accent` | Main action, focus, active element, link. | `#126bed` | `#64a5ff` |
