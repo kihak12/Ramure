@@ -1431,7 +1431,8 @@ way, in this order, each only as far as needed:
 
 1. the SHA goes (it stays in the detail panel and in the menu of the commit);
 2. the name of the author goes; the "Classique" style keeps the 34 px of its initials, and
-   "Ruban" already shows them on the graph;
+   "Ruban" already shows them on the graph, where the point of a merge commit, with no initial,
+   gives its author in a tooltip (10.2);
 3. the date goes;
 4. "Branche / Tag" narrows, down to 164 px;
 5. last, "Graphe" narrows, down to 72 px, until the message has 120 px. At the narrowest
