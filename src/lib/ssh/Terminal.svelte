@@ -308,6 +308,8 @@
     const previous = session.journal;
     // Une connexion perdue qui revient continue son fichier, après une ligne de reprise.
     if (previous?.resumable) return { path: previous.path, header: previous.header, note: previous.opened ? resumed() : null };
+    // Une session nouvelle : l'en-tête ne parle plus du journal de la précédente.
+    session.journal = null;
     // Sinon, c'est une session nouvelle : un fichier neuf, pour un hôte qui enregistre chacune.
     if (local || !host.logSessions) return null;
     session.journal = { ...(await newJournal(stem(), title())), live: false, opened: false, resumable: true };
@@ -338,16 +340,23 @@
 
   /** Les mots de l'en-tête, après le nom : ils cèdent la place aux boutons, coupés par une
    *  ellipse, et l'infobulle les redonne en entier (charte, 3.4 et 9.15). */
-  const metaWords = $derived.by(() => {
-    if (local) return opened ? [opened.shell, `ouvert dans ${opened.cwd}`] : [];
+  type Word = { text: string; mono?: boolean; before?: string };
+  const metaWords = $derived.by((): Word[] => {
+    // Le shell et son dossier de départ en police de code (charte, 9.15).
+    if (local) return opened ? [{ text: opened.shell, mono: true }, { before: 'ouvert dans ', text: opened.cwd, mono: true }] : [];
     if (phase.step === 'connected' && info) {
-      const words = [info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session', info.authMethod, `connexion en ${Math.round(info.connectMs)} ms`];
-      if (echo !== null) words.push(`écho ${Math.round(echo)} ms`);
+      const words: Word[] = [
+        { text: info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session' },
+        { text: info.authMethod },
+        { text: `connexion en ${Math.round(info.connectMs)} ms` },
+      ];
+      if (echo !== null) words.push({ text: `écho ${Math.round(echo)} ms` });
       return words;
     }
-    if (phase.step === 'connecting') return [session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…'];
+    if (phase.step === 'connecting') return [{ text: session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…' }];
     return [];
   });
+  const metaTitle = $derived(metaWords.map((w) => `${w.before ?? ''}${w.text}`).join(' · '));
 
   /** « Enregistrer le journal » : commence, avec ce que le terminal montre déjà, ou s'arrête. */
   async function toggleJournal() {
@@ -707,7 +716,9 @@
     {/if}
     <!-- Les mots de l'en-tête cèdent la place avant les boutons, coupés par une ellipse (9.15) : un
          seul texte, séparé par des espaces cadratins, pour que l'ellipse se dessine. -->
-    <span class="meta" title={metaWords.join(' · ')}>{metaWords.join('\u2003')}</span>
+    <span class="meta" title={metaTitle}
+      >{#each metaWords as word, i (i)}{#if i}{'\u2003'}{/if}{word.before ?? ''}<span class:mono={word.mono}>{word.text}</span>{/each}</span
+    >
     {#if session.journal}
       <span class="journal" title={session.journal.path}>{recording ? 'journal en cours' : 'journal enregistré'}</span>
     {/if}

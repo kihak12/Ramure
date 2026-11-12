@@ -1044,13 +1044,14 @@ password typed without echo is not in it.
 - **Stopping**, with the toggle or the palette, closes the file, and a notification says "Journal
   enregistré", the path in its detail. Closing the tab, or the end of the session, closes it too,
   without a question: nothing is lost. Then the header says "journal enregistré", in `--muted`,
-  its tooltip giving the path, until a journal starts again. After a lost connection comes back,
-  by itself or with "Reconnecter" (9.15, "A lost connection"), the same file goes on, after the
-  line "— connexion perdue, reprise à 23:07 —". A session that ended by itself or by "Déconnecter"
-  is over: reopened in the same tab, it is a new session, with a new file when its host records
-  every session. A journal that cannot be opened does not stop the session: a warning notification
-  says why and what to do ("accès refusé. Choisis dans les réglages un dossier où ton compte peut
-  écrire."), or gives the text of the system when the cause is not known.
+  its tooltip giving the path, until a journal starts again or the tab opens a new session. After
+  a lost connection comes back, by itself or with "Reconnecter" (9.15, "A lost connection"), the
+  same file goes on, after the line "— connexion perdue, reprise à 23:07 —". A session that ended
+  by itself or by "Déconnecter" is over: reopened in the same tab, it is a new session, with a new
+  file when its host records every session. A journal that cannot be opened does not stop the
+  session: a warning notification says why and what to do ("accès refusé. Choisis dans les
+  réglages un dossier où ton compte peut écrire."), or gives the text of the system when the cause
+  is not known.
 - **The file**: one per session, named after the host, the date and the time,
   `serveur-test_2026-11-11_23-05-12.log` (`terminal-local_…` for a local terminal; a character
   that a file name cannot hold becomes "_"), in the folder chosen in the settings (9.18),
