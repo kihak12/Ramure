@@ -521,7 +521,7 @@
             {#if labels.length}
               {@render chip(labels[0], commit)}
               {#if labels.length > 1}
-                <span class="chip more">+{labels.length - 1}</span>
+                <span class="more">+{labels.length - 1}</span>
                 <span class="all">
                   {#each labels as label (label.kind + label.name)}{@render chip(label, commit)}{/each}
                 </span>
@@ -837,9 +837,16 @@
     background: color-mix(in srgb, var(--c) 90%, var(--ink));
     border-color: color-mix(in srgb, var(--c) 90%, var(--ink));
   }
-  /* Le compte des autres étiquettes : un compteur (`.chip`, charte, 9.5), qui ne rétrécit pas. */
   .more {
     flex: none;
+    font-size: var(--fs-micro);
+    padding: 0 5px;
+    line-height: 16px;
+    border-radius: var(--radius-pill);
+    background: var(--side);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
   }
   /* Toutes les étiquettes d'un commit, dépliées au survol de la colonne. */
   .all {

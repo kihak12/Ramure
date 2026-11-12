@@ -636,8 +636,11 @@ buttons.
 - The icons of a label are 14 px.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
 - A local branch and its remote branch on the same commit share one label, with both icons.
-- When a commit carries several labels, the first is shown and the others are counted in a
-  counter (9.5), "+N". Hovering the column unfolds them all in a floating list, over the rows below: `--raised`
+- When a commit carries several labels, the first is shown and the others are counted in a "+N"
+  pill: `--side` background, `--line` border, 10.5 px text in tabular figures, in `--muted`.
+  Unlike a counter (9.5), it keeps a border, so that it stays visible on a hovered or selected
+  row, whose background is `--hover` or `--sel` (9.6). Hovering the column unfolds them all in a
+  floating list, over the rows below: `--raised`
   background, `--line` border, `--shadow-pop` shadow, as what floats (6), but 8 px corners
   (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays open as long as
   the pointer is on it, and its labels behave like the others: hover, double-click, right-click,
