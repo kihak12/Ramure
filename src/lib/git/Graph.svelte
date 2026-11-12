@@ -566,7 +566,7 @@
               <span class="who" title={commit.author}>{commit.author}</span>
             {/if}
           </span>
-          <span class="date">{commit.wip ? '' : dateFmt.format(commit.time * 1000)}</span>
+          <span class="date"><span>{commit.wip ? '' : dateFmt.format(commit.time * 1000)}</span></span>
           <span class="sha mono">{commit.wip ? '' : commit.sha.slice(0, 7)}</span>
         </div>
       {/each}
@@ -584,7 +584,8 @@
     position: relative;
   }
   /* Largeurs calculées dans le script (charte, section 10.1). Une colonne qui cède garde sa
-     place dans la grille, à 0 px, et son contenu est caché. */
+     place dans la grille, à 0 px, et son contenu ne se voit plus : le nom de l'auteur et la date
+     restent lus par un lecteur d'écran (voir plus bas). */
   .head,
   .row {
     display: grid;
@@ -597,12 +598,22 @@
   }
   /* `visibility`, et non `display` : une cellule retirée décalerait les suivantes d'une colonne. */
   .no-who .head span:nth-child(4),
-  .no-who .who,
   .no-date .head span:nth-child(5),
-  .no-date .date,
   .no-sha .head span:nth-child(6),
   .no-sha .sha {
     visibility: hidden;
+  }
+  /* L'auteur et la date d'une colonne qui a cédé ne se voient plus, mais un lecteur d'écran les lit
+     encore : la ligne annonce toujours son auteur et sa date (charte, section 11). `visibility`
+     les retirerait aussi de l'arbre d'accessibilité. */
+  .no-who .who,
+  .no-date .date > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .head {
     border-bottom: 1px solid var(--line-soft);

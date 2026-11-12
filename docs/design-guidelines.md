@@ -1442,6 +1442,8 @@ way, in this order, each only as far as needed:
 5. last, "Graphe" narrows, down to 72 px, until the message has 120 px. At the narrowest
    centre card (360 px, 9.16), the message takes what is left, 80 px at the least.
 
+The name of the author and the date that have gone from the eye stay for screen readers (11).
+
 The lanes that no longer fit are cut at the right edge of "Graphe"; hiding a side card (9.17)
 gives them back. A commit on a cut lane has no dot: its band starts at the edge of the column,
 and the tooltip of its message adds its author.
@@ -1504,7 +1506,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Reduced motion.** See section 8.
 - **Screen readers.** An icon on its own has an accessible name. An error is announced at once
   (`role="alert"`), other notifications without interrupting (`role="status"`). Menus and the
-  palette declare their role.
+  palette declare their role. A row of the graph says its message, its author and its date, even
+  when their columns have given way (10.1): they are then hidden from the eye only.
 - **Both themes.** A screen is not finished until it has been checked in light and in dark.
 
 ## 12. Tone of the interface text
