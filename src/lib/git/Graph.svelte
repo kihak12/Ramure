@@ -625,14 +625,16 @@
   .scroller:has(.row:focus-visible) .row.sel::before {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
+  /* Les lignes, le canevas et le halo s'empilent entre eux, à part du reste de la carte. */
   .spacer {
     position: relative;
+    isolation: isolate;
   }
   .lanes {
     position: absolute;
     left: var(--labels);
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
   }
   .row {
     position: absolute;
@@ -843,6 +845,12 @@
   .labels:hover .all {
     display: flex;
     animation: pop-in var(--t-fast) var(--ease);
+  }
+  /* La ligne dont on survole les étiquettes passe devant les suivantes : sans cela, la liste
+     dépliée resterait sous elles, visible mais hors d'atteinte du pointeur, et se fermerait dès
+     qu'il descend dessus. Elle reste sous le canevas, qui garde ses traits par-dessus son fond. */
+  .row:has(.labels:hover) {
+    z-index: 1;
   }
 
   .msg {

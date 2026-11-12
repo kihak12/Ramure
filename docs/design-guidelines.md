@@ -334,8 +334,8 @@ From left to right and from top to bottom:
 |---|---|---|
 | `--radius-xs` | 4 px | Small markers: shortcut key, file status letter, highlight inside a diff line; the 15 px checkbox. |
 | `--radius-s` | 6 px | What can be clicked: buttons, fields, branch and tag labels, menu items. |
-| `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons. |
-| `--radius-l` | 12 px | What floats: dialogs, menus, command palette. |
+| `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels. |
+| `--radius-l` | 12 px | What floats: dialogs, menus, command palette; notifications and the unfolded labels of a commit excepted (8 px). |
 | `--radius-card` | 14 px | Cards. |
 | `--radius-pill` | 999 px | What informs: counters, the capsule of a commit message. |
 
@@ -356,7 +356,7 @@ The interface has four levels. Each is recognised by its background.
 | 0 | Window | `--side` | none | none |
 | 1 | Card | `--panel` | none | none |
 | 2 | Button, field (inside a card) | `--raised`, `--bg` | 1 px `--line` | `--shadow-soft` for a button |
-| 3 | Menu, dialog, notification, palette | `--raised` | 1 px `--line` | `--shadow-pop` |
+| 3 | Menu, dialog, notification, palette, unfolded labels of a commit | `--raised` | 1 px `--line` | `--shadow-pop` |
 
 | Token | Light | Dark |
 |---|---|---|
@@ -636,8 +636,12 @@ buttons.
 - The icons of a label are 14 px.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
 - A local branch and its remote branch on the same commit share one label, with both icons.
-- When a commit carries several labels, the first is shown and the others are counted in a
-  "+N" pill.
+- When a commit carries several labels, the first is shown and the others are counted in a "+N"
+  pill. Hovering the column unfolds them all in a floating list, over the rows below: `--raised`
+  background, `--line` border, `--shadow-pop` shadow, as what floats (6), but 8 px corners
+  (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays open as long as
+  the pointer is on it, and its labels behave like the others: hover, double-click, right-click,
+  drop target.
 - Double-click: switch to the branch. Right-click: the branch menu.
 - During the switch, the waiting ring takes the place of the icon of the label, centred in the
   same 14 px box.
