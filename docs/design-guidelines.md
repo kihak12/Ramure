@@ -108,14 +108,15 @@ component that hard-codes one.
 | `--ink` | Body text. | `#171a21` | `#e6e9ef` |
 | `--muted` | Secondary text: captions, metadata, labels. | `#5c6370` | `#959ca9` |
 | `--faint` | Hint in an empty field, disabled element, decorative marker. | `#8f95a1` | `#676e7b` |
-| `--hover` | Background of a hovered element. | `#eef0f4` | `#1e222a` |
-| `--sel` | Background of a selected element. | `#e1ecfb` | `#1d3252` |
-| `--accent` | Main action, focus, active element, link. | `#2b6fdb` | `#6aa5f8` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded. | `#e4eefc` | `#182b45` |
+| `--hover` | Background of a hovered element, on a card or on what floats. | `#eaf2fe` | `#1d293a` |
+| `--hover-side` | Background of a hovered element on the window background: rail, toolbar, tabs, status bar. | `#d8e2f2` | `#101a27` |
+| `--sel` | Background of a selected element. | `#cee5ff` | `#112f56` |
+| `--accent` | Main action, focus, active element, link. | `#126bed` | `#64a5ff` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded. | `#e3eefe` | `#102a4e` |
 | `--on-accent` | Text placed on the accent or on a branch colour. | `#ffffff` | `#08131f` |
-| `--ok` / `--ok-soft` | Success, added line. | `#1f7a45` / `#e2f3e8` | `#5cc48d` / `#12301f` |
-| `--warn` / `--warn-soft` | Warning, pending operation. | `#8f5708` / `#fbf0dc` | `#f0a94f` / `#3a2b14` |
-| `--bad` / `--bad-soft` | Error, destructive action, removed line. | `#b42318` / `#fbe5e2` | `#f2776d` / `#3a1715` |
+| `--ok` / `--ok-soft` | Success, added line. | `#037c40` / `#def5e6` | `#42c887` / `#02321b` |
+| `--warn` / `--warn-soft` | Warning, pending operation. | `#905601` / `#fef0d4` | `#f9a52c` / `#3e2a06` |
+| `--bad` / `--bad-soft` | Error, destructive action, removed line. | `#bc0400` / `#ffe4e0` | `#fe6c62` / `#41100f` |
 | `--term-bg` / `--term-ink` | Background and text of the terminal. | `#fbfbfc` / `#1c1f27` | `#0b0c10` / `#d5dae3` |
 | `--scrim` | Veil behind a dialog. | `rgb(18 22 30 / 0.32)` | `rgb(0 0 0 / 0.55)` |
 
@@ -126,14 +127,14 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
 
 | Token | Light | Dark |
 |---|---|---|
-| `--l0` | `#2b6fdb` | `#6aa5f8` |
-| `--l1` | `#c2410c` | `#f2844e` |
-| `--l2` | `#1b7f53` | `#55c68b` |
-| `--l3` | `#8447c7` | `#b98aeb` |
-| `--l4` | `#8a6500` | `#e8be45` |
-| `--l5` | `#c33a6f` | `#ee79a2` |
-| `--l6` | `#0f808a` | `#3fc4cc` |
-| `--l7` | `#5d6b17` | `#b0c25a` |
+| `--l0` | `#126bed` | `#64a5ff` |
+| `--l1` | `#c43e01` | `#fe7b35` |
+| `--l2` | `#018051` | `#35ca84` |
+| `--l3` | `#8939d6` | `#bd84f7` |
+| `--l4` | `#8a6501` | `#eebc06` |
+| `--l5` | `#ce216e` | `#f96ea2` |
+| `--l6` | `#03808b` | `#07c6d0` |
+| `--l7` | `#5d6c02` | `#afc340` |
 
 - `--l0` is the accent colour: the first column and the accent echo each other.
 - Outside the graph, these colours are only used for a marker chosen by the user, such as the
@@ -150,6 +151,11 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
   has to be read.
 - A state-tinted background uses the `-soft` token, or 13 to 15% of the colour over the
   background.
+- **Hover and selection are tints of the accent**, of growing strength: `--hover` on a card,
+  `--hover-side` on the window background, darker in light and lighter in dark than the surface,
+  and `--sel`, more saturated, so that the selection stays apart from the hover. Every theme
+  makes them so, in the hue of its accent; their lightness is kept where `--ink` and `--muted`
+  stay readable (2.4).
 
 ### 2.4 Minimum contrasts
 
@@ -157,13 +163,15 @@ Every theme must meet them, in light and in dark.
 
 | Pair | Minimum |
 |---|---|
-| `--ink` on `--panel`, `--bg`, `--sel`, `--hover` | 7:1 |
+| `--ink` on `--panel`, `--bg`, `--sel`, `--hover`, `--hover-side` | 7:1 |
 | `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
-| `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--warn-soft` | 4.5:1 |
+| `--ink` on `--accent-soft`, `--ok-soft`, `--warn-soft`, `--bad-soft` | 7:1 |
+| `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--hover-side`, `--warn-soft` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
 | `--ok`, `--warn`, `--bad` on `--panel`, `--bg` and `--raised` (the result of a test in a dialog) | 4.5:1 |
 | `--bad` on `--bad-soft` and `--warn-soft` (ghost danger button, destructive menu item, the banner of an operation) | 4.5:1 |
 | `--accent` and each branch colour on `--panel` | 3:1 |
+| `--accent` on `--accent-soft` (the icon of an active module or of a pressed action) | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | Each terminal colour (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
@@ -453,7 +461,7 @@ States are the same everywhere:
 
 | State | Rendering |
 |---|---|
-| Hover | `--hover` background, in `--t-fast`. |
+| Hover | `--hover` background, in `--t-fast`; `--hover-side` on the window background (rail, toolbar, tabs, status bar). |
 | Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists and menus. |
 | Selection | `--sel` background. |
 | Disabled | 45% opacity, "not allowed" cursor, no reaction on hover. |
@@ -555,7 +563,7 @@ its own buttons.
 
 - Each action is an 18 px icon above an 11.5 px label, at least 58 px wide.
 - At rest, no background and no border: the button sits on the window background. On hover, a
-  `--hover` background and 6 px corners.
+  `--hover-side` background and 6 px corners.
 - A counter (commits to pull, to push) is a round badge in `--accent`, at the top right of the
   icon.
 - During an operation, the icon spins and the button is disabled.
@@ -572,7 +580,7 @@ its own buttons.
 - One view button closes the toolbar, on the right, above the right edge of the cards:
   "Affichage". It is an 18 px icon alone, in a 30 × 30 px button, and it opens the menu of the
   cards to show (9.17).
-  - At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a `--hover`
+  - At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a `--hover-side`
     background and the icon in `--ink`. It has no pressed state: the menu says what is shown.
   - Its accessible name is "Affichage" and its tooltip "Choisir les cartes à afficher", which
     keeps quiet while the menu is open (9.9).
@@ -717,18 +725,19 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 ### 9.7 Tabs
 
 - The active tab is a small card: `--panel` background, 8 px corners, no frame and no line.
-- An inactive tab is `--muted` text on the window background; on hover, a `--hover` background.
+- An inactive tab is `--muted` text on the window background; on hover, a `--hover-side`
+  background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
 - A terminal that records its journal carries the "journal" icon, 14 px in `--muted`, between its
   name and its cross, with "Journal en cours d’enregistrement" as tooltip and accessible name
   (9.15).
 - The close cross is visible on the active tab, and on hover on the others. On hover it takes
-  a `--line` background, not `--hover`: it sits on a tab that is hovered or active, where
-  `--hover` would not show.
+  a veil of `--ink` at 12%, not a hover token: it sits on a tab that is hovered (`--hover-side`)
+  or active (`--panel`), and the veil shows on both, in light and in dark.
 - The same goes for the cross of a row that appears on hover, such as a recent repository on the
   start page: `--line` on hover, since it sits on a hovered row.
 - The "+" button follows the last tab: an icon alone, 28 × 28 px, no background at rest and
-  `--hover` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
+  `--hover-side` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
   name say what it opens, with the shortcut: "Nouveau terminal local (Ctrl + Maj + N)".
 - A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling. It
   shows no scrollbar: it scrolls to the tab that matters (below).

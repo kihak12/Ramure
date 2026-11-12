@@ -168,7 +168,7 @@
     cursor: default;
   }
   button.crumb:hover:not(:disabled) {
-    background: var(--hover);
+    background: var(--hover-side);
   }
   .crumb b,
   .small {
@@ -218,7 +218,7 @@
       opacity var(--t-fast) var(--ease);
   }
   .tool:hover:not(:disabled) {
-    background: var(--hover);
+    background: var(--hover-side);
   }
   .tool:hover:not(:disabled) .glyph {
     transform: translateY(-1px);
@@ -262,7 +262,7 @@
   }
   .view:hover:not(:disabled),
   .view[aria-expanded='true'] {
-    background: var(--hover);
+    background: var(--hover-side);
     color: var(--ink);
   }
   .view:active:not(:disabled) {

@@ -107,7 +107,7 @@
     transition: background var(--t-fast) var(--ease);
   }
   .journal-btn:hover:not(:disabled) {
-    background: var(--hover);
+    background: var(--hover-side);
     color: var(--ink);
   }
   .journal-btn:disabled {
