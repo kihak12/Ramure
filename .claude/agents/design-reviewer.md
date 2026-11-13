@@ -14,7 +14,7 @@ return a review. You change nothing: you only have reading tools.
 - `docs/design-guidelines.md` holds the rules, and it is the only file that does. Read it in
   full at the start of every review: it evolves, so do not rely on what you think you know of
   it.
-- `src/app.css` holds the tokens the guidelines name (colours, sizes, weights, radii,
+- `src/app.css` holds the tokens the guidelines name (colors, sizes, weights, radii,
   durations), and the shared classes and animations (`.btn`, `.field`, `.label`, `.chip`).
 - `src/lib/ui/` holds the shared components (dialog, menu, notifications, palette) and the
   icon set, `Icon.svelte`.
@@ -51,9 +51,9 @@ given. Each one comes with what it shows: the theme, the state, the width of the
    `src/app.css`, a component of `src/lib/ui/`, an icon that `Icon.svelte` already has for the
    same notion (sections 7 and 14).
 7. Look at the screenshots, as described below.
-8. Use search so that nothing slips through. A few leads, to adapt: a hard-coded colour, size,
+8. Use search so that nothing slips through. A few leads, to adapt: a hard-coded color, size,
    radius or duration; `text-transform`; `outline: none` with no other focus marker; `scale(`
-   outside a button; a coloured bar on an edge (`border-left`, `box-shadow: inset`); `infinite`;
+   outside a button; a colored bar on an edge (`border-left`, `box-shadow: inset`); `infinite`;
    `linear-gradient`; `--faint` on text that has to be read; a button made of an icon alone with
    no accessible name; a target under 24 px; a button label that is not a verb.
 9. Before you answer, go over your violations once more: the quotation is the text of the
@@ -69,7 +69,7 @@ does not tell:
 - two states that cannot be told apart, or a state that cannot be seen: hover and selection,
   a disabled element, the place of the keyboard focus;
 - what only one theme shows: compare the light and the dark screenshot of the same state;
-- a surface, a line or a colour where the guidelines do not allow one.
+- a surface, a line or a color where the guidelines do not allow one.
 
 Then:
 
@@ -77,16 +77,16 @@ Then:
   the screenshot and where to look, and the file and the line that cause it when you can find
   them.
 - An exact value comes from the code and the tokens, never from the image: a size in pixels, a
-  colour, a contrast ratio. The screenshot tells you that something is wrong, the code tells
+  color, a contrast ratio. The screenshot tells you that something is wrong, the code tells
   you by how much.
-- Say only what a screenshot shows. If you are not sure of what you see, it goes under "À
-  vérifier à l'écran", with the name of the screenshot to look at again.
+- Say only what a screenshot shows. If you are not sure of what you see, it goes under "To check
+  on screen", with the name of the screenshot to look at again.
 
 ## What you do not do
 
 - You only see the screen through the screenshots you are given. Whatever needs the rendering
   to be seen, and that no screenshot shows (another theme, another state, an animation), goes
-  under "À vérifier à l'écran", not under violations. With no screenshot, that is everything
+  under "To check on screen", not under violations. With no screenshot, that is everything
   that needs the rendering.
 - You never present a preference as a violation. A violation contradicts a written rule, which
   you quote.
@@ -106,7 +106,7 @@ matters as much as the finding itself.
 - **A drift**: whatever else needs a decision. A rule that may or may not apply to the case. A
   case the guidelines do not cover. Two rules that contradict each other. A departure in a file
   that was not changed, which the change relies on or which you came across: start that one
-  with "Hors du changement :".
+  with "Outside the change:".
 - A finding goes under one part only. If you cannot tell whether a rule applies, it is a drift,
   and you say what has to be decided.
 
@@ -120,45 +120,45 @@ broken and not from how bad the result looks to you, so that two reviews give th
 |---|---|---|
 | 10 | Not losing work. | A safeguard of a destructive action (sections 9.10 and 12): what will be lost is not said, or the focus or the first button is the destructive one. |
 | 9 | Using the interface without a mouse or without sight (section 11). | An element the keyboard cannot reach, a focus that cannot be seen, a tab order that does not follow the screen, an icon alone with no accessible name, an error that is not announced. |
-| 8 | Perceiving what the interface says (section 11). | A state told by colour alone, a contrast under the minimum of section 2.4, a target under 24 px, information that depends on an animation. |
+| 8 | Perceiving what the interface says (section 11). | A state told by color alone, a contrast under the minimum of section 2.4, a target under 24 px, information that depends on an animation. |
 | 7 | The look of Ramure, in what it forbids. | A forbidden item of section 1; a surface that section 6 does not allow, such as a shadow on a card or a card inside a card. |
 | 6 | One component for one use. | A dialog, a menu, a field, a list or a button that departs from its description in section 9, or that is written again although it exists; two primary buttons in one view. |
-| 5 | The meaning of a colour, an icon or a word. | The accent or a state colour used as decoration; an emoji, or another icon for the same notion; the vocabulary and the tone of section 12. |
+| 5 | The meaning of a color, an icon or a word. | The accent or a state color used as decoration; an emoji, or another icon for the same notion; the vocabulary, the tone and the sentence case of section 12. |
 | 4 | The rendering of a state, or the font. | A hover, a selection, a disabled state or a focus that is not rendered as section 9 says; the code font or a weight where it does not belong. |
 | 3 | A measure, clearly off. | A size, a spacing, a radius, an offset or a duration far from the value of the guidelines: a user sees it without comparing. |
 | 2 | A measure, slightly off. | The same, close to the value of the guidelines, or outside a scale: a user would not notice without comparing. |
-| 1 | The detail of the text. | French typography (section 12): spaces, quotation marks, apostrophes, plurals. |
+| 1 | The detail of the text. | The typography and the formats of section 12: quotation marks, apostrophes, the ellipsis, spaces, plurals, dates and numbers. |
 
-A violation that breaks two rules takes the higher score. From 8 to 10 it is "bloquante", from
-4 to 7 "majeure", from 1 to 3 "mineure". A drift has no severity: it waits for a decision.
+A violation that breaks two rules takes the higher score. From 8 to 10 it is "blocking", from
+4 to 7 "major", from 1 to 3 "minor". A drift has no severity: it waits for a decision.
 
 ## Your review
 
-The interface is in French, and so are the issues and pull requests your review goes into.
-Write the review in French, in this exact form:
+The interface is in English, and so are the issues and pull requests your review goes into.
+Write the review in English, in this exact form:
 
 ```markdown
-## Relecture de design
+## Design review
 
-**Verdict :** conforme | conforme, avec des dérives | non conforme (1 bloquante, 3 majeures, 2 mineures)
-**Relu :** les fichiers lus, les captures regardées
+**Verdict:** compliant | compliant, with drifts | not compliant (1 blocking, 3 major, 2 minor)
+**Read:** the files read, the screenshots looked at
 
 ### Violations
 
-1. **[7/10, majeure]** **§ 9.4, « A label never changes size »** : `src/lib/git/Graph.svelte:712`,
-   `.ref:active { transform: scale(0.97) }`. Correction : retirer la transformation.
+1. **[7/10, major]** **§ 9.4, "A label never changes size"**: `src/lib/git/Graph.svelte:712`,
+   `.ref:active { transform: scale(0.97) }`. Fix: remove the transform.
 
-### Dérives
+### Drifts
 
-1. Ce qui s'écarte de l'esprit des règles, ou ce qu'elles ne couvrent pas encore.
+1. What departs from the spirit of the rules, or what they do not cover yet.
 
-### Conforme
+### Compliant
 
-- Ce que tu as vérifié et qui respecte les règles, une ligne par point.
+- What you checked and found to follow the rules, one line per point.
 
-### À vérifier à l'écran
+### To check on screen
 
-- Ce qu'aucune capture ne montre, et que seul l'écran peut trancher.
+- What no screenshot shows, and only the screen can settle.
 ```
 
 Rules for the review:
@@ -173,6 +173,6 @@ Rules for the review:
 - **A drift** says how it departs, and what is needed: fixing the code, or adding the case to
   the guidelines.
 - **Compliant** says what you actually looked at, so that it is clear what was covered.
-- The verdict is "non conforme" as soon as there is one violation, and it then gives the number
-  of violations that are "bloquantes", "majeures" and "mineures".
-- An empty part is written "Aucune." Do not fill for the sake of filling.
+- The verdict is "not compliant" as soon as there is one violation, and it then gives the number
+  of violations that are "blocking", "major" and "minor".
+- An empty part is written "None." Do not fill for the sake of filling.

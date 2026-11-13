@@ -8,11 +8,11 @@ is in the [README](README.md).
 - The number in brackets is the section of the [design guidelines](../../../docs/design-guidelines.md)
   that holds the rule.
 - **Sev.** is the severity, from 1 to 10, that the table of the definition of the subagent gives
-  to the rule: 8 to 10 is "bloquante", 4 to 7 "majeure", 1 to 3 "mineure".
+  to the rule: 8 to 10 is "blocking", 4 to 7 "major", 1 to 3 "minor".
 
 ## Planted violations (25)
 
-Five are "bloquantes", fifteen "majeures", five "mineures".
+Five are "blocking", fifteen "major", five "minor".
 
 ### Interface text
 

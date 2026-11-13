@@ -67,7 +67,7 @@ There is one virtual screen and one release binary. Never play two scenarios at 
 - **The GTK file chooser** corrupts a typed path with its completion. Choose the file by
   double-clicking it in the list, or type the path slowly after Ctrl + L and check it in a
   capture before confirming.
-- **A notification** goes away after about 9 seconds: an action it offers, such as "Annuler",
+- **A notification** goes away after about 9 seconds: an action it offers, such as "Undo",
   has to be clicked before that.
 - **A dialog** makes the rest of the page inert: a click outside it lands on its veil and
   closes it.
@@ -85,7 +85,7 @@ There is one virtual screen and one release binary. Never play two scenarios at 
 - Play what the brief asks, step by step. When it asks for several tries, play them all from
   the same starting state (menu or dialog closed, pointer moved away), and count.
 - Capture each state the brief names, in each theme it names. Name a file after what it shows:
-  `115-hote-sombre.png`, not `capture3.png`.
+  `115-host-dark.png`, not `capture3.png`.
 - To look at many captures, crop them to the area that matters and assemble them
   (`convert a.png -crop 600x300+0+0 a-zoom.png`, then
   `convert a-zoom.png b-zoom.png -append a-b.png`), and open the assembly: fewer images to
@@ -100,29 +100,28 @@ Facts, not conclusions on the code. You are often told what the caller expects t
 what the screen shows, especially when it is something else. A try that went wrong (a click
 that missed its target, an application that did not start) is reported and not counted.
 
-The interface, the issues and the pull requests of Ramure are in French: write your report in
-French, in this form:
+The interface, the issues and the pull requests of Ramure are in English: write your report in
+English, in this form:
 
 ```markdown
-## Essai à l'écran
+## Screen test
 
-**Binaire :** compilé pour cet essai | déjà à jour, sur la branche `…` au commit `…`
-**Environnement :** thèmes, taille de la fenêtre, dépôt ou hôtes de test, avec ou sans utilisateur système
+**Binary:** built for this test | already up to date, on branch `…` at commit `…`
+**Environment:** themes, window size, test repository or hosts, with or without a system user
 
-### Scénarios
+### Scenarios
 
-1. **Ce qui a été joué**, pas à pas, avec le geste exact (calme ou simultané).
-   - Vu : ce que l'écran montre. Comptes : 3 essais sur 3.
-   - Captures : `captures/…-clair.png`, `captures/…-sombre.png`
+1. **What was played**, step by step, with the exact gesture (calm or simultaneous).
+   - Seen: what the screen shows. Counts: 3 tries out of 3.
+   - Screenshots: `captures/…-light.png`, `captures/…-dark.png`
 
-### Inattendu
+### Unexpected
 
-- Ce qui a surpris, même hors des scénarios. « Rien. » sinon.
+- What came as a surprise, even outside the scenarios. "Nothing." otherwise.
 
-### Non vérifié
+### Not checked
 
-- Ce qui n'a pas pu être joué ou vu, et pourquoi : un texte accentué, une étape impossible,
-  Windows.
+- What could not be played or seen, and why: an accented text, an impossible step, Windows.
 ```
 
 ## Before you answer
