@@ -1,6 +1,6 @@
 # Ramure design guidelines
 
-The reference for Ramure's design: colours, type, spacing, shapes, motion, every component, the
+The reference for Ramure's design: colors, type, spacing, shapes, motion, every component, the
 tone of the interface text and the logo.
 
 - **Scope:** the whole interface, Git and SSH modules.
@@ -10,9 +10,9 @@ tone of the interface text and the logo.
 - **In the code:** the tokens are in `src/app.css`, and `npm run check` rejects a component that
   writes a value of its own.
 
-The interface is in English, and so are the labels quoted in this document. The interface moved
-from French to English in November 2026 (#147): until that work is done, the code may still show
-the French text that a label quoted here replaces.
+The interface is in English, and so are the labels quoted in this document. The interface is
+moving from French to English (#147): until that work is done, the code may still show the French
+text that a label quoted here replaces.
 
 | Dark | Light |
 |---|---|
@@ -23,7 +23,7 @@ The two screenshots show the application as it is, on a demonstration repository
 ## Contents
 
 1. [Principles](#1-principles)
-2. [Colours](#2-colours)
+2. [Colors](#2-colors)
 3. [Typography](#3-typography)
 4. [Spacing and dimensions](#4-spacing-and-dimensions)
 5. [Shapes](#5-shapes)
@@ -61,16 +61,16 @@ The two screenshots show the application as it is, on a demonstration repository
 
 ## 1. Principles
 
-What the interface favours:
+What the interface favors:
 
 1. **Content first.** The graph, the diff and the terminal fill the screen. Everything else
    steps back: no decoration on working screens.
-2. **Colour means something.** A bright colour stands for a branch, a state or the main action,
-   or for a marker that the user chose: the colour of an SSH host. Nothing else.
+2. **Color means something.** A bright color stands for a branch, a state or the main action,
+   or for a marker that the user chose: the color of an SSH host. Nothing else.
 3. **Surfaces rather than lines.** Areas are separated by their background and by space. Lines
    are only used inside a card or a dialog.
 4. **One shape, one role.** A slightly rounded rectangle can be clicked. A pill or a circle
-   informs. One exception: a colour swatch, a round dot of colour that is chosen (9.21).
+   informs. One exception: a color swatch, a round dot of color that is chosen (9.21).
 5. **Dense and readable.** A lot of information on screen, but no text under 10.5 px and no
    target under 24 px.
 6. **Calm.** A movement is brief and explains a change. Nothing moves without an action from the
@@ -78,9 +78,9 @@ What the interface favours:
 
 What it forbids:
 
-- a colour hard-coded in a component;
+- a color hard-coded in a component;
 - a border or a shadow around a card;
-- a coloured bar on the edge of a card or of a row, to mark a selection or a state; the colour
+- a colored bar on the edge of a card or of a row, to mark a selection or a state; the color
   that the user gives an SSH host is the one exception (9.21): it names the host, never a state;
 - a pill for an element that can be clicked;
 - an element that changes size when it is clicked, other than a button;
@@ -88,12 +88,12 @@ What it forbids:
 - text in all capitals;
 - a looping animation, apart from the two cases of [section 8](#8-motion).
 
-## 2. Colours
+## 2. Colors
 
-Every colour goes through a token, defined in `src/app.css`. The values below are those of the
+Every color goes through a token, defined in `src/app.css`. The values below are those of the
 default theme, **Slate**.
 
-This holds for every token in these guidelines: colours, text sizes and weights, radii and
+This holds for every token in these guidelines: colors, text sizes and weights, radii and
 durations. `src/app.css` is the only file that writes those values, and `npm run check` rejects a
 component that hard-codes one.
 
@@ -115,16 +115,16 @@ component that hard-codes one.
 | `--sel` | Background of a selected element. | `#cee5ff` | `#112f56` |
 | `--accent` | Main action, focus, active element, link. | `#126bed` | `#64a5ff` |
 | `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded. | `#e3eefe` | `#102a4e` |
-| `--on-accent` | Text placed on the accent or on a branch colour. | `#ffffff` | `#08131f` |
+| `--on-accent` | Text placed on the accent or on a branch color. | `#ffffff` | `#08131f` |
 | `--ok` / `--ok-soft` | Success, added line. | `#037c40` / `#def5e6` | `#42c887` / `#02321b` |
 | `--warn` / `--warn-soft` | Warning, pending operation. | `#905601` / `#fef0d4` | `#f9a52c` / `#3e2a06` |
 | `--bad` / `--bad-soft` | Error, destructive action, removed line. | `#bc0400` / `#ffe4e0` | `#fe6c62` / `#41100f` |
 | `--term-bg` / `--term-ink` | Background and text of the terminal. | `#fbfbfc` / `#1c1f27` | `#0b0c10` / `#d5dae3` |
 | `--scrim` | Veil behind a dialog. | `rgb(18 22 30 / 0.32)` | `rgb(0 0 0 / 0.55)` |
 
-### 2.2 Branch colours
+### 2.2 Branch colors
 
-Eight colours, reserved for the graph. A branch takes the colour of its column: column 0 for
+Eight colors, reserved for the graph. A branch takes the color of its column: column 0 for
 `--l0`, column 1 for `--l1`, and so on, starting again at `--l0` after `--l7`.
 
 | Token | Light | Dark |
@@ -138,20 +138,20 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
 | `--l6` | `#03808b` | `#07c6d0` |
 | `--l7` | `#5d6c02` | `#afc340` |
 
-- `--l0` is the accent colour: the first column and the accent echo each other.
-- Outside the graph, these colours are only used for a marker chosen by the user, such as the
-  colour of an SSH host, and for the preview of the graph in the settings (9.19).
+- `--l0` is the accent color: the first column and the accent echo each other.
+- Outside the graph, these colors are only used for a marker chosen by the user, such as the
+  color of an SSH host, and for the preview of the graph in the settings (9.19).
 
 ### 2.3 Rules of use
 
-- No colour is hard-coded in a component. An intermediate shade is made with `color-mix()`
+- No color is hard-coded in a component. An intermediate shade is made with `color-mix()`
   between two tokens.
 - **The accent** stands for one thing at a time: the main button of a surface (9.1,
   "Hierarchy"), the focus, the active element. Never two main buttons in one surface.
-- **State colours** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
+- **State colors** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
 - **`--faint`** never carries information that is needed: its contrast is too low for text that
   has to be read.
-- A state-tinted background uses the `-soft` token, or 13 to 15% of the colour over the
+- A state-tinted background uses the `-soft` token, or 13 to 15% of the color over the
   background.
 - **Hover and selection are tints of the accent**, of growing strength: `--hover` on a card,
   `--hover-side` on the window background, darker in light and lighter in dark than the surface,
@@ -160,7 +160,7 @@ Eight colours, reserved for the graph. A branch takes the colour of its column: 
   stay readable, the hover far enough from its background to be seen, and the selection far
   enough from its background and from the hover (2.4).
 
-### 2.4 Minimum contrasts and colour distances
+### 2.4 Minimum contrasts and color distances
 
 Every theme must meet them, in light and in dark.
 
@@ -170,13 +170,13 @@ Every theme must meet them, in light and in dark.
 | `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
 | `--ink` on `--accent-soft`, `--ok-soft`, `--warn-soft`, `--bad-soft` | 7:1 |
 | `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--hover-side`, `--warn-soft` | 4.5:1 |
-| `--on-accent` on `--accent`, `--bad` and each branch colour, at rest and on hover | 4.5:1 |
+| `--on-accent` on `--accent`, `--bad` and each branch color, at rest and on hover | 4.5:1 |
 | `--ok`, `--warn`, `--bad` on `--panel`, `--bg` and `--raised` (the result of a test in a dialog) | 4.5:1 |
 | `--bad` on `--bad-soft` and `--warn-soft` (ghost danger button, destructive menu item, the banner of an operation) | 4.5:1 |
-| `--accent` and each branch colour on `--panel` | 3:1 |
+| `--accent` and each branch color on `--panel` | 3:1 |
 | `--accent` on `--accent-soft` (the icon of an active module or of a pressed action) | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
-| Each terminal colour (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
+| Each terminal color (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
 A hover has to be seen, and the selection has to stand apart from its background and from the
 hover. The second table gives the minimum distance between each hover and its background,
@@ -203,34 +203,34 @@ closer to the hover: there, a hover at 7 was seen, discreet but visible.
 `npm run check` checks the contrasts and the distances of every theme, in light and in dark
 (`scripts/verifier-contrastes.mjs`).
 
-### 2.5 Colour themes
+### 2.5 Color themes
 
 - Light or dark is a setting: "System" (the default) follows the system, "Light" and "Dark"
   hold one whatever the system says. The choice applies at once, to the whole window.
-- A colour theme redefines the tokens of sections 2.1, 2.2 and 2.6, in light and in dark, and
-  nothing else: no shape, no font, no size, no shadow. It does not change the colours of the logo
+- A color theme redefines the tokens of sections 2.1, 2.2 and 2.6, in light and in dark, and
+  nothing else: no shape, no font, no size, no shadow. It does not change the colors of the logo
   either (section 13).
 - Four themes: Slate (the default), Ink, Undergrowth and Ember. They are chosen under
   "Colors" in the settings, and the choice applies at once. Their values are in `src/app.css`,
   selected by the `data-palette` attribute: on the root for the whole window, on an element for
   a preview.
-- A theme enters the application only if it meets the contrasts and the colour distances of
+- A theme enters the application only if it meets the contrasts and the color distances of
   section 2.4, in light and in dark. `npm run check` computes them for every theme, branch
   labels and capsules included.
 - In the settings, "Theme" is the choice of light or dark, and "Colors" the choice of the
-  colour theme. The interface keeps these two words.
-- Worth knowing: in Undergrowth the accent is also the colour of success, and in Ember it is
-  close to the warning colour. It is an exception to section 2.3, accepted for these two optional
+  color theme. The interface keeps these two words.
+- Worth knowing: in Undergrowth the accent is also the color of success, and in Ember it is
+  close to the warning color. It is an exception to section 2.3, accepted for these two optional
   themes and said in the help text of their tile. Slate, the default, has neither flaw.
 
-### 2.6 Terminal colours
+### 2.6 Terminal colors
 
-Sixteen colours draw what a program asks for in a terminal: the eight ANSI colours (codes 30 to
+Sixteen colors draw what a program asks for in a terminal: the eight ANSI colors (codes 30 to
 37) and their bright versions (90 to 97), in text and in background. They are tokens like the
-others, so they follow light and dark and the colour theme. The values below are those of
+others, so they follow light and dark and the color theme. The values below are those of
 Slate.
 
-| Token | Colour | Code | Light | Dark |
+| Token | Color | Code | Light | Dark |
 |---|---|---|---|---|
 | `--ansi-0` | Black | 30 | `#1c1f27` | `#272a31` |
 | `--ansi-1` | Red | 31 | `#ac190f` | `#e66c62` |
@@ -251,22 +251,22 @@ Slate.
 
 - **Every one is read on `--term-bg`**, at 4.5:1 at least, with two exceptions, which are
   backgrounds: black in dark and white in light, a shade of the terminal background. Text in
-  those two colours stays readable all the same: see the safety net below.
+  those two colors stays readable all the same: see the safety net below.
 - **Black and white swap their roles with the background.** In dark, the order from the background
   outwards is black, bright black, white, bright white. In light it is reversed: white, bright
-  white, bright black, black. Bright black is the grey that programs use for what is secondary
+  white, bright black, black. Bright black is the gray that programs use for what is secondary
   (a hint, a comment), so it reads in both. Bright black in dark and bright white in light stand
   at 6.5:1, well clear of the 4.5:1 to which the safety net raises black and white text: the two
   stay apart.
-- **The bright version** of the six colours stands further from the background in dark (9.5:1
+- **The bright version** of the six colors stands further from the background in dark (9.5:1
   against 6.2:1), and closer in light (4.8:1 against 7:1).
 - **The hues come from the theme**: red is the hue of `--bad`, green that of `--ok`, yellow that
-  of `--warn`; blue, magenta and cyan those of the branch colours (2.2) that come nearest. The
-  greys take the hue of `--term-ink`.
+  of `--warn`; blue, magenta and cyan those of the branch colors (2.2) that come nearest. The
+  grays take the hue of `--term-ink`.
 - **The safety net.** Any text that would read under 4.5:1 on the background of its cell is
-  lightened or darkened by the terminal until it reaches it: a text in any other colour (256
-  colours, true colours), a text in black on the dark background or in white on the light one,
-  and the default text on a coloured background.
+  lightened or darkened by the terminal until it reaches it: a text in any other color (256
+  colors, true colors), a text in black on the dark background or in white on the light one,
+  and the default text on a colored background.
 
 ## 3. Typography
 
@@ -283,8 +283,8 @@ Slate.
   The detail of a notification is in it too, whatever it says (9.11).
 - In a list of files, the path is in the interface font: the folder in `--muted`, the file name
   in `--ink`.
-- DM Mono stops at weight 500. Emphasised code text is rendered at 500; the browser does not
-  synthesise a fake bold.
+- DM Mono stops at weight 500. Emphasized code text is rendered at 500; the browser does not
+  synthesize a fake bold.
 
 ### 3.2 Sizes
 
@@ -313,8 +313,9 @@ Two weights, no more.
 
 ### 3.4 Rules
 
-- A capital at the start of a sentence, and that is all: no title in capitals, no spaced
-  capitals.
+- A capital at the start of a sentence and for proper names only (12, "Sentence case"): no title
+  in capitals, no spaced capitals. The abbreviations of git and of the system keep theirs: HEAD,
+  SHA, WIP, SSH, PM.
 - Numbers that line up or that change (counters, dates, columns) use tabular figures
   (`font-variant-numeric: tabular-nums`).
 - Text that is too long is cut on the right with an ellipsis, and its full value appears in a
@@ -347,12 +348,12 @@ From left to right and from top to bottom:
 | Module rail (Git, SSH); at its foot, the search and the settings | 48 px wide | `--side` |
 | Tab bar | tabs 30 px high | `--side` |
 | Toolbar | full width | `--side` |
-| The cards of a repository: the branch list, the centre, the detail panel. The centre holds the graph and, under it, the terminal of the repository when it is shown (9.20) | 8 px apart; the two side cards can be resized (9.16); each card can be hidden (9.17) | `--panel` |
+| The cards of a repository: the branch list, the center, the detail panel. The center holds the graph and, under it, the terminal of the repository when it is shown (9.20) | 8 px apart; the two side cards can be resized (9.16); each card can be hidden (9.17) | `--panel` |
 | Status bar | 26 px high | `--side` |
 
 - No line separates these areas: the background and the space are enough.
 - The window is at least 1000 × 600 px; no area may overflow at that size.
-- When a side card is hidden, the gap of its handle goes with it: the centre card sits 8 px from
+- When a side card is hidden, the gap of its handle goes with it: the center card sits 8 px from
   the edge of the window.
 - The settings page takes the place of the module, to the right of the rail (9.18).
 
@@ -379,17 +380,17 @@ From left to right and from top to bottom:
 | `--radius-card` | 14 px | Cards. |
 | `--radius-pill` | 999 px | What informs: counters, the "+N" of the labels of a commit (9.4), the capsule of a commit message. |
 
-- **Everything that can be clicked is a slightly rounded rectangle**, except a colour swatch
+- **Everything that can be clicked is a slightly rounded rectangle**, except a color swatch
   (below). The pill is reserved for what informs without being clicked.
 - The circle is reserved for the dot of a commit, the badge of a toolbar button, the icon of a
-  notification, the waiting ring, and the colour swatches of a choice of colour (the colour of
-  an SSH host). A swatch is a dot of colour that can be clicked: it is round, and it is the one
+  notification, the waiting ring, and the color swatches of a choice of color (the color of
+  an SSH host). A swatch is a dot of color that can be clicked: it is round, and it is the one
   element that grows on hover (8).
 - An element placed inside another never has a larger radius than the one that contains it.
 
 ## 6. Surfaces and shadows
 
-The interface has four levels. Each is recognised by its background.
+The interface has four levels. Each is recognized by its background.
 
 | Level | Element | Background | Border | Shadow |
 |---|---|---|---|---|
@@ -414,7 +415,7 @@ The interface has four levels. Each is recognised by its background.
 
 - One set only, the application's own (`src/lib/ui/Icon.svelte`). No emoji, no icon from
   another library.
-- Drawing: a 16 × 16 grid, a 1.4 stroke with no fill, rounded ends and corners, the colour of
+- Drawing: a 16 × 16 grid, a 1.4 stroke with no fill, rounded ends and corners, the color of
   the text (`currentColor`).
 
 | Size | Use |
@@ -438,7 +439,7 @@ The interface has four levels. Each is recognised by its background.
 | Token | Value | Use |
 |---|---|---|
 | `--ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | The only curve in the application. Only a continuous rotation or a continuous sweep is linear. |
-| `--t-fast` | 110 ms | Hover, press, focus, colour change, disappearance. |
+| `--t-fast` | 110 ms | Hover, press, focus, color change, disappearance. |
 | `--t-med` | 200 ms | Appearance of a menu or a dialog, folding of a section. |
 | `--t-slow` | 340 ms | Long move: the rail marker, reordering of a list. |
 | `--t-step` | 14 ms | Delay between two elements of a staggered entrance. |
@@ -448,8 +449,8 @@ The interface has four levels. Each is recognised by its background.
 
 Transitions written in script read the same tokens, through `src/lib/ui/motion.ts`.
 
-**What is animated.** Opacity, position (`transform`) and colours. An appearance comes from
-close by: an offset of 6 to 10 px at most. One scale besides the press effect: a colour swatch
+**What is animated.** Opacity, position (`transform`) and colors. An appearance comes from
+close by: an offset of 6 to 10 px at most. One scale besides the press effect: a color swatch
 grows to 112% on hover, in `--t-fast` (9.21).
 
 **The press effect.** A button shrinks to 97% while it is clicked. This applies to buttons,
@@ -469,11 +470,11 @@ button: the cross and the "+" of a tab bar, the close button of a notification o
 spinning icon, a spinning ring, a bar, a blinking dot. The halo of the current commit in the
 graph: a ring that widens and fades, in 2.4 s.
 
-The waiting ring is 12 px, in `--accent` or in the colour of the text around it, and it appears
+The waiting ring is 12 px, in `--accent` or in the color of the text around it, and it appears
 where the user asked for the operation: on the tab of the repository, on the label or the row of
 the branch being switched to, in the status bar, on the row and the tab of a host being connected
 to. It is the shared class `.spinner` of
-`src/app.css`, whose `--spinner` property gives it another colour. Words always say the state
+`src/app.css`, whose `--spinner` property gives it another color. Words always say the state
 beside it, so the ring itself is hidden from screen readers. One exception: on the tab of a host
 being connected to, the ring stands alone in the place of the dot, and carries the name of the
 state (9.15).
@@ -605,11 +606,13 @@ its own buttons.
   `--accent-soft` background, the icon in `--accent`, `aria-pressed`. On hover the tint gets a
   little stronger (12% of `--accent` over `--accent-soft`). While the terminal is hidden with
   shells still running, the badge of the action counts them.
-- One view button closes the toolbar, on the right, above the right edge of the cards: "View". It is
-  an 18 px icon alone, in a 30 × 30 px button, and it opens the menu of the cards to show (9.17). -
-  At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a `--hover-side`
-  background and the icon in `--ink`. It has no pressed state: the menu says what is shown.
-  - Its accessible name is "View" and its tooltip "Choose the cards to show", which
+- One view button sits at the right end of the toolbar, above the right edge of the cards:
+  "View". It is an 18 px icon alone, in a 30 × 30 px button, and it opens the menu of the cards
+  to show (9.17).
+  - At rest, the icon is in `--muted`. On hover, and for as long as its menu is open: a
+    `--hover-side` background and the icon in `--ink`. It has no pressed state: the menu says what
+    is shown.
+  - Its accessible name is "View" and its tooltip "Choose the panels to show", which
     keeps quiet while the menu is open (9.9).
     `aria-haspopup` says that it opens a menu, `aria-expanded` whether the menu is open.
   - Disabled, at 45%, when no repository is open, and while the editor of a conflict covers the
@@ -621,7 +624,7 @@ its own buttons.
 - Hover: a stronger border.
 - Focus: an `--accent` border and a 3 px halo in `--accent` at 25%. No outline on top of it.
 - Error: a `--bad` border, and an 11.5 px message in `--bad` under the field.
-- The label is above the field, in 12 px, weight 650, colour `--muted`. A hint inside the empty
+- The label is above the field, in 12 px, weight 650, color `--muted`. A hint inside the empty
   field never replaces the label. The hint is in `--faint`: it never reads as typed text, and it
   never carries what has to be read, which is the role of the label or of the accessible name.
 - A checkbox is drawn by the application, never by the system, so that it reads the same in
@@ -653,15 +656,15 @@ its own buttons.
 
 ### 9.4 Branch and tag labels
 
-The labels of the "Branch / Tag" column of the graph. They are buttons, and have the shape of
+The labels of the "Branch / tag" column of the graph. They are buttons, and have the shape of
 buttons.
 
 | Type | Rendering |
 |---|---|
-| Local branch | Background: 24% of the branch colour over `--panel`. Border: the same colour at 55%. `--ink` text, weight 650. "Computer" icon. |
-| Current branch | Solid background in the branch colour, surrounded by a ring of the same colour. `--on-accent` text, weight 650, preceded by a check mark. |
-| Remote branch | The same background as a local branch. Dashed border in the branch colour, weight 400. "Cloud" icon. |
-| Tag | The same background as a local branch. Solid border in the branch colour, weight 400. "Tag" icon. |
+| Local branch | Background: 24% of the branch color over `--panel`. Border: the same color at 55%. `--ink` text, weight 650. "Computer" icon. |
+| Current branch | Solid background in the branch color, surrounded by a ring of the same color. `--on-accent` text, weight 650, preceded by a check mark. |
+| Remote branch | The same background as a local branch. Dashed border in the branch color, weight 400. "Cloud" icon. |
+| Tag | The same background as a local branch. Solid border in the branch color, weight 400. "Tag" icon. |
 
 - A rectangle with 6 px corners, 22 px high, 11.5 px text. **Never a pill.**
 - Local branches, remote branches and tags share one background. The icon, the border and the
@@ -682,7 +685,7 @@ buttons.
   floating list, over the rows below: `--raised`
   background, `--line` border, `--shadow-pop` shadow, as what floats (6), but 8 px corners
   (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays within the
-  "Branch / Tag" column, 6 px from each edge, so that the graph never covers it: a long name is
+  "Branch / tag" column, 6 px from each edge, so that the graph never covers it: a long name is
   cut with an ellipsis, and is whole in the tooltip of its label (3.4). It stays open as long as
   the pointer is on it, and its labels behave like the others: hover, double-click, right-click,
   drop target.
@@ -693,7 +696,7 @@ buttons.
   finds the rest; a hidden list comes back with Ctrl + Shift + B; a detached HEAD, which has no row
   there, is the commit itself, whose menu is that of its row in the graph. The labels of the graph
   are not stops of the tab order.
-- During the switch, the waiting ring takes the place of the icon of the label, centred in the
+- During the switch, the waiting ring takes the place of the icon of the label, centered in the
   same 14 px box.
 
 ### 9.5 Counters
@@ -708,7 +711,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Hover: a rounded `--hover` background under the row, 8 px corners.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
   the area that scrolls, its scrollbar apart.
-- **No coloured bar on the edge** to mark the selection.
+- **No colored bar on the edge** to mark the selection.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the selected row. **Never an outline
   around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
   selected when it receives focus, the first one becomes selected.
@@ -736,7 +739,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   background nor its actions once the pointer has left. Only the keyboard focus shows them. This
   holds for the rows that hold a button of their own: the host book, the file lists, the recent
   repositories of the start page.
-- The state of a file is a letter on a tinted background (M, A, D, R), never a colour alone.
+- The state of a file is a letter on a tinted background (M, A, D, R), never a color alone.
 - A file that is only partly staged carries the word "partly" after its name, in `--muted`
   at 11.5 px, in both lists.
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
@@ -756,7 +759,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
 - A terminal that records its log carries the "journal" icon, 14 px in `--muted`, between its
-  name and its cross, with "Recording a log" as tooltip and accessible name
+  name and its cross, with "Recording log" as tooltip and accessible name
   (9.15).
 - The close cross is visible on the active tab, and on hover on the others. On hover it takes
   a veil of `--ink` at 12%, not a hover token: it sits on a tab that is hovered (`--hover-side`)
@@ -829,7 +832,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
   takes the width it needs, up to 760 px: the clone 560 px, the form of a host 600 px (9.21),
   "Manage keys…" and the export to `~/.ssh/config` 640 px, the interactive rebase 760 px.
-- **Place.** Centred across the window, and anchored 11% from its top, as the command palette
+- **Place.** Centered across the window, and anchored 11% from its top, as the command palette
   (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
   it, its content scrolls, and its last line of buttons stays in view.
@@ -848,7 +851,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 ### 9.11 Notifications
 
-- At the bottom, in the centre of the window, 40 px from the edge. Five at most, stacked.
+- At the bottom, in the center of the window, 40 px from the edge. Five at most, stacked.
   480 px wide at most.
 - **Never for an action done in a dialog.** A modal dialog lays its veil over the notifications
   and makes them unreachable: a click on one falls on the veil and closes the dialog. The dialog
@@ -857,7 +860,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   `~/.ssh/config`, 9.15).
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
-  coloured bar on the edge.
+  colored bar on the edge.
 - A short title, then the detail, in the code font at 11.5 px whatever it says: the output of
   git as it is, a path, or the reason of a failure with what to do.
 - In the title, a word of more than 36 characters, such as the name of a branch or a path, is
@@ -879,7 +882,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 ### 9.12 Command palette
 
-- Floating, centred, 11% from the top of the window, 640 px wide at most.
+- Floating, centered, 11% from the top of the window, 640 px wide at most.
 - A 15 px input. Results as rows (9.6), with the shortcut of each command on the right.
 - A shortcut key is drawn like a key: 10.5 px, 4 px corners, a thicker bottom edge.
 
@@ -889,15 +892,15 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - On the left, the branch and the last git command, in the code font. On the right, the
   timings.
 - During an operation, the right side starts with the waiting ring and a few words:
-  "Switching to main…", or "Operation in progress…".
+  "Switching to main…", or "Working…" when the operation has no name of its own.
 
 ### 9.14 Diff
 
 - Code font, 12 px. Line numbers in `--muted`.
 - Added line: a background at 14% of `--ok`, a "+" sign in `--ok`. Removed line: a background at
   13% of `--bad`, a "−" sign in `--bad`.
-- The sign is always there: colour alone never says whether a line is added or removed.
-- A line picked to be staged on its own has a stronger tint and its sign in bold. No coloured
+- The sign is always there: color alone never says whether a line is added or removed.
+- A line picked to be staged on its own has a stronger tint and its sign in bold. No colored
   bar on its edge.
 - From the keyboard, the lines behave like a list (9.6): ↑ and ↓ move from one changed line to
   the next, Home and End go to the first and to the last, with the inner ring on the line; Space
@@ -913,18 +916,18 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 ### 9.15 Terminal
 
 - `--term-bg` background, `--term-ink` text, code font at 13 px.
-- The colours a program asks for are those of section 2.6: they change with light and dark and
-  with the colour theme, at once, in the open terminals too.
+- The colors a program asks for are those of section 2.6: they change with light and dark and
+  with the color theme, at once, in the open terminals too.
 - Terminal tabs follow the rule for tabs (9.7).
 
 **A local terminal.** The shell of the user on their own machine (PowerShell on Windows, the
 `SHELL` of the user on Ubuntu), in their home folder. It is a tab of the SSH module, with the same
-terminal, colours, search and resizing as a session. A repository has local terminals of its
+terminal, colors, search and resizing as a session. A repository has local terminals of its
 own, under its graph (9.20).
 
 - Opened by Ctrl + Shift + N or "New local terminal" in the palette, from either module (the
   SSH module is then shown); by the "+" after the last tab (9.7); and from the empty screen of the
-  module, by "Open a local terminal", next to "Add host…".
+  module, by "Open local terminal", next to "Add host…".
 - Its tab carries the "computer" icon instead of the dot of a host (7: the computer means
   "local"), and its tooltip and accessible name say "Local terminal". Its title is "Terminal",
   then "Terminal 2", "Terminal 3", the smallest free number.
@@ -950,14 +953,13 @@ own, under its graph (9.20).
   the user is looking at, closes without a question; closing the window, or the tab of a
   repository, asks as soon as a shell is open: "A terminal is open…".
 - A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
-  grey dot; its tooltip and accessible name then say "Local terminal stopped".
+  gray dot; its tooltip and accessible name then say "Local terminal stopped".
 - Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus goes
   to its main button: the terminal keeps the Tab key for the shell. A panel that asks for a
   secret gives it to its field. Under a repository, where the state of the shell is a strip, the
   rule is that of 9.20.
 
-**Search.** Ctrl + Shift + F, or "Chercher
-  dans le terminal" in the palette, opens a search bar
+**Search.** Ctrl + Shift + F, or "Search the terminal" in the palette, opens a search bar
 in the terminal of the current tab.
 
 - The bar is a strip under the header of the session, on `--panel`, with a `--line-soft`
@@ -1002,7 +1004,7 @@ remember", "Trust this time" and "Cancel". Remembering it adds one line at the e
 written, the session opens all the same: its header says "fingerprint accepted for this session",
 and a warning notification says "The fingerprint could not be remembered", then why and what to
 do: in plain words when the cause is known (access denied, a read-only or full disk, a folder or a
-file in the way), "access denied. Check that the file is not read-only…", otherwise the text of
+file in the way), "Access denied. Check that the file is not read-only…", otherwise the text of
 the system as it is; the test of the host form says it in its result line instead (9.21).
 A fingerprint that has changed blocks the connection, and names the line of `known_hosts` to look
 at.
@@ -1018,8 +1020,8 @@ panel shows.
   the Secret Service (GNOME Keyring, KWallet) on Ubuntu. The secret is kept only once it has
   worked.
 - **Without a keyring**, nothing is offered, and a line in `--muted` says so in place of the
-  checkbox: "The system keyring does not respond: this password will be asked for at every
-  connection.", or "… this passphrase will be asked for at every connection."
+  checkbox: "The system keyring does not respond: this password will be asked for every time you
+  connect.", or "… this passphrase will be asked for every time you connect."
 - **A secret that is refused** puts the field in its error state (9.3): a `--bad` border, and
   the reason under it, in 11.5 px, announced at once.
 - **A secret that is kept is used without a question.** The header of the session says where it
@@ -1054,7 +1056,7 @@ all standard, since no action is expected more than the others (9.1).
 - **The result** sits on the left of the last line, before the buttons, in 11.5 px, never in a
   notification (9.11). Success: the check icon and the sentence in `--ok`, "Key imported:
   ~/.ssh/id_portable", "Key created: ~/.ssh/id_ed25519_2", "Public key of id_portable copied,
-  ready to paste on the server or the forge.", announced as a status.
+  ready to paste on the server or your Git host.", announced as a status.
   Failure: the warning icon and why and what to do in `--bad`, announced at once: "This is a
   public key: choose the file without “.pub”.", "A file named “id_ed25519” already exists in
   ~/.ssh: rename the key before importing it." The line stays until the next action. It wraps
@@ -1064,9 +1066,9 @@ all standard, since no action is expected more than the others (9.1).
 
 **Exporting to `~/.ssh/config`.** So that a host of the book opens with `ssh <name>` too, in a
 terminal or in any tool that reads that file. "Export to ~/.ssh/config…", a small standard
-button in the foot of the book under "Import ~/.ssh/config", opens a dialog for every host; the
+button in the foot of the book under "Import from ~/.ssh/config", opens a dialog for every host; the
 same entry in the menu of a host opens it for that host alone. It is an export done when asked,
-never a synchronisation: nothing is written before the dialog has shown what will change.
+never a synchronization: nothing is written before the dialog has shown what will change.
 
 - **The dialog**, "Export to ~/.ssh/config", says what Ramure does: "Ramure adds or updates these
   hosts. The rest of the file is left untouched, and the old file is copied to
@@ -1125,7 +1127,7 @@ password typed without echo is not in it.
   records again.
 - **While it records**, the toggle is pressed; the header says "recording log", in `--muted`
   like its other words, its tooltip giving the path of the file; the tab carries the "journal"
-  icon (9.7). No colour of its own and no animation: `--bad` is for errors (2.3), and nothing
+  icon (9.7). No color of its own and no animation: `--bad` is for errors (2.3), and nothing
   loops (8). While a lost connection is being retried, the log keeps recording: it goes on in
   the same file as soon as the session is back.
 - **Stopping**, with the toggle or the palette, closes the file, and a notification says "Log
@@ -1136,7 +1138,7 @@ password typed without echo is not in it.
   goes on, after the line "— connection lost, resumed at 11:07 PM —". A session that ended by
   itself or by "Disconnect" is over: reopened in the same tab, it is a new session, with a new
   file when its host records every session. A log that cannot be opened does not stop the
-  session: a warning notification says why and what to do ("access denied. Choose a folder your
+  session: a warning notification says why and what to do ("Access denied. Choose a folder your
   account can write to in the settings."), or gives the text of the system when the cause
   is not known.
 - **The file**: one per session, named after the host, the date and the time,
@@ -1159,14 +1161,14 @@ reconnection" is on in the settings.
 
 - Five tries, 2, 5, 10, 20 and 30 s apart. While it waits, the terminal keeps its text under
   the veil, and a panel over the veil, like the one that shows the connection, says "Connection
-  lost", when the next try comes and which one it is ("Next try in 4 s, 2 of 5."), why the last
+  lost", when the next try comes and which one it is ("Next attempt in 4 s, 2 of 5."), why the last
   one failed, and offers "Reconnect now" (main button) and "Stop".
   The line of the reason keeps its place, so that the buttons do not move from one try to the
   next.
 - When the panel appears, the focus goes to "Reconnect now": the terminal keeps the
   Tab key for the shell, and the keyboard could not reach the panel otherwise.
 - The countdown changes every second and is not read; a screen reader hears one sentence per
-  try ("Connection lost. Try 2 of 5 in 5 seconds.").
+  try ("Connection lost. Attempt 2 of 5 in 5 seconds.").
 - The dot of the tab and of the header blinks in `--warn` while it waits and tries; its tooltip
   and its accessible name say "Reconnecting". The dot always says the state in words
   this way, whatever the state, and so does the ring that stands for it during a first
@@ -1184,7 +1186,7 @@ reconnection" is on in the settings.
 ### 9.16 Resize handle
 
 Between two cards whose size can be set: in the view of a repository, on either side of the
-centre card, and between the centre card and the terminal under it (9.20). The latter is a
+center card, and between the center card and the terminal under it (9.20). The latter is a
 horizontal handle: what is said here of the width holds for its height, with the up and down
 arrows, a horizontal marker and the vertical resize cursor.
 
@@ -1195,7 +1197,7 @@ arrows, a horizontal marker and the vertical resize cursor.
 - Keyboard: left and right arrows in steps of 16 px, Home and End for the minimum and maximum
   width, Enter for the default width.
 - Double-click: the default width.
-- Each card has a minimum and a maximum width, and the centre card always keeps 360 px. The
+- Each card has a minimum and a maximum width, and the center card always keeps 360 px. The
   chosen widths are restored at the next launch.
 - The handle is only 8 px wide: it is the one exception to the 24 px target, and the keyboard
   makes up for it.
@@ -1214,7 +1216,7 @@ hiding the graph gives the terminal the whole height.
   the branch list, Ctrl + Shift + E for the detail panel, Ctrl + Shift + J for the terminal.
   The graph has no shortcut at first: one can be given in the settings. A command of the palette
   hides or shows both side cards at once. The terminal also keeps its action in the toolbar.
-- **The centre is never empty**: it holds the graph, the terminal, or both. In the menu, the item
+- **The center is never empty**: it holds the graph, the terminal, or both. In the menu, the item
   of the one that is alone there is disabled, and its tooltip says why: "The graph stays shown
   while the terminal is hidden.", or "The terminal stays shown while the graph is hidden." The
   command of the palette that hides the graph is disabled the same way, and says "the terminal
@@ -1296,7 +1298,7 @@ Ramure writes one file per recorded session." (9.15).
 keys (9.12), and a button that restores the default.
 
 - A click on the combination starts recording: the row takes an `--accent-soft` background and
-  says "Press the keys…", in `--ink`, weight 650; the accessible name of the button says
+  says "Press the shortcut…", in `--ink`, weight 650; the accessible name of the button says
   that a combination is awaited. Backspace removes the shortcut, Escape cancels.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
@@ -1318,34 +1320,34 @@ diff. Nothing has to be opened to compare them.
   button or a field (6), not a card, and neither is its preview.
 - An option has 8 px corners and is at least 28 px high. Hover: a `--hover` background.
 - The chosen option: a `--sel` background, its name in weight 650, and a check mark in
-  `--accent` on its right. Never the colour alone, never a coloured bar on an edge. The place
+  `--accent` on its right. Never the color alone, never a colored bar on an edge. The place
   of the check mark is kept on the other options: an option never changes size.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the chosen option, as on a row (9.6).
-- A preview is drawn with the tokens, never with colours of its own. A preview of a theme
+- A preview is drawn with the tokens, never with colors of its own. A preview of a theme
   carries `data-theme` and `data-palette`, which give it the tokens of that theme whatever the
   theme of the window.
 - A tile may carry a help text under its name, in 11.5 px, `--muted`, when its options differ by
-  more than their look: the colour themes say what sets each apart.
+  more than their look: the color themes say what sets each apart.
 - A preview is a sketch, not the component it shows: a few bars and dots, with no text. It is
   hidden from screen readers, and the name of the option says what it is. The preview of the
-  graph is the one place outside the graph where the branch colours are used (2.2).
+  graph is the one place outside the graph where the branch colors are used (2.2).
 
 ### 9.20 Terminal of a repository
 
 A local terminal under the graph, opened in the folder of the repository, to run a command
 (a build, the tests, a git command Ramure does not have) without leaving the repository.
 
-- **Place.** A card of its own under the centre card, as wide as it, 8 px below it: the window
+- **Place.** A card of its own under the center card, as wide as it, 8 px below it: the window
   background separates them, the handle of 9.16 sits in that gap. The side cards keep their full
   height. Hiding a side card gives its width to the graph and to the terminal alike. When the
-  graph is hidden (9.17), the terminal takes the whole height of the centre, with no handle.
+  graph is hidden (9.17), the terminal takes the whole height of the center, with no handle.
 - **Getting there and back.** The "Terminal" action of the toolbar (9.2); the "Terminal" item
   of the "View" menu (9.17); Ctrl + Shift + J; and "Show terminal" or "Hide terminal" in the
   palette. The shortcut works from the terminal too, and it does three things:
   when the terminal is hidden, it shows it and gives it the keyboard; when it is shown and the
   focus is elsewhere, it gives it the keyboard; when the focus is in it, it hides it and the
   focus goes to the graph. The button, the menu and the palette only show and hide.
-  "New terminal in repository", in the palette, opens one more.
+  "New terminal in this repository", in the palette, opens one more.
 - **The first time.** Showing the terminal of a repository that has none opens one. Nothing is
   started at launch: the terminal of a repository comes back hidden, and its shells are new.
 - **Header.** One line, 35 px high, on `--panel`, with a `--line-soft` separator above the
@@ -1358,7 +1360,7 @@ A local terminal under the graph, opened in the folder of the repository, to run
   repository. The active tab, which sits on a card already, has a `--sel` background and its
   title in weight 650; the others are in `--muted`, `--hover` on hover. The cross is visible on
   the active tab and on hover on the others; a middle click closes a tab too. The "+" is 24 ×
-  24 px, "New terminal in repository".
+  24 px, "New terminal in this repository".
 - **Each repository has its own terminals.** They belong to the tab of the repository: switching
   tabs or modules, or hiding the terminal, does not stop them. Closing the tab of the repository
   stops them. They are not tabs of the SSH module, and Ctrl + Shift + N still opens a terminal
@@ -1389,7 +1391,7 @@ A local terminal under the graph, opened in the folder of the repository, to run
   answer.
 - **Keyboard.** The terminal never takes the keyboard on its own: not when the tab of the
   repository is shown again, not when it is shown by the button, even when that opens its first
-  shell. It takes it on the shortcut, on "+", on "New terminal in repository" and on
+  shell. It takes it on the shortcut, on "+", on "New terminal in this repository" and on
   "Restart". In it, as in every terminal, only the shortcuts with Shift, Alt or a function key
   act (11). No search bar here for now: Ctrl + Shift + F stays "Fetch".
 - **What it does not cover.** The editor of a conflict covers the view, the terminal with it.
@@ -1420,7 +1422,7 @@ need the room.
   button (9.1), alone at the left of its last line. It opens the confirmation that the
   menu of the host opens too (9.10): what is lost, the password kept for its account included
   (9.15). Confirmed, the host is deleted, the form closes and the focus goes to the filter field
-  of the book, which is always there, the row of the host being gone; cancelled, the focus is
+  of the book, which is always there, the row of the host being gone; canceled, the focus is
   back on the button, with its ring. A host being added, or a copy, has no such button: it is not
   in the book yet.
 - **A failure** to save or to delete the host is said on the left of the last line, between
@@ -1451,7 +1453,7 @@ need the room.
     9.15.
   - Success is announced as a status (`role="status"`), failure as an alert (`role="alert"`).
   - The result goes away as soon as a field of the connection changes: the address, the port,
-    the user, the authentication, the key, the bastion. The name, the group, the tags, the colour
+    the user, the authentication, the key, the bastion. The name, the group, the tags, the color
     and the startup command do not touch it.
 - **What a connection asks, the test asks too**, in the same line, in place of the result:
   - an unknown server: its fingerprint in the code font, with "Trust and remember" and "Trust
@@ -1468,8 +1470,8 @@ need the room.
   keeps for this host (9.15), in 11.5 px, `--muted`, and offers to forget it with a small ghost
   button under the sentence, its text aligned with that of the sentence:
   - with a password: "The password of this account is kept in the system keyring." and "Forget
-    password"; when none is kept, "Asked for at connection, where you can have the system
-    keyring remember it."; without a keyring, the sentence of 9.15;
+    password"; when none is kept, "Asked for when you connect. You can have the system keyring
+    remember it."; without a keyring, the sentence of 9.15;
   - with a key file whose passphrase is kept: "The passphrase of this key is kept in the system
     keyring." and "Forget passphrase". When none is kept, the line under
     the key says, as before, that the passphrase is asked for at connection time: nothing more
@@ -1485,17 +1487,17 @@ need the room.
   test pushes down only what is under it.
 - **A host behind a bastion** (ProxyJump) cannot be tested yet: the button is disabled, and the
   warning of the form already says why.
-- **The colour of the host** is a row of swatches, a group of radio buttons: "None", a dashed
-  circle in `--line`, then the eight branch colours (2.2). A swatch is a 24 px circle. Hover: it
-  grows to 112%, in `--t-fast`; the colour itself says what it is, so no `--hover` background.
-  Chosen: a 2 px ring of its own colour (of `--muted` for "None"), 2 px away from it, drawn
+- **The color of the host** is a row of swatches, a group of radio buttons: "None", a dashed
+  circle in `--line`, then the eight branch colors (2.2). A swatch is a 24 px circle. Hover: it
+  grows to 112%, in `--t-fast`; the color itself says what it is, so no `--hover` background.
+  Chosen: a 2 px ring of its own color (of `--muted` for "None"), 2 px away from it, drawn
   with a flat shadow, not an elevation. Keyboard focus: the ring of the application, 2 px of
   `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Color 3".
-- **In the host book**, the chosen colour is a 4 px bar with round ends on the left of the row, as
-  high as the row. It names the host and never says its state, which is why it is the one coloured
+- **In the host book**, the chosen color is a 4 px bar with round ends on the left of the row, as
+  high as the row. It names the host and never says its state, which is why it is the one colored
   bar allowed on the edge of a row (1): the selection is the background of the row (9.6), and the
   state of a session is the dot of its tab. It is hidden from screen readers, since the name of
-  the host says which it is. A host without a colour keeps the place empty, so that the names stay
+  the host says which it is. A host without a color keeps the place empty, so that the names stay
   aligned.
 - **The address of a host** is `deploy@vps.example.net:2222`, in the code font, under its name in
   the book and in the header and the panels of its session; the port shows when it is not 22. A
@@ -1508,7 +1510,7 @@ need the room.
 
 ### 10.1 Columns
 
-In order: Branch / Tag (220 px), Graph (420 px at most, 340 px in "Classic"), Message,
+In order: Branch / tag (220 px), Graph (420 px at most, 340 px in "Classic"), Message,
 Author (150 px), Date (92 px) and SHA (66 px).
 
 **The message comes first.** It wants 200 px. When it would get less, the other columns give
@@ -1519,9 +1521,9 @@ way, in this order, each only as far as needed:
    "Ribbon" already shows them on the graph, where the point of a merge commit, with no initial,
    gives its author in a tooltip (10.2);
 3. the date goes;
-4. "Branch / Tag" narrows, down to 164 px;
+4. "Branch / tag" narrows, down to 164 px;
 5. last, "Graph" narrows, down to 72 px, until the message has 120 px. At the narrowest
-   centre card (360 px, 9.16), the message takes what is left, 80 px at the least.
+   center card (360 px, 9.16), the message takes what is left, 80 px at the least.
 
 The name of the author and the date that have gone from the eye stay for screen readers (11).
 
@@ -1541,36 +1543,36 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 | Radius of a commit | 10 px |
 | Radius of a merge commit | 5 px |
 | Thickness of a line | 3 px |
-| Band behind a commit | 24 px high, 15% of the branch colour |
+| Band behind a commit | 24 px high, 15% of the branch color |
 
-- **A commit** is a round dot in the colour of its branch, with the initial of its author in
-  `--on-accent`. A ring in the colour of the card sets it apart from the lines.
+- **A commit** is a round dot in the color of its branch, with the initial of its author in
+  `--on-accent`. A ring in the color of the card sets it apart from the lines.
 - **A merge commit** is a smaller point, with no initial.
 - **Hovering a dot**, in "Ribbon", gives the full name of its author in a tooltip, the point of a
   merge commit included. In "Classic", the initials of the "Author" column do (10.3).
 - **Lines** are straight as long as the branch keeps its column. A change of column is a soft
   curve, with no corner.
-- **The message** sits in a capsule: a background at 15% of the branch colour, rounded like a
+- **The message** sits in a capsule: a background at 15% of the branch color, rounded like a
   pill on the right, as wide as the text. A band of the same tint links it to the dot.
-- **A label** is linked to its commit by a thin line in the branch colour.
+- **A label** is linked to its commit by a thin line in the branch color.
 - **The current commit** carries a halo (section 8), and the label of its branch is solid.
 - **Changes in progress** take the first row: an empty circle, the words `// WIP` in the code
   font inside a dashed frame, and the number of changed files.
 
 ### 10.3 Rules
 
-- The colour of a commit, of its line, of its capsule and of its label is the same.
+- The color of a commit, of its line, of its capsule and of its label is the same.
 - Hover and selection follow the rule for rows (9.6).
 - The graph is not animated on scroll.
-- No text on the lines, no gradient, no more than eight colours.
+- No text on the lines, no gradient, no more than eight colors.
 - The "Classic" style, offered in the settings, keeps points and more compact curves. It
-  follows the same colours and the same selection rules. Its points carry no initial: those of
+  follows the same colors and the same selection rules. Its points carry no initial: those of
   the author come before the name, in the "Author" column, and give it whole in a tooltip, all
   the more needed when the column has narrowed to the initials (10.1).
 
 ## 11. Accessibility
 
-- **Contrasts.** Those of section 2.4, and its colour distances, checked in light and in dark.
+- **Contrasts.** Those of section 2.4, and its color distances, checked in light and in dark.
 - **Visible focus.** Every element that takes keyboard focus shows it. An outline is never
   removed without another marker replacing it. A focus given by the application, to the main
   button of a panel or back to the button of a menu, shows the same ring as one reached with
@@ -1583,7 +1585,7 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
   function key are active: the others belong to the shell.
 - **Targets.** 24 × 24 px at least.
-- **Never colour alone.** A state is backed by an icon, a sign or text: "+" and "−" in a diff, a
+- **Never color alone.** A state is backed by an icon, a sign or text: "+" and "−" in a diff, a
   letter for the state of a file, an icon for local and remote.
 - **Reduced motion.** See section 8.
 - **Screen readers.** An icon on its own has an accessible name. An error is announced at once
@@ -1599,13 +1601,21 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 The interface is written in English, in American spelling ("color", "canceled"). These rules
 apply to that text.
 
-- **Address the user as "you"**, in the imperative, in short sentences: "Stage the files to
-  include in the commit."
+- **Address the user directly**, in the imperative, in short sentences: "Stage the files to
+  include in the commit." When a sentence needs a subject, it is "you".
 - **Buttons** are verbs in the imperative, with their object when the context does not give it:
   "Create branch", "Stage all". Never "OK" or "Yes".
-- **Sentence case** everywhere, buttons, titles, menus and settings included: a capital for the
-  first word and for proper names only. "Create branch", not "Create Branch".
-- **Titles** name the action: "New branch".
+- **Sentence case** everywhere, buttons, titles, menus, column headers and settings included: a
+  capital for the first word and for proper names only (Ramure, Git, Slate). "Create branch", not
+  "Create Branch"; "Branch / tag", not "Branch / Tag".
+- **A state said beside a name**, in a header, a row or after a file name, is a lower-case
+  fragment, not a sentence: "connecting…", "recording log", "log saved", "partly", "opened in".
+  Said alone, as a tooltip or an accessible name, it takes its capital: "Recording log".
+- **Titles** name the action: "New branch". A confirmation asks a question: "Delete web-prod?",
+  "Quit Ramure?". A panel over a terminal names a state: "Unknown server", "Connection lost",
+  "Shell stopped".
+- **Git and git.** "Git" with a capital is the product and the module ("the Git module"); "git"
+  in lower case is the program and its commands ("the output of git", `git fetch`).
 - **The name of a setting** is a noun, not a verb: "Automatic fetch", "Graph style". Its help
   text follows the rules above.
 - **Work in progress** takes a verb in "-ing" and the ellipsis: "Cloning…", "Switching to
@@ -1629,13 +1639,19 @@ here is what is read in the documentation of git and in a terminal.
 | merge, rebase, cherry-pick | Merge, Rebase, Cherry-pick |
 | checkout, switch | Switch, as `git switch` |
 | remote | Remote |
-| revert | "Revert this commit"; the operation in progress: "Revert in progress", "Abort revert" |
-| an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort` |
-| commit, tag, reset, HEAD | Kept as they are. |
+| revert | "Revert this commit"; the operation in progress: "Revert in progress" |
+| an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort`. In the banner, "Abort…" opens its confirmation (9.1); a command that names the operation says it: "Abort revert". |
+| amend | "Amend last commit" |
+| discard | "Discard changes", for what is not committed |
+| stash apply, stash drop | "Apply stash", "Drop stash" |
+| commit, tag, reset, HEAD | Kept as they are, in lower case except HEAD. |
 
 Typography:
 
-- curly quotation marks “ ” and a curly apostrophe ’, an ellipsis as a single character …;
+- curly quotation marks “ ” and a curly apostrophe ’, an ellipsis as a single character …; in the
+  interface, a period or a comma that ends the sentence goes inside the closing quotation mark,
+  as American usage has it (this document quotes labels on their own, with the punctuation
+  outside);
 - no space before ":", ";", "?" and "!";
 - plurals agree: "1 commit", "10 commits";
 - dates and numbers in the American format, whatever the language of the system: a short date
@@ -1658,27 +1674,27 @@ the curves of the graph (10).
 |---|---|---|
 | Icon | [`logo/ramure-icone.svg`](logo/ramure-icone.svg) | The application: taskbar, window, start page. The symbol in white on a blue tile. |
 | Icon, small sizes | [`logo/ramure-icone-petit.svg`](logo/ramure-icone-petit.svg) | The same, under 40 px. The drawing is simplified: one tine per side, a thicker stroke. |
-| Logo | [`logo/ramure-logo.svg`](logo/ramure-logo.svg), [`logo/ramure-logo-sombre.svg`](logo/ramure-logo-sombre.svg) | The icon followed by the name. The "sombre" version has the name in a light colour, for a dark background. |
-| Symbol | [`logo/ramure-symbole.svg`](logo/ramure-symbole.svg), [`logo/ramure-symbole-petit.svg`](logo/ramure-symbole-petit.svg) | The drawing alone, in a single colour, when the tile does not fit. |
+| Logo | [`logo/ramure-logo.svg`](logo/ramure-logo.svg), [`logo/ramure-logo-sombre.svg`](logo/ramure-logo-sombre.svg) | The icon followed by the name. The "sombre" version has the name in a light color, for a dark background. |
+| Symbol | [`logo/ramure-symbole.svg`](logo/ramure-symbole.svg), [`logo/ramure-symbole-petit.svg`](logo/ramure-symbole-petit.svg) | The drawing alone, in a single color, when the tile does not fit. |
 
-### 13.2 Colours
+### 13.2 Colors
 
 | Token | Value | Role |
 |---|---|---|
 | `--brand` | `#2b6fdb` | The tile. |
 | `--on-brand` | `#ffffff` | The symbol on the tile. |
 
-- These two colours are fixed: they change neither in the dark theme nor with the colour theme.
+- These two colors are fixed: they change neither in the dark theme nor with the color theme.
   The icon is the same everywhere.
 - The name is in `#171a21` on a light background, in `#e6e9ef` on a dark one.
-- The symbol alone takes the colour of the text, the blue of the tile, or white. No other.
+- The symbol alone takes the color of the text, the blue of the tile, or white. No other.
 
 ### 13.3 Construction
 
-- **The tile** is a square whose corners are rounded by 22% of its side. The symbol is centred
+- **The tile** is a square whose corners are rounded by 22% of its side. The symbol is centered
   in it, with a margin of 16% of the side (12% for the simplified drawing).
 - **The name** is "Ramure", in DM Sans, weight 650, with a tracking of −0.01 em. Its cap height
-  is 45% of the height of the tile, and it is centred on the tile.
+  is 45% of the height of the tile, and it is centered on the tile.
 - **The gap** between the tile and the name is a quarter of the height of the tile.
 - In the files, the name is converted to outlines: it displays without the font being installed.
 
@@ -1691,7 +1707,7 @@ the curves of the graph (10).
 ### 13.5 What is forbidden
 
 - Distorting the logo, slanting it or rotating it.
-- Changing the colour of the tile or of the symbol; adding a gradient, a shadow or an outline.
+- Changing the color of the tile or of the symbol; adding a gradient, a shadow or an outline.
 - Redrawing the symbol: adding or removing tines, changing the thickness of the stroke.
 - Using the full drawing under 40 px.
 - Placing the symbol alone on a photograph or a busy background: that is what the tile is for.
@@ -1712,7 +1728,7 @@ the curves of the graph (10).
   goes into section 9 with its states.
 - A new token goes into the relevant section, with its role and its two values, then into
   `src/app.css`.
-- `npm run check` rejects a colour, a text size, a weight, a radius or a duration hard-coded in
+- `npm run check` rejects a color, a text size, a weight, a radius or a duration hard-coded in
   a component.
 - Every pull request that touches the interface is reviewed against these guidelines.
 - The two screenshots at the top of this file show the view of a repository. A pull request that
@@ -1720,15 +1736,16 @@ the curves of the graph (10).
 
 ## 15. History
 
-- **The look** was chosen on 10 November 2026, among four proposals shown on the real
+- **The look** was chosen on November 10, 2026, among four proposals shown on the real
   application: Sous-bois, Encre and Braise first, then Clairière, which was kept. Clairière has
   the cards and the graph of Sous-bois, without its borders, its pill-shaped buttons and its
-  green. Its colours are the default theme, Slate (Ardoise until the interface moved to English);
-  the colours of the other three became the themes Undergrowth, Ink and Ember (Sous-bois, Encre
+  green. Its colors are the default theme, Slate (Ardoise, before the interface moved to English);
+  the colors of the other three became the themes Undergrowth, Ink and Ember (Sous-bois, Encre
   and Braise) (2.5).
 - **The logo** was chosen the same day, among three drawings on the theme of a deer's antlers.
-- **The language** of the interface moved from French to English in November 2026 (#147): the
-  labels, the messages, the code and its comments, and the conventions of the repository.
+- **The language** of the interface moves from French to English from November 2026 (#147): the
+  labels, the messages, the code and its comments, and the conventions of the repository. The
+  names of the proposals above are kept as they were.
 - The record of both choices, with the screenshots and the sketches of every proposal, was in
   `docs/design/`. It was removed once these guidelines had become the only reference. Git keeps
   it: `git show 72eb9ec:docs/design/directions.md` for the look, and

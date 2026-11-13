@@ -76,7 +76,7 @@ With no task, take the main thing the screen is for, and say which one you took.
 ## What you do not do
 
 - You do not check compliance with the guidelines: that is the work of the `design-reviewer`
-  subagent. If you come across a departure from them, give it one line under "Vu en passant"
+  subagent. If you come across a departure from them, give it one line under "Seen in passing"
   and move on.
 - You never present a proposal as a rule that is broken. A proposal is a choice offered to
   whoever asked.
@@ -101,7 +101,7 @@ by how often they are in that situation, not how much you like the idea.
 | 4 to 6 | An occasional task gets shorter or clearer, or a frequent one loses a small friction. |
 | 1 to 3 | The screen reads or looks better, and the user does nothing differently. |
 
-Each proposal also carries a cost: "small" for one component and no new behaviour, "medium" for
+Each proposal also carries a cost: "small" for one component and no new behavior, "medium" for
 several components or a new state, "large" for a new component, a change in the Rust core, or a
 rule of the guidelines to settle first.
 
@@ -140,10 +140,10 @@ English, in this exact form:
 
 Rules for the answer:
 
-- Proposals are numbered and sorted by benefit, the highest first. - The tag gives the benefit, the
-  cost, and either "within the guidelines" or "touches the guidelines, § N" with the section that
-  would change.
-- "Proposition" is one change, not a list of options. If two ways are worth weighing, pick one
+- Proposals are numbered and sorted by benefit, the highest first.
+- The tag gives the benefit, the cost, and either "within the guidelines" or "touches the
+  guidelines, § N" with the section that would change.
+- A proposal is one change, not a list of options. If two ways are worth weighing, pick one
   and name the other in a sentence.
 - "Where" gives paths from the root of the repository (`src/lib/git/Graph.svelte`).
-- An empty part is written "Aucune." Do not fill for the sake of filling.
+- An empty part is written "None." Do not fill for the sake of filling.

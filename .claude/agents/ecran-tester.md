@@ -67,7 +67,7 @@ There is one virtual screen and one release binary. Never play two scenarios at 
 - **The GTK file chooser** corrupts a typed path with its completion. Choose the file by
   double-clicking it in the list, or type the path slowly after Ctrl + L and check it in a
   capture before confirming.
-- **A notification** goes away after about 9 seconds: an action it offers, such as "Annuler",
+- **A notification** goes away after about 9 seconds: an action it offers, such as "Undo",
   has to be clicked before that.
 - **A dialog** makes the rest of the page inert: a click outside it lands on its veil and
   closes it.

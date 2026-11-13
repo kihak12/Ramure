@@ -32,15 +32,15 @@ screens may still show the French text.
 
 - **Tabs**: one repository per tab, reopened at startup. Ctrl + T opens a tab, Ctrl + W closes
   it, Ctrl + Tab moves to the next one; a middle click closes a tab too.
-- **Start page** of a new tab: open a folder, clone, initialise, and the list of recent
+- **Start page** of a new tab: open a folder, clone, initialize, and the list of recent
   repositories.
-- **Clone** (`git clone --progress`): live progress, can be cancelled. A clone that fails leaves
+- **Clone** (`git clone --progress`): live progress, can be canceled. A clone that fails leaves
   no folder behind.
 - **Resizable cards**: the branch list on the left and the detail panel on the right are resized
   by dragging the handle between them and the graph, or from the keyboard. Widths are kept from
   one launch to the next; a double-click restores the default width.
 - **Cards to show**: the "View" button at the right end of the toolbar opens a menu with
-  one box per card: the branch list, the graph, the terminal and the detail panel. The side
+  one item per card: the branch list, the graph, the terminal and the detail panel. The side
   cards are also hidden and shown with Ctrl + Shift + B (branch list) and Ctrl + Shift + E
   (detail panel), or from the command palette, to read the graph on the whole width. A hidden
   detail panel only comes back when asked for: Enter or a double-click on a commit, a click on
@@ -51,9 +51,9 @@ screens may still show the French text.
 - **Graph**: `git log`, lanes computed in Rust, drawn on a canvas. Only the visible rows exist in
   the page; 50,000 commits scroll smoothly.
 - **Two styles**, chosen in the settings. "Ribbon" (the default): a dot with the author's
-  initials on each commit, soft curves, the message in a capsule of the branch colour, an
+  initials on each commit, soft curves, the message in a capsule of the branch color, an
   animated halo on the current commit. "Classic": points and curves, more compact.
-- **A "Branch / Tag" column** on the left of the graph, linked to its commit by a line. A
+- **A "Branch / tag" column** on the left of the graph, linked to its commit by a line. A
   computer icon marks the last local commit of a branch, a cloud the last remote one; on the same
   commit they share one label. Extra labels unfold on hover.
 - **Sidebar**: local branches with their ahead and behind counts, remote branches, tags, stashes,
@@ -94,7 +94,7 @@ Everything goes through a right-click on a commit or on a label, and through the
   is kept in `refs/ramure/backup/<branch>-<date>` (`git reset --hard <that ref>` goes back to
   it). Rewriting commits that were already pushed shows a warning.
 
-### Synchronisation
+### Synchronization
 
 - **Fetch** (`git fetch --all --prune`), **Pull** (fast-forward by default; rebase or merge as a
   setting), **Push** (a branch without an upstream is published automatically), and **force push**
@@ -122,7 +122,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 ### SSH
 
 - **Host book**: name, address, port, user, authentication (agent and default keys, key file, or
-  password), group, tags, colour, startup command. It is stored in a SQLite file
+  password), group, tags, color, startup command. It is stored in a SQLite file
   (`%APPDATA%\Ramure` or `~/.config/ramure`), with no secret in it.
 - **Import of `~/.ssh/config`**: Host, HostName, User, Port, IdentityFile. A host that goes
   through a bastion (ProxyJump) is imported, but cannot be connected to yet.
@@ -132,8 +132,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   machine (PowerShell on Windows, your `SHELL` on Ubuntu) in your home folder.
 - **Automatic reconnection** of a lost connection, five tries, and **search** in a terminal
   (Ctrl + Shift + F).
-- **Terminal colours** that follow the theme: the sixteen colours a program asks for (`ls`,
-  `git`, a coloured prompt) are those of the colour theme, in light and in dark. Any text that
+- **Terminal colors** that follow the theme: the sixteen colors a program asks for (`ls`,
+  `git`, a colored prompt) are those of the color theme, in light and in dark. Any text that
   would read poorly on its background is adjusted until it reads.
 - **Fingerprints**: on the first connection, the server's fingerprint is shown; accepting it
   writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
@@ -144,7 +144,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   in the form; an unknown server, a passphrase or a password is asked for as when connecting.
 - **A host's key**: in its form, the key file is typed or picked with "Browse…", which opens
   the system file dialog in `~/.ssh`.
-- **Passwords and passphrases** are asked for at connection time. Tick "Remember in the
+- **Passwords and passphrases** are asked for at connection time. Check "Remember in the
   system keyring" and Ramure keeps the secret in the keyring of the system, the Credential
   Manager on Windows or the Secret Service (GNOME Keyring, KWallet) on Ubuntu, and nowhere else.
   The next connection does not ask. A kept secret that the server refuses is forgotten and asked
@@ -156,9 +156,9 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - **Settings page**: the button at the foot of the rail, or Ctrl + , . It opens on the section
   of the module you are in. Every setting applies at once; there is nothing to save.
 - **Light or dark**: "System" follows the system, "Light" and "Dark" hold one.
-- **Colour themes**: Slate (the default), Ink, Undergrowth and Ember, each in light and dark.
-  A theme changes the colours only. `npm run check` verifies that every theme meets the contrasts
-  and the colour distances of the design guidelines.
+- **Color themes**: Slate (the default), Ink, Undergrowth and Ember, each in light and dark.
+  A theme changes the colors only. `npm run check` verifies that every theme meets the contrasts
+  and the color distances of the design guidelines.
 - **Configurable keyboard shortcuts**: in the settings, under "Keyboard shortcuts", with a
   filter. In a terminal, only shortcuts with Shift, Alt or a function key are active.
 - **Command log**: every git command that was run, with its duration, from the status bar.
@@ -194,7 +194,7 @@ npm install
 npm run tauri dev
 ```
 
-Optimised build, without an installer (binary in `src-tauri/target/release/`):
+Optimized build, without an installer (binary in `src-tauri/target/release/`):
 
 ```bash
 npm run tauri build -- --no-bundle
@@ -206,9 +206,9 @@ npm run tauri build -- --no-bundle
 npm run check
 ```
 
-This command checks the types, then rejects any colour, text size, weight, radius or duration
+This command checks the types, then rejects any color, text size, weight, radius or duration
 hard-coded in a component: those values come from the tokens in `src/app.css`. It then computes the
-contrasts and the colour distances of every colour theme, in light and in dark, against those of the
+contrasts and the color distances of every color theme, in light and in dark, against those of the
 design guidelines. Last, it rejects two files of `src/` whose names differ only by case, such as
 `Toasts.svelte` and `toasts.svelte.ts`: on Windows an import of one loads the other, and the window
 stays blank.
