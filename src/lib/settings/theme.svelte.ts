@@ -1,6 +1,5 @@
-// Thème clair ou sombre, celui du système ou celui qu'on a choisi, et thème de couleurs
-// (charte, section 2.5). Les jetons de src/app.css suivent les attributs `data-theme` et
-// `data-palette` de la racine.
+// Light or dark theme, the system's or the one chosen, and color theme (guidelines, section 2.5).
+// The tokens of src/app.css follow the `data-theme` and `data-palette` attributes of the root.
 
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { prefs } from '../git/prefs.svelte';
@@ -10,17 +9,17 @@ const system = window.matchMedia('(prefers-color-scheme: dark)');
 class Theme {
   #systemDark = $state(system.matches);
 
-  /** Vrai quand l'interface est sombre. Ce qui dessine ses propres couleurs (graphe, terminal) le lit. */
+  /** True when the interface is dark. What draws its own colors (graph, terminal) reads it. */
   dark = $derived(prefs.theme === 'system' ? this.#systemDark : prefs.theme === 'dark');
-  /** Change dès qu'une couleur change : clair ou sombre, ou thème de couleurs. Le graphe et le
-   *  terminal, qui lisent les jetons pour dessiner, se redessinent quand elle change. */
+  /** Changes as soon as a color changes: light or dark, or color theme. The graph and the
+   *  terminal, which read the tokens to draw, redraw when it changes. */
   key = $derived(`${prefs.palette}:${this.dark ? 'dark' : 'light'}`);
 
   constructor() {
     system.addEventListener('change', () => (this.#systemDark = system.matches));
   }
 
-  /** Applique le choix à la page, et à la barre de titre de la fenêtre quand le système le permet. */
+  /** Applies the choice to the page, and to the title bar of the window when the system allows it. */
   apply() {
     const choice = prefs.theme;
     const root = document.documentElement;
@@ -31,10 +30,10 @@ class Theme {
       void getCurrentWindow()
         .setTheme(choice === 'system' ? null : choice)
         .catch(() => {
-          /* système sans thème de fenêtre : la page, elle, a déjà changé */
+          /* a system without a window theme: the page itself has already changed */
         });
     } catch {
-      /* hors de Tauri (aperçu dans un navigateur) : il n'y a pas de fenêtre à régler */
+      /* outside Tauri (a preview in a browser): there is no window to set */
     }
   }
 }

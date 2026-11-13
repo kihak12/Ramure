@@ -7,7 +7,7 @@
   let { repo }: { repo: Repo } = $props();
 
   const recents = $derived(workspace.recents);
-  const relative = new Intl.RelativeTimeFormat('fr-FR', { numeric: 'auto' });
+  const relative = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
 
   function ago(at: number) {
     const minutes = Math.round((at - Date.now()) / 60_000);

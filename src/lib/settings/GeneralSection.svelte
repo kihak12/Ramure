@@ -7,18 +7,18 @@
   import ThemePreview from './ThemePreview.svelte';
 
   const THEMES = [
-    { value: 'system', label: 'Système' },
-    { value: 'light', label: 'Clair' },
-    { value: 'dark', label: 'Sombre' },
+    { value: 'system', label: 'System' },
+    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Dark' },
   ] as const satisfies readonly { value: ThemeChoice; label: string }[];
 
-  // Chaque thème de couleurs dit ce qui le distingue ; Sous-bois et Braise disent aussi leur limite
-  // (charte, section 2.5).
+  // Each color theme says what sets it apart; Undergrowth and Ember also say their limit
+  // (guidelines, section 2.5).
   const PALETTES = [
-    { value: 'ardoise', label: 'Ardoise', help: 'Gris neutres, accent bleu. Par défaut.' },
-    { value: 'encre', label: 'Encre', help: 'Gris presque noirs ou blancs, accent indigo.' },
-    { value: 'sous-bois', label: 'Sous-bois', help: 'Verts sombres ou papier, accent mousse, comme la réussite.' },
-    { value: 'braise', label: 'Braise', help: 'Charbon ou crème, accent ambre, proche de l’avertissement.' },
+    { value: 'slate', label: 'Slate', help: 'Neutral grays, blue accent. The default.' },
+    { value: 'ink', label: 'Ink', help: 'Grays close to black or white, indigo accent.' },
+    { value: 'undergrowth', label: 'Undergrowth', help: 'Dark greens or paper, moss accent, like success.' },
+    { value: 'ember', label: 'Ember', help: 'Charcoal or cream, amber accent, close to the warning color.' },
   ] as const satisfies readonly { value: Palette; label: string; help: string }[];
 
   const changed = $derived(prefs.theme !== DEFAULTS.theme || prefs.palette !== DEFAULTS.palette);
@@ -35,7 +35,7 @@
 </script>
 
 <SectionHeader
-  title="Général"
+  title="General"
   {changed}
   onreset={() => {
     const before = { theme: prefs.theme, palette: prefs.palette };
@@ -50,12 +50,12 @@
 
 <section class="group" aria-labelledby="group-look">
   <h3 id="group-look">Apparence</h3>
-  <SettingRow id="set-theme" name="Thème" help="« Système » suit le réglage clair ou sombre de ton ordinateur." group>
+  <SettingRow id="set-theme" name="Theme" help="“System” follows the light or dark setting of your computer." group>
     <Choice name="set-theme" layout="tiles" labelledby="set-theme-name" describedby="set-theme-help" value={prefs.theme} options={THEMES} onchange={setTheme}>
       {#snippet preview(choice: ThemeChoice)}<ThemePreview {choice} palette={prefs.palette} />{/snippet}
     </Choice>
   </SettingRow>
-  <SettingRow id="set-palette" name="Couleurs" help="Ne change que les couleurs : la disposition, les formes et le texte restent les mêmes." group>
+  <SettingRow id="set-palette" name="Colors" help="Changes the colors only: the layout, the shapes and the text stay the same." group>
     <Choice name="set-palette" layout="tiles" labelledby="set-palette-name" describedby="set-palette-help" value={prefs.palette} options={PALETTES} onchange={setPalette}>
       {#snippet preview(palette: Palette)}<ThemePreview choice={prefs.theme} {palette} />{/snippet}
     </Choice>

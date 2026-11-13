@@ -1,42 +1,47 @@
-// Réglages de Ramure, communs à tous les dépôts ouverts. Ils se changent dans la page de réglages
-// (src/lib/settings/) et s'appliquent à l'instant.
+// Ramure's settings, shared by every open repository. They are changed on the settings page
+// (src/lib/settings/) and apply at once.
 
 const STORAGE_KEY = 'ramure.settings';
 
 export type PullMode = 'ff-only' | 'rebase' | 'merge';
-/** `ribbon` : pastilles d'auteur et rubans de couleur. `classic` : points et courbes, plus compact. */
+/** `ribbon`: author dots and colored ribbons. `classic`: points and curves, more compact. */
 export type GraphStyle = 'ribbon' | 'classic';
 export type DiffMode = 'unified' | 'split';
-/** `system` : clair ou sombre, comme le système. */
+/** `system`: light or dark, as the system says. */
 export type ThemeChoice = 'system' | 'light' | 'dark';
-/** Thème de couleurs (charte, section 2.5). */
-export type Palette = 'ardoise' | 'encre' | 'sous-bois' | 'braise';
+/** Color theme (guidelines, section 2.5). */
+export type Palette = 'slate' | 'ink' | 'undergrowth' | 'ember';
+/** The names of the color themes before the interface moved to English (#147): a setting saved
+ *  under one of them is read under its new name. */
+const FORMER_PALETTES: Readonly<Record<string, Palette>> = { ardoise: 'slate', encre: 'ink', 'sous-bois': 'undergrowth', braise: 'ember' };
 
 export interface Settings {
-  /** Commits chargés ; 0 pour tout l'historique. */
+  /** Commits loaded; 0 for the whole history. */
   limit: number;
-  /** Fetch automatique, en minutes ; 0 pour le désactiver. */
+  /** Automatic fetch, in minutes; 0 to turn it off. */
   autoFetch: number;
   pullMode: PullMode;
   graphStyle: GraphStyle;
-  /** Diff sur une colonne, ou ancien et nouveau côte à côte. */
+  /** Diff in one column, or old and new side by side. */
   diffMode: DiffMode;
   theme: ThemeChoice;
   palette: Palette;
-  /** Une connexion SSH perdue se rouvre d'elle-même (charte, section 9.15). */
+  /** A lost SSH connection opens again on its own (guidelines, section 9.15). */
   sshReconnect: boolean;
-  /** Le dossier des journaux de session ; vide pour celui par défaut (charte, 9.15, 9.18). */
+  /** The folder of session logs; empty for the default one (guidelines, 9.15, 9.18). */
   journalDir: string;
 }
 
-export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'ardoise', sshReconnect: true, journalDir: '' };
+export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'slate', sshReconnect: true, journalDir: '' };
 
-/** Bornes de la récupération automatique, en minutes. */
+/** Bounds of the automatic fetch, in minutes. */
 export const AUTO_FETCH = { min: 0, max: 60 } as const;
 
 function read(): Settings {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') };
+    const saved: Settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') };
+    saved.palette = FORMER_PALETTES[saved.palette] ?? saved.palette;
+    return saved;
   } catch {
     return { ...DEFAULTS };
   }
@@ -44,12 +49,12 @@ function read(): Settings {
 
 export const prefs = $state<Settings>(read());
 
-/** Enregistre un ou plusieurs réglages. */
+/** Saves one or more settings. */
 export function savePrefs(next: Partial<Settings>) {
   Object.assign(prefs, next);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
   } catch {
-    /* stockage indisponible : les réglages valent pour cette session */
+    /* storage unavailable: the settings hold for this session */
   }
 }

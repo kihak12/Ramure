@@ -33,7 +33,7 @@ export function fileName(name: string, d: Date): string {
 
 /** « Journal de serveur-test, commencé le 11 nov. 2026 à 23:05 » ; `title` dit de quoi. */
 export function header(title: string, d: Date): string {
-  const day = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  const day = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   return `${title}, commencé le ${day} à ${time(d)}`;
 }
 

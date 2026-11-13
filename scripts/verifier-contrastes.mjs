@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const css = readFileSync(fileURLToPath(new URL('../src/app.css', import.meta.url)), 'utf8');
-const PALETTES = ['ardoise', 'encre', 'sous-bois', 'braise'];
+const PALETTES = ['slate', 'ink', 'undergrowth', 'ember'];
 
 /** Le corps du bloc qui commence par `selector`, ou null. */
 function block(selector) {

@@ -7,7 +7,7 @@
 
   let { repo, commit }: { repo: Repo; commit: CommitRow } = $props();
 
-  const fullDateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full', timeStyle: 'short' });
+  const fullDateFmt = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' });
   const detail = $derived(repo.detail);
   const body = $derived(detail ? detail.message.split('\n').slice(1).join('\n').trim() : '');
 

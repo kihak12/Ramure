@@ -210,7 +210,7 @@
               {#if session.journal?.live}
                 <!-- Le journal en cours : une icône, dite en mots, sans couleur ni animation (9.7). -->
                 <span class="journal" role="img" aria-label="Journal en cours d’enregistrement" title="Journal en cours d’enregistrement">
-                  <Icon name="journal" size={14} />
+                  <Icon name="log" size={14} />
                 </span>
               {/if}
             </button>

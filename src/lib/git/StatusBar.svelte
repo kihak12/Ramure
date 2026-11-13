@@ -10,7 +10,7 @@
   // Horloge de la barre d'état : fait vieillir « il y a 2 min » sans autre événement.
   let now = $state(Date.now());
 
-  const numFmt = new Intl.NumberFormat('fr-FR');
+  const numFmt = new Intl.NumberFormat('en-US');
   const ms = (n: number) => `${numFmt.format(Math.round(n))} ms`;
 
   const result = $derived(repo.result);
