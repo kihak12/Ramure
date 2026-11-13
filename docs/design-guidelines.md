@@ -1515,13 +1515,15 @@ top, whatever it shows: a commit, or nothing selected yet. The "WIP" row of the 
 too, but it scrolls out of sight; the detail panel is where the eye goes after a click.
 
 - **A strip** across the width of the card, above its content: `--accent-soft` background, 8 px
-  corners, 6 px of inner margin, 10 px on the left. It is a sign, not a banner: it asks nothing
+  corners, 8 px of inner margin, 10 px on the sides. It is a sign, not a banner: it asks nothing
   and warns of nothing, so it has no `role="status"` and no transition of its own.
-- **On the left**, the pencil icon, 16 px, in `--accent`, then the sentence in `--ink`, weight
-  650: "2 files with uncommitted changes", "1 file with uncommitted changes".
-- **On the right**, "Show working changes", a small standard button, with the words of the
-  palette command (9.17). It shows the work panel, as the "WIP" row does.
-- **When the card is narrow**, the button goes under the sentence, on the left.
+- **First line**: the pencil icon, 16 px, in `--accent`, then the sentence in `--ink`, weight
+  650: "2 files with uncommitted changes", "1 file with uncommitted changes". The sentence wraps
+  under itself when the card is narrow.
+- **Second line**: "Show working changes", a small standard button, aligned with the sentence,
+  with the words of the palette command (9.17). It shows the work panel, as the "WIP" row does.
+  Two lines whatever the width: the detail panel is too narrow for one, and the button keeps its
+  place.
 - **No strip** while the work panel itself is shown, nor once the changes are committed or
   discarded: it comes and goes with them, and what is under it moves with it.
 

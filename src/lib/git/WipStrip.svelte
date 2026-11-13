@@ -19,13 +19,15 @@
 
 <style>
   .strip {
-    /* The whole width of the card. When it is narrow, the button goes under the sentence. */
+    /* The whole width of the card, on two lines: the icon and the sentence, then the button,
+       aligned with the sentence. A card as narrow as the detail panel would wrap them anyway:
+       two lines keep the button in one place, whatever the width. */
     align-self: stretch;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 6px 8px;
-    padding: 6px 6px 6px 10px;
+    padding: 8px 10px;
     border-radius: var(--radius);
     background: var(--accent-soft);
     color: var(--ink);
@@ -35,8 +37,10 @@
     color: var(--accent);
   }
   .text {
-    flex: 1 1 140px;
-    min-width: 0;
     font-weight: var(--fw-strong);
+  }
+  .strip .btn {
+    grid-column: 2;
+    justify-self: start;
   }
 </style>
