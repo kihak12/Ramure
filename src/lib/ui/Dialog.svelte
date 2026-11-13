@@ -14,7 +14,7 @@
 
   const initial = (field: Field) => field.value ?? (field.type === 'checkbox' ? false : field.type === 'number' ? 0 : '');
 
-  // `showModal()` apporte le piège de focus, la touche Échap et le voile d'arrière-plan.
+  // `showModal()` brings the focus trap, the Escape key and the backdrop veil.
   $effect(() => {
     if (!element) return;
     if (open && !element.open) {
@@ -37,7 +37,7 @@
   }
 </script>
 
-<!-- `oncancel` : Échap. Le clic sur le voile ferme aussi. -->
+<!-- `oncancel`: Escape. A click on the veil closes too. -->
 <dialog
   bind:this={element}
   oncancel={(e) => {
@@ -48,7 +48,7 @@
 >
   {#if spec}
     <form onsubmit={submit}>
-      <!-- Le contenu défile si la fenêtre est trop basse ; la dernière ligne reste en vue (charte, 9.10). -->
+      <!-- The content scrolls if the window is too low; the last line stays in view (guidelines, 9.10). -->
       <div class="content">
       <h2>{spec.title}</h2>
       {#if spec.body}<p class="body">{spec.body}</p>{/if}
@@ -95,17 +95,17 @@
       </div>
 
       <footer>
-        <!-- La sortie, l'action annexe, puis le principal, à droite (charte, 9.1, « Hierarchy »). -->
-        <!-- Action destructive : le focus arrive sur « Annuler », pour qu'Entrée ne détruise rien (charte, 9.10). -->
+        <!-- The way out, the secondary action, then the main one, at the right (guidelines, 9.1, "Hierarchy"). -->
+        <!-- Destructive action: the focus lands on "Cancel", so that Enter destroys nothing (guidelines, 9.10). -->
         <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn" type="button" autofocus={!!spec.danger} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Annuler'}</button>
+        <button class="btn" type="button" autofocus={!!spec.danger} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Cancel'}</button>
         {#if spec.extra}
           {@const extra = spec.extra}
           <button
             class="btn"
             type="button"
             onclick={() => {
-              // Fermer la boîte vide `spec` : l'action est retenue avant, sinon elle ne se lit plus.
+              // Closing the dialog empties `spec`: the action is kept beforehand, or it can no longer be read.
               const run = extra.run;
               dialogs.close(null);
               run();
@@ -148,7 +148,7 @@
     min-height: 0;
     padding: 16px 20px;
   }
-  /* 4 px de marge rendus : le halo du focus d'un champ (3 px) n'est pas rogné par le défilement. */
+  /* 4 px of margin given back: the focus halo of a field (3 px) is not clipped by the scrolling. */
   .content {
     display: flex;
     flex-direction: column;
@@ -199,8 +199,8 @@
     align-items: center;
     gap: 6px;
   }
-  /* Trop de boutons pour une ligne : ils passent à la ligne suivante, le principal reste le dernier,
-     en bas à droite (charte, 9.1, « Hierarchy »). */
+  /* Too many buttons for one line: they wrap to the next line, the main one stays last,
+     at the bottom right (guidelines, 9.1, "Hierarchy"). */
   footer {
     display: flex;
     flex-wrap: wrap;

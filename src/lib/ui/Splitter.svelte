@@ -1,9 +1,9 @@
 <script lang="ts">
   /**
-   * Poignée de redimensionnement entre deux cartes (charte graphique, section 9.16).
-   * Elle se glisse à la souris et se règle au clavier ; un double-clic, ou Entrée, revient à la
-   * taille par défaut. Verticale entre deux cartes côte à côte (elle règle une largeur),
-   * horizontale entre deux cartes l'une sous l'autre (elle règle une hauteur).
+   * Resize handle between two cards (design guidelines, section 9.16).
+   * It is dragged with the mouse and set from the keyboard; a double-click, or Enter, goes back to
+   * the default size. Vertical between two cards side by side (it sets a width), horizontal
+   * between two cards one above the other (it sets a height).
    */
   let {
     value,
@@ -16,23 +16,23 @@
     onchange,
     oncommit,
   }: {
-    /** Largeur actuelle de la carte réglée, en pixels. */
+    /** Current width of the card being set, in pixels. */
     value: number;
     min: number;
     max: number;
-    /** Largeur par défaut. */
+    /** Default width. */
     initial: number;
-    /** 1 : la carte est à gauche (ou au-dessus) de la poignée ; -1 : à droite (ou au-dessous). */
+    /** 1: the card is on the left of the handle (or above it); -1: on the right (or below). */
     direction?: 1 | -1;
-    /** `vertical` : la poignée sépare deux cartes côte à côte ; `horizontal` : l'une sous l'autre. */
+    /** `vertical`: the handle separates two cards side by side; `horizontal`: one above the other. */
     orientation?: 'vertical' | 'horizontal';
     label: string;
     onchange: (value: number) => void;
-    /** Fin du geste : c'est le moment d'enregistrer. */
+    /** End of the gesture: the time to save. */
     oncommit: () => void;
   } = $props();
 
-  const STEP = 16; // un appui sur une flèche
+  const STEP = 16; // one press of an arrow key
   let origin: { at: number; value: number } | null = null;
   const horizontal = $derived(orientation === 'horizontal');
   const along = (e: PointerEvent) => (horizontal ? e.clientY : e.clientX);
@@ -42,9 +42,9 @@
 
   function down(e: PointerEvent) {
     if (e.button !== 0) return;
-    e.preventDefault(); // pas de sélection de texte pendant le geste
+    e.preventDefault(); // no text selection during the gesture
     const handle = e.currentTarget as HTMLElement;
-    handle.focus({ preventScroll: true }); // l'annulation ci-dessus empêche aussi la prise de focus
+    handle.focus({ preventScroll: true }); // the preventDefault above also prevents taking the focus
     handle.setPointerCapture(e.pointerId);
     origin = { at: along(e), value };
     dragging = true;
@@ -67,8 +67,8 @@
   }
 
   function key(e: KeyboardEvent) {
-    // Une flèche déplace la poignée : vers la droite, elle élargit la carte de gauche et rétrécit
-    // celle de droite ; vers le haut, elle agrandit la carte du dessous.
+    // An arrow moves the handle: to the right, it widens the card on the left and narrows the one
+    // on the right; upward, it makes the card below taller.
     const [back, forth] = horizontal ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight'];
     const moves: Record<string, number> = {
       [back]: value - STEP * direction,
@@ -95,7 +95,7 @@
   aria-valuemin={min}
   aria-valuemax={max}
   tabindex="0"
-  title="Glisser pour redimensionner. Double-clic : {horizontal ? 'hauteur' : 'largeur'} par défaut."
+  title="Drag to resize. Double-click: default {horizontal ? 'height' : 'width'}."
   onpointerdown={down}
   onpointermove={move}
   onpointerup={up}
@@ -111,8 +111,8 @@
     cursor: col-resize;
     touch-action: none;
   }
-  /* Au repos, rien : le fond de la fenêtre sépare déjà les cartes. Le repère n'apparaît qu'au survol,
-     au focus et pendant le geste. */
+  /* At rest, nothing: the window background already separates the cards. The marker only appears on
+     hover, on focus and during the gesture. */
   .splitter::before {
     content: '';
     position: absolute;
@@ -131,7 +131,7 @@
   .splitter:hover::before {
     opacity: 1;
   }
-  /* Le focus se lit sur le repère lui-même, pas par un cadre autour de la poignée. */
+  /* The focus reads on the marker itself, not through a frame around the handle. */
   .splitter:focus-visible {
     outline: none;
   }

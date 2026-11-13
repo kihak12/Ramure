@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  // Jeu d'icônes de Ramure : traits de 1,4 px sur une grille de 16, sans remplissage.
+  // Ramure's icon set: 1.4 px strokes on a 16 grid, with no fill.
   const PATHS = {
     branch:
       '<circle cx="4.5" cy="3.5" r="1.6"/><circle cx="4.5" cy="12.5" r="1.6"/><circle cx="11.5" cy="5.5" r="1.6"/><path d="M4.5 5.1v5.8M11.5 7.1c0 3-7 2-7 3.8"/>',
@@ -60,5 +60,5 @@
   let { name, size = 16 }: { name: IconName; size?: number } = $props();
 </script>
 
-<!-- Les tracés sont des constantes de ce fichier : rien d'extérieur n'est injecté. -->
+<!-- The paths are constants of this file: nothing from outside is injected. -->
 <svg class="icon" viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">{@html PATHS[name]}</svg>

@@ -3,9 +3,9 @@
   import Icon from './Icon.svelte';
 
   /**
-   * Un choix : quelques options, toutes visibles, dont une est toujours retenue (charte, section 9.19).
-   * C'est un groupe de boutons radio : les flèches déplacent le choix, qui s'applique aussitôt.
-   * `rows` : une option par ligne, avec ce qu'elle entraîne. `tiles` : côte à côte, avec un aperçu.
+   * A choice: a few options, all in view, one of which is always selected (guidelines, section 9.19).
+   * It is a group of radio buttons: the arrows move the choice, which applies at once.
+   * `rows`: one option per line, with what it entails. `tiles`: side by side, with a preview.
    */
   let {
     name,
@@ -17,27 +17,27 @@
     preview,
     onchange,
   }: {
-    /** Nom du groupe de boutons radio, unique dans la page. */
+    /** Name of the group of radio buttons, unique in the page. */
     name: string;
     value: T;
     options: readonly { value: T; label: string; help?: string }[];
     layout?: 'rows' | 'tiles';
     labelledby: string;
     describedby?: string;
-    /** Ce qui se voit mieux qu'il ne se dit : l'aperçu d'une option. */
+    /** What is better shown than said: the preview of an option. */
     preview?: Snippet<[T]>;
     onchange: (value: T) => void;
   } = $props();
 
-  // L'anneau de focus ne se montre qu'au clavier. On le suit ici : `:focus-visible` ne répond pas
-  // sur un bouton radio atteint par les flèches dans tous les moteurs. Un focus qui arrive juste
-  // après un appui de la souris vient d'elle ; tout autre vient du clavier.
-  const POINTER_WINDOW = 500; // ms entre l'appui de la souris et le focus qu'il donne
+  // The focus ring only shows from the keyboard. It is tracked here: `:focus-visible` does not
+  // respond, in every engine, on a radio button reached with the arrows. A focus that arrives just
+  // after a mouse press comes from the mouse; any other comes from the keyboard.
+  const POINTER_WINDOW = 500; // ms between the mouse press and the focus it gives
   let keyboard = $state(false);
   let pointerAt = -Infinity;
 </script>
 
-<!-- Le groupe ne prend pas le focus lui-même : ce sont ses boutons radio qui le prennent. -->
+<!-- The group does not take the focus itself: its radio buttons take it. -->
 <!-- svelte-ignore a11y_interactive_supports_focus -->
 <div
   class="choice {layout}"
@@ -63,7 +63,7 @@
         <span class="name">{option.label}</span>
         {#if option.help}<span class="help">{option.help}</span>{/if}
       </span>
-      <!-- La coche garde sa place sur les options non retenues : une option ne change pas de taille. -->
+      <!-- The check mark keeps its place on the options not selected: an option does not change size. -->
       <span class="mark" aria-hidden="true"><Icon name="check" size={14} /></span>
     </label>
   {/each}
@@ -102,7 +102,7 @@
   .option.on {
     background: var(--sel);
   }
-  /* Le bouton radio reste là pour le clavier et les lecteurs d'écran ; la ligne entière le dessine. */
+  /* The radio button stays there for the keyboard and screen readers; the whole line draws it. */
   input {
     position: absolute;
     inset: 0;
@@ -110,7 +110,7 @@
     opacity: 0;
     pointer-events: none;
   }
-  /* Focus au clavier : un anneau intérieur sur l'option, comme sur une ligne de liste. */
+  /* Keyboard focus: an inner ring on the option, as on a row of a list. */
   .ring {
     position: absolute;
     inset: 0;

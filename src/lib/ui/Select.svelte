@@ -3,9 +3,9 @@
   import type { HTMLSelectAttributes } from 'svelte/elements';
   import Icon from './Icon.svelte';
 
-  // Une liste. Fermée, elle est dessinée par l'application, comme la case à cocher : un champ de
-  // 32 px et le chevron du jeu d'icônes, pareils sous Windows et sous Linux, où la liste du système
-  // est plus haute qu'un champ. Ouverte, son menu reste celui du système (charte, section 9.3).
+  // A drop-down list. Closed, it is drawn by the application, like the checkbox: a 32 px field and
+  // the chevron of the icon set, the same on Windows and on Linux, where the list of the system is
+  // taller than a field. Open, its menu stays that of the system (guidelines, section 9.3).
   let {
     value = $bindable(),
     element = $bindable(),
@@ -34,14 +34,14 @@
   select {
     appearance: none;
     height: 32px;
-    /* Le texte ne passe jamais sous le chevron. */
+    /* The text never runs under the chevron. */
     padding-right: 29px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
   }
-  /* Désactivée, comme tout élément désactivé (charte, section 9). */
+  /* Disabled, like any disabled element (guidelines, section 9). */
   .select:has(select:disabled) {
     opacity: 0.45;
   }

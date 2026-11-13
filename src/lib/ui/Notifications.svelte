@@ -7,8 +7,8 @@
 
   const ICON = { ok: 'check', warn: 'warning', err: 'warning' } as const;
 
-  // Dans un titre, un mot trop long (un nom de branche, un chemin) est coupé en son milieu : son
-  // début et sa fin restent lisibles. Le titre complet est en infobulle, et lu par les lecteurs d'écran.
+  // In a title, a word that is too long (the name of a branch, a path) is cut in its middle: its
+  // start and its end stay readable. The full title is in a tooltip, and read by screen readers.
   const LONG = 36;
   const HEAD = 24;
   const TAIL = 10;
@@ -19,7 +19,7 @@
       .join(' ');
   }
 
-  /** Donne le focus au bouton d'action dès qu'il apparaît, si on le demande. */
+  /** Gives the focus to the action button as soon as it appears, when asked to. */
   function focused(node: HTMLButtonElement, wanted: boolean) {
     if (wanted) node.focus();
   }
@@ -62,7 +62,7 @@
           {action.label}
         </button>
       {/if}
-      <button class="close" type="button" aria-label="Fermer la notification" title="Fermer la notification" onclick={() => toasts.dismiss(toast.id)}>
+      <button class="close" type="button" aria-label="Close notification" title="Close notification" onclick={() => toasts.dismiss(toast.id)}>
         <Icon name="x" size={14} />
       </button>
     </div>
@@ -71,7 +71,7 @@
 
 <style>
   .toasts {
-    /* En bas au centre : c'est l'endroit qui masque le moins de commandes. */
+    /* At the bottom, in the center: the place that hides the fewest controls. */
     position: fixed;
     left: 50%;
     bottom: 40px;
@@ -92,7 +92,7 @@
     align-items: start;
     padding: 10px 10px 10px 12px;
     border-radius: var(--radius);
-    /* L'état est porté par l'icône, pas par un trait de couleur sur le bord. */
+    /* The state is carried by the icon, not by a colored bar on the edge. */
     border: 1px solid var(--line);
     background: var(--raised);
     box-shadow: var(--shadow-pop);
@@ -120,7 +120,7 @@
   .text b {
     font-weight: var(--fw-strong);
   }
-  /* Hors de l'écran, mais lu : le titre entier, quand celui qui est affiché est coupé. */
+  /* Off screen, but read: the whole title, when the one displayed is cut. */
   pre {
     margin: 4px 0 0;
     font-size: var(--fs-small);
@@ -147,7 +147,7 @@
       background var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
-  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  /* When pressed, a button shrinks to 97% (guidelines, sections 8 and 9.1). */
   .close:active {
     transform: scale(0.97);
   }

@@ -1,5 +1,5 @@
-// Boîtes de dialogue de l'application : confirmations et petits formulaires.
-// `dialogs.ask(...)` renvoie une promesse, résolue avec les valeurs saisies ou `null` si on annule.
+// Dialogs of the application: confirmations and small forms.
+// `dialogs.ask(...)` returns a promise, resolved with the values entered, or `null` on cancel.
 
 export type FieldValue = string | boolean | number;
 
@@ -19,17 +19,17 @@ export interface Field {
 
 export interface DialogSpec {
   title: string;
-  /** Texte d'explication, sous le titre. */
+  /** Explanatory text, under the title. */
   body?: string;
-  /** Mise en garde, affichée dans un encadré. */
+  /** Warning, shown in a box. */
   warning?: string;
   fields?: Field[];
-  /** Le libellé du bouton qui confirme : un verbe et son objet, jamais « Valider » (charte, 9.1). */
+  /** The label of the button that confirms: a verb and its object, never "OK" (guidelines, 9.1). */
   confirmLabel: string;
   cancelLabel?: string;
-  /** Action destructrice : le bouton de confirmation passe en rouge. */
+  /** Destructive action: the confirmation button turns red. */
   danger?: boolean;
-  /** Action annexe, entre « Annuler » et le principal : la boîte se ferme, puis l'action s'exécute. */
+  /** Secondary action, between "Cancel" and the main button: the dialog closes, then the action runs. */
   extra?: { label: string; run: () => void };
 }
 
@@ -39,7 +39,7 @@ class Dialogs {
   current = $state.raw<{ spec: DialogSpec; resolve: (answers: Answers | null) => void } | null>(null);
 
   ask(spec: DialogSpec): Promise<Answers | null> {
-    // Une seule boîte à la fois : la précédente est annulée.
+    // One dialog at a time: the previous one is canceled.
     this.current?.resolve(null);
     return new Promise((resolve) => {
       this.current = { spec, resolve };

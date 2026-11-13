@@ -1,15 +1,15 @@
-// Branche en cours de glissement : la déposer sur une autre propose de les fusionner ou de
-// rebaser l'une sur l'autre.
+// Branch being dragged: dropping it on another offers to merge them or to rebase one onto the
+// other.
 import type { Label } from './labels';
 
 export const drag = $state<{ label: Label | null }>({ label: null });
 
-/** Seules les branches se glissent et reçoivent : ni les tags, ni un HEAD détaché. */
+/** Only branches are dragged and receive a drop: neither tags nor a detached HEAD. */
 export const isBranch = (label: Label) => label.local !== null || label.remotes.length > 0;
 
-/** Nom git d'une étiquette de branche : la branche locale si elle existe, sinon la distante. */
+/** Git name of a branch label: the local branch if there is one, otherwise the remote one. */
 export const refName = (label: Label) => label.local ?? label.remotes[0] ?? label.name;
 
-/** Vrai si `target` peut recevoir la branche en cours de glissement. */
+/** True if `target` can receive the branch being dragged. */
 export const accepts = (target: Label) =>
   drag.label !== null && isBranch(target) && refName(drag.label) !== refName(target);

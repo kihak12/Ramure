@@ -1,5 +1,5 @@
-// Menu flottant : un seul à la fois. Il s'ouvre à l'endroit du clic droit, ou sous le bouton qui
-// le déroule (charte, section 9.9).
+// Floating menu: one at a time. It opens where the right-click was, or under the button that
+// drops it down (guidelines, section 9.9).
 import { focusWithRing } from './focus';
 import type { IconName } from './Icon.svelte';
 
@@ -11,9 +11,9 @@ export type MenuItem =
       danger?: boolean;
       disabled?: boolean;
       hint?: string;
-      /** Une case à cocher : la choisir ne ferme pas le menu. */
+      /** A checkable item: choosing it does not close the menu. */
       checked?: boolean;
-      /** Le raccourci de l'action, comme `Ctrl+Shift+B`, rappelé à droite. */
+      /** The shortcut of the action, such as `Ctrl+Shift+B`, recalled on the right. */
       keys?: string;
     }
   | { separator: true };
@@ -21,24 +21,24 @@ export type MenuItem =
 interface Open {
   x: number;
   y: number;
-  /** Une fonction quand les éléments changent pendant que le menu est ouvert : des cases à cocher. */
+  /** A function when the items change while the menu is open: checkable items. */
   items: MenuItem[] | (() => MenuItem[]);
-  /** Le bouton qui a déroulé le menu : il retrouve le focus à la fermeture. */
+  /** The button that dropped the menu down: it gets the focus back when the menu closes. */
   anchor?: HTMLElement;
-  /** Ouvert au clavier : le premier élément montre tout de suite qu'il a le focus. */
+  /** Opened from the keyboard: the first item shows at once that it has the focus. */
   keyboard?: boolean;
-  /** L'élément qui avait le focus quand le menu contextuel a été demandé au clavier : il le
-   *  retrouve à la fermeture. C'est la ligne, ou la liste qui la désigne (le graphe). */
+  /** The element that had the focus when the context menu was asked for from the keyboard: it
+   *  gets it back when the menu closes. It is the row, or the list that points to it (the graph). */
   origin?: HTMLElement;
 }
 
-// La touche Menu, ou Maj + F10 : le navigateur envoie l'événement `contextmenu` juste après. On
-// retient l'heure de la touche pour reconnaître un menu contextuel demandé au clavier.
+// The Menu key, or Shift + F10: the browser sends the `contextmenu` event right after. The time of
+// the key is kept, to recognize a context menu asked for from the keyboard.
 let contextKeyAt = -Infinity;
 const fromKeyboard = (event: Event) => event.timeStamp - contextKeyAt < 500;
-/** Vrai pendant que l'on renvoie un `contextmenu` demandé au clavier : il ne doit pas l'être deux fois. */
+/** True while a `contextmenu` asked for from the keyboard is being sent again: it must not be sent twice. */
 let resending = false;
-/** Vrai si `element` se voit, au moins en partie, dans la zone visible de `list`. */
+/** True if `element` can be seen, at least in part, in the visible area of `list`. */
 function inView(element: HTMLElement, list: HTMLElement) {
   const box = element.getBoundingClientRect();
   const frame = list.getBoundingClientRect();
@@ -52,11 +52,11 @@ if (typeof window !== 'undefined') {
     },
     true,
   );
-  // WebKitGTK envoie ce `contextmenu` à l'élément qui se trouve sous le coin bas gauche de celui qui
-  // a le focus, pas toujours à lui : son propre menu ne s'ouvrait pas, et le moteur montrait le sien.
-  // On le renvoie à l'élément qui a le focus, ou, pour une liste qui garde le focus et désigne sa
-  // ligne courante (`aria-activedescendant`, le graphe), à cette ligne. Un champ de texte garde le
-  // menu du système (couper, copier, coller).
+  // WebKitGTK sends this `contextmenu` to the element under the bottom left corner of the one that
+  // has the focus, not always to that one: its own menu did not open, and the engine showed its
+  // own. It is sent again to the element that has the focus, or, for a list that keeps the focus
+  // and points to its current row (`aria-activedescendant`, the graph), to that row. A text field
+  // keeps the menu of the system (cut, copy, paste).
   window.addEventListener(
     'contextmenu',
     (event) => {
@@ -64,23 +64,23 @@ if (typeof window !== 'undefined') {
       if (resending || !fromKeyboard(event) || !(focused instanceof HTMLElement) || focused === document.body) return;
       if (focused.isContentEditable || focused.matches('input, textarea, select')) return;
       const current = focused.getAttribute('aria-activedescendant');
-      // Cherchée dans la liste : un onglet masqué garde ses lignes, sous les mêmes identifiants.
+      // Looked for inside the list: a hidden tab keeps its rows, under the same ids.
       const row = current ? focused.querySelector<HTMLElement>(`#${CSS.escape(current)}`) : null;
-      // La ligne courante n'est pas en vue (la liste a défilé loin d'elle ; le graphe garde aussi des
-      // lignes rendues hors de la vue) : rien ne s'ouvre, ni le menu du moteur, ni celui de la ligne
-      // qui se trouverait sous le coin de la liste.
+      // The current row is not in view (the list has scrolled far from it; the graph also keeps
+      // rows rendered out of view): nothing opens, neither the menu of the engine nor that of the
+      // row that would be under the corner of the list.
       if (current && (!row || !inView(row, focused))) {
         event.preventDefault();
         event.stopPropagation();
         return;
       }
-      // Toujours renvoyé, même quand le moteur visait déjà le bon élément : un élément sans menu
-      // (un titre de section) n'ouvre alors rien, et jamais le menu du moteur.
+      // Always sent again, even when the engine already aimed at the right element: an element with
+      // no menu (the title of a section) then opens nothing, and never the menu of the engine.
       const target = row || focused;
       event.preventDefault();
       event.stopPropagation();
-      // Un `contextmenu` que personne n'a pris en charge a pour action par défaut le menu du moteur :
-      // la fenêtre l'annule en dernier, s'il remonte jusqu'à elle sans qu'un menu l'ait arrêté.
+      // A `contextmenu` that nobody handled has the menu of the engine as its default action: the
+      // window prevents it last, if it bubbles up to the window without a menu having stopped it.
       const resent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
       const quiet = (e: Event) => {
         if (e === resent) e.preventDefault();
@@ -108,8 +108,8 @@ class Menu {
       this.current = null;
       return;
     }
-    // Demandé au clavier : sous l'élément qui a le focus, sur son bord gauche, et le premier élément
-    // a le focus ; à la fermeture, l'élément le retrouve (charte, 9.9).
+    // Asked for from the keyboard: under the element that has the focus, on its left edge, and the
+    // first item has the focus; when the menu closes, the element gets it back (guidelines, 9.9).
     const element = event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined;
     if (element && fromKeyboard(event)) {
       const box = element.getBoundingClientRect();
@@ -121,21 +121,21 @@ class Menu {
     this.current = { x: event.clientX, y: event.clientY, items };
   }
 
-  /** Déroule le menu sous `anchor`, aligné sur son bord droit. */
+  /** Drops the menu down under `anchor`, aligned on its right edge. */
   openUnder(anchor: HTMLElement, items: () => MenuItem[], keyboard = false) {
     const box = anchor.getBoundingClientRect();
     this.current = { x: box.right, y: box.bottom + 4, items, anchor, keyboard };
   }
 
-  /** Vrai tant que le menu déroulé par `anchor` est ouvert. */
+  /** True while the menu dropped down by `anchor` is open. */
   isUnder(anchor: HTMLElement | undefined) {
     return !!anchor && this.current?.anchor === anchor;
   }
 
-  /** `keyboard` : fermé par Échap. Le bouton qui retrouve le focus le montre, comme l'élément
-   *  d'où un menu contextuel a été demandé au clavier. `outside` : fermé à la souris (un clic à
-   *  côté, la molette, un élément choisi au clic) ; cet élément retrouve le focus sans l'anneau,
-   *  comme le bouton (charte, 9.9). */
+  /** `keyboard`: closed by Escape. The button that gets the focus back shows it, as does the element
+   *  from which a context menu was asked for from the keyboard. `outside`: closed with the mouse (a
+   *  click outside, the wheel, an item chosen with a click); that element gets the focus back
+   *  without the ring, as the button does (guidelines, 9.9). */
   close(keyboard = false, outside = false) {
     const anchor = this.current?.anchor;
     const origin = this.current?.origin;
