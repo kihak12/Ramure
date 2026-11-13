@@ -144,7 +144,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   in the form; an unknown server, a passphrase or a password is asked for as when connecting.
 - **A host's key**: in its form, the key file is typed or picked with "Browse…", which opens
   the system file dialog in `~/.ssh`.
-- **Passwords and passphrases** are asked for at connection time. Check "Remember in the
+- **Passwords and passphrases** are asked for when you connect. Check "Remember in the
   system keyring" and Ramure keeps the secret in the keyring of the system, the Credential
   Manager on Windows or the Secret Service (GNOME Keyring, KWallet) on Ubuntu, and nowhere else.
   The next connection does not ask. A kept secret that the server refuses is forgotten and asked

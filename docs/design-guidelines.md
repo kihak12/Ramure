@@ -513,7 +513,7 @@ States are the same everywhere:
 - A toggle is a small ghost button that keeps a state (`aria-pressed`). Pressed: an
   `--accent-soft` background and an `--accent` border, the text staying in `--ink`.
 - Hover: `--hover` background and a stronger border. A primary or danger button moves 10%
-  towards `--ink`, darker in light and lighter in dark, like the label of the current branch
+  toward `--ink`, darker in light and lighter in dark, like the label of the current branch
   (9.4): its text gains contrast in both themes, where a lighter background lost it.
 - Every button is at least 24 px high, the small one included, and a button made of an icon
   alone is at least 24 × 24 px.
@@ -637,7 +637,7 @@ its own buttons.
   - Partly checked, for a box that checks a whole list when only some of its rows are ("Check
     all"): the same as checked, with a dash in place of the check mark, the path of the
     "minus" icon drawn the same way.
-  - Hover: the border in `--ink`, or the accent 10% towards `--ink` when checked or partly
+  - Hover: the border in `--ink`, or the accent 10% toward `--ink` when checked or partly
     checked.
   - Focus: the focus ring of the application (the states of section 9). Disabled: 45%, and its
     text too.
@@ -672,7 +672,7 @@ buttons.
 - **A label never changes size**: not on click, not on hover, not when a branch is dragged onto
   it.
 - Hover: the tint of the background gets stronger, 28% at most: beyond that, `--ink` falls
-  under 7:1 in some dark themes. The solid background of the current branch moves 10% towards
+  under 7:1 in some dark themes. The solid background of the current branch moves 10% toward
   `--ink`, darker in light and lighter in dark, so that its text gains contrast in both themes.
 - The icons of a label are 14 px.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
@@ -1099,7 +1099,7 @@ never a synchronization: nothing is written before the dialog has shown what wil
   does: "Check at least one host."; Enter all the same turns the sentence to `--warn` with the
   warning icon, announced. When every row is "Not exported", the left of the line says "None of
   these hosts can be exported." and the line has only "Close". An empty book says "No hosts:
-  nothing to export.". With nothing to export, the list gives way to one sentence, "All hosts
+  nothing to export." With nothing to export, the list gives way to one sentence, "All hosts
   are already up to date in ~/.ssh/config.", and the line has only "Close".
 - **The result.** A failure is said on the left of the last line, with what to do, the dialog
   staying open (9.11); while it writes, the main button says "Exporting…", and neither a click on
@@ -1474,7 +1474,7 @@ need the room.
     remember it."; without a keyring, the sentence of 9.15;
   - with a key file whose passphrase is kept: "The passphrase of this key is kept in the system
     keyring." and "Forget passphrase". When none is kept, the line under
-    the key says, as before, that the passphrase is asked for at connection time: nothing more
+    the key says, as before, that the passphrase is asked for when you connect: nothing more
     is said there without a keyring, the panel that asks says it.
   - The sentence follows the fields: it is read again when the user, the address, the port or
     the key changes. Forgetting is done at once, without saving the form; the focus then goes
