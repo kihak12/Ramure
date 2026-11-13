@@ -1145,7 +1145,7 @@ password typed without echo is not in it.
 - **The file**: one per session, named after the host, the date and the time,
   `test-server_2026-11-11_23-05-12.log` (`local-terminal_…` for a local terminal; a character that a
   file name cannot hold becomes "_"), in the folder chosen in the settings (9.18),
-  `Documents/Ramure/Logs` by default, or `Ramure/Logs` in the personal folder when the system has no
+  `Documents/Ramure/Logs` by default, or `Ramure/Logs` in the home folder when the system has no
   Documents folder. Its first line: "Log of test-server, started Nov 11, 2026 at 11:05 PM". The
   control sequences are removed, a progress bar keeps its last state, and the display of a
   full-screen program (vim, htop, less) gives way to one line, "[full-screen display omitted]". On

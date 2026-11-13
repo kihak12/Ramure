@@ -128,12 +128,12 @@ fn explain(e: &std::io::Error) -> String {
         ErrorKind::PermissionDenied => {
             "Access denied. Check that the file is not read-only and that it belongs to your account.".into()
         }
-        ErrorKind::ReadOnlyFilesystem => "The disk is read-only. Make it writable, then reconnect.".into(),
+        ErrorKind::ReadOnlyFilesystem => "The disk is read-only. Make it writable, then connect again.".into(),
         ErrorKind::StorageFull | ErrorKind::QuotaExceeded => {
-            "The disk is full. Free up some space, then reconnect.".into()
+            "The disk is full. Free up some space, then connect again.".into()
         }
         ErrorKind::IsADirectory => {
-            "This is a folder, not a file. Rename it, then reconnect: the file will be created.".into()
+            "This is a folder, not a file. Rename it, then connect again: the file will be created.".into()
         }
         _ => e.to_string(),
     }
@@ -143,7 +143,7 @@ fn explain(e: &std::io::Error) -> String {
 fn explain_dir(e: &std::io::Error) -> String {
     match e.kind() {
         ErrorKind::AlreadyExists | ErrorKind::NotADirectory => {
-            "There is a file where the folder should be. Rename it, then reconnect.".into()
+            "There is a file where the folder should be. Rename it, then connect again.".into()
         }
         ErrorKind::PermissionDenied => {
             "Access denied. Check that the folder is not read-only and that it belongs to your account.".into()

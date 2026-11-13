@@ -278,7 +278,7 @@ fn explain(e: &std::io::Error) -> String {
         ErrorKind::ReadOnlyFilesystem => "The disk is read-only. Choose another folder in the settings.".into(),
         ErrorKind::StorageFull | ErrorKind::QuotaExceeded => "The disk is full. Free up some space, or choose another folder.".into(),
         ErrorKind::NotADirectory | ErrorKind::AlreadyExists => {
-            "A file has the same name as the folder. Rename it, or choose another folder in the settings.".into()
+            "There is a file where the folder should be. Rename it, or choose another folder in the settings.".into()
         }
         _ => e.to_string(),
     }
@@ -342,7 +342,7 @@ pub fn journal_open_dir(path: String) -> Result<(), String> {
         .arg(&dir)
         .spawn()
         .map(|_| ())
-        .map_err(|e| format!("The file manager could not open: open {path} by hand. ({e})"))
+        .map_err(|e| format!("The file manager could not open the folder: open “{path}” by hand. ({e})"))
 }
 
 #[tauri::command]
@@ -447,7 +447,7 @@ mod tests {
         fs::write(dir.join("Logs"), b"").unwrap();
         let open = JournalOpen { path: dir.join("Logs").join("a.log").display().to_string(), header: "x".into(), note: None, backlog: None };
         let error = start("refused", &open).unwrap_err();
-        assert!(error.contains("A file has the same name as the folder"), "{error}");
+        assert!(error.contains("There is a file where the folder should be"), "{error}");
         let _ = fs::remove_dir_all(&dir);
     }
 

@@ -162,7 +162,7 @@ pub fn check_sha(sha: &str) -> Result<(), String> {
     if (4..=64).contains(&sha.len()) && sha.bytes().all(|b| b.is_ascii_hexdigit()) {
         Ok(())
     } else {
-        Err(format!("Invalid commit hash: “{sha}”. A hash holds 4 to 64 hexadecimal digits."))
+        Err(format!("Invalid commit SHA: “{sha}”. A SHA holds 4 to 64 hexadecimal digits."))
     }
 }
 

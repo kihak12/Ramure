@@ -136,8 +136,8 @@ fn failure(out: &Output) -> String {
     // output: both are kept.
     match (stdout.is_empty(), stderr.is_empty()) {
         (true, true) => match out.status.code() {
-            Some(code) => format!("git stopped with code {code} and wrote no message."),
-            None => "git was interrupted and wrote no message.".to_string(),
+            Some(code) => format!("The git command stopped with code {code} and wrote no message."),
+            None => "The git command was interrupted and wrote no message.".to_string(),
         },
         (true, false) => stderr,
         (false, true) => stdout,

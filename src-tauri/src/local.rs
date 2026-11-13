@@ -122,7 +122,10 @@ pub fn local_open(
     let mut child = pair
         .slave
         .spawn_command(command)
-        .map_err(|e| format!("{} could not start: {e}.", shell.display()))?;
+        .map_err(|e| {
+            let what = if cfg!(windows) { "Check that PowerShell is installed." } else { "Check the SHELL variable of your account." };
+            format!("{} could not start: {e}. {what}", shell.display())
+        })?;
     // The slave side now belongs to the shell: keeping it open would delay the end of reading.
     drop(pair.slave);
 

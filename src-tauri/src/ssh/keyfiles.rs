@@ -179,7 +179,7 @@ pub fn import_in(dir: &Path, source: &Path) -> Result<KeyInfo, String> {
     let size = fs::metadata(source).map_err(|e| match e.kind() {
         std::io::ErrorKind::NotFound => "This file was not found: choose it again.".to_string(),
         std::io::ErrorKind::PermissionDenied => {
-            "Access denied: your account cannot read this file. Copy it to your home folder first.".into()
+            "Access denied. Your account cannot read this file: check its permissions.".into()
         }
         _ => format!("{}: {e}", source.display()),
     })?;
@@ -196,7 +196,7 @@ pub fn import_in(dir: &Path, source: &Path) -> Result<KeyInfo, String> {
         .or_else(|| PublicKey::read_openssh_file(source.with_file_name(format!("{name}.pub"))).ok());
     let public = match (beside, imported.public) {
         (Some(file), Some(carried)) if file.key_data() != carried.key_data() => {
-            return Err("The .pub file next to this key is not its public key: remove it, then try again.".into());
+            return Err("The “.pub” file next to this key is not its public key: remove it, then try again.".into());
         }
         (Some(file), _) => file,
         (None, Some(carried)) => carried,

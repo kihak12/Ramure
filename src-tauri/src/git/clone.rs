@@ -121,7 +121,7 @@ pub fn clone_repo(job: &CloneJob, url: &str, dest: &Path, progress: impl Fn(Stri
     if job.cancelled.load(Ordering::SeqCst) {
         Err("Clone stopped.".into())
     } else if tail.is_empty() {
-        Err("git clone failed.".into())
+        Err("The clone failed.".into())
     } else {
         Err(tail.join("\n"))
     }

@@ -278,7 +278,10 @@ pub fn hosts_import(store: State<'_, Store>) -> Result<ImportReport, String> {
     let path = config::home().map(|home| home.join(".ssh").join("config")).ok_or(
         "Home folder not found: neither USERPROFILE (Windows) nor HOME (Linux) is set. Set one, then restart Ramure.",
     )?;
-    let text = std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let text = std::fs::read_to_string(&path).map_err(|e| match e.kind() {
+        std::io::ErrorKind::NotFound => "~/.ssh/config was not found: there is no host to import.".to_string(),
+        _ => format!("{}: {e}", path.display()),
+    })?;
     let (added, skipped) = store.import(&config::parse(&text))?;
     Ok(ImportReport { added, skipped })
 }

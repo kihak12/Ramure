@@ -294,7 +294,6 @@
     : { write: 'ssh_write', resize: 'ssh_resize', close: 'ssh_close', closed: 'ssh-closed' };
   /** What the core says of an open local terminal: its shell and its starting folder. */
   let opened = $state<{ shell: string; cwd: string } | null>(null);
-  const onWindows = navigator.userAgent.includes('Windows');
 
   // --- Log (guidelines, 9.15, "The log of a session") -----------------------------------------
   const recording = $derived(!!session.journal?.live);
@@ -419,8 +418,8 @@
       relaunched = false;
     } catch (e) {
       session.status = 'closed';
-      const what = onWindows ? 'Check that PowerShell is installed.' : 'Check the SHELL variable of your account.';
-      phase = { step: 'error', message: `${typeof e === 'string' ? e : String(e)} ${what}` };
+      // The core says what failed and, when the shell could not start, what to check.
+      phase = { step: 'error', message: typeof e === 'string' ? e : String(e) };
     }
   }
   const target = $derived(addressOf(host.user, host.hostname, host.port));

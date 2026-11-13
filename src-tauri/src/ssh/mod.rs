@@ -358,15 +358,17 @@ async fn authenticate(
             let path = config::expand(path);
             let passphrase = passphrase.as_deref().filter(|p| !p.is_empty());
             let tried = auth_key_file(handle, user, &path, passphrase).await?;
+            let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
             if tried.accepted {
-                let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
                 Ok(Authenticated {
                     method: key_method(&name, tried.retained),
                     typed: tried.typed.map(|passphrase| (secrets::passphrase_account(&path), passphrase)),
                 })
             } else {
                 Err(SshError::Auth {
-                    message: format!("The server refused the key {}.", path.display()),
+                    message: format!(
+                        "The server refused the key {name}. Add its public key to the server’s authorized_keys, or choose another key in the host form."
+                    ),
                 })
             }
         }
@@ -397,7 +399,7 @@ async fn authenticate(
             match encrypted {
                 Some((path, refused)) => Err(SshError::NeedPassphrase { path, refused }),
                 None => Err(SshError::Auth {
-                    message: "No key was accepted: neither those of the SSH agent nor the default keys of ~/.ssh. Choose a key file in the host form, or add your key to the SSH agent."
+                    message: "None of the keys of the SSH agent or of ~/.ssh was accepted. Choose a key file in the host form, or add your key to the SSH agent."
                         .into(),
                 }),
             }
