@@ -1,63 +1,63 @@
-// Actions déclenchées par les menus et la barre d'outils : elles posent les questions
-// nécessaires (nom, confirmation), puis délèguent au dépôt.
+// Actions triggered by the menus and the toolbar: they ask the questions they need (a name, a
+// confirmation), then hand over to the repository.
 
 import { dialogs } from '../ui/dialogs.svelte';
 import type { MenuItem } from '../ui/menu.svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { refName } from './drag.svelte';
 import { bare, type Label } from './labels';
-import type { Repo } from './repo.svelte';
-import type { CommitRow, FileChange, Operation, Relation, ResetMode, Stash } from './types';
+import { OPERATION, type Repo } from './repo.svelte';
+import type { CommitRow, FileChange, Relation, ResetMode, Stash } from './types';
 
 const short = (sha: string) => sha.slice(0, 7);
-const commits = (count: number) => `${count} commit${count > 1 ? 's' : ''}`;
+const commits = (count: number) => `${count} commit${count === 1 ? '' : 's'}`;
 
 // --- Branches -----------------------------------------------------------------------------
 
 /**
- * Bascule sur la branche locale qui suit la branche distante `remote`, et la met à jour.
- * - Pas encore de branche locale : elle est créée.
- * - Branche locale en retard : elle est avancée jusqu'à la branche distante.
- * - Branche locale en avance : rien à récupérer, on bascule seulement.
- * - Branches divergées : on demande avant de rebaser, car un rebase réécrit les commits locaux.
- */
-/**
- * Avant un basculement : si des modifications en cours seraient écrasées, git refuserait. On
- * propose alors de les remiser. Renvoie `false` quand l'utilisateur renonce, ou que la remise échoue.
- * `label` : le nom à montrer, quand `name` est une branche distante.
+ * Before a switch: if working changes would be overwritten, git would refuse. The user is then
+ * offered to stash them. Returns `false` when the user gives up, or when the stash fails.
+ * `label`: the name to show, when `name` is a remote branch.
  */
 async function stashFirst(repo: Repo, name: string, remote: boolean, label = name): Promise<boolean> {
   let blockers: string[];
   try {
     blockers = await repo.git<string[]>('git_switch_blockers', { name, remote });
   } catch {
-    // La vérification n'a pas pu se faire : le basculement dira lui-même ce qui ne va pas.
+    // The check could not be made: the switch itself will say what is wrong.
     return true;
   }
   if (!blockers.length) return true;
-  const what = blockers.length > 1 ? `${blockers.length} fichiers` : blockers[0];
+  const what = blockers.length === 1 ? blockers[0] : `${blockers.length} files`;
   const sure = await dialogs.confirm({
-    title: `Basculer sur ${label} ?`,
+    title: `Switch to ${label}?`,
     body:
-      `Tes modifications de ${what} seraient écrasées par ce basculement, et git le refuserait.\n\n` +
-      'Remise d’abord toutes tes modifications en cours : tu pourras les dépiler ensuite, sur la branche de ton choix.',
-    confirmLabel: 'Remiser et basculer',
+      `Switching would overwrite your changes to ${what}, and git would refuse it.\n\n` +
+      'Stash all your working changes first: you can pop them afterward, on the branch of your choice.',
+    confirmLabel: 'Stash and switch',
   });
   if (!sure) return false;
-  return repo.refOp({ op: 'stash-push', message: `Avant de basculer sur ${label}` }, 'Modifications remisées', 'Impossible de remiser les modifications');
+  return repo.refOp({ op: 'stash-push', message: `Before switching to ${label}` }, 'Changes stashed', 'Could not stash changes');
 }
 
-/** Bascule sur une branche locale, en proposant de remiser les modifications qui l'empêcheraient. */
-export async function switchBranch(repo: Repo, name: string, done = `Basculé sur ${name}`): Promise<boolean> {
+/** Switches to a local branch, offering to stash the changes that would prevent it. */
+export async function switchBranch(repo: Repo, name: string, done = `Switched to ${name}`): Promise<boolean> {
   if (repo.locked || name === repo.branch) return false;
   if (!(await stashFirst(repo, name, false))) return false;
-  return repo.refOp({ op: 'switch', name }, done, `Impossible de basculer sur ${name}`);
+  return repo.refOp({ op: 'switch', name }, done, `Could not switch to ${name}`);
 }
 
+/**
+ * Switches to the local branch that tracks the remote branch `remote`, and updates it.
+ * - No local branch yet: it is created.
+ * - Local branch behind: it is fast-forwarded to the remote branch.
+ * - Local branch ahead: nothing to fetch, it only switches.
+ * - Diverged branches: asks before rebasing, since a rebase rewrites the local commits.
+ */
 export async function switchToRemote(repo: Repo, remote: string) {
   if (repo.locked) return;
   const local = bare(remote);
-  const failed = `Impossible de basculer sur ${local}`;
+  const failed = `Could not switch to ${local}`;
   let relation: Relation;
   try {
     relation = await repo.git<Relation>('git_remote_relation', { remote });
@@ -68,10 +68,10 @@ export async function switchToRemote(repo: Repo, remote: string) {
 
   const { ahead, behind } = relation;
   if (relation.local === null || ahead === 0 || behind === 0) {
-    let done = `Basculé sur ${local}`;
-    if (relation.local !== null && behind > 0) done += `, mise à jour avec ${remote} (${commits(behind)})`;
-    else if (ahead > 0) done += `, qui a ${commits(ahead)} d’avance sur ${remote}`;
-    // La destination est la branche distante quand la locale n'existe pas ou sera avancée jusqu'à elle.
+    let done = `Switched to ${local}`;
+    if (relation.local !== null && behind > 0) done += `, updated with ${remote} (${commits(behind)})`;
+    else if (ahead > 0) done += `, ${commits(ahead)} ahead of ${remote}`;
+    // The destination is the remote branch when the local one does not exist or will be moved up to it.
     const viaRemote = relation.local === null || behind > 0;
     if (await stashFirst(repo, viaRemote ? remote : local, viaRemote, local)) {
       await repo.refOp({ op: 'switch-remote', name: remote }, done, failed);
@@ -79,217 +79,210 @@ export async function switchToRemote(repo: Repo, remote: string) {
     return;
   }
 
-  const stay = () => void switchBranch(repo, local, `Basculé sur ${local}, sans la mettre à jour`);
+  const stay = () => void switchBranch(repo, local, `Switched to ${local}, without updating it`);
   const rebase = await dialogs.confirm({
-    title: `Mettre à jour ${local} ?`,
+    title: `Update ${local}?`,
     body:
-      `${local} et ${remote} ont divergé : ${commits(ahead)} de ${local} ne ${ahead > 1 ? 'sont' : 'est'} pas sur ${remote}, ` +
-      `et ${commits(behind)} de ${remote} ${behind > 1 ? 'manquent' : 'manque'} à ${local}.\n\n` +
-      `Rebaser rejoue tes commits par-dessus ${remote}. Une sauvegarde de la branche est gardée.`,
-    confirmLabel: 'Basculer et rebaser',
-    extra: { label: 'Basculer sans mettre à jour', run: stay },
+      `${local} and ${remote} have diverged: ${commits(ahead)} of ${local} ${ahead === 1 ? 'is' : 'are'} not on ${remote}, ` +
+      `and ${commits(behind)} of ${remote} ${behind === 1 ? 'is' : 'are'} missing from ${local}.\n\n` +
+      `Rebasing replays your commits on top of ${remote}. A backup of the branch is kept.`,
+    confirmLabel: 'Switch and rebase',
+    extra: { label: 'Switch without updating', run: stay },
   });
   if (!rebase) return;
   if (repo.branch !== local && !(await switchBranch(repo, local))) return;
-  await repo.history({ op: 'rebase', onto: remote }, `${local} rebasée sur ${remote}`, 'Le rebase a échoué');
+  await repo.history({ op: 'rebase', onto: remote }, `${local} rebased onto ${remote}`, 'Rebase failed');
 }
 
 export async function createBranch(repo: Repo, start: string, from: string) {
   const answers = await dialogs.ask({
-    title: 'Nouvelle branche',
-    body: `À partir de ${from}.`,
+    title: 'New branch',
+    body: `From ${from}.`,
     fields: [
-      { name: 'name', label: 'Nom de la branche', type: 'text', required: true, mono: true, placeholder: 'feat/ma-branche' },
-      { name: 'switch', label: 'Basculer dessus', type: 'checkbox', value: true },
+      { name: 'name', label: 'Branch name', type: 'text', required: true, mono: true, placeholder: 'feat/my-branch' },
+      { name: 'switch', label: 'Switch to it', type: 'checkbox', value: true },
     ],
-    confirmLabel: 'Créer la branche',
+    confirmLabel: 'Create branch',
   });
   if (!answers) return;
   const name = String(answers.name);
-  await repo.refOp({ op: 'branch-create', name, start, switch: answers.switch === true }, `Branche ${name} créée`);
+  await repo.refOp({ op: 'branch-create', name, start, switch: answers.switch === true }, `Branch ${name} created`);
 }
 
 export async function renameBranch(repo: Repo, name: string) {
   const answers = await dialogs.ask({
-    title: `Renommer ${name}`,
-    fields: [{ name: 'name', label: 'Nouveau nom', type: 'text', required: true, mono: true, value: name }],
-    confirmLabel: 'Renommer',
+    title: `Rename ${name}`,
+    fields: [{ name: 'name', label: 'New name', type: 'text', required: true, mono: true, value: name }],
+    confirmLabel: 'Rename',
   });
   if (!answers || answers.name === name) return;
-  await repo.refOp({ op: 'branch-rename', name, newName: String(answers.name) }, `Branche renommée en ${answers.name}`);
+  await repo.refOp({ op: 'branch-rename', name, newName: String(answers.name) }, `Branch renamed to ${answers.name}`);
 }
 
 export async function deleteBranch(repo: Repo, name: string) {
   const answers = await dialogs.ask({
-    title: `Supprimer la branche ${name} ?`,
-    body: 'Seule la branche locale est supprimée. Ses commits restent accessibles tant qu’une autre branche ou un tag les contient.',
-    fields: [{ name: 'force', label: 'Supprimer même si elle n’est pas fusionnée', type: 'checkbox', value: false }],
-    confirmLabel: 'Supprimer',
+    title: `Delete branch ${name}?`,
+    body: 'Only the local branch is deleted. Its commits stay reachable as long as another branch or a tag contains them.',
+    fields: [{ name: 'force', label: 'Delete even if it is not merged', type: 'checkbox', value: false }],
+    confirmLabel: 'Delete',
     danger: true,
   });
   if (!answers) return;
-  await repo.refOp({ op: 'branch-delete', name, force: answers.force === true }, `Branche ${name} supprimée`);
+  await repo.refOp({ op: 'branch-delete', name, force: answers.force === true }, `Branch ${name} deleted`);
 }
 
 export async function deleteRemoteBranch(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer ${name} sur le dépôt distant ?`,
-    warning: 'La branche disparaît pour tout le monde. Cette action ne s’annule pas depuis Ramure.',
-    confirmLabel: 'Supprimer sur le dépôt distant',
+    title: `Delete ${name} from the remote?`,
+    warning: 'The branch disappears for everyone. This cannot be undone from Ramure.',
+    confirmLabel: 'Delete from remote',
     danger: true,
   });
-  if (confirmed) await repo.refOp({ op: 'remote-branch-delete', name }, `${name} supprimée sur le dépôt distant`);
+  if (confirmed) await repo.refOp({ op: 'remote-branch-delete', name }, `${name} deleted from the remote`);
 }
 
 // --- Tags ---------------------------------------------------------------------------------
 
 export async function createTag(repo: Repo, sha: string) {
   const answers = await dialogs.ask({
-    title: 'Nouveau tag',
-    body: `Sur le commit ${short(sha)}.`,
+    title: 'New tag',
+    body: `On commit ${short(sha)}.`,
     fields: [
-      { name: 'name', label: 'Nom du tag', type: 'text', required: true, mono: true, placeholder: 'v1.0.0' },
-      { name: 'message', label: 'Message', type: 'textarea', hint: 'Avec un message, le tag est annoté. Sans message, il est léger.' },
-      { name: 'push', label: 'Pousser le tag vers le dépôt distant', type: 'checkbox', value: false },
+      { name: 'name', label: 'Tag name', type: 'text', required: true, mono: true, placeholder: 'v1.0.0' },
+      { name: 'message', label: 'Message', type: 'textarea', hint: 'With a message, the tag is annotated. Without one, it is lightweight.' },
+      { name: 'push', label: 'Push tag to the remote', type: 'checkbox', value: false },
     ],
-    confirmLabel: 'Créer le tag',
+    confirmLabel: 'Create tag',
   });
   if (!answers) return;
   const name = String(answers.name);
-  const created = await repo.refOp({ op: 'tag-create', name, sha, message: String(answers.message ?? '') }, `Tag ${name} créé`);
-  if (created && answers.push === true) await repo.refOp({ op: 'tag-push', name }, `Tag ${name} poussé`);
+  const created = await repo.refOp({ op: 'tag-create', name, sha, message: String(answers.message ?? '') }, `Tag ${name} created`);
+  if (created && answers.push === true) await repo.refOp({ op: 'tag-push', name }, `Tag ${name} pushed`);
 }
 
 export async function deleteTag(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer le tag ${name} ?`,
-    body: 'Le tag est supprimé sur cette machine seulement.',
-    confirmLabel: 'Supprimer',
+    title: `Delete tag ${name}?`,
+    body: 'The tag is deleted on this machine only.',
+    confirmLabel: 'Delete',
     danger: true,
   });
-  if (confirmed) await repo.refOp({ op: 'tag-delete', name }, `Tag ${name} supprimé`);
+  if (confirmed) await repo.refOp({ op: 'tag-delete', name }, `Tag ${name} deleted`);
 }
 
 export async function deleteRemoteTag(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer le tag ${name} sur le dépôt distant ?`,
-    warning: 'Le tag disparaît pour tout le monde.',
-    confirmLabel: 'Supprimer sur le dépôt distant',
+    title: `Delete tag ${name} from the remote?`,
+    warning: 'The tag disappears for everyone.',
+    confirmLabel: 'Delete from remote',
     danger: true,
   });
-  if (confirmed) await repo.refOp({ op: 'tag-delete-remote', name }, `Tag ${name} supprimé sur le dépôt distant`);
+  if (confirmed) await repo.refOp({ op: 'tag-delete-remote', name }, `Tag ${name} deleted from the remote`);
 }
 
-// --- Remises ------------------------------------------------------------------------------
+// --- Stashes ------------------------------------------------------------------------------
 
 export async function stashChanges(repo: Repo) {
   const answers = await dialogs.ask({
-    title: 'Remiser les modifications',
-    body: 'Toutes les modifications en cours sont mises de côté, fichiers non suivis compris. Le répertoire de travail redevient propre.',
-    fields: [{ name: 'message', label: 'Nom de la remise (facultatif)', type: 'text', placeholder: 'travail en cours sur…' }],
-    confirmLabel: 'Remiser',
+    title: 'Stash changes',
+    body: 'All working changes are set aside, untracked files included. The working directory is clean again.',
+    fields: [{ name: 'message', label: 'Stash name (optional)', type: 'text', placeholder: 'work in progress on…' }],
+    confirmLabel: 'Stash',
   });
-  if (answers) await repo.refOp({ op: 'stash-push', message: String(answers.message ?? '') }, 'Modifications remisées');
+  if (answers) await repo.refOp({ op: 'stash-push', message: String(answers.message ?? '') }, 'Changes stashed');
 }
 
 export async function dropStash(repo: Repo, stash: Stash) {
   const confirmed = await dialogs.confirm({
-    title: `Supprimer la remise ${stash.index} ?`,
+    title: `Drop stash ${stash.index}?`,
     body: stash.message,
-    warning: 'Les modifications qu’elle contient seront perdues.',
-    confirmLabel: 'Supprimer la remise',
+    warning: 'The changes it holds will be lost.',
+    confirmLabel: 'Drop stash',
     danger: true,
   });
-  if (confirmed) await repo.refOp({ op: 'stash-drop', index: stash.index }, 'Remise supprimée');
+  if (confirmed) await repo.refOp({ op: 'stash-drop', index: stash.index }, 'Stash dropped');
 }
 
-// --- Historique ---------------------------------------------------------------------------
+// --- History ------------------------------------------------------------------------------
 
-/** Vrai si le sommet de la branche courante existe déjà sur un dépôt distant. */
+/** True if the tip of the current branch is already on a remote. */
 const headIsPushed = (repo: Repo) => repo.hasRemote && !!repo.head && !repo.head.localOnly;
 
 const REWRITE_WARNING =
-  'Des commits de cette branche sont déjà sur le dépôt distant. Les réécrire obligera à pousser en forçant, et gênera ceux qui les ont récupérés.';
+  'Some commits of this branch are already on the remote. Rewriting them will require a force push, and will get in the way of anyone who has fetched them.';
 
 export async function rebaseOnto(repo: Repo, onto: string) {
   const branch = repo.branch ?? 'HEAD';
   const confirmed = await dialogs.confirm({
-    title: `Rebaser ${branch} sur ${onto} ?`,
-    body: `Les commits de ${branch} absents de ${onto} sont rejoués un par un au-dessus de ${onto}. La position actuelle est sauvegardée dans refs/ramure/backup.`,
+    title: `Rebase ${branch} onto ${onto}?`,
+    body: `The commits of ${branch} that are not in ${onto} are replayed one by one on top of ${onto}. The current position is saved in refs/ramure/backup.`,
     warning: headIsPushed(repo) ? REWRITE_WARNING : undefined,
-    confirmLabel: 'Rebaser',
+    confirmLabel: 'Rebase',
   });
-  if (confirmed) await repo.history({ op: 'rebase', onto }, `${branch} rebasée sur ${onto}`, 'Le rebase a échoué');
+  if (confirmed) await repo.history({ op: 'rebase', onto }, `${branch} rebased onto ${onto}`, 'Rebase failed');
 }
 
 export async function resetTo(repo: Repo, commit: CommitRow) {
   const branch = repo.branch;
   if (!branch) return;
   const answers = await dialogs.ask({
-    title: `Réinitialiser ${branch} sur ${short(commit.sha)}`,
-    body: `« ${commit.subject} » devient le dernier commit de ${branch}. La position actuelle est sauvegardée dans refs/ramure/backup.`,
+    title: `Reset ${branch} to ${short(commit.sha)}`,
+    body: `“${commit.subject}” becomes the last commit of ${branch}. The current position is saved in refs/ramure/backup.`,
     warning: headIsPushed(repo) ? REWRITE_WARNING : undefined,
     fields: [
       {
         name: 'mode',
-        label: 'Que deviennent les changements des commits retirés ?',
+        label: 'What happens to the changes of the removed commits?',
         type: 'select',
         value: 'mixed',
         options: [
-          { value: 'soft', label: 'Ils restent indexés (soft)' },
-          { value: 'mixed', label: 'Ils restent dans les fichiers (mixed)' },
-          { value: 'hard', label: 'Ils sont supprimés (hard)' },
+          { value: 'soft', label: 'They stay staged (soft)' },
+          { value: 'mixed', label: 'They stay in the files (mixed)' },
+          { value: 'hard', label: 'They are deleted (hard)' },
         ],
       },
     ],
-    confirmLabel: 'Réinitialiser',
+    confirmLabel: 'Reset',
     danger: true,
   });
   if (!answers) return;
   const mode = answers.mode as ResetMode;
   if (mode === 'hard') {
     const sure = await dialogs.confirm({
-      title: 'Confirmer le reset --hard',
-      warning: 'Les modifications en cours et celles des commits retirés seront supprimées des fichiers.',
-      confirmLabel: 'Tout supprimer et réinitialiser',
+      title: `Reset ${branch} with --hard?`,
+      warning: 'Your working changes and those of the removed commits will be deleted from the files.',
+      confirmLabel: 'Delete all and reset',
       danger: true,
     });
     if (!sure) return;
   }
-  await repo.history({ op: 'reset', sha: commit.sha, mode }, `${branch} réinitialisée sur ${short(commit.sha)}`, 'Le reset a échoué');
+  await repo.history({ op: 'reset', sha: commit.sha, mode }, `${branch} reset to ${short(commit.sha)}`, 'Reset failed');
 }
 
 export async function forcePush(repo: Repo) {
   const confirmed = await dialogs.confirm({
-    title: `Pousser ${repo.branch ?? ''} en forçant ?`,
-    body: 'La branche distante est remplacée par la tienne (git push --force-with-lease). Le push est refusé si quelqu’un a poussé entre-temps un travail que tu n’as pas récupéré.',
-    warning: 'Les commits distants absents de ta branche seront perdus.',
-    confirmLabel: 'Pousser en forçant',
+    title: `Force push ${repo.branch ?? ''}?`,
+    body: 'The remote branch is replaced by yours (git push --force-with-lease). The push is refused if someone has pushed work in the meantime that you have not fetched.',
+    warning: 'The remote commits that are not on your branch will be lost.',
+    confirmLabel: 'Force push',
     danger: true,
   });
   if (confirmed) await repo.sync('push-force');
 }
 
-/** L'opération arrêtée, dans une phrase : « Abandonner le rebase ». */
-const ABORTED: Record<Operation, string> = {
-  merge: 'la fusion',
-  rebase: 'le rebase',
-  'cherry-pick': 'le cherry-pick',
-  revert: 'le revert',
-};
-
-/** Abandonne l'opération en cours, après une confirmation qui dit ce qui est perdu (charte, 9.1). */
+/** Aborts the operation in progress, after a confirmation that says what is lost (guidelines, 9.1). */
 export async function abortOperation(repo: Repo) {
   const operation = repo.status?.operation;
   if (!operation) return;
-  const what = ABORTED[operation];
-  // `git <opération> --abort` rend aux branches leurs commits d'origine : seul le travail fait
-  // pendant l'opération, les conflits résolus, est perdu, et git ne le garde nulle part.
+  // The operation inside a sentence: “Abort rebase”.
+  const what = OPERATION[operation].toLowerCase();
+  // `git <operation> --abort` gives the branches back their original commits: only the work done
+  // during the operation, the resolved conflicts, is lost, and git keeps it nowhere.
   const confirmed = await dialogs.confirm({
-    title: `Abandonner ${what}\u00a0?`,
-    body: `Le dépôt revient à son état d’avant ${what} (git ${operation} --abort).`,
-    warning: 'Les conflits déjà résolus seront perdus définitivement.',
-    confirmLabel: `Abandonner ${what}`,
+    title: `Abort ${what}?`,
+    body: `The repository goes back to its state before the ${what} (git ${operation} --abort).`,
+    warning: 'The conflicts already resolved will be lost for good.',
+    confirmLabel: `Abort ${what}`,
     danger: true,
   });
   if (confirmed) await repo.operate('abort');
@@ -297,14 +290,17 @@ export async function abortOperation(repo: Repo) {
 
 export async function discardFiles(repo: Repo, files: FileChange[]) {
   if (!files.length) return;
-  const what = files.length === 1 ? `« ${files[0].path} »` : `${files.length} fichiers`;
+  const one = files.length === 1;
+  const what = one ? `“${files[0].path}”` : `${files.length} files`;
   const onlyNew = files.every((f) => f.kind === 'untracked');
   const confirmed = await dialogs.confirm({
-    title: onlyNew ? `Supprimer ${what} ?` : `Abandonner les modifications de ${what} ?`,
+    title: onlyNew ? `Delete ${what}?` : `Discard changes to ${what}?`,
     warning: onlyNew
-      ? 'Ces fichiers sont nouveaux : git ne pourra pas les restaurer.'
-      : 'Les modifications non indexées seront perdues définitivement.',
-    confirmLabel: onlyNew ? 'Supprimer' : 'Abandonner',
+      ? one
+        ? 'This file is new: git cannot restore it.'
+        : 'These files are new: git cannot restore them.'
+      : 'The unstaged changes will be lost for good.',
+    confirmLabel: onlyNew ? 'Delete' : 'Discard',
     danger: true,
   });
   if (confirmed) await repo.discard(files);
@@ -313,22 +309,22 @@ export async function discardFiles(repo: Repo, files: FileChange[]) {
 async function copy(text: string, what: string) {
   try {
     await navigator.clipboard.writeText(text);
-    toasts.ok(`${what} copié`);
+    toasts.ok(`${what} copied`);
   } catch {
-    toasts.err('Copie impossible', 'Le presse-papiers a refusé l’écriture.');
+    toasts.err('Could not copy', 'The clipboard refused the text.');
   }
 }
 
-// --- Menus contextuels --------------------------------------------------------------------
+// --- Context menus ------------------------------------------------------------------------
 
 export function commitMenu(repo: Repo, commit: CommitRow): MenuItem[] {
   if (commit.wip) {
     return [
-      { label: 'Remiser les modifications…', icon: 'stash', run: () => void stashChanges(repo) },
-      { label: 'Tout indexer', icon: 'plus', disabled: !repo.status?.unstaged.length, run: () => void repo.stage(repo.status?.unstaged ?? []) },
+      { label: 'Stash changes…', icon: 'stash', run: () => void stashChanges(repo) },
+      { label: 'Stage all', icon: 'plus', disabled: !repo.status?.unstaged.length, run: () => void repo.stage(repo.status?.unstaged ?? []) },
       { separator: true },
       {
-        label: 'Abandonner toutes les modifications non indexées…',
+        label: 'Discard all unstaged changes…',
         icon: 'undo',
         danger: true,
         disabled: !repo.status?.unstaged.length,
@@ -339,44 +335,44 @@ export function commitMenu(repo: Repo, commit: CommitRow): MenuItem[] {
   const branch = repo.branch;
   const isHead = commit.sha === repo.head?.sha;
   const merge = commit.parents.length > 1;
-  const name = `le commit ${short(commit.sha)}`;
+  const name = `commit ${short(commit.sha)}`;
   return [
-    { label: 'Créer une branche ici…', icon: 'branch', run: () => void createBranch(repo, commit.sha, name) },
-    { label: 'Créer un tag ici…', icon: 'tag', run: () => void createTag(repo, commit.sha) },
+    { label: 'Create branch here…', icon: 'branch', run: () => void createBranch(repo, commit.sha, name) },
+    { label: 'Create tag here…', icon: 'tag', run: () => void createTag(repo, commit.sha) },
     { separator: true },
     {
-      label: 'Cherry-pick de ce commit',
+      label: 'Cherry-pick this commit',
       icon: 'pick',
       disabled: isHead,
-      hint: `Rejoue ce commit sur ${branch ?? 'HEAD'}`,
-      run: () => void repo.history({ op: 'cherry-pick', sha: commit.sha, mainline: merge }, `Commit ${short(commit.sha)} repris`, 'Le cherry-pick a échoué'),
+      hint: `Replay this commit on ${branch ?? 'HEAD'}`,
+      run: () => void repo.history({ op: 'cherry-pick', sha: commit.sha, mainline: merge }, `Commit ${short(commit.sha)} cherry-picked`, 'Cherry-pick failed'),
     },
     {
-      label: 'Annuler ce commit (revert)',
+      label: 'Revert this commit',
       icon: 'undo',
-      hint: 'Crée un commit qui défait celui-ci',
-      run: () => void repo.history({ op: 'revert', sha: commit.sha, mainline: merge }, `Commit ${short(commit.sha)} annulé`, 'Le revert a échoué'),
+      hint: 'Create a commit that undoes this one',
+      run: () => void repo.history({ op: 'revert', sha: commit.sha, mainline: merge }, `Commit ${short(commit.sha)} reverted`, 'Revert failed'),
     },
     { separator: true },
     {
-      label: branch ? `Réinitialiser ${branch} ici…` : 'Réinitialiser ici…',
+      label: branch ? `Reset ${branch} to here…` : 'Reset to here…',
       icon: 'reset',
       disabled: !branch || isHead,
       run: () => void resetTo(repo, commit),
     },
     {
-      label: 'Rebase interactif à partir d’ici…',
+      label: 'Rebase interactively from here…',
       icon: 'list',
-      hint: 'Réordonner, fusionner, reformuler ou supprimer les commits de celui-ci jusqu’à HEAD',
+      hint: 'Reorder, squash, reword or drop the commits from this one up to HEAD',
       run: () => void repo.planRebase(commit.sha),
     },
-    { label: 'Basculer sur ce commit (HEAD détaché)', icon: 'commit', disabled: isHead, run: () => void repo.refOp({ op: 'detach', sha: commit.sha }, `HEAD détaché sur ${short(commit.sha)}`) },
+    { label: 'Switch to this commit (detached HEAD)', icon: 'commit', disabled: isHead, run: () => void repo.refOp({ op: 'detach', sha: commit.sha }, `HEAD detached at ${short(commit.sha)}`) },
     { separator: true },
-    { label: 'Copier le SHA', icon: 'copy', run: () => void copy(commit.sha, 'SHA') },
+    { label: 'Copy SHA', icon: 'copy', run: () => void copy(commit.sha, 'SHA') },
   ];
 }
 
-/** Menu d'une étiquette de branche ou de tag. `sha` : le commit qu'elle désigne. */
+/** Menu of a branch or tag label. `sha`: the commit it points to. */
 export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
   const current = repo.branch;
   const here = current ?? 'HEAD';
@@ -384,11 +380,11 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
 
   if (label.tag) {
     return [
-      { label: `Pousser le tag ${label.tag}`, icon: 'push', disabled: !repo.refs?.remoteNames.length, run: () => void repo.refOp({ op: 'tag-push', name: label.tag! }, `Tag ${label.tag} poussé`) },
-      { label: 'Créer une branche ici…', icon: 'branch', run: () => void createBranch(repo, sha, `le tag ${label.tag}`) },
+      { label: `Push tag ${label.tag}`, icon: 'push', disabled: !repo.refs?.remoteNames.length, run: () => void repo.refOp({ op: 'tag-push', name: label.tag! }, `Tag ${label.tag} pushed`) },
+      { label: 'Create branch here…', icon: 'branch', run: () => void createBranch(repo, sha, `tag ${label.tag}`) },
       { separator: true },
-      { label: 'Supprimer le tag…', icon: 'trash', danger: true, run: () => void deleteTag(repo, label.tag!) },
-      { label: 'Supprimer le tag sur le dépôt distant…', icon: 'trash', danger: true, disabled: !repo.refs?.remoteNames.length, run: () => void deleteRemoteTag(repo, label.tag!) },
+      { label: 'Delete tag…', icon: 'trash', danger: true, run: () => void deleteTag(repo, label.tag!) },
+      { label: 'Delete tag from remote…', icon: 'trash', danger: true, disabled: !repo.refs?.remoteNames.length, run: () => void deleteRemoteTag(repo, label.tag!) },
     ];
   }
   if (label.kind === 'detached') return commitMenuForSha(repo, sha);
@@ -400,47 +396,47 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
 
   if (isCurrent) {
     items.push(
-      { label: 'Tirer', icon: 'pull', disabled: !repo.status?.upstream, run: () => void repo.sync('pull') },
-      { label: repo.status?.upstream ? 'Pousser' : 'Publier la branche', icon: 'push', run: () => void repo.sync('push') },
-      { label: 'Pousser en forçant…', icon: 'push', danger: true, disabled: !repo.status?.upstream, run: () => void forcePush(repo) },
+      { label: 'Pull', icon: 'pull', disabled: !repo.status?.upstream, run: () => void repo.sync('pull') },
+      { label: repo.status?.upstream ? 'Push' : 'Publish branch', icon: 'push', run: () => void repo.sync('push') },
+      { label: 'Force push…', icon: 'push', danger: true, disabled: !repo.status?.upstream, run: () => void forcePush(repo) },
     );
   } else {
     items.push(
       {
-        label: `Basculer sur ${local ?? bare(target)}`,
+        label: `Switch to ${local ?? bare(target)}`,
         icon: 'check',
         hint: local
           ? undefined
           : repo.refs?.branches.some((b) => b.name === bare(target))
-            ? `Bascule sur la branche locale et la met à jour avec ${target}`
-            : 'Crée la branche locale qui suit cette branche distante',
+            ? `Switch to the local branch and update it with ${target}`
+            : 'Create the local branch that tracks this remote branch',
         run: () =>
           void (local ? switchBranch(repo, local) : switchToRemote(repo, target)),
       },
       { separator: true },
       {
-        label: `Fusionner ${target} dans ${here}`,
+        label: `Merge ${target} into ${here}`,
         icon: 'merge',
-        run: () => void repo.history({ op: 'merge', target }, `${target} fusionnée dans ${here}`, 'La fusion a échoué'),
+        run: () => void repo.history({ op: 'merge', target }, `${target} merged into ${here}`, 'Merge failed'),
       },
-      { label: `Rebaser ${here} sur ${target}…`, icon: 'branch', disabled: !current, run: () => void rebaseOnto(repo, target) },
+      { label: `Rebase ${here} onto ${target}…`, icon: 'branch', disabled: !current, run: () => void rebaseOnto(repo, target) },
     );
   }
-  items.push({ separator: true }, { label: 'Créer une branche ici…', icon: 'branch', run: () => void createBranch(repo, sha, target) });
+  items.push({ separator: true }, { label: 'Create branch here…', icon: 'branch', run: () => void createBranch(repo, sha, target) });
   if (local) {
-    items.push({ label: 'Renommer…', icon: 'pencil', run: () => void renameBranch(repo, local) });
-    items.push({ label: 'Supprimer la branche…', icon: 'trash', danger: true, disabled: isCurrent, run: () => void deleteBranch(repo, local) });
+    items.push({ label: 'Rename branch…', icon: 'pencil', run: () => void renameBranch(repo, local) });
+    items.push({ label: 'Delete branch…', icon: 'trash', danger: true, disabled: isCurrent, run: () => void deleteBranch(repo, local) });
   }
   for (const name of label.remotes) {
-    items.push({ label: `Supprimer ${name} sur le dépôt distant…`, icon: 'trash', danger: true, run: () => void deleteRemoteBranch(repo, name) });
+    items.push({ label: `Delete ${name} from remote…`, icon: 'trash', danger: true, run: () => void deleteRemoteBranch(repo, name) });
   }
   return items;
 }
 
 /**
- * Menu proposé quand on dépose la branche `source` sur la branche `target`.
- * git ne fusionne que dans la branche courante, et ne rebase que la branche courante :
- * quand il faut d'abord basculer, le libellé le dit.
+ * Menu offered when the branch `source` is dropped onto the branch `target`.
+ * git only merges into the current branch, and only rebases the current branch: when a switch
+ * has to come first, the label says so.
  */
 export function dropMenu(repo: Repo, source: Label, target: Label): MenuItem[] {
   const [from, onto] = [refName(source), refName(target)];
@@ -448,22 +444,22 @@ export function dropMenu(repo: Repo, source: Label, target: Label): MenuItem[] {
   const switchThen = async (name: string, next: () => Promise<unknown>) => {
     if (await switchBranch(repo, name)) await next();
   };
-  const merge = () => repo.history({ op: 'merge', target: from }, `${from} fusionnée dans ${onto}`, 'La fusion a échoué');
+  const merge = () => repo.history({ op: 'merge', target: from }, `${from} merged into ${onto}`, 'Merge failed');
 
   const items: MenuItem[] = [];
   if (target.local === null) {
-    items.push({ label: `Fusionner ${from} dans ${onto}`, icon: 'merge', disabled: true, hint: 'On ne fusionne que dans une branche locale', run: () => {} });
+    items.push({ label: `Merge ${from} into ${onto}`, icon: 'merge', disabled: true, hint: 'You can only merge into a local branch', run: () => {} });
   } else if (target.local === current) {
-    items.push({ label: `Fusionner ${from} dans ${onto}`, icon: 'merge', run: () => void merge() });
+    items.push({ label: `Merge ${from} into ${onto}`, icon: 'merge', run: () => void merge() });
   } else {
-    items.push({ label: `Basculer sur ${onto}, puis y fusionner ${from}`, icon: 'merge', run: () => void switchThen(onto, merge) });
+    items.push({ label: `Switch to ${onto}, then merge ${from} into it`, icon: 'merge', run: () => void switchThen(onto, merge) });
   }
   if (source.local === null) {
-    items.push({ label: `Rebaser ${from} sur ${onto}`, icon: 'branch', disabled: true, hint: 'On ne rebase qu\u2019une branche locale', run: () => {} });
+    items.push({ label: `Rebase ${from} onto ${onto}`, icon: 'branch', disabled: true, hint: 'You can only rebase a local branch', run: () => {} });
   } else if (source.local === current) {
-    items.push({ label: `Rebaser ${from} sur ${onto}…`, icon: 'branch', run: () => void rebaseOnto(repo, onto) });
+    items.push({ label: `Rebase ${from} onto ${onto}…`, icon: 'branch', run: () => void rebaseOnto(repo, onto) });
   } else {
-    items.push({ label: `Basculer sur ${from}, puis la rebaser sur ${onto}…`, icon: 'branch', run: () => void switchThen(from, () => rebaseOnto(repo, onto)) });
+    items.push({ label: `Switch to ${from}, then rebase it onto ${onto}…`, icon: 'branch', run: () => void switchThen(from, () => rebaseOnto(repo, onto)) });
   }
   return items;
 }
@@ -475,11 +471,11 @@ function commitMenuForSha(repo: Repo, sha: string): MenuItem[] {
 
 export function stashMenu(repo: Repo, stash: Stash): MenuItem[] {
   return [
-    { label: 'Voir le contenu', icon: 'eye', run: () => repo.openStashDiff(stash.index, stash.message) },
+    { label: 'Show contents', icon: 'eye', run: () => repo.openStashDiff(stash.index, stash.message) },
     { separator: true },
-    { label: 'Appliquer et supprimer (pop)', icon: 'pop', run: () => void repo.refOp({ op: 'stash-pop', index: stash.index }, 'Remise appliquée', 'La remise n’a pas pu être appliquée') },
-    { label: 'Appliquer en la gardant', icon: 'stash', run: () => void repo.refOp({ op: 'stash-apply', index: stash.index }, 'Remise appliquée', 'La remise n’a pas pu être appliquée') },
+    { label: 'Pop stash', icon: 'pop', run: () => void repo.refOp({ op: 'stash-pop', index: stash.index }, 'Stash popped', 'Could not pop stash') },
+    { label: 'Apply stash', icon: 'stash', run: () => void repo.refOp({ op: 'stash-apply', index: stash.index }, 'Stash applied', 'Could not apply stash') },
     { separator: true },
-    { label: 'Supprimer la remise…', icon: 'trash', danger: true, run: () => void dropStash(repo, stash) },
+    { label: 'Drop stash…', icon: 'trash', danger: true, run: () => void dropStash(repo, stash) },
   ];
 }

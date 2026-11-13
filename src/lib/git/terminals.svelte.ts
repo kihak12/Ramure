@@ -1,23 +1,23 @@
-// Terminaux d'un dépôt : des terminaux locaux ouverts dans son dossier, sous le graphe
-// (charte, section 9.20). Chaque dépôt a les siens ; ils vivent tant que son onglet est ouvert.
+// Terminals of a repository: local terminals opened in its folder, under the graph
+// (guidelines, section 9.20). Each repository has its own; they live as long as its tab is open.
 
 import { localSession, type Session } from '../ssh/ssh.svelte';
 
 export class RepoTerminals {
   sessions = $state<Session[]>([]);
   activeKey = $state(0);
-  /** Le panneau est affiché sous le graphe. */
+  /** The panel is shown under the graph. */
   shown = $state(false);
   /**
-   * Le graphe est masqué : le terminal tient toute la colonne du centre. Ne vaut que tant que le
-   * terminal est affiché ; le centre n'est jamais vide (charte, section 9.17).
+   * The graph is hidden: the terminal takes the whole center column. Only holds while the
+   * terminal is shown; the center is never empty (guidelines, section 9.17).
    */
   alone = $state(false);
-  /** Compte les demandes de clavier : chacune donne le focus au terminal actif. */
+  /** Counts the requests for the keyboard: each one gives the focus to the active terminal. */
   focusAsk = $state(0);
 
   active = $derived(this.sessions.find((s) => s.key === this.activeKey) ?? null);
-  /** Shells qui tournent encore : la pastille du bouton « Terminal » les compte, panneau masqué. */
+  /** Shells still running: the badge of the “Terminal” button counts them, panel hidden. */
   running = $derived(this.sessions.filter((s) => s.status !== 'closed').length);
 
   #add(cwd: string) {
@@ -27,25 +27,25 @@ export class RepoTerminals {
     this.shown = true;
   }
 
-  /** « + », ou la palette : un terminal de plus dans `cwd`, qui prend le clavier. */
+  /** “+”, or the palette: one more terminal in `cwd`, which takes the keyboard. */
   open(cwd: string) {
     this.#add(cwd);
     this.focusAsk++;
   }
 
-  /** Affiche le panneau, sans lui donner le clavier ; s'il n'a pas de terminal, en ouvre un. */
+  /** Shows the panel, without giving it the keyboard; if it has no terminal, opens one. */
   show(cwd: string) {
     if (!this.sessions.length) this.#add(cwd);
     this.shown = true;
   }
 
-  /** Masquer le terminal ramène le graphe s'il était masqué. */
+  /** Hiding the terminal brings the graph back if it was hidden. */
   hide() {
     this.shown = false;
     this.alone = false;
   }
 
-  /** Masque ou affiche le graphe ; sans terminal affiché, il reste. */
+  /** Hides or shows the graph; with no terminal shown, it stays. */
   setGraph(visible: boolean) {
     this.alone = !visible && this.shown;
   }
@@ -54,13 +54,13 @@ export class RepoTerminals {
     this.setGraph(this.alone);
   }
 
-  /** Le bouton et la palette : afficher ou masquer, sans plus. */
+  /** The button and the palette: show or hide, nothing more. */
   toggle(cwd: string) {
     if (this.shown) this.hide();
     else this.show(cwd);
   }
 
-  /** Le raccourci : affiche et donne le clavier, ou le donne, ou masque si le clavier y est déjà. */
+  /** The shortcut: shows and gives the keyboard, or gives it, or hides if the keyboard is already there. */
   key(cwd: string, focusInside: boolean) {
     if (this.shown && focusInside) return this.hide();
     this.show(cwd);
@@ -71,7 +71,7 @@ export class RepoTerminals {
     this.activeKey = key;
   }
 
-  /** Ferme un onglet ; fermer le dernier masque le panneau, qui n'a pas d'état vide. */
+  /** Closes a tab; closing the last one hides the panel, which has no empty state. */
   close(key: number) {
     const at = this.sessions.findIndex((s) => s.key === key);
     if (at < 0) return;

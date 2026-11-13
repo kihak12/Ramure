@@ -1,4 +1,4 @@
-// Miroir des structures renvoyées par la commande `git_log` (src-tauri/src/git/log.rs).
+// Mirror of the structures returned by the `git_log` command (src-tauri/src/git/log.rs).
 
 export type RefKind = 'head' | 'local' | 'remote' | 'tag' | 'detached';
 
@@ -11,15 +11,15 @@ export interface CommitRow {
   sha: string;
   parents: string[];
   author: string;
-  /** Date de l'auteur, en secondes Unix. */
+  /** Author date, in Unix seconds. */
   time: number;
   refs: RefLabel[];
   subject: string;
   lane: number;
-  /** Segments vers la ligne suivante : [colonne de départ, colonne d'arrivée, lane]. */
+  /** Segments to the next row: [start column, end column, lane]. */
   edges: [number, number, number][];
   wip: boolean;
-  /** Commit absent de toute branche distante : pas encore poussé. */
+  /** Commit absent from every remote branch: not pushed yet. */
   localOnly: boolean;
 }
 
@@ -41,7 +41,7 @@ export interface LogResult {
   commands: CommandLog[];
 }
 
-// --- Répertoire de travail et index (src-tauri/src/git/work.rs) ---------------------------
+// --- Working directory and index (src-tauri/src/git/work.rs) -----------------------------
 
 export type ChangeKind =
   | 'added'
@@ -69,7 +69,7 @@ export interface Status {
   behind: number;
   staged: FileChange[];
   unstaged: FileChange[];
-  /** Opération en suspens, à continuer ou à abandonner. */
+  /** Operation that stopped, to continue or to abort. */
   operation: Operation | null;
 }
 
@@ -83,7 +83,7 @@ export interface CommitDetail {
   files: FileChange[];
 }
 
-/** Enveloppe des commandes git : la donnée, et les commandes lancées pour l'obtenir. */
+/** Envelope of the git commands: the data, and the commands run to get it. */
 export interface Done<T> {
   data: T;
   commands: CommandLog[];
@@ -94,15 +94,15 @@ export interface Failed {
   commands: CommandLog[];
 }
 
-// --- Références et historique (src-tauri/src/git/ops.rs) ----------------------------------
+// --- References and history (src-tauri/src/git/ops.rs) ------------------------------------
 
-/** Position de la branche locale qui porte le nom d'une branche distante, par rapport à elle. */
+/** Position of the local branch that bears the name of a remote branch, relative to it. */
 export interface Relation {
-  /** Nom de la branche locale ; `null` si elle n'existe pas encore. */
+  /** Name of the local branch; `null` if it does not exist yet. */
   local: string | null;
-  /** Commits de la branche locale absents de la branche distante. */
+  /** Commits of the local branch absent from the remote branch. */
   ahead: number;
-  /** Commits de la branche distante absents de la branche locale. */
+  /** Commits of the remote branch absent from the local branch. */
   behind: number;
 }
 
@@ -112,7 +112,7 @@ export interface Branch {
   upstream: string | null;
   ahead: number;
   behind: number;
-  /** La branche distante suivie n'existe plus. */
+  /** The tracked remote branch no longer exists. */
   gone: boolean;
   current: boolean;
 }
@@ -163,7 +163,7 @@ export type HistoryOp =
   | { op: 'revert'; sha: string; mainline: boolean }
   | { op: 'reset'; sha: string; mode: ResetMode };
 
-/** Résultat d'une opération qui peut s'arrêter sur un conflit. */
+/** Result of an operation that can stop on a conflict. */
 export interface Outcome {
   output: string;
   stopped: Operation | null;
@@ -171,7 +171,7 @@ export interface Outcome {
 
 export interface RebasePlan {
   base: string | null;
-  /** Du plus ancien au plus récent. */
+  /** From the oldest to the newest. */
   commits: { sha: string; subject: string; message: string }[];
   pushed: boolean;
 }
@@ -184,13 +184,13 @@ export interface TodoItem {
   message?: string;
 }
 
-/** Versions d'un fichier en conflit (src-tauri/src/git/conflict.rs). */
+/** Versions of a conflicted file (src-tauri/src/git/conflict.rs). */
 export interface ConflictFile {
   base: string | null;
   ours: string | null;
   theirs: string | null;
-  /** Fichier du répertoire de travail, avec les marqueurs de conflit. */
+  /** File of the working directory, with the conflict markers. */
   merged: string | null;
-  /** Une version n'est pas du texte, ou est trop volumineuse pour l'éditeur. */
+  /** A version is not text, or is too large for the editor. */
   binary: boolean;
 }

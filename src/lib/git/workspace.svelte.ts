@@ -1,5 +1,5 @@
-// Espace de travail Git : les onglets ouverts (un dépôt chacun) et les dépôts récents.
-// Les onglets sont rouverts au démarrage.
+// Git workspace: the open tabs (one repository each) and the recent repositories.
+// The tabs are reopened at startup.
 
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -10,14 +10,14 @@ import type { CommandLog, Done } from './types';
 
 const STORAGE_TABS = 'ramure.tabs';
 const STORAGE_RECENTS = 'ramure.recents';
-/** Ancienne clé, du temps où Ramure n'ouvrait qu'un dépôt. */
+/** Former key, from the time when Ramure opened only one repository. */
 const STORAGE_LEGACY = 'ramure.repo';
 const MAX_RECENTS = 12;
 
 export interface Recent {
   path: string;
   name: string;
-  /** Dernière ouverture, en millisecondes Unix. */
+  /** Last opening, in Unix milliseconds. */
   at: number;
 }
 
@@ -44,18 +44,18 @@ function write(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    /* stockage indisponible : rien n'est mémorisé pour la prochaine fois */
+    /* storage unavailable: nothing is remembered for next time */
   }
 }
 
-/** Dernier élément d'un chemin, avec l'un ou l'autre séparateur. */
+/** Last element of a path, with either separator. */
 export const basename = (path: string) => path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? path;
 
 class Workspace {
   tabs = $state.raw<Tab[]>([]);
   activeId = $state(0);
   recents = $state.raw<Recent[]>(read<Recent[]>(STORAGE_RECENTS, []));
-  /** Vrai tant que la boîte de clonage est ouverte. */
+  /** True while the clone dialog is open. */
   cloning = $state(false);
 
   active = $derived(this.tabs.find((tab) => tab.id === this.activeId) ?? null);
@@ -68,7 +68,7 @@ class Workspace {
     try {
       legacy = localStorage.getItem(STORAGE_LEGACY) ?? '';
     } catch {
-      /* stockage indisponible */
+      /* storage unavailable */
     }
     const saved = read<SavedTabs>(STORAGE_TABS, { paths: legacy ? [legacy] : [], active: 0 });
     const tabs = saved.paths.map((path) => this.#create(path));
@@ -105,9 +105,9 @@ class Workspace {
     this.#persist();
   }
 
-  /** Titre d'un onglet : le nom du dépôt, ou celui du dossier pendant le chargement. */
+  /** Title of a tab: the name of the repository, or that of the folder while it loads. */
   title(tab: Tab) {
-    return tab.repo.result?.name ?? (tab.repo.path ? basename(tab.repo.path) : 'Nouvel onglet');
+    return tab.repo.result?.name ?? (tab.repo.path ? basename(tab.repo.path) : 'New tab');
   }
 
   newTab() {
@@ -123,22 +123,22 @@ class Workspace {
     this.#persist();
   }
 
-  /** Passe à l'onglet suivant (`step = 1`) ou précédent (`step = -1`). */
+  /** Goes to the next tab (`step = 1`) or the previous one (`step = -1`). */
   cycle(step: 1 | -1) {
     const at = this.tabs.findIndex((tab) => tab.id === this.activeId);
     if (at < 0 || this.tabs.length < 2) return;
     this.activate(this.tabs[(at + step + this.tabs.length) % this.tabs.length].id);
   }
 
-  /** Ferme un onglet. Si un programme tourne dans le terminal du dépôt, on demande d'abord. */
+  /** Closes a tab. If a program runs in the terminal of the repository, asks first. */
   async closeTab(id: number) {
     const closing = this.tabs.find((tab) => tab.id === id);
     if (!closing || !(await mayCloseRepo(this.title(closing), closing.repo.terminals.sessions))) return;
-    // La question a pu durer : l'onglet est cherché à nouveau.
+    // The question may have taken a while: the tab is looked up again.
     const at = this.tabs.findIndex((tab) => tab.id === id);
     if (at < 0) return;
     const rest = this.tabs.filter((tab) => tab.id !== id);
-    // Il reste toujours un onglet : le dernier fermé laisse place à la page d'accueil.
+    // There is always a tab left: closing the last one leaves room for the start page.
     if (!rest.length) rest.push(this.#create());
     this.tabs = rest;
     if (this.activeId === id) this.activeId = rest[Math.min(at, rest.length - 1)].id;
@@ -146,8 +146,8 @@ class Workspace {
   }
 
   /**
-   * Ouvre `path` : dans l'onglet qui montre déjà ce dépôt, sinon dans l'onglet courant
-   * s'il est vide, sinon dans un nouvel onglet. Renvoie l'onglet utilisé.
+   * Opens `path`: in the tab that already shows this repository, else in the current tab if it
+   * is empty, else in a new tab. Returns the tab used.
    */
   async openPath(path: string): Promise<Tab> {
     const existing = this.tabs.find((tab) => tab.repo.path === path);
@@ -163,28 +163,28 @@ class Workspace {
     return tab;
   }
 
-  /** Demande un dossier, puis l'ouvre. */
+  /** Asks for a folder, then opens it. */
   async pick() {
-    const dir = await open({ directory: true, multiple: false, title: 'Ouvrir un dépôt Git' });
+    const dir = await open({ directory: true, multiple: false, title: 'Open Git repository' });
     if (typeof dir === 'string') await this.openPath(dir);
   }
 
-  /** Demande un dossier, y initialise un dépôt, puis l'ouvre. */
+  /** Asks for a folder, initializes a repository in it, then opens it. */
   async init() {
-    const dir = await open({ directory: true, multiple: false, title: 'Choisir le dossier du nouveau dépôt' });
+    const dir = await open({ directory: true, multiple: false, title: 'Choose the folder of the new repository' });
     if (typeof dir !== 'string') return;
     try {
       const reply = await invoke<Done<string>>('git_init', { path: dir });
       const tab = await this.openPath(reply.data);
       tab.repo.record(reply.commands);
-      toasts.ok('Dépôt initialisé', dir);
+      toasts.ok('Repository initialized', dir);
     } catch (e) {
       const failed = e as { message?: string };
-      toasts.err("L'initialisation a échoué", failed.message ?? String(e));
+      toasts.err('Could not initialize repository', failed.message ?? String(e));
     }
   }
 
-  /** Ouvre le dépôt qui vient d'être cloné et verse la commande à son journal. */
+  /** Opens the repository just cloned and adds the command to its command log. */
   async openCloned(path: string, commands: CommandLog[]) {
     const tab = await this.openPath(path);
     tab.repo.record(commands);
