@@ -1,7 +1,7 @@
 [package]
 name = "ramure"
 version = "0.0.1"
-description = "Client Git graphique et client SSH/SFTP"
+description = "Graphical Git client and SSH/SFTP client"
 authors = ["Ramure contributors"]
 license = "MIT"
 edition = "2024"
@@ -21,18 +21,18 @@ log = "0.4"
 tauri = { version = "2.12.5", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
-# `ring` plutôt que `aws-lc-rs` : se compile sous Windows sans NASM ni CMake.
+# `ring` rather than `aws-lc-rs`: it builds on Windows without NASM or CMake.
 russh = { version = "0.65.1", default-features = false, features = ["ring", "flate2", "rsa"] }
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "macros", "time", "net", "io-util"] }
 rusqlite = { version = "0.41.1", features = ["bundled"] }
 uuid = { version = "1.29.2", features = ["v4"] }
 rand = "0.10"
-# Pseudo-terminal des terminaux locaux : ConPTY sous Windows, openpty ailleurs.
+# Pseudo-terminal for local terminals: ConPTY on Windows, openpty elsewhere.
 portable-pty = "0.9.0"
-# Trousseau du système : Gestionnaire d'identifiants sous Windows, Secret Service sous Linux
-# (par zbus, sans bibliothèque système à installer).
+# System keyring: Credential Manager on Windows, Secret Service on Linux
+# (through zbus, with no system library to install).
 keyring = "4.2"
-# Lecture de `known_hosts` (noms hachés `|1|`) : les versions que russh compile déjà.
+# Reading `known_hosts` (hashed `|1|` names): the versions russh already builds.
 hmac = "0.13"
 sha1 = "0.11"
 data-encoding = "2.11"

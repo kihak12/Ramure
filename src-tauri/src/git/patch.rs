@@ -1,9 +1,9 @@
-//! Indexation par bloc ou par ligne : construit, à partir du diff d'un fichier, le patch
-//! qui ne contient que les lignes choisies.
+//! Staging by hunk or by line: builds, from the diff of a file, the patch that holds only the
+//! chosen lines.
 
 use std::collections::HashSet;
 
-/// Lit `@@ -a,b +c,d @@` et renvoie `(a, c)`.
+/// Reads `@@ -a,b +c,d @@` and returns `(a, c)`.
 fn hunk_starts(header: &str) -> Option<(i64, i64)> {
     let mut parts = header.split(' ');
     if parts.next()? != "@@" {
@@ -17,25 +17,25 @@ fn hunk_starts(header: &str) -> Option<(i64, i64)> {
     Some((old, new))
 }
 
-/// Numéro de la première ligne d'un côté de bloc : s'il est vide, git note la ligne qui précède.
+/// Number of the first line of one side of a hunk: when that side is empty, git gives the line before.
 fn start_of(begin: i64, count: i64) -> i64 {
     if count > 0 { begin } else { begin - 1 }
 }
 
-/// Construit le patch limité aux lignes `selected` (indices dans `diff.split('\n')`).
+/// Builds the patch limited to the `selected` lines (indices in `diff.split('\n')`).
 ///
-/// - `reverse = false` : le diff va de l'index au répertoire de travail, et le patch s'applique
-///   à l'index pour y ajouter les lignes choisies. Une suppression non choisie redevient du
-///   contexte, un ajout non choisi disparaît.
-/// - `reverse = true` : le diff va de HEAD à l'index, et le patch s'applique à l'envers pour
-///   retirer de l'index les lignes choisies. C'est alors l'ajout non choisi qui devient du
-///   contexte, et la suppression non choisie qui disparaît.
+/// - `reverse = false`: the diff goes from the index to the working tree, and the patch applies
+///   to the index to add the chosen lines to it. A deletion that was not chosen becomes context
+///   again, and an addition that was not chosen goes away.
+/// - `reverse = true`: the diff goes from HEAD to the index, and the patch applies in reverse to
+///   take the chosen lines out of the index. It is then the addition not chosen that becomes
+///   context, and the deletion not chosen that goes away.
 pub fn partial_patch(diff: &str, selected: &HashSet<usize>, reverse: bool) -> Result<String, String> {
     let lines: Vec<&str> = diff.split('\n').collect();
     let mut out = String::new();
     let mut i = 0;
 
-    // En-tête du fichier, recopié tel quel.
+    // Header of the file, copied as it is.
     let mut files = 0;
     while i < lines.len() && !lines[i].starts_with("@@") {
         let line = lines[i];
@@ -44,33 +44,33 @@ pub fn partial_patch(diff: &str, selected: &HashSet<usize>, reverse: bool) -> Re
         }
         let whole_file_only = ["new file mode", "deleted file mode", "rename from", "copy from", "Binary files", "GIT binary patch"];
         if whole_file_only.iter().any(|p| line.starts_with(p)) {
-            return Err("Ce fichier ne peut être indexé qu'en entier (nouveau, supprimé, renommé ou binaire).".into());
+            return Err("This file can only be staged as a whole: it is new, deleted, renamed or binary.".into());
         }
         out.push_str(line);
         out.push('\n');
         i += 1;
     }
     if files != 1 || i == lines.len() {
-        return Err("Le diff ne contient pas un fichier texte modifié.".into());
+        return Err("The diff does not contain a modified text file.".into());
     }
 
-    // Décalage accumulé entre les deux côtés par les blocs déjà écrits.
+    // Offset between the two sides, built up by the hunks already written.
     let mut delta: i64 = 0;
     let mut written = false;
     while i < lines.len() {
         let header = lines[i];
         if header.is_empty() && i == lines.len() - 1 {
-            break; // fin du texte : artefact du découpage sur `\n`
+            break; // end of the text: an artifact of splitting on `\n`
         }
         let (old_start, new_start) =
-            hunk_starts(header).ok_or_else(|| format!("bloc de diff illisible : {header}"))?;
+            hunk_starts(header).ok_or_else(|| format!("Unreadable diff hunk: {header}"))?;
         i += 1;
 
         let mut body: Vec<String> = Vec::new();
         let (mut old_count, mut new_count) = (0i64, 0i64);
         let (mut orig_old, mut orig_new) = (0i64, 0i64);
         let mut changed = false;
-        // La mention « \ No newline at end of file » suit le sort de la ligne qui la précède.
+        // The “\ No newline at end of file” note shares the fate of the line before it.
         let mut last_kept = true;
         while i < lines.len() && !lines[i].starts_with("@@") {
             let line = lines[i];
@@ -79,7 +79,7 @@ pub fn partial_patch(diff: &str, selected: &HashSet<usize>, reverse: bool) -> Re
                 break;
             }
             if line.starts_with("diff --git ") {
-                return Err("Le diff contient plusieurs fichiers.".into());
+                return Err("The diff contains several files.".into());
             }
             let picked = selected.contains(&i);
             let rest = line.get(1..).unwrap_or("");
@@ -122,7 +122,7 @@ pub fn partial_patch(diff: &str, selected: &HashSet<usize>, reverse: bool) -> Re
                     }
                 }
                 _ => {
-                    // Ligne de contexte (une ligne vide est un contexte dont l'espace a été perdu).
+                    // Context line (an empty line is context whose space was lost).
                     orig_old += 1;
                     orig_new += 1;
                     body.push(format!(" {rest}"));
@@ -137,8 +137,8 @@ pub fn partial_patch(diff: &str, selected: &HashSet<usize>, reverse: bool) -> Re
             continue;
         }
 
-        // Le côté sur lequel git cherche le bloc (l'ancien à l'endroit, le nouveau à l'envers)
-        // garde sa position d'origine ; l'autre est décalé par les blocs précédents.
+        // The side where git looks for the hunk (the old one forward, the new one in reverse)
+        // keeps its original position; the other is shifted by the previous hunks.
         let (old_at, new_at) = if reverse {
             let begin = if orig_new > 0 { new_start } else { new_start + 1 };
             (start_of(begin - delta, old_count), start_of(begin, new_count))
@@ -155,14 +155,14 @@ pub fn partial_patch(diff: &str, selected: &HashSet<usize>, reverse: bool) -> Re
         written = true;
     }
 
-    if written { Ok(out) } else { Err("Aucune ligne modifiée n'est sélectionnée.".into()) }
+    if written { Ok(out) } else { Err("No changed line is selected. Select at least one added or removed line.".into()) }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const DIFF: &str = "diff --git a/f.txt b/f.txt\nindex 111..222 100644\n--- a/f.txt\n+++ b/f.txt\n@@ -1,4 +1,5 @@\n un\n-deux\n+DEUX\n+deux et demi\n trois\n quatre\n@@ -10,3 +11,2 @@\n dix\n-onze\n douze\n";
+    const DIFF: &str = "diff --git a/f.txt b/f.txt\nindex 111..222 100644\n--- a/f.txt\n+++ b/f.txt\n@@ -1,4 +1,5 @@\n one\n-two\n+TWO\n+two and a half\n three\n four\n@@ -10,3 +11,2 @@\n ten\n-eleven\n twelve\n";
 
     fn pick(indices: &[usize]) -> HashSet<usize> {
         indices.iter().copied().collect()
@@ -170,29 +170,29 @@ mod tests {
 
     #[test]
     fn forward_patch_keeps_only_selected_lines() {
-        // Ligne 8 : « +deux et demi ». La suppression de « deux » redevient du contexte.
+        // Line 8: “+two and a half”. The deletion of “two” becomes context again.
         let patch = partial_patch(DIFF, &pick(&[8]), false).unwrap();
         assert_eq!(
             patch,
-            "diff --git a/f.txt b/f.txt\nindex 111..222 100644\n--- a/f.txt\n+++ b/f.txt\n@@ -1,4 +1,5 @@\n un\n deux\n+deux et demi\n trois\n quatre\n"
+            "diff --git a/f.txt b/f.txt\nindex 111..222 100644\n--- a/f.txt\n+++ b/f.txt\n@@ -1,4 +1,5 @@\n one\n two\n+two and a half\n three\n four\n"
         );
     }
 
     #[test]
     fn later_hunks_are_shifted_by_earlier_ones() {
-        // Lignes 6 et 7 (« -deux », « +DEUX ») puis 13 (« -onze ») : le premier bloc ne change
-        // pas la longueur, le second garde donc sa position.
+        // Lines 6 and 7 (“-two”, “+TWO”), then 13 (“-eleven”): the first hunk does not change
+        // the length, so the second keeps its position.
         let patch = partial_patch(DIFF, &pick(&[6, 7, 13]), false).unwrap();
-        assert!(patch.contains("@@ -1,4 +1,4 @@\n un\n-deux\n+DEUX\n trois\n quatre\n"));
-        assert!(patch.contains("@@ -10,3 +10,2 @@\n dix\n-onze\n douze\n"));
+        assert!(patch.contains("@@ -1,4 +1,4 @@\n one\n-two\n+TWO\n three\n four\n"));
+        assert!(patch.contains("@@ -10,3 +10,2 @@\n ten\n-eleven\n twelve\n"));
     }
 
     #[test]
     fn reverse_patch_turns_unselected_additions_into_context() {
         let patch = partial_patch(DIFF, &pick(&[8]), true).unwrap();
-        // « DEUX » est dans l'index : contexte. « deux » n'y est pas : absent.
-        assert!(patch.contains("@@ -1,4 +1,5 @@\n un\n DEUX\n+deux et demi\n trois\n quatre\n"));
-        assert!(!patch.contains("onze"));
+        // “TWO” is in the index: context. “two” is not: absent.
+        assert!(patch.contains("@@ -1,4 +1,5 @@\n one\n TWO\n+two and a half\n three\n four\n"));
+        assert!(!patch.contains("eleven"));
     }
 
     #[test]

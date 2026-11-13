@@ -1,4 +1,4 @@
-//! Création d'un dépôt local : clonage, avec progression et annulation, ou initialisation.
+//! Creating a local repository: a clone, with progress and cancellation, or an init.
 
 use std::fs;
 use std::io::Read;
@@ -13,7 +13,7 @@ use tauri::ipc::Channel;
 
 use super::{CommandLog, Done, Failed, check_name, command, ms, step, text};
 
-/// Clonage en cours, s'il y en a un. Un seul à la fois.
+/// The clone in progress, if there is one. One at a time.
 #[derive(Default)]
 pub struct CloneJob {
     child: Mutex<Option<Child>>,
@@ -23,8 +23,8 @@ pub struct CloneJob {
 #[derive(Default)]
 pub struct CloneState(pub Arc<CloneJob>);
 
-/// Masque l'identifiant et le mot de passe d'une adresse (`https://moi:secret@hôte/…`),
-/// pour que le journal ne les conserve jamais.
+/// Hides the user name and the password of a URL (`https://me:secret@host/…`), so that the
+/// command log never keeps them.
 pub fn redact(url: &str) -> String {
     let Some((scheme, rest)) = url.split_once("://") else { return url.to_string() };
     let authority_end = rest.find('/').unwrap_or(rest.len());
@@ -34,8 +34,8 @@ pub fn redact(url: &str) -> String {
     }
 }
 
-/// Nom de dossier proposé pour une adresse : `https://hôte/moi/projet.git` → `projet`.
-/// L'interface applique la même règle (`folderName` dans `CloneDialog.svelte`).
+/// Folder name suggested for a URL: `https://host/me/project.git` → `project`.
+/// The interface applies the same rule (`folderName` in `CloneDialog.svelte`).
 #[cfg(test)]
 pub fn folder_name(url: &str) -> String {
     let trimmed = url.trim().trim_end_matches(['/', '\\']);
@@ -43,35 +43,38 @@ pub fn folder_name(url: &str) -> String {
     last.strip_suffix(".git").unwrap_or(last).to_string()
 }
 
-/// Clone `url` dans `dest`. `progress` reçoit chaque ligne d'avancement de git.
+/// Clones `url` into `dest`. `progress` receives each progress line of git.
 pub fn clone_repo(job: &CloneJob, url: &str, dest: &Path, progress: impl Fn(String)) -> Result<(), String> {
     let url = url.trim();
     check_name(url)?;
-    let parent = dest.parent().filter(|p| p.is_dir()).ok_or("Le dossier parent n'existe pas.")?;
+    let parent = dest.parent().filter(|p| p.is_dir()).ok_or("The parent folder does not exist. Choose an existing folder.")?;
     let existed = dest.exists();
     if existed && fs::read_dir(dest).map(|mut entries| entries.next().is_some()).unwrap_or(true) {
-        return Err(format!("Le dossier « {} » existe déjà et n'est pas vide.", dest.display()));
+        return Err(format!(
+            "The folder “{}” already exists and is not empty. Choose another folder name.",
+            dest.display()
+        ));
     }
 
-    let mut slot = job.child.lock().map_err(|_| "état du clonage indisponible")?;
+    let mut slot = job.child.lock().map_err(|_| "The clone state is unavailable. Restart Ramure.")?;
     if slot.is_some() {
-        return Err("Un clonage est déjà en cours.".into());
+        return Err("A clone is already in progress. Wait for it to finish.".into());
     }
     let mut cmd = command();
     cmd.current_dir(parent)
-        // `--` : l'adresse et le dossier ne peuvent pas être pris pour des options.
+        // `--`: the URL and the folder cannot be taken for options.
         .args(["clone", "--progress", "--", url])
         .arg(dest)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::piped());
-    let mut child = cmd.spawn().map_err(|e| format!("impossible de lancer git : {e}"))?;
-    let mut stderr = child.stderr.take().ok_or("sortie de git indisponible")?;
+    let mut child = cmd.spawn().map_err(|e| format!("Could not start git: {e}. Check that git is installed."))?;
+    let mut stderr = child.stderr.take().ok_or("The output of git is unavailable. Try again.")?;
     job.cancelled.store(false, Ordering::SeqCst);
     *slot = Some(child);
     drop(slot);
 
-    // git réécrit sa ligne d'avancement avec des retours chariot : chaque fragment est un état.
+    // git rewrites its progress line with carriage returns: each fragment is a state.
     let mut tail: Vec<String> = Vec::new();
     let mut pending: Vec<u8> = Vec::new();
     let mut chunk = [0u8; 4096];
@@ -80,7 +83,7 @@ pub fn clone_repo(job: &CloneJob, url: &str, dest: &Path, progress: impl Fn(Stri
         if line.is_empty() {
             return;
         }
-        // Les lignes de progression (« Receiving objects: 42% ») ne servent pas de message d'erreur.
+        // Progress lines (“Receiving objects: 42%”) are not used as the error message.
         if !line.contains('%') {
             tail.push(line.clone());
             if tail.len() > 12 {
@@ -106,25 +109,25 @@ pub fn clone_repo(job: &CloneJob, url: &str, dest: &Path, progress: impl Fn(Stri
     }
     emit(&pending);
 
-    let child = job.child.lock().map_err(|_| "état du clonage indisponible")?.take();
+    let child = job.child.lock().map_err(|_| "The clone state is unavailable. Restart Ramure.")?.take();
     let success = child.and_then(|mut c| c.wait().ok()).is_some_and(|status| status.success());
     if success {
         return Ok(());
     }
-    // On ne supprime que ce que ce clonage a créé.
+    // Only what this clone created is removed.
     if !existed {
         let _ = fs::remove_dir_all(dest);
     }
     if job.cancelled.load(Ordering::SeqCst) {
-        Err("Clonage annulé.".into())
+        Err("Clone canceled.".into())
     } else if tail.is_empty() {
-        Err("git clone a échoué.".into())
+        Err("git clone failed.".into())
     } else {
         Err(tail.join("\n"))
     }
 }
 
-/// Interrompt le clonage en cours. Sans effet s'il n'y en a pas.
+/// Stops the clone in progress. No effect when there is none.
 pub fn cancel(job: &CloneJob) {
     if let Ok(mut slot) = job.child.lock() {
         if let Some(child) = slot.as_mut() {
@@ -167,13 +170,13 @@ pub fn git_clone_cancel(state: State<'_, CloneState>) {
     cancel(&state.0);
 }
 
-/// Initialise un dépôt dans un dossier existant. Sans danger sur un dépôt déjà initialisé.
+/// Initializes a repository in an existing folder. Safe on a repository already initialized.
 #[tauri::command]
 pub async fn git_init(path: String) -> Result<Done<String>, Failed> {
     super::blocking(move |j| {
         let dir = Path::new(&path);
         if !dir.is_dir() {
-            return Err(format!("Le dossier « {path} » n'existe pas."));
+            return Err(format!("The folder “{path}” does not exist."));
         }
         step(j, dir, &["init"])?;
         Ok(path)
@@ -188,49 +191,49 @@ mod tests {
     use std::sync::Mutex as StdMutex;
 
     #[test]
-    fn credentials_never_reach_the_journal() {
-        assert_eq!(redact("https://moi:secret@exemple.org/a/b.git"), "https://***@exemple.org/a/b.git");
-        assert_eq!(redact("https://jeton@exemple.org/a/b.git"), "https://***@exemple.org/a/b.git");
-        assert_eq!(redact("https://exemple.org/a/b@c.git"), "https://exemple.org/a/b@c.git");
-        assert_eq!(redact("git@exemple.org:a/b.git"), "git@exemple.org:a/b.git");
+    fn credentials_never_reach_the_command_log() {
+        assert_eq!(redact("https://me:secret@example.org/a/b.git"), "https://***@example.org/a/b.git");
+        assert_eq!(redact("https://token@example.org/a/b.git"), "https://***@example.org/a/b.git");
+        assert_eq!(redact("https://example.org/a/b@c.git"), "https://example.org/a/b@c.git");
+        assert_eq!(redact("git@example.org:a/b.git"), "git@example.org:a/b.git");
     }
 
     #[test]
     fn folder_names_come_from_the_address() {
-        assert_eq!(folder_name("https://exemple.org/moi/projet.git"), "projet");
-        assert_eq!(folder_name("git@exemple.org:moi/projet.git"), "projet");
-        assert_eq!(folder_name("https://exemple.org/moi/projet/"), "projet");
-        assert_eq!(folder_name("/srv/depots/outil"), "outil");
-        assert_eq!(folder_name("C:\\depots\\outil.git"), "outil");
+        assert_eq!(folder_name("https://example.org/me/project.git"), "project");
+        assert_eq!(folder_name("git@example.org:me/project.git"), "project");
+        assert_eq!(folder_name("https://example.org/me/project/"), "project");
+        assert_eq!(folder_name("/srv/repos/tool"), "tool");
+        assert_eq!(folder_name("C:\\repos\\tool.git"), "tool");
     }
 
     #[test]
     fn clone_reports_progress_and_cleans_up_after_a_failure() {
         let origin = Scratch::new("clone-origin");
-        origin.write("a.txt", "un\n");
+        origin.write("a.txt", "one\n");
         origin.git(&["add", "-A"]);
         origin.git(&["commit", "-q", "-m", "init"]);
 
         let parent = Scratch::new("clone-dest");
         let job = CloneJob::default();
         let lines = StdMutex::new(Vec::new());
-        let dest = parent.0.join("copie");
+        let dest = parent.0.join("copy");
         clone_repo(&job, origin.0.to_str().unwrap(), &dest, |l| lines.lock().unwrap().push(l)).unwrap();
         assert!(dest.join("a.txt").exists());
         assert!(lines.lock().unwrap().iter().any(|l| l.starts_with("Cloning into")));
 
-        // Destination occupée : refus, sans rien toucher.
+        // Destination taken: refused, with nothing touched.
         let again = clone_repo(&job, origin.0.to_str().unwrap(), &dest, |_| {});
-        assert!(again.unwrap_err().contains("n'est pas vide"));
+        assert!(again.unwrap_err().contains("is not empty"));
         assert!(dest.join("a.txt").exists());
 
-        // Source inexistante : le message de git remonte, et le dossier créé disparaît.
-        let missing = parent.0.join("rien");
+        // Missing source: the message of git comes back, and the folder created goes away.
+        let missing = parent.0.join("nothing");
         let failed = clone_repo(&job, parent.0.join("absent").to_str().unwrap(), &missing, |_| {});
         assert!(failed.is_err());
         assert!(!missing.exists());
 
         assert!(clone_repo(&job, "--upload-pack=x", &missing, |_| {}).is_err());
-        cancel(&job); // aucun clonage en cours : sans effet
+        cancel(&job); // no clone in progress: no effect
     }
 }
