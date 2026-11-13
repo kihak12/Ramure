@@ -1,5 +1,5 @@
-//! Lecture de `~/.ssh/config`, pour importer ses hôtes dans le carnet : Host, HostName,
-//! User, Port, IdentityFile, et la présence d'un rebond par bastion.
+//! Reading `~/.ssh/config`, to import its hosts into the host book: Host, HostName,
+//! User, Port, IdentityFile, and whether the host jumps through a bastion.
 
 use std::path::PathBuf;
 
@@ -13,7 +13,7 @@ pub struct HostEntry {
     pub user: Option<String>,
     pub port: u16,
     pub identity_file: Option<String>,
-    /// L'hôte passe par un bastion : pas encore pris en charge.
+    /// The host goes through a bastion: not supported yet.
     pub proxy_jump: bool,
 }
 
@@ -21,7 +21,7 @@ pub fn home() -> Option<PathBuf> {
     std::env::home_dir()
 }
 
-/// Remplace un `~/` initial par le dossier personnel.
+/// Replaces a leading `~/` with the home folder.
 pub fn expand(path: &str) -> PathBuf {
     let rest = path.strip_prefix("~/").or_else(|| path.strip_prefix("~\\"));
     match (rest, home()) {
@@ -32,7 +32,7 @@ pub fn expand(path: &str) -> PathBuf {
 
 pub fn parse(text: &str) -> Vec<HostEntry> {
     let mut hosts: Vec<HostEntry> = Vec::new();
-    // Indices des hôtes déclarés par le bloc `Host` en cours.
+    // Indices of the hosts declared by the current `Host` block.
     let mut current: Vec<usize> = Vec::new();
 
     for line in text.lines() {
@@ -49,7 +49,7 @@ pub fn parse(text: &str) -> Vec<HostEntry> {
             "host" => {
                 current.clear();
                 for alias in value.split_whitespace() {
-                    // Les motifs (`*`, `?`, `!`) ne sont pas des hôtes auxquels on se connecte.
+                    // Patterns (`*`, `?`, `!`) are not hosts one connects to.
                     if alias.contains(['*', '?', '!']) {
                         continue;
                     }
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn hosts_are_read_and_patterns_skipped() {
         let text = "\
-# commentaire
+# comment
 Host *
     ServerAliveInterval 30
 
@@ -96,9 +96,9 @@ Host vps prod-web
     User deploy
     Port 2222
     IdentityFile ~/.ssh/id_ed25519
-    IdentityFile ~/.ssh/autre
+    IdentityFile ~/.ssh/other
 
-Host interne
+Host internal
     HostName=10.0.2.15
     ProxyJump bastion
 ";

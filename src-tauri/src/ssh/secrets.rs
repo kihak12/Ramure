@@ -1,14 +1,13 @@
-//! Secrets retenus dans le trousseau du système : le Gestionnaire d'identifiants sous Windows, le
-//! Secret Service (GNOME Keyring, KWallet) sous Linux.
+//! Secrets kept in the system keyring: the Credential Manager on Windows, the Secret Service
+//! (GNOME Keyring, KWallet) on Linux.
 //!
-//! Deux sortes de secrets, chacune rangée sous ce à quoi elle appartient :
-//! - le mot de passe d'un compte sur un serveur, sous `utilisateur@serveur:port` ;
-//! - la phrase secrète d'une clé, sous le chemin de son fichier.
+//! Two kinds of secrets, each stored under what it belongs to:
+//! - the password of an account on a server, under `user@server:port`;
+//! - the passphrase of a key, under the path of its file.
 //!
-//! Un secret n'est écrit nulle part ailleurs : ni dans le carnet d'hôtes, ni dans un journal, ni
-//! dans un message. Il ne repasse jamais par l'interface : c'est le cœur qui le lit au moment de
-//! s'authentifier. Les appels au trousseau sont bloquants (il peut demander à être déverrouillé) :
-//! les fonctions asynchrones d'ici les sortent de l'exécuteur.
+//! A secret is written nowhere else: not in the host book, not in a log, not in a message. It never
+//! goes back through the interface: the core reads it when it authenticates. Calls to the keyring
+//! block (it may ask to be unlocked): the async functions here move them off the executor.
 
 use std::path::Path;
 
@@ -16,11 +15,11 @@ use serde::Deserialize;
 
 use super::config;
 
-/// Le nom sous lequel le trousseau range les secrets de l'application.
+/// The name under which the keyring stores the secrets of the application.
 #[cfg_attr(test, allow(dead_code))]
 const SERVICE: &str = "Ramure";
 
-/// Un secret, désigné par ce à quoi il appartient.
+/// A secret, named by what it belongs to.
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Secret {
@@ -37,15 +36,15 @@ impl Secret {
     }
 }
 
-/// Le nom du mot de passe de `user` sur `host:port`. Il suit le compte, pas la fiche du carnet :
-/// changer l'adresse d'un hôte ne fait pas partir son ancien mot de passe vers un autre serveur.
+/// The name of the password of `user` on `host:port`. It follows the account, not the entry of the
+/// host book: changing the address of a host does not send its old password to another server.
 pub fn password_account(user: &str, host: &str, port: u16) -> String {
     format!("ssh-password:{user}@{host}:{port}")
 }
 
-/// Le nom de la phrase secrète de la clé `path` : elle vaut pour tous les hôtes qui s'en servent.
-/// Le chemin est ramené à une seule écriture : `~/.ssh/id` développé et le même chemin construit
-/// pièce à pièce désignent la même clé, même sous Windows où les séparateurs et la casse varient.
+/// The name of the passphrase of the key `path`: it is good for every host that uses the key.
+/// The path is brought to a single spelling: `~/.ssh/id` expanded and the same path built piece by
+/// piece name the same key, even on Windows, where separators and case vary.
 pub fn passphrase_account(path: &Path) -> String {
     let normal: std::path::PathBuf = path.components().collect();
     let shown = normal.display().to_string();
@@ -58,14 +57,14 @@ mod backend {
 
     use super::SERVICE;
 
-    /// Un message sans rien de secret : ce que le trousseau dit de son refus.
+    /// A message with nothing secret in it: what the keyring says of its refusal.
     fn told(e: Error) -> String {
         e.to_string()
     }
 
     pub fn available() -> bool {
-        // L'initialisation ne suffit pas : sous Linux, le bus peut répondre sans qu'aucun trousseau
-        // n'y soit. On lit donc une entrée qui n'existe pas.
+        // Creating the entry is not enough: on Linux, the bus can answer with no keyring behind it.
+        // So an entry that does not exist is read.
         match Entry::new(SERVICE, "ramure-probe").map(|entry| entry.get_password()) {
             Ok(Ok(_)) | Ok(Err(Error::NoEntry)) => true,
             Ok(Err(_)) | Err(_) => false,
@@ -92,7 +91,7 @@ mod backend {
     }
 }
 
-/// Dans les tests, le trousseau est une table en mémoire : ils ne touchent pas à celui de la machine.
+/// In tests, the keyring is a table in memory: they do not touch the keyring of the machine.
 #[cfg(test)]
 mod backend {
     use std::collections::HashMap;
@@ -119,40 +118,40 @@ mod backend {
     }
 }
 
-/// Sort un appel bloquant de l'exécuteur ; `fallback` s'il n'a pas pu tourner.
+/// Moves a blocking call off the executor; `fallback` if it could not run.
 async fn off_thread<T: Send + 'static>(call: impl FnOnce() -> T + Send + 'static, fallback: T) -> T {
     tauri::async_runtime::spawn_blocking(call).await.unwrap_or(fallback)
 }
 
-/// Le secret retenu sous `account`, s'il y en a un. Un trousseau qui ne répond pas n'en a pas.
+/// The secret kept under `account`, if there is one. A keyring that does not respond has none.
 pub async fn held(account: String) -> Option<String> {
     off_thread(move || backend::get(&account).ok().flatten(), None).await
 }
 
-/// Retient `secret` sous `account`. L'erreur dit pourquoi le trousseau a refusé, sans le secret.
+/// Keeps `secret` under `account`. The error says why the keyring refused, without the secret.
 pub async fn keep(account: String, secret: String) -> Result<(), String> {
-    off_thread(move || backend::set(&account, &secret), Err("le trousseau n’a pas répondu".into())).await
+    off_thread(move || backend::set(&account, &secret), Err("the keyring did not respond".into())).await
 }
 
-/// Oublie le secret retenu sous `account`. Ne rien avoir à oublier n'est pas une erreur.
+/// Forgets the secret kept under `account`. Having nothing to forget is not an error.
 pub async fn forget(account: String) -> Result<(), String> {
-    off_thread(move || backend::forget(&account), Err("le trousseau n’a pas répondu".into())).await
+    off_thread(move || backend::forget(&account), Err("the keyring did not respond".into())).await
 }
 
-/// Oublie sans attendre ni rien dire : pour un ménage qui ne doit pas retarder ce qui l'a causé.
+/// Forgets without waiting or saying anything: for a cleanup that must not delay what caused it.
 pub fn forget_quietly(account: String) {
     tauri::async_runtime::spawn_blocking(move || {
         let _ = backend::forget(&account);
     });
 }
 
-/// Le trousseau du système répond-il ? Sans lui, l'interface ne propose pas de retenir un secret.
+/// Does the system keyring respond? Without it, the interface does not offer to keep a secret.
 #[tauri::command]
 pub async fn secrets_available() -> bool {
     off_thread(backend::available, false).await
 }
 
-/// Pour chaque secret de `secrets`, dans l'ordre : vrai s'il est retenu. Sa valeur ne sort pas d'ici.
+/// For each secret of `secrets`, in order: true if it is kept. Its value does not leave this module.
 #[tauri::command]
 pub async fn secrets_held(secrets: Vec<Secret>) -> Vec<bool> {
     let accounts: Vec<String> = secrets.iter().map(Secret::account).collect();
@@ -160,7 +159,7 @@ pub async fn secrets_held(secrets: Vec<Secret>) -> Vec<bool> {
     off_thread(move || accounts.iter().map(|account| matches!(backend::get(account), Ok(Some(_)))).collect(), none).await
 }
 
-/// Oublie un secret retenu.
+/// Forgets a kept secret.
 #[tauri::command]
 pub async fn secret_forget(secret: Secret) -> Result<(), String> {
     forget(secret.account()).await
@@ -172,9 +171,9 @@ mod tests {
 
     #[test]
     fn a_password_belongs_to_an_account_on_a_server() {
-        assert_eq!(password_account("deploy", "serveur.example", 22), "ssh-password:deploy@serveur.example:22");
-        // Le même utilisateur sur un autre port est un autre compte.
-        assert_ne!(password_account("deploy", "serveur.example", 22), password_account("deploy", "serveur.example", 2222));
+        assert_eq!(password_account("deploy", "server.example", 22), "ssh-password:deploy@server.example:22");
+        // The same user on another port is another account.
+        assert_ne!(password_account("deploy", "server.example", 22), password_account("deploy", "server.example", 2222));
     }
 
     #[test]
@@ -193,13 +192,13 @@ mod tests {
 
     #[tokio::test]
     async fn a_secret_is_kept_found_and_forgotten() {
-        let account = password_account("camille", "essai.example", 22);
+        let account = password_account("camille", "test.example", 22);
         assert_eq!(held(account.clone()).await, None);
         keep(account.clone(), "s3cret".into()).await.unwrap();
         assert_eq!(held(account.clone()).await.as_deref(), Some("s3cret"));
         forget(account.clone()).await.unwrap();
         assert_eq!(held(account.clone()).await, None);
-        // Oublier ce qui n'est pas retenu n'est pas une erreur.
+        // Forgetting what is not kept is not an error.
         forget(account).await.unwrap();
     }
 }

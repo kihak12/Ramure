@@ -1,8 +1,8 @@
-//! Sessions SSH interactives : connexion, vérification de l'empreinte, authentification, terminal.
+//! Interactive SSH sessions: connection, fingerprint check, authentication, terminal.
 //!
-//! Chaque session vit dans une tâche tokio. L'interface lui parle par des commandes
-//! (`ssh_write`, `ssh_resize`, `ssh_close`) et reçoit la sortie du terminal en octets bruts
-//! sur un canal Tauri.
+//! Each session lives in a tokio task. The interface talks to it through commands
+//! (`ssh_write`, `ssh_resize`, `ssh_close`) and receives the output of the terminal as raw bytes
+//! on a Tauri channel.
 
 pub mod config;
 pub mod export;
@@ -27,7 +27,7 @@ use tokio::sync::mpsc;
 
 use known_hosts::Known;
 
-/// Clés essayées en mode automatique, dans l'ordre d'OpenSSH.
+/// Keys tried in automatic mode, in the order of OpenSSH.
 const DEFAULT_KEYS: [&str; 3] = ["id_ed25519", "id_ecdsa", "id_rsa"];
 
 enum Cmd {
@@ -45,10 +45,10 @@ pub struct SshState {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Auth {
-    /// Agent SSH, puis clés par défaut de `~/.ssh`.
+    /// SSH agent, then the default keys of `~/.ssh`.
     Auto,
     KeyFile { path: String, passphrase: Option<String> },
-    /// Sans mot de passe : celui que le trousseau retient pour ce compte, s'il y en a un.
+    /// Without a password: the one the keyring keeps for this account, if there is one.
     Password { password: Option<String> },
 }
 
@@ -61,22 +61,22 @@ pub struct ConnectParams {
     auth: Auth,
     cols: u32,
     rows: u32,
-    /// Empreinte que l'utilisateur vient d'accepter pour un serveur inconnu.
+    /// Fingerprint the user has just accepted for an unknown server.
     accept_fingerprint: Option<String>,
-    /// Vrai pour inscrire cette empreinte dans `known_hosts` ; sinon elle ne vaut que pour cette session.
+    /// True to add this fingerprint to `known_hosts`; otherwise it is good for this session only.
     #[serde(default)]
     remember_host: bool,
-    /// Commande envoyée dans le terminal dès que le shell est prêt.
+    /// Command sent to the terminal as soon as the shell is ready.
     startup_command: Option<String>,
-    /// Vrai pour retenir dans le trousseau du système le secret tapé, une fois qu'il a servi.
+    /// True to keep the typed secret in the system keyring, once it has worked.
     #[serde(default)]
     remember_secret: bool,
-    /// Le journal à ouvrir avant que la sortie n'arrive : l'option de l'hôte, ou une reprise.
+    /// The log to open before the output arrives: the option of the host, or a resumed log.
     #[serde(default)]
     journal: Option<crate::journal::JournalOpen>,
 }
 
-/// Ce qu'il faut pour tester un hôte : se connecter et s'authentifier, sans ouvrir de terminal.
+/// What testing a host needs: connecting and authenticating, without opening a terminal.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TestParams {
@@ -89,12 +89,12 @@ pub struct TestParams {
     remember_host: bool,
 }
 
-/// Résultat d'un test réussi : comment le serveur a été reconnu et l'utilisateur authentifié.
+/// Result of a test that succeeded: how the server was recognized and the user authenticated.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Tested {
     known_host: bool,
-    /// L'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit : pourquoi.
+    /// The fingerprint was to be remembered and `known_hosts` could not be written: why.
     learn_failed: Option<String>,
     auth_method: String,
     connect_ms: f64,
@@ -103,20 +103,20 @@ pub struct Tested {
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum SshError {
-    /// Serveur absent de `known_hosts` : à l'utilisateur de vérifier l'empreinte.
+    /// Server missing from `known_hosts`: the user has to check the fingerprint.
     HostKeyUnknown { fingerprint: String, algorithm: String },
-    /// L'empreinte ne correspond plus à celle enregistrée : connexion bloquée.
+    /// The fingerprint no longer matches the recorded one: the connection is blocked.
     HostKeyChanged { fingerprint: String, line: usize },
-    /// La clé `path` est protégée. `refused` : la phrase secrète essayée ne la déverrouille pas.
+    /// The key `path` is protected. `refused`: the passphrase tried does not unlock it.
     NeedPassphrase { path: String, refused: Option<Refused> },
-    /// Il faut un mot de passe. `refused` : celui que le trousseau retenait a été refusé, et oublié.
+    /// A password is needed. `refused`: the one the keyring kept was refused, and forgotten.
     NeedPassword { refused: bool },
     Auth { message: String },
     Other { message: String },
 }
 
-/// D'où venait un secret qui n'a pas servi : tapé à l'instant, ou retenu dans le trousseau. Un
-/// secret retenu qui est refusé est oublié : il ne sera pas présenté une seconde fois au serveur.
+/// Where a secret that did not work came from: typed just now, or kept in the keyring. A kept
+/// secret that is refused is forgotten: it will not be offered to the server a second time.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Refused {
@@ -133,27 +133,27 @@ fn other(e: impl std::fmt::Display) -> SshError {
 pub struct Connected {
     id: u32,
     fingerprint: String,
-    /// Faux si l'empreinte a été acceptée pour cette session seulement.
+    /// False if the fingerprint was accepted for this session only.
     known_host: bool,
-    /// L'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit : pourquoi.
+    /// The fingerprint was to be remembered and `known_hosts` could not be written: why.
     learn_failed: Option<String>,
     auth_method: String,
     connect_ms: f64,
-    /// Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit, sans le secret.
+    /// The secret was to be kept and the keyring refused it: what the keyring says, without the secret.
     keep_failed: Option<String>,
-    /// Le journal demandé n'a pas pu être ouvert : pourquoi. La session s'ouvre quand même.
+    /// The requested log could not be opened: why. The session opens all the same.
     journal_failed: Option<String>,
 }
 
-/// Pourquoi une session s'est terminée. Seule une connexion perdue se rouvre d'elle-même.
+/// Why a session ended. Only a lost connection opens again by itself.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 enum Ending {
-    /// L'utilisateur a fermé l'onglet ou cliqué « Déconnecter ».
+    /// The user closed the tab or clicked “Disconnect”.
     User,
-    /// Le serveur a fermé la session : `exit`, fin du shell, code de sortie.
+    /// The server closed the session: `exit`, end of the shell, exit code.
     Exit,
-    /// La connexion est tombée sans que personne ne la ferme : réseau coupé, veille, délai dépassé.
+    /// The connection dropped without anyone closing it: network cut, sleep, timed out.
     Lost,
 }
 
@@ -176,7 +176,7 @@ pub struct Defaults {
 
 enum HostVerdict {
     Trusted(String),
-    /// Acceptée pour cette session. `learn_failed` : elle devait être mémorisée, et ne l'a pas été.
+    /// Accepted for this session. `learn_failed`: it was to be remembered, and was not.
     AcceptedOnce { fingerprint: String, learn_failed: Option<String> },
     Unknown { fingerprint: String, algorithm: String },
     Changed { fingerprint: String, line: usize },
@@ -205,8 +205,8 @@ impl client::Handler for ClientHandler {
             Known::Trusted => HostVerdict::Trusted(fingerprint),
             Known::Changed { line } => HostVerdict::Changed { fingerprint, line },
             Known::Unknown if self.accepted.as_deref() == Some(fingerprint.as_str()) => {
-                // L'utilisateur fait confiance à ce serveur : on l'inscrit dans known_hosts,
-                // comme le fait OpenSSH. Si l'écriture échoue, la confiance vaut pour la session.
+                // The user trusts this server: it is added to known_hosts, as OpenSSH does. If the
+                // write fails, the trust is good for the session.
                 match self.remember.then(|| known_hosts::learn(&self.host, self.port, &key)) {
                     Some(Ok(())) => HostVerdict::Trusted(fingerprint),
                     Some(Err(reason)) => HostVerdict::AcceptedOnce { fingerprint, learn_failed: Some(reason) },
@@ -223,12 +223,12 @@ impl client::Handler for ClientHandler {
     }
 }
 
-/// Ce qu'a donné une clé : si le serveur l'a acceptée, et d'où venait sa phrase secrète.
+/// What a key gave: whether the server accepted it, and where its passphrase came from.
 struct KeyTried {
     accepted: bool,
-    /// La phrase secrète venait du trousseau.
+    /// The passphrase came from the keyring.
     retained: bool,
-    /// La phrase secrète tapée qui a déverrouillé la clé : à retenir si on le demande.
+    /// The typed passphrase that unlocked the key: to keep if asked.
     typed: Option<String>,
 }
 
@@ -245,7 +245,7 @@ async fn auth_key_file(
         Ok(key) => key,
         Err(keys::Error::KeyIsEncrypted) => {
             let account = secrets::passphrase_account(path);
-            // La phrase tapée d'abord ; sinon celle que le trousseau retient pour cette clé.
+            // The typed passphrase first; otherwise the one the keyring keeps for this key.
             let (candidate, from_keyring) = match passphrase {
                 Some(given) => (given.to_string(), false),
                 None => match secrets::held(account.clone()).await {
@@ -263,14 +263,14 @@ async fn auth_key_file(
                     key
                 }
                 Err(_) if from_keyring => {
-                    // La phrase retenue ne déverrouille plus la clé : elle est oubliée, et redemandée.
+                    // The kept passphrase no longer unlocks the key: it is forgotten, and asked for again.
                     let _ = secrets::forget(account).await;
                     return Err(SshError::NeedPassphrase { path: shown, refused: Some(Refused::Retained) });
                 }
                 Err(_) => return Err(SshError::NeedPassphrase { path: shown, refused: Some(Refused::Typed) }),
             }
         }
-        Err(e) => return Err(other(format!("{shown} : {e}"))),
+        Err(e) => return Err(other(format!("{shown}: {e}"))),
     };
     let hash = handle.best_supported_rsa_hash().await.map_err(other)?.flatten();
     let result = handle
@@ -280,7 +280,7 @@ async fn auth_key_file(
     Ok(KeyTried { accepted: result.success(), retained, typed })
 }
 
-/// Essaie chaque identité de l'agent SSH. Renvoie le commentaire de la clé acceptée.
+/// Tries each identity of the SSH agent. Returns the comment of the accepted key.
 async fn auth_agent(handle: &mut Handle<ClientHandler>, user: &str) -> Option<String> {
     use russh::keys::agent::client::AgentClient;
 
@@ -305,23 +305,23 @@ async fn auth_agent(handle: &mut Handle<ClientHandler>, user: &str) -> Option<St
     None
 }
 
-/// Un mot de passe prêt à servir : tapé à l'instant, ou retenu dans le trousseau.
+/// A password ready to use: typed just now, or kept in the keyring.
 struct Password {
     value: String,
     retained: bool,
 }
 
-/// Une authentification réussie.
+/// An authentication that succeeded.
 struct Authenticated {
-    /// Comment : « mot de passe », « clé id_ed25519 », « agent SSH »…
+    /// How: “password”, “key id_ed25519”, “SSH agent”…
     method: String,
-    /// Le secret tapé qui a servi, et le nom sous lequel le retenir si on le demande.
+    /// The typed secret that worked, and the name to keep it under if asked.
     typed: Option<(String, String)>,
 }
 
-/// Le nom d'une clé tel qu'on le montre, suivi de ce qui l'a déverrouillée si c'est le trousseau.
+/// The name of a key as it is shown, followed by what unlocked it if that was the keyring.
 fn key_method(name: &str, retained: bool) -> String {
-    if retained { format!("clé {name}, phrase secrète du trousseau") } else { format!("clé {name}") }
+    if retained { format!("key {name}, passphrase from the keyring") } else { format!("key {name}") }
 }
 
 async fn authenticate(
@@ -342,16 +342,16 @@ async fn authenticate(
                 .map_err(other)?;
             if result.success() {
                 Ok(if password.retained {
-                    Authenticated { method: "mot de passe du trousseau".into(), typed: None }
+                    Authenticated { method: "password from the keyring".into(), typed: None }
                 } else {
-                    Authenticated { method: "mot de passe".into(), typed: Some((password_account, password.value)) }
+                    Authenticated { method: "password".into(), typed: Some((password_account, password.value)) }
                 })
             } else if password.retained {
-                // Le mot de passe retenu n'est plus le bon : il est oublié, et redemandé.
+                // The kept password is no longer the right one: it is forgotten, and asked for again.
                 let _ = secrets::forget(password_account).await;
                 Err(SshError::NeedPassword { refused: true })
             } else {
-                Err(SshError::Auth { message: "Le serveur a refusé ce mot de passe.".into() })
+                Err(SshError::Auth { message: "The server refused this password.".into() })
             }
         }
         Auth::KeyFile { path, passphrase } => {
@@ -366,16 +366,16 @@ async fn authenticate(
                 })
             } else {
                 Err(SshError::Auth {
-                    message: format!("Le serveur a refusé la clé {}.", path.display()),
+                    message: format!("The server refused the key {}.", path.display()),
                 })
             }
         }
         Auth::Auto => {
             if let Some(comment) = auth_agent(handle, user).await {
-                let method = if comment.is_empty() { "agent SSH".into() } else { format!("agent SSH ({comment})") };
+                let method = if comment.is_empty() { "SSH agent".into() } else { format!("SSH agent ({comment})") };
                 return Ok(Authenticated { method, typed: None });
             }
-            // Première clé chiffrée rencontrée : on demandera sa passphrase si rien d'autre ne passe.
+            // First encrypted key met: its passphrase is asked for if nothing else gets through.
             let mut encrypted = None;
             if let Some(dir) = config::home().map(|home| home.join(".ssh")) {
                 for name in DEFAULT_KEYS {
@@ -397,7 +397,7 @@ async fn authenticate(
             match encrypted {
                 Some((path, refused)) => Err(SshError::NeedPassphrase { path, refused }),
                 None => Err(SshError::Auth {
-                    message: "Aucune clé acceptée : ni celles de l'agent SSH, ni les clés par défaut de ~/.ssh."
+                    message: "No key was accepted: neither those of the SSH agent nor the default keys of ~/.ssh."
                         .into(),
                 }),
             }
@@ -405,7 +405,7 @@ async fn authenticate(
     }
 }
 
-/// Boucle d'une session : relaie la frappe vers le serveur et la sortie vers l'interface.
+/// Loop of a session: relays the keystrokes to the server and the output to the interface.
 async fn pump(
     mut channel: russh::Channel<client::Msg>,
     mut rx: mpsc::UnboundedReceiver<Cmd>,
@@ -414,9 +414,9 @@ async fn pump(
     key: &str,
 ) -> (Option<u32>, Option<String>, Ending) {
     let mut exit_status = None;
-    // Le serveur a dit que la session finissait (code de sortie, fin de flux) : elle n'est pas perdue.
+    // The server said the session was ending (exit code, end of stream): it is not lost.
     let mut ended_by_server = false;
-    // La commande de démarrage part quand le shell s'est tu 250 ms, et au plus tard après 3 s.
+    // The startup command is sent once the shell has been quiet for 250 ms, and after 3 s at the latest.
     let quiet = tokio::time::sleep(Duration::from_secs(3));
     tokio::pin!(quiet);
 
@@ -471,18 +471,18 @@ async fn pump(
     (exit_status, reason, ending)
 }
 
-/// Le canal s'est tu sans message de fermeture : la session finissait si le serveur l'avait
-/// annoncé, sinon la connexion est perdue.
+/// The channel fell silent without a close message: the session was ending if the server had said
+/// so, otherwise the connection is lost.
 fn ending_without_close(ended_by_server: bool) -> Ending {
     if ended_by_server { Ending::Exit } else { Ending::Lost }
 }
 
-/// L'utilisateur de cette machine : celui d'un hôte qui n'en précise pas.
+/// The user of this machine: the user of a host that names none.
 pub fn current_user() -> String {
     std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default()
 }
 
-/// Valeurs proposées par le formulaire : utilisateur courant, hôtes de `~/.ssh/config`, clés présentes.
+/// Values the form offers: the current user, the hosts of `~/.ssh/config`, the keys present.
 #[tauri::command]
 pub fn ssh_defaults() -> Defaults {
     let user = current_user();
@@ -503,19 +503,19 @@ pub fn ssh_defaults() -> Defaults {
     Defaults { user, hosts, key_files }
 }
 
-/// Une connexion ouverte et authentifiée, prête à recevoir un canal.
+/// A connection open and authenticated, ready to receive a channel.
 struct Opened {
     handle: Handle<ClientHandler>,
     fingerprint: String,
     known_host: bool,
     learn_failed: Option<String>,
     auth_method: String,
-    /// Le secret tapé qui a servi, et le nom sous lequel le retenir si on le demande.
+    /// The typed secret that worked, and the name to keep it under if asked.
     typed: Option<(String, String)>,
 }
 
-/// Se connecte à `host:port`, vérifie l'empreinte du serveur et authentifie `user`. Commun à une
-/// session et au test d'un hôte.
+/// Connects to `host:port`, checks the fingerprint of the server and authenticates `user`. Shared
+/// by a session and the test of a host.
 async fn open_authenticated(
     host: &str,
     port: u16,
@@ -525,7 +525,7 @@ async fn open_authenticated(
     remember_host: bool,
 ) -> Result<Opened, SshError> {
     let host = host.trim();
-    // Le mot de passe est trouvé avant de se connecter : sans lui, inutile de déranger le serveur.
+    // The password is found before connecting: without it, there is no point bothering the server.
     let password_account = secrets::password_account(user, host, port);
     let password = match auth {
         Auth::Password { password } => match password.as_deref().filter(|p| !p.is_empty()) {
@@ -558,7 +558,7 @@ async fn open_authenticated(
     let seen = verdict.lock().ok().and_then(|mut slot| slot.take());
 
     let mut handle = match connection {
-        Err(_) => return Err(other(format!("{host}:{port} ne répond pas (délai de 15 s dépassé)."))),
+        Err(_) => return Err(other(format!("{host}:{port} is not responding (timed out after 15 s)."))),
         Ok(Err(e)) => {
             return Err(match seen {
                 Some(HostVerdict::Unknown { fingerprint, algorithm }) => {
@@ -583,15 +583,14 @@ async fn open_authenticated(
             Ok(Opened { handle, fingerprint, known_host, learn_failed, auth_method: method, typed })
         }
         Err(e) => {
-            let _ = handle.disconnect(Disconnect::ByApplication, "", "fr").await;
+            let _ = handle.disconnect(Disconnect::ByApplication, "", "en").await;
             Err(e)
         }
     }
 }
 
-/// Teste un hôte : connexion, empreinte et authentification, puis déconnexion aussitôt.
-/// Aucun terminal n'est ouvert, rien n'est enregistré, sauf l'empreinte que l'utilisateur
-/// demande de mémoriser.
+/// Tests a host: connection, fingerprint and authentication, then disconnects at once.
+/// No terminal is opened, nothing is saved, except the fingerprint the user asks to remember.
 #[tauri::command]
 pub async fn ssh_test(params: TestParams) -> Result<Tested, SshError> {
     let started = Instant::now();
@@ -604,7 +603,7 @@ pub async fn ssh_test(params: TestParams) -> Result<Tested, SshError> {
         params.remember_host,
     )
     .await?;
-    let _ = opened.handle.disconnect(Disconnect::ByApplication, "", "fr").await;
+    let _ = opened.handle.disconnect(Disconnect::ByApplication, "", "en").await;
     Ok(Tested {
         known_host: opened.known_host,
         learn_failed: opened.learn_failed,
@@ -631,8 +630,8 @@ pub async fn ssh_connect(
     )
     .await?;
 
-    // Le secret a servi : c'est maintenant qu'il est retenu, si on l'a demandé. Un trousseau qui
-    // refuse n'empêche pas la session : l'interface le dira.
+    // The secret has worked: now is when it is kept, if that was asked. A keyring that refuses does
+    // not stop the session: the interface will say so.
     let mut keep_failed = None;
     if params.remember_secret {
         if let Some((account, secret)) = typed {
@@ -652,10 +651,10 @@ pub async fn ssh_connect(
     state
         .sessions
         .lock()
-        .map_err(|_| other("état des sessions indisponible"))?
+        .map_err(|_| other("The session state is unavailable. Restart Ramure."))?
         .insert(id, tx);
 
-    // Le journal s'ouvre avant que la sortie ne soit lue : rien ne lui échappe.
+    // The log opens before the output is read: nothing escapes it.
     let key = format!("ssh:{id}");
     let journal_failed = params.journal.as_ref().and_then(|open| crate::journal::start(&key, open).err());
 
@@ -663,7 +662,7 @@ pub async fn ssh_connect(
     tauri::async_runtime::spawn(async move {
         let (exit_status, reason, ending) = pump(channel, rx, on_data, startup, &key).await;
         crate::journal::stop(&key);
-        let _ = handle.disconnect(Disconnect::ByApplication, "", "fr").await;
+        let _ = handle.disconnect(Disconnect::ByApplication, "", "en").await;
         if let Ok(mut sessions) = app.state::<SshState>().sessions.lock() {
             sessions.remove(&id);
         }
@@ -683,9 +682,9 @@ pub async fn ssh_connect(
 }
 
 fn send(state: &SshState, id: u32, cmd: Cmd) -> Result<(), String> {
-    let sessions = state.sessions.lock().map_err(|_| "état des sessions indisponible".to_string())?;
-    let tx = sessions.get(&id).ok_or_else(|| "cette session est fermée".to_string())?;
-    tx.send(cmd).map_err(|_| "cette session est fermée".to_string())
+    let sessions = state.sessions.lock().map_err(|_| "The session state is unavailable. Restart Ramure.".to_string())?;
+    let tx = sessions.get(&id).ok_or_else(|| "This session is closed.".to_string())?;
+    tx.send(cmd).map_err(|_| "This session is closed.".to_string())
 }
 
 #[tauri::command]

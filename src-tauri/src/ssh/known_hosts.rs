@@ -1,12 +1,12 @@
-//! Le fichier `known_hosts` d'OpenSSH : reconnaître un serveur, et l'y inscrire.
+//! The `known_hosts` file of OpenSSH: recognizing a server, and adding it there.
 //!
-//! russh sait le lire, mais il abandonne tout le fichier à la première ligne qu'il ne comprend
-//! pas : un octet qui n'est pas de l'UTF-8, deux espaces de suite, une clé `ssh-dss`. Le serveur
-//! passait alors pour inconnu, et chaque connexion l'inscrivait une fois de plus. Ici, comme dans
-//! OpenSSH, une ligne illisible est ignorée, et seulement elle.
+//! russh can read it, but it gives up the whole file at the first line it does not understand: a
+//! byte that is not UTF-8, two spaces in a row, an `ssh-dss` key. The server then passed for
+//! unknown, and every connection added it once more. Here, as in OpenSSH, an unreadable line is
+//! skipped, and only that line.
 //!
-//! Les lignes à marqueur (`@cert-authority`, `@revoked`) sont ignorées, comme russh le faisait :
-//! Ramure ne vérifie pas les certificats d'hôte.
+//! Lines with a marker (`@cert-authority`, `@revoked`) are skipped, as russh did: Ramure does not
+//! check host certificates.
 
 use std::fs::{self, OpenOptions};
 use std::io::{ErrorKind, Write};
@@ -19,18 +19,18 @@ use sha1::Sha1;
 
 use super::config;
 
-/// Ce que `known_hosts` dit d'un serveur et de sa clé.
+/// What `known_hosts` says of a server and its key.
 #[derive(Debug, PartialEq)]
 pub enum Known {
-    /// Une ligne pour ce serveur porte cette clé.
+    /// A line for this server holds this key.
     Trusted,
-    /// Aucune ligne ne porte cette clé, mais la ligne `line` en donne une autre du même type.
+    /// No line holds this key, but line `line` gives another one of the same type.
     Changed { line: usize },
-    /// Rien sur ce serveur pour ce type de clé, ou pas de fichier.
+    /// Nothing on this server for this type of key, or no file.
     Unknown,
 }
 
-/// `~/.ssh/known_hosts`, là où OpenSSH le cherche, sous Windows comme sous Linux.
+/// `~/.ssh/known_hosts`, where OpenSSH looks for it, on Windows as on Linux.
 fn path() -> Option<PathBuf> {
     config::home().map(|home| home.join(".ssh").join("known_hosts"))
 }
@@ -42,16 +42,16 @@ pub fn check(host: &str, port: u16, key: &PublicKey) -> Known {
     }
 }
 
-/// Inscrit la clé du serveur dans `known_hosts`. En cas d'échec, dit pourquoi.
+/// Adds the key of the server to `known_hosts`. On failure, says why.
 pub fn learn(host: &str, port: u16, key: &PublicKey) -> Result<(), String> {
     let path = path().ok_or(
-        "Dossier personnel introuvable\u{a0}: ni USERPROFILE (Windows) ni HOME (Linux) n’est défini. \
-         Définis-en un, puis relance Ramure.",
+        "Home folder not found: neither USERPROFILE (Windows) nor HOME (Linux) is set. \
+         Set one, then restart Ramure.",
     )?;
     learn_path(&path, host, port, key)
 }
 
-/// Un fichier absent, ou qu'on ne peut pas ouvrir, ne connaît aucun serveur.
+/// A file that is missing, or that cannot be opened, knows no server.
 pub fn check_path(path: &Path, host: &str, port: u16, key: &PublicKey) -> Known {
     match fs::read(path) {
         Ok(bytes) => check_text(&decode(&bytes).0, host, port, key),
@@ -80,17 +80,17 @@ pub fn check_text(text: &str, host: &str, port: u16, key: &PublicKey) -> Known {
     }
 }
 
-/// Ajoute la ligne du serveur à la fin du fichier, dans son encodage, puis relit le fichier pour
-/// s'assurer qu'elle y est. Une clé déjà connue n'est pas inscrite une seconde fois.
+/// Appends the line of the server at the end of the file, in its encoding, then reads the file
+/// again to make sure the line is there. A key already known is not added a second time.
 pub fn learn_path(path: &Path, host: &str, port: u16, key: &PublicKey) -> Result<(), String> {
     if check_path(path, host, port, key) == Known::Trusted {
         return Ok(());
     }
-    let failed = |e: std::io::Error| format!("{}\u{a0}: {}", path.display(), explain(&e));
+    let failed = |e: std::io::Error| format!("{}: {}", path.display(), explain(&e));
     if let Some(dir) = path.parent() {
-        fs::create_dir_all(dir).map_err(|e| format!("{}\u{a0}: {}", dir.display(), explain_dir(&e)))?;
+        fs::create_dir_all(dir).map_err(|e| format!("{}: {}", dir.display(), explain_dir(&e)))?;
     }
-    // Sous Windows, ouvrir un dossier répond « accès refusé » : le cas est reconnu avant.
+    // On Windows, opening a folder answers “access denied”: the case is recognized first.
     if path.is_dir() {
         return Err(failed(ErrorKind::IsADirectory.into()));
     }
@@ -115,38 +115,38 @@ pub fn learn_path(path: &Path, host: &str, port: u16, key: &PublicKey) -> Result
     drop(file);
 
     if check_path(path, host, port, key) != Known::Trusted {
-        let advice = "Ouvre le fichier pour vérifier sa dernière ligne.";
-        return Err(format!("{}\u{a0}: la ligne écrite n’a pas été retrouvée à la relecture. {advice}", path.display()));
+        let advice = "Open the file to check its last line.";
+        return Err(format!("{}: The new line was not found when the file was read back. {advice}", path.display()));
     }
     Ok(())
 }
 
-/// Une erreur du système, en français et avec ce qu'il faut faire, quand la cause est connue ;
-/// sinon le texte du système, tel quel (en anglais sous Linux, dans la langue de Windows sinon).
+/// An error of the system, in plain words and with what to do, when the cause is known; otherwise
+/// the text of the system, as it is (in English on Linux, in the language of Windows otherwise).
 fn explain(e: &std::io::Error) -> String {
     match e.kind() {
         ErrorKind::PermissionDenied => {
-            "accès refusé. Vérifie que le fichier n’est pas en lecture seule et qu’il appartient à ton compte.".into()
+            "Access denied. Check that the file is not read-only and that it belongs to your account.".into()
         }
-        ErrorKind::ReadOnlyFilesystem => "le disque est en lecture seule. Rends-le inscriptible, puis reconnecte-toi.".into(),
+        ErrorKind::ReadOnlyFilesystem => "The disk is read-only. Make it writable, then reconnect.".into(),
         ErrorKind::StorageFull | ErrorKind::QuotaExceeded => {
-            "le disque est plein. Libère de la place, puis reconnecte-toi.".into()
+            "The disk is full. Free up some space, then reconnect.".into()
         }
         ErrorKind::IsADirectory => {
-            "c’est un dossier, pas un fichier. Renomme-le, puis reconnecte-toi\u{a0}: le fichier sera créé.".into()
+            "This is a folder, not a file. Rename it, then reconnect: the file will be created.".into()
         }
         _ => e.to_string(),
     }
 }
 
-/// Le dossier `.ssh` n'a pas pu être créé : un fichier porte souvent ce nom.
+/// The `.ssh` folder could not be created: a file often has that name.
 fn explain_dir(e: &std::io::Error) -> String {
     match e.kind() {
         ErrorKind::AlreadyExists | ErrorKind::NotADirectory => {
-            "un fichier porte ce nom, à la place du dossier. Renomme-le, puis reconnecte-toi.".into()
+            "There is a file where the folder should be. Rename it, then reconnect.".into()
         }
         ErrorKind::PermissionDenied => {
-            "accès refusé. Vérifie que le dossier n’est pas en lecture seule et qu’il appartient à ton compte.".into()
+            "Access denied. Check that the folder is not read-only and that it belongs to your account.".into()
         }
         _ => explain(e),
     }
@@ -169,9 +169,9 @@ impl Encoding {
     }
 }
 
-/// Le texte du fichier. Sous Windows, PowerShell 5 écrit en UTF-16, et le Bloc-notes a pu
-/// l'enregistrer en ANSI : un octet invalide devient un caractère de remplacement, sans
-/// empêcher de lire les autres lignes.
+/// The text of the file. On Windows, PowerShell 5 writes UTF-16, and Notepad may have saved it in
+/// ANSI: an invalid byte becomes a replacement character, without preventing the other lines from
+/// being read.
 fn decode(bytes: &[u8]) -> (String, Encoding) {
     let utf16 = |rest: &[u8], le: bool| {
         let units: Vec<u16> = rest
@@ -189,12 +189,12 @@ fn decode(bytes: &[u8]) -> (String, Encoding) {
         let rest = bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(bytes);
         (String::from_utf8_lossy(rest).into_owned(), Encoding::Utf8)
     };
-    // Des lignes UTF-16 ajoutées à un fichier UTF-8 se lisent une fois leurs octets nuls retirés.
+    // UTF-16 lines appended to a UTF-8 file can be read once their null bytes are removed.
     (text.replace('\0', ""), encoding)
 }
 
-/// La clé d'une ligne, et ses noms d'hôtes. `None` pour un commentaire, une ligne vide, une ligne
-/// à marqueur ou une ligne illisible.
+/// The key of a line, and its host names. `None` for a comment, an empty line, a line with a marker
+/// or an unreadable line.
 fn parse_line(line: &str) -> Option<(PublicKey, &str)> {
     let line = line.trim();
     if line.is_empty() || line.starts_with('#') || line.starts_with('@') {
@@ -207,8 +207,8 @@ fn parse_line(line: &str) -> Option<(PublicKey, &str)> {
     Some((key, patterns))
 }
 
-/// Les noms sous lesquels OpenSSH inscrit ce serveur : `hôte` sur le port 22, `[hôte]:port`
-/// ailleurs. Sur le port 22, `[hôte]:22` vaut aussi.
+/// The names under which OpenSSH records this server: `host` on port 22, `[host]:port` elsewhere.
+/// On port 22, `[host]:22` is good too.
 fn names(host: &str, port: u16) -> Vec<String> {
     let host = host.trim().to_lowercase();
     let bracketed = format!("[{host}]:{port}");
@@ -219,8 +219,8 @@ fn written_name(host: &str, port: u16) -> String {
     names(host, port).swap_remove(0)
 }
 
-/// Une liste de motifs séparés par des virgules : un nom, un nom haché `|1|sel|hachage`, un motif
-/// avec `*` et `?`, ou une exclusion `!motif`, qui l'emporte sur tout le reste de la ligne.
+/// A list of patterns separated by commas: a name, a hashed name `|1|salt|hash`, a pattern with `*`
+/// and `?`, or an exclusion `!pattern`, which wins over all the rest of the line.
 fn matches(patterns: &str, names: &[String]) -> bool {
     let mut found = false;
     for pattern in patterns.split(',').filter(|pattern| !pattern.is_empty()) {
@@ -252,7 +252,7 @@ fn hash_matches(hashed: &str, name: &str) -> bool {
     mac.chain_update(name.as_bytes()).verify_slice(&hash).is_ok()
 }
 
-/// `*` : n'importe quelle suite de caractères ; `?` : un caractère.
+/// `*`: any run of characters; `?`: one character.
 fn wildcard(pattern: &[u8], name: &[u8]) -> bool {
     match pattern.split_first() {
         None => name.is_empty(),
@@ -271,9 +271,9 @@ mod tests {
     const ED25519: &str = "AAAAC3NzaC1lZDI1NTE5AAAAIF4pvy9vQCDx1D/pPpnEE+xHMBN66+9lmfhnl+Tz+n2A";
     const OTHER: &str = "AAAAC3NzaC1lZDI1NTE5AAAAILhE/8jpGXy6yuxZSpVmBc3C7a6proh0a85HJPbiMoyi";
     const ECDSA: &str = "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC9qkQgTXQMOjTirxHiCezHGNghDsQNX+m7wZzHfp94VOlFWr1q37sB981Y0nVuMEDc2qNceXnOrwtampPjsImM=";
-    /// `serveur.exemple`, puis `[serveur.exemple]:2222`, hachés par `ssh-keygen -H`.
-    const HASHED_22: &str = "|1|XWXzXS0pdVw/54dGPCI2klpW6Eg=|uxAO7Et/xluNqVuSuHCDGPl/Tj8=";
-    const HASHED_2222: &str = "|1|iuHbCiDGZ0XsaYE0QHUI729pZjE=|WJ477LZzkcDO9sBOirjkNQZL1LA=";
+    /// `server.example`, then `[server.example]:2222`, hashed as `ssh-keygen -H` does.
+    const HASHED_22: &str = "|1|XWXzXS0pdVw/54dGPCI2klpW6Eg=|hlf/vf6x80NyIn6OnkdJGthLR6U=";
+    const HASHED_2222: &str = "|1|iuHbCiDGZ0XsaYE0QHUI729pZjE=|oDSPCxDrq542SdBP9Orhj9VG9qw=";
 
     fn key(base64: &str) -> PublicKey {
         keys::parse_public_key_base64(base64).unwrap()
@@ -284,69 +284,69 @@ mod tests {
     }
 
     #[test]
-    fn reconnait_le_nom_et_le_port() {
-        let text = format!("serveur.exemple ssh-ed25519 {ED25519}\n[autre]:2222 ssh-ed25519 {ED25519}\n");
-        assert_eq!(check(&text, "serveur.exemple", 22), Known::Trusted);
-        assert_eq!(check(&text, "autre", 2222), Known::Trusted);
-        assert_eq!(check(&text, "autre", 22), Known::Unknown);
-        assert_eq!(check(&text, "serveur.exemple", 2222), Known::Unknown);
-        assert_eq!(check(&format!("[serveur.exemple]:22 ssh-ed25519 {ED25519}"), "serveur.exemple", 22), Known::Trusted);
+    fn recognizes_the_name_and_the_port() {
+        let text = format!("server.example ssh-ed25519 {ED25519}\n[other]:2222 ssh-ed25519 {ED25519}\n");
+        assert_eq!(check(&text, "server.example", 22), Known::Trusted);
+        assert_eq!(check(&text, "other", 2222), Known::Trusted);
+        assert_eq!(check(&text, "other", 22), Known::Unknown);
+        assert_eq!(check(&text, "server.example", 2222), Known::Unknown);
+        assert_eq!(check(&format!("[server.example]:22 ssh-ed25519 {ED25519}"), "server.example", 22), Known::Trusted);
     }
 
     #[test]
-    fn ignore_les_majuscules_et_les_espaces_autour_du_nom() {
-        let text = format!("Serveur.Exemple ssh-ed25519 {ED25519}\n");
-        assert_eq!(check(&text, "serveur.exemple", 22), Known::Trusted);
-        assert_eq!(check(&text, " SERVEUR.exemple ", 22), Known::Trusted);
+    fn ignores_case_and_spaces_around_the_name() {
+        let text = format!("Server.Example ssh-ed25519 {ED25519}\n");
+        assert_eq!(check(&text, "server.example", 22), Known::Trusted);
+        assert_eq!(check(&text, " SERVER.example ", 22), Known::Trusted);
     }
 
     #[test]
-    fn une_ligne_illisible_n_empeche_pas_de_lire_les_autres() {
+    fn an_unreadable_line_does_not_stop_reading_the_others() {
         let text = format!(
-            "# commentaire\r\n\
-             serveur.exemple ssh-dss AAAAB3NzaC1kc3MAAACBAP\r\n\
-             serveur.exemple  ssh-ed25519\t{ED25519}  commentaire\r\n\
-             ligne-tronquee\r\n\
-             @cert-authority *.exemple ssh-ed25519 {OTHER}\r\n"
+            "# comment\r\n\
+             server.example ssh-dss AAAAB3NzaC1kc3MAAACBAP\r\n\
+             server.example  ssh-ed25519\t{ED25519}  comment\r\n\
+             truncated-line\r\n\
+             @cert-authority *.example ssh-ed25519 {OTHER}\r\n"
         );
-        assert_eq!(check(&text, "serveur.exemple", 22), Known::Trusted);
+        assert_eq!(check(&text, "server.example", 22), Known::Trusted);
     }
 
     #[test]
-    fn lit_les_listes_les_motifs_et_les_exclusions() {
-        let list = format!("alpha,serveur.exemple,10.0.0.5 ssh-ed25519 {ED25519}");
+    fn reads_lists_patterns_and_exclusions() {
+        let list = format!("alpha,server.example,10.0.0.5 ssh-ed25519 {ED25519}");
         assert_eq!(check(&list, "10.0.0.5", 22), Known::Trusted);
-        let pattern = format!("*.exemple,!secret.exemple ssh-ed25519 {ED25519}");
-        assert_eq!(check(&pattern, "serveur.exemple", 22), Known::Trusted);
-        assert_eq!(check(&pattern, "secret.exemple", 22), Known::Unknown);
-        let single = format!("serveur-? ssh-ed25519 {ED25519}");
-        assert_eq!(check(&single, "serveur-1", 22), Known::Trusted);
-        assert_eq!(check(&single, "serveur-12", 22), Known::Unknown);
+        let pattern = format!("*.example,!secret.example ssh-ed25519 {ED25519}");
+        assert_eq!(check(&pattern, "server.example", 22), Known::Trusted);
+        assert_eq!(check(&pattern, "secret.example", 22), Known::Unknown);
+        let single = format!("server-? ssh-ed25519 {ED25519}");
+        assert_eq!(check(&single, "server-1", 22), Known::Trusted);
+        assert_eq!(check(&single, "server-12", 22), Known::Unknown);
     }
 
     #[test]
-    fn lit_les_noms_haches() {
+    fn reads_hashed_names() {
         let text = format!("{HASHED_22} ssh-ed25519 {ED25519}\n{HASHED_2222} ssh-ed25519 {ED25519}\n");
-        assert_eq!(check(&text, "serveur.exemple", 22), Known::Trusted);
-        assert_eq!(check(&text, "serveur.exemple", 2222), Known::Trusted);
-        assert_eq!(check(&text, "autre.exemple", 22), Known::Unknown);
+        assert_eq!(check(&text, "server.example", 22), Known::Trusted);
+        assert_eq!(check(&text, "server.example", 2222), Known::Trusted);
+        assert_eq!(check(&text, "other.example", 22), Known::Unknown);
     }
 
     #[test]
-    fn une_autre_cle_du_meme_type_est_un_changement() {
-        let text = format!("# une\n\nserveur.exemple ssh-ed25519 {OTHER}\n");
-        assert_eq!(check(&text, "serveur.exemple", 22), Known::Changed { line: 3 });
-        // Une clé d'un autre type ne dit rien de celle-ci.
-        let other_type = format!("serveur.exemple ecdsa-sha2-nistp256 {ECDSA}\n");
-        assert_eq!(check(&other_type, "serveur.exemple", 22), Known::Unknown);
-        // La bonne clé, plus loin, l'emporte sur une ancienne.
-        let both = format!("serveur.exemple ssh-ed25519 {OTHER}\nserveur.exemple ssh-ed25519 {ED25519}\n");
-        assert_eq!(check(&both, "serveur.exemple", 22), Known::Trusted);
+    fn another_key_of_the_same_type_is_a_change() {
+        let text = format!("# one\n\nserver.example ssh-ed25519 {OTHER}\n");
+        assert_eq!(check(&text, "server.example", 22), Known::Changed { line: 3 });
+        // A key of another type says nothing of this one.
+        let other_type = format!("server.example ecdsa-sha2-nistp256 {ECDSA}\n");
+        assert_eq!(check(&other_type, "server.example", 22), Known::Unknown);
+        // The right key, further down, wins over an old one.
+        let both = format!("server.example ssh-ed25519 {OTHER}\nserver.example ssh-ed25519 {ED25519}\n");
+        assert_eq!(check(&both, "server.example", 22), Known::Trusted);
     }
 
     #[test]
-    fn decode_les_encodages_de_windows() {
-        let line = format!("serveur.exemple ssh-ed25519 {ED25519}\r\n");
+    fn decodes_the_encodings_of_windows() {
+        let line = format!("server.example ssh-ed25519 {ED25519}\r\n");
         let mut latin1 = b"# caf\xe9\r\n".to_vec();
         latin1.extend_from_slice(line.as_bytes());
         let mut bom = vec![0xEF, 0xBB, 0xBF];
@@ -355,10 +355,10 @@ mod tests {
         utf16.extend(Encoding::Utf16Le.encode(&line));
         let mut utf16_be = vec![0xFE, 0xFF];
         utf16_be.extend(Encoding::Utf16Be.encode(&line));
-        let mut appended = b"# debut en UTF-8\n".to_vec();
+        let mut appended = b"# starts in UTF-8\n".to_vec();
         appended.extend(Encoding::Utf16Le.encode(&line));
         for bytes in [latin1, bom, utf16, utf16_be, appended] {
-            assert_eq!(check(&decode(&bytes).0, "serveur.exemple", 22), Known::Trusted);
+            assert_eq!(check(&decode(&bytes).0, "server.example", 22), Known::Trusted);
         }
     }
 
@@ -369,75 +369,75 @@ mod tests {
     }
 
     #[test]
-    fn inscrit_une_seule_fois_et_cree_le_dossier() {
-        let path = scratch("une-fois");
+    fn adds_once_and_creates_the_folder() {
+        let path = scratch("once");
         let key = key(ED25519);
-        learn_path(&path, "Serveur.Exemple", 2222, &key).unwrap();
-        learn_path(&path, "serveur.exemple", 2222, &key).unwrap();
-        assert_eq!(fs::read_to_string(&path).unwrap(), format!("[serveur.exemple]:2222 ssh-ed25519 {ED25519}\n"));
-        assert_eq!(check_path(&path, "serveur.exemple", 2222, &key), Known::Trusted);
+        learn_path(&path, "Server.Example", 2222, &key).unwrap();
+        learn_path(&path, "server.example", 2222, &key).unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), format!("[server.example]:2222 ssh-ed25519 {ED25519}\n"));
+        assert_eq!(check_path(&path, "server.example", 2222, &key), Known::Trusted);
         let _ = fs::remove_dir_all(path.parent().unwrap().parent().unwrap());
     }
 
     #[test]
-    fn complete_un_fichier_sans_le_reecrire() {
+    fn appends_to_a_file_without_rewriting_it() {
         let path = scratch("complete");
         fs::create_dir_all(path.parent().unwrap()).unwrap();
-        // Sans fin de ligne, avec un octet ANSI : la ligne ajoutée commence sur une ligne neuve.
-        fs::write(&path, b"# caf\xe9\nautre ssh-ed25519 AAAA").unwrap();
-        learn_path(&path, "serveur.exemple", 22, &key(ED25519)).unwrap();
-        let mut expected = b"# caf\xe9\nautre ssh-ed25519 AAAA\n".to_vec();
-        expected.extend_from_slice(format!("serveur.exemple ssh-ed25519 {ED25519}\n").as_bytes());
+        // No line ending, and an ANSI byte: the appended line starts on a new line.
+        fs::write(&path, b"# caf\xe9\nother ssh-ed25519 AAAA").unwrap();
+        learn_path(&path, "server.example", 22, &key(ED25519)).unwrap();
+        let mut expected = b"# caf\xe9\nother ssh-ed25519 AAAA\n".to_vec();
+        expected.extend_from_slice(format!("server.example ssh-ed25519 {ED25519}\n").as_bytes());
         assert_eq!(fs::read(&path).unwrap(), expected);
         let _ = fs::remove_dir_all(path.parent().unwrap().parent().unwrap());
     }
 
     #[test]
-    fn complete_un_fichier_utf16_dans_son_encodage() {
+    fn appends_to_a_utf16_file_in_its_encoding() {
         let path = scratch("utf16");
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         let mut bytes = vec![0xFF, 0xFE];
-        bytes.extend(Encoding::Utf16Le.encode("autre ssh-ed25519 AAAA\r\n"));
+        bytes.extend(Encoding::Utf16Le.encode("other ssh-ed25519 AAAA\r\n"));
         fs::write(&path, &bytes).unwrap();
-        learn_path(&path, "serveur.exemple", 22, &key(ED25519)).unwrap();
+        learn_path(&path, "server.example", 22, &key(ED25519)).unwrap();
         let (text, encoding) = decode(&fs::read(&path).unwrap());
         assert_eq!(encoding, Encoding::Utf16Le);
-        assert_eq!(text, format!("autre ssh-ed25519 AAAA\r\nserveur.exemple ssh-ed25519 {ED25519}\n"));
+        assert_eq!(text, format!("other ssh-ed25519 AAAA\r\nserver.example ssh-ed25519 {ED25519}\n"));
         let _ = fs::remove_dir_all(path.parent().unwrap().parent().unwrap());
     }
 
     #[test]
-    fn dit_pourquoi_l_inscription_echoue() {
-        let path = scratch("echec");
-        // Un dossier à la place du fichier : impossible d'y écrire, même en administrateur.
+    fn says_why_adding_the_server_fails() {
+        let path = scratch("failure");
+        // A folder in place of the file: it cannot be written, even as an administrator.
         fs::create_dir_all(&path).unwrap();
-        let error = learn_path(&path, "serveur.exemple", 22, &key(ED25519)).unwrap_err();
+        let error = learn_path(&path, "server.example", 22, &key(ED25519)).unwrap_err();
         assert!(error.starts_with(&path.display().to_string()), "{error}");
-        assert!(error.contains("c’est un dossier, pas un fichier"), "{error}");
+        assert!(error.contains("This is a folder, not a file"), "{error}");
         let _ = fs::remove_dir_all(path.parent().unwrap().parent().unwrap());
     }
 
     #[test]
-    fn dit_quand_un_fichier_prend_la_place_du_dossier() {
-        let path = scratch("fichier-ssh");
+    fn says_when_a_file_stands_where_the_folder_should_be() {
+        let path = scratch("ssh-file");
         let dir = path.parent().unwrap();
         fs::create_dir_all(dir.parent().unwrap()).unwrap();
         fs::write(dir, b"").unwrap();
-        let error = learn_path(&path, "serveur.exemple", 22, &key(ED25519)).unwrap_err();
+        let error = learn_path(&path, "server.example", 22, &key(ED25519)).unwrap_err();
         assert!(error.starts_with(&dir.display().to_string()), "{error}");
-        assert!(error.contains("un fichier porte ce nom"), "{error}");
+        assert!(error.contains("There is a file where the folder should be"), "{error}");
         let _ = fs::remove_dir_all(dir.parent().unwrap());
     }
 
     #[test]
-    fn traduit_les_erreurs_courantes() {
+    fn explains_the_common_errors() {
         let said = |kind: ErrorKind| explain(&kind.into());
-        assert!(said(ErrorKind::PermissionDenied).starts_with("accès refusé. Vérifie"));
-        assert!(said(ErrorKind::ReadOnlyFilesystem).starts_with("le disque est en lecture seule. Rends-le"));
-        assert!(explain_dir(&ErrorKind::PermissionDenied.into()).contains("le dossier n’est pas en lecture seule"));
-        assert!(said(ErrorKind::StorageFull).starts_with("le disque est plein"));
-        // Une cause inconnue garde le texte du système.
-        let other = std::io::Error::other("panne inattendue");
-        assert_eq!(explain(&other), "panne inattendue");
+        assert!(said(ErrorKind::PermissionDenied).starts_with("Access denied. Check"));
+        assert!(said(ErrorKind::ReadOnlyFilesystem).starts_with("The disk is read-only. Make it"));
+        assert!(explain_dir(&ErrorKind::PermissionDenied.into()).contains("the folder is not read-only"));
+        assert!(said(ErrorKind::StorageFull).starts_with("The disk is full"));
+        // An unknown cause keeps the text of the system.
+        let other = std::io::Error::other("unexpected failure");
+        assert_eq!(explain(&other), "unexpected failure");
     }
 }
