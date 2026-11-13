@@ -15,11 +15,11 @@
   import { addressOf, emptyHost, type Host } from './types';
   import { motion } from '../ui/motion';
 
-  /** Vrai quand le module SSH est à l'écran. */
+  /** True when the SSH module is on screen. */
   let { active = false }: { active?: boolean } = $props();
 
-  // L'onglet actif reste à l'écran quand les onglets débordent : la barre défile jusqu'à lui,
-  // et la marge de défilement le garde à gauche du « + ».
+  // The active tab stays on screen when the tabs overflow: the bar scrolls to it, and the scroll
+  // padding keeps it to the left of the "+".
   let tabsEl = $state<HTMLElement>();
   $effect(() => {
     void ssh.activeKey;
@@ -36,7 +36,7 @@
         [h.alias, h.hostname, h.user, h.group, ...h.tags].some((text) => text.toLowerCase().includes(needle)),
     ),
   );
-  // Les hôtes arrivent triés par groupe : on les découpe en sections.
+  // The hosts come sorted by group: they are cut into sections.
   const sections = $derived.by(() => {
     const out: { group: string; hosts: Host[] }[] = [];
     for (const host of shown) {
@@ -47,8 +47,9 @@
     return out;
   });
 
-  // Les hôtes dont une session s'ouvre : leur ligne le dit aussitôt, là où l'on vient d'agir
-  // (charte, section 9.15). L'état vient de la session, pas du terminal : il n'attend pas son montage.
+  // The hosts whose session is opening: their row says so at once, where the user has just acted
+  // (guidelines, section 9.15). The state comes from the session, not from the terminal: it does
+  // not wait for the terminal to mount.
   const waiting = $derived(
     new Map(
       ssh.sessions
@@ -60,28 +61,28 @@
   const address = (host: Host) => addressOf(host.user || ssh.defaultUser, host.hostname, host.port);
 
 
-  // « + » des onglets : un terminal local, d'un clic. L'infobulle dit le raccourci.
-  const newLocal = $derived(`Nouveau terminal local${keys.binding('terminal-new') ? ` (${display(keys.binding('terminal-new'))})` : ''}`);
+  // The "+" of the tabs: a local terminal, in one click. The tooltip says the shortcut.
+  const newLocal = $derived(`New local terminal${keys.binding('terminal-new') ? ` (${display(keys.binding('terminal-new'))})` : ''}`);
 
-  /** La croix ou le clic du milieu : si un programme tourne dans un terminal local, on demande d'abord. */
+  /** The cross or the middle click: if a program runs in a local terminal, ask first. */
   async function closeTab(session: Session) {
     if (await mayCloseTerminal(session)) ssh.close(session.key);
   }
 
-  /** Le menu de la ligne : la suppression demandée, puis le focus au filtre du carnet. */
+  /** The menu of the row: the deletion asked for, then the focus to the filter of the book. */
   async function removeHost(host: Host) {
     if (await ssh.removeAsked(host)) await ssh.focusBook();
   }
 
   function hostMenu(event: MouseEvent, host: Host) {
     menu.open(event, [
-      { label: 'Ouvrir un terminal', icon: 'terminal', disabled: host.proxyJump, run: () => ssh.open(host) },
+      { label: 'Open terminal', icon: 'terminal', disabled: host.proxyJump, run: () => ssh.open(host) },
       { separator: true },
-      { label: 'Modifier…', icon: 'pencil', run: () => (ssh.editing = host) },
-      { label: 'Dupliquer…', icon: 'copy', run: () => (ssh.editing = { ...host, id: '', alias: `${host.alias} (copie)` }) },
-      { label: 'Exporter vers ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = host.id) },
+      { label: 'Edit…', icon: 'pencil', run: () => (ssh.editing = host) },
+      { label: 'Duplicate…', icon: 'copy', run: () => (ssh.editing = { ...host, id: '', alias: `${host.alias} (copy)` }) },
+      { label: 'Export to ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = host.id) },
       { separator: true },
-      { label: 'Supprimer…', icon: 'trash', danger: true, run: () => void removeHost(host) },
+      { label: 'Delete…', icon: 'trash', danger: true, run: () => void removeHost(host) },
     ]);
   }
 
@@ -89,14 +90,14 @@
 </script>
 
 <div class="ssh">
-  <aside class="book" aria-label="Carnet d’hôtes">
+  <aside class="book" aria-label="Hosts">
     <header>
-      <span class="label">Hôtes · {ssh.hosts.length}</span>
-      <button class="btn small" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte…</button>
+      <span class="label">Hosts · {ssh.hosts.length}</span>
+      <button class="btn small" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Add host…</button>
     </header>
     <label class="search">
       <Icon name="search" size={14} />
-      <input type="search" placeholder="Filtrer par nom, adresse, groupe, tag" aria-label="Filtrer les hôtes" bind:value={filter} />
+      <input type="search" placeholder="Filter by name, address, group, tag" aria-label="Filter hosts" bind:value={filter} />
     </label>
 
     <div class="scroll">
@@ -109,18 +110,18 @@
               <button
                 class="host"
                 type="button"
-                title="{host.alias} — double-clic pour ouvrir un terminal, clic droit pour les actions"
+                title="{host.alias} — double-click to open a terminal, right-click for actions"
                 ondblclick={() => !host.proxyJump && ssh.open(host)}
                 onkeydown={(e) => {
                   if (e.key === 'Enter' && !host.proxyJump) ssh.open(host);
                 }}
                 oncontextmenu={(e) => hostMenu(e, host)}
               >
-                <!-- La couleur choisie nomme l'hôte ; sans couleur, la place reste vide (charte, 9.21). -->
+                <!-- The chosen color names the host; without a color, the place stays empty (guidelines, 9.21). -->
                 <span class="tint" aria-hidden="true" style:--c={host.color ? `var(--l${host.color})` : 'transparent'}></span>
                 <span class="text">
                   <b>{host.alias}</b>
-                  <!-- Pendant la connexion, l'attente prend la place de l'adresse : la ligne garde sa hauteur. -->
+                  <!-- While it connects, the wait takes the place of the address: the row keeps its height. -->
                   {#if wait}
                     <small class="wait"><span class="spinner" aria-hidden="true"></span><span>{STATUS[wait]}…</span></small>
                   {:else}
@@ -128,15 +129,15 @@
                   {/if}
                   {#if host.tags.length || host.proxyJump}
                     <span class="tags">
-                      {#if host.proxyJump}<span class="chip via" title="Rebond par bastion : pas encore pris en charge">bastion</span>{/if}
+                      {#if host.proxyJump}<span class="chip via" title="Jump through a bastion: not supported yet">bastion</span>{/if}
                       {#each host.tags as tag (tag)}<span class="chip">{tag}</span>{/each}
                     </span>
                   {/if}
                 </span>
               </button>
               <span class="acts">
-                <button type="button" aria-label="Ouvrir un terminal sur {host.alias}" title="Ouvrir un terminal" disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
-                <button type="button" aria-label="Modifier {host.alias}" title="Modifier" onclick={() => (ssh.editing = host)}><Icon name="pencil" size={14} /></button>
+                <button type="button" aria-label="Open terminal on {host.alias}" title="Open terminal" disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
+                <button type="button" aria-label="Edit {host.alias}" title="Edit" onclick={() => (ssh.editing = host)}><Icon name="pencil" size={14} /></button>
               </span>
             </li>
           {/each}
@@ -144,30 +145,30 @@
       {:else}
         <p class="none">
           {#if !ssh.loaded}
-            Lecture du carnet…
+            Loading hosts…
           {:else if ssh.hosts.length}
-            Aucun hôte ne correspond à « {filter} ».
+            No host matches “{filter}”.
           {:else}
-            Le carnet est vide. Ajoute un hôte, ou importe ceux de ~/.ssh/config.
+            No hosts. Add one, or import those from ~/.ssh/config.
           {/if}
         </p>
       {/each}
     </div>
 
     <footer>
-      <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Ajoute au carnet les hôtes de ~/.ssh/config qui n’y sont pas encore">
-        <Icon name="import" size={14} /> Importer ~/.ssh/config
+      <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Add the hosts of ~/.ssh/config that are not listed yet">
+        <Icon name="import" size={14} /> Import from ~/.ssh/config
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.exporting = 'all')} title="Écrit les hôtes du carnet dans ~/.ssh/config, après avoir montré ce qui change">
-        <Icon name="export" size={14} /> Exporter vers ~/.ssh/config…
+      <button class="btn small" type="button" onclick={() => (ssh.exporting = 'all')} title="Write the hosts to ~/.ssh/config, after showing what changes">
+        <Icon name="export" size={14} /> Export to ~/.ssh/config…
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="key" size={14} /> Gérer les clés…</button>
+      <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="key" size={14} /> Manage keys…</button>
     </footer>
   </aside>
 
   <div class="work">
     {#if ssh.sessions.length}
-      <div class="tabs" role="tablist" aria-label="Terminaux ouverts" bind:this={tabsEl}>
+      <div class="tabs" role="tablist" aria-label="Open terminals" bind:this={tabsEl}>
         {#each ssh.sessions as session (session.key)}
           {@const current = session.key === ssh.activeKey}
           <div class="tab" class:current animate:flip={{ duration: motion.med }} in:fade={{ duration: motion.med }}>
@@ -176,28 +177,28 @@
               type="button"
               role="tab"
               aria-selected={current}
-              title={session.kind === 'local' ? (session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local') : undefined}
+              title={session.kind === 'local' ? (session.status === 'closed' ? 'Local terminal stopped' : 'Local terminal') : undefined}
               onclick={() => (ssh.activeKey = session.key)}
               onauxclick={(e) => {
                 if (e.button === 1) void closeTab(session);
               }}
             >
               {#if session.kind === 'local'}
-                <!-- Un terminal local porte l'ordinateur, comme partout où « local » est dit. -->
+                <!-- A local terminal carries the computer icon, as everywhere "local" is said. -->
                 <span
                   class="local"
                   class:stopped={session.status === 'closed'}
                   role="img"
-                  aria-label={session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local'}
-                  title={session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local'}
+                  aria-label={session.status === 'closed' ? 'Local terminal stopped' : 'Local terminal'}
+                  title={session.status === 'closed' ? 'Local terminal stopped' : 'Local terminal'}
                 >
                   <Icon name="laptop" size={14} />
                 </span>
               {:else if session.status === 'connecting'}
-                <!-- La connexion s'ouvre : l'anneau d'attente tient la place du point. -->
+                <!-- The connection is opening: the waiting ring takes the place of the dot. -->
                 <span class="spinner" role="img" aria-label={STATUS.connecting} title={STATUS.connecting}></span>
               {:else}
-                <!-- L'état de la session est dit en mots, pas seulement par la couleur du point. -->
+                <!-- The state of the session is said in words, not only by the color of the dot. -->
                 <span
                   class="dot s-{session.status}"
                   role="img"
@@ -208,13 +209,13 @@
               {/if}
               <span class="name">{session.title}</span>
               {#if session.journal?.live}
-                <!-- Le journal en cours : une icône, dite en mots, sans couleur ni animation (9.7). -->
-                <span class="journal" role="img" aria-label="Journal en cours d’enregistrement" title="Journal en cours d’enregistrement">
+                <!-- The log being recorded: an icon, said in words, with no color nor animation (9.7). -->
+                <span class="journal" role="img" aria-label="Recording log" title="Recording log">
                   <Icon name="log" size={14} />
                 </span>
               {/if}
             </button>
-            <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => void closeTab(session)}>
+            <button class="close" type="button" aria-label="Close terminal {session.title}" title="Close terminal" onclick={() => void closeTab(session)}>
               <Icon name="x" size={14} />
             </button>
           </div>
@@ -234,12 +235,12 @@
     {:else}
       <div class="empty">
         <span class="art"><Icon name="terminal" size={30} /></span>
-        <p>Double-clique un hôte pour ouvrir un terminal distant, ou ouvre un terminal sur cette machine.</p>
+        <p>Double-click a host to open a remote terminal, or open a terminal on this machine.</p>
         <div class="row">
-          <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Ajouter un hôte…</button>
-          <button class="btn" type="button" onclick={() => ssh.openLocal()}><Icon name="laptop" size={14} /> Ouvrir un terminal local</button>
+          <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Add host…</button>
+          <button class="btn" type="button" onclick={() => ssh.openLocal()}><Icon name="laptop" size={14} /> Open local terminal</button>
           {#if ssh.loaded && !ssh.hosts.length}
-            <button class="btn" type="button" onclick={() => void ssh.importConfig()}>Importer ~/.ssh/config</button>
+            <button class="btn" type="button" onclick={() => void ssh.importConfig()}>Import from ~/.ssh/config</button>
           {/if}
         </div>
       </div>
@@ -331,8 +332,8 @@
     border-radius: var(--radius);
     transition: background var(--t-fast) var(--ease);
   }
-  /* Le fond suit le pointeur, et le focus clavier : un clic ne laisse rien derrière lui, même si le
-     bouton de la ligne garde le focus (charte, section 9.6). */
+  /* The background follows the pointer, and the keyboard focus: a click leaves nothing behind it,
+     even if the button of the row keeps the focus (guidelines, section 9.6). */
   li:hover,
   li:has(:focus-visible) {
     background: var(--hover);
@@ -447,8 +448,8 @@
     min-width: 0;
     min-height: 0;
   }
-  /* 4 px autour des onglets, rendus par une marge négative : la place de l'anneau de focus, que le
-     défilement horizontal rognerait sinon. */
+  /* 4 px around the tabs, given back by a negative margin: the room of the focus ring, which the
+     horizontal scrolling would cut otherwise. */
   .tabs {
     display: flex;
     align-items: center;
@@ -457,11 +458,11 @@
     margin: -4px;
     padding: 4px;
     overflow-x: auto;
-    /* Un onglet qui prend le focus défile jusqu'à rester visible à gauche du « + », qui colle au bord. */
+    /* A tab that takes the focus scrolls until it stays visible to the left of the "+", which sticks to the edge. */
     scroll-padding-inline-end: 40px;
     scrollbar-width: none;
   }
-  /* « + » après le dernier onglet (charte, section 9.7) : il reste visible quand les onglets débordent. */
+  /* "+" after the last tab (guidelines, section 9.7): it stays visible when the tabs overflow. */
   .add {
     position: sticky;
     right: 0;
@@ -473,7 +474,7 @@
     border: 0;
     border-radius: var(--radius-s);
     background: var(--side);
-    /* Les 4 px de marge à sa droite gardent le fond de la barre : aucun onglet n'y dépasse. */
+    /* The 4 px of margin on its right keep the background of the bar: no tab shows past it. */
     box-shadow: 4px 0 0 var(--side);
     color: var(--muted);
     cursor: pointer;
@@ -485,7 +486,7 @@
     background: var(--hover-side);
     color: var(--ink);
   }
-  /* 6 px entre l'icône et le nom : l'écart de l'onglet (8 px) moins 2. */
+  /* 6 px between the icon and the name: the gap of the tab (8 px) minus 2. */
   .local {
     flex: none;
     display: grid;
@@ -522,7 +523,7 @@
     gap: 8px;
     padding: 6px 4px 6px 10px;
     border: 0;
-    /* Les angles de l'onglet : l'anneau de focus les suit. */
+    /* The corners of the tab: the focus ring follows them. */
     border-radius: var(--radius);
     background: none;
     cursor: pointer;
@@ -557,7 +558,7 @@
     background: var(--warn);
     animation: blink var(--t-wait) var(--ease) infinite;
   }
-  /* L'anneau de 12 px tient dans la place du point de 8 px : le titre de l'onglet ne bouge pas. */
+  /* The 12 px ring fits in the place of the 8 px dot: the title of the tab does not move. */
   .open .spinner {
     margin: -2px;
   }
@@ -584,7 +585,7 @@
       opacity var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
-  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  /* When pressed, a button shrinks to 97% (guidelines, sections 8 and 9.1). */
   .close:active,
   .add:active {
     transform: scale(0.97);
@@ -594,8 +595,8 @@
   .close:focus-visible {
     opacity: 1;
   }
-  /* Sur un onglet survolé (--hover-side) ou actif (--panel), un voile de --ink se voit sur l'un et
-     l'autre, en clair et en sombre (charte, 9.7). */
+  /* On a hovered tab (--hover-side) or an active one (--panel), a veil of --ink shows on both, in
+     light and in dark (guidelines, 9.7). */
   .close:hover {
     background: color-mix(in srgb, var(--ink) 12%, transparent);
     color: var(--ink);

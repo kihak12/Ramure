@@ -7,26 +7,25 @@
   import { toasts } from '../ui/toasts.svelte';
   import { ssh } from './ssh.svelte';
 
-  // Écrire des hôtes du carnet dans ~/.ssh/config, après avoir montré ce qui change (charte, 9.15,
-  // « Exporting to ~/.ssh/config »).
+  // Writing hosts of the book into ~/.ssh/config, after showing what changes (guidelines, 9.15,
+  // "Exporting to ~/.ssh/config").
 
   type Status = 'added' | 'modified' | 'current' | 'blocked';
   type Row = { id: string; alias: string; status: Status; detail: string };
   type Exported = { count: number; backup: string | null; written: string };
 
-  const NB = ' ';
-  const STATE: Record<Status, string> = { added: 'Ajouté', modified: 'Modifié', current: 'À jour', blocked: 'Non exporté' };
+  const STATE: Record<Status, string> = { added: 'Added', modified: 'Changed', current: 'Up to date', blocked: 'Not exported' };
 
   let element = $state<HTMLDialogElement>();
   let rows = $state<Row[]>([]);
   let checked = $state<Record<string, boolean>>({});
   let loaded = $state(false);
   let busy = $state(false);
-  /** Ce qui a échoué : la lecture du fichier, ou son écriture. Dit dans la dernière ligne (9.11). */
+  /** What failed: reading the file, or writing it. Said in the last line (9.11). */
   let failure = $state('');
-  /** L'export a été tenté sans rien de coché : la raison passe en avertissement (charte, 9.1). */
+  /** The export was tried with nothing checked: the reason turns into a warning (guidelines, 9.1). */
   let tried = $state(false);
-  /** L'export vient du clavier : le focus ira au bouton « Annuler » de la notification (9.11). */
+  /** The export comes from the keyboard: the focus will go to the "Undo" button of the notification (9.11). */
   let byKeyboard = false;
 
   const single = $derived(ssh.exporting !== null && ssh.exporting !== 'all');
@@ -36,8 +35,8 @@
   const count = $derived(writable.filter((row) => checked[row.id]).length);
   const someModified = $derived(!single && writable.some((row) => row.status === 'modified'));
   const all = $derived(writable.length > 0 && count === writable.length);
-  const plural = (n: number, word: string) => `${n}${NB}${word}${n > 1 ? 's' : ''}`;
-  const WHY = 'Coche au moins un hôte.';
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const WHY = 'Check at least one host.';
 
   $effect(() => {
     if (!element) return;
@@ -58,13 +57,13 @@
     const ids = ssh.exporting === 'all' ? null : [ssh.exporting];
     try {
       rows = await invoke<Row[]>('ssh_config_preview', { ids });
-      // Les ajouts sont cochés ; une modification ne l'est que si on a demandé cet hôte-là.
+      // The hosts to add are checked; a host to change only when that very host was asked for.
       checked = Object.fromEntries(rows.map((row) => [row.id, row.status === 'added' || (single && row.status === 'modified')]));
     } catch (e) {
       failure = typeof e === 'string' ? e : String(e);
     }
     loaded = true;
-    // Le focus va à la première case, sinon au bouton de la dernière ligne (charte, 9.10).
+    // The focus goes to the first checkbox, otherwise to the button of the last line (guidelines, 9.10).
     await tick();
     focusWithRing(element?.querySelector<HTMLElement>('input[type="checkbox"], footer .btn:last-child'));
   }
@@ -79,7 +78,7 @@
     if (count) tried = false;
   });
 
-  /** Entrée sur une case lance l'export, comme sur un champ ; sans rien de coché, dit pourquoi. */
+  /** Enter on a checkbox starts the export, as in a field; with nothing checked, says why. */
   function onKey(e: KeyboardEvent) {
     if (e.key !== 'Enter' || !(e.target instanceof HTMLInputElement)) return;
     e.preventDefault();
@@ -103,11 +102,11 @@
     try {
       const done = await invoke<Exported>('ssh_config_export', { ids });
       close();
-      // La boîte est fermée : la notification n'est plus sous son voile, et propose de défaire.
+      // The dialog is closed: the notification is no longer under its veil, and offers to undo.
       toasts.ok(
-        done.count === 1 ? `${alias} exporté vers ~/.ssh/config` : `${plural(done.count, 'hôte')} exportés vers ~/.ssh/config`,
-        done.backup ? `Ancien fichier${NB}: ~/.ssh/config.ramure.bak` : '~/.ssh/config a été créé.',
-        { label: 'Annuler', run: () => void undo(done), focus: keyboard },
+        done.count === 1 ? `${alias} exported to ~/.ssh/config` : `${plural(done.count, 'host')} exported to ~/.ssh/config`,
+        done.backup ? 'Old file: ~/.ssh/config.ramure.bak' : '~/.ssh/config was created.',
+        { label: 'Undo', run: () => void undo(done), focus: keyboard },
       );
     } catch (err) {
       failure = typeof err === 'string' ? err : String(err);
@@ -119,9 +118,9 @@
   async function undo(done: Exported) {
     try {
       await invoke('ssh_config_undo', { written: done.written, hadBackup: done.backup !== null });
-      toasts.ok(done.backup ? '~/.ssh/config est revenu comme avant l’export' : '~/.ssh/config a été retiré');
+      toasts.ok(done.backup ? '~/.ssh/config is back as it was before the export' : '~/.ssh/config was removed');
     } catch (err) {
-      toasts.err('L’export n’a pas pu être annulé', typeof err === 'string' ? err : String(err));
+      toasts.err('The export could not be undone', typeof err === 'string' ? err : String(err));
     }
   }
 </script>
@@ -134,17 +133,17 @@
     if (!busy) close();
   }}
   use:veil={() => {
-    // Une écriture ne s'arrête pas en cours de route : rien ne ferme la boîte avant qu'elle finisse.
+    // A write does not stop halfway: nothing closes the dialog before it ends.
     if (!busy) close();
   }}
 >
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <form class="box" onsubmit={exportChosen} onkeydown={onKey}>
     <header>
-      <h2 id="export-title">Exporter vers ~/.ssh/config</h2>
-      <p>Ramure ajoute ou met à jour ces hôtes. Le reste du fichier n’est pas touché, et l’ancien fichier est copié dans <code>~/.ssh/config.ramure.bak</code>.</p>
+      <h2 id="export-title">Export to ~/.ssh/config</h2>
+      <p>Ramure adds or updates these hosts. The rest of the file is left untouched, and the old file is copied to <code>~/.ssh/config.ramure.bak</code>.</p>
       {#if someModified}
-        <p>Une entrée modifiée garde la version du fichier tant que tu ne la coches pas.</p>
+        <p>A changed entry keeps the version of the file until you check it.</p>
       {/if}
     </header>
 
@@ -153,7 +152,7 @@
         {#if writable.length > 1}
           <label class="all">
             <input type="checkbox" checked={all} indeterminate={count > 0 && !all} onchange={(e) => checkAll(e.currentTarget.checked)} />
-            <span>Tout cocher</span>
+            <span>Check all</span>
           </label>
         {/if}
         <ul>
@@ -180,22 +179,22 @@
           {/each}
         </ul>
         {#if upToDate}
-          <p class="count">{plural(upToDate, 'hôte')} {upToDate > 1 ? 'sont' : 'est'} déjà à jour dans le fichier.</p>
+          <p class="count">{plural(upToDate, 'host')} {upToDate === 1 ? 'is' : 'are'} already up to date in the file.</p>
         {/if}
       {:else if loaded && !failure}
         <p class="none">
           {#if !rows.length}
-            Le carnet est vide{NB}: rien à exporter.
+            No hosts: nothing to export.
           {:else if single}
-            {rows[0].alias} est déjà à jour dans ~/.ssh/config.
+            {rows[0].alias} is already up to date in ~/.ssh/config.
           {:else}
-            Tous les hôtes sont déjà à jour dans ~/.ssh/config.
+            All hosts are already up to date in ~/.ssh/config.
           {/if}
         </p>
       {/if}
     </div>
 
-    <!-- La sortie, puis l'export, à droite ; à gauche, pourquoi il est grisé, ou ce qui a échoué. -->
+    <!-- The way out, then the export, on the right; on the left, why it is disabled, or what failed. -->
     <footer>
       <div class="result">
         {#if failure}
@@ -205,12 +204,12 @@
         {:else if writable.length && !count}
           <p class="why">{WHY}</p>
         {:else if loaded && listed.length && !writable.length}
-          <p class="why">Aucun de ces hôtes ne peut être exporté.</p>
+          <p class="why">None of these hosts can be exported.</p>
         {/if}
       </div>
-      <!-- La dernière ligne paraît une fois le fichier lu : ses boutons ne changent pas sous le pointeur. -->
+      <!-- The last line shows once the file is read: its buttons do not change under the pointer. -->
       {#if loaded && writable.length}
-        <button class="btn" type="button" disabled={busy} onclick={close}>Annuler</button>
+        <button class="btn" type="button" disabled={busy} onclick={close}>Cancel</button>
         <button
           class="btn primary"
           type="submit"
@@ -218,10 +217,10 @@
           title={count ? undefined : WHY}
           onclick={(e) => (byKeyboard = e.detail === 0)}
         >
-          {busy ? 'Export en cours…' : count ? `Exporter ${plural(count, 'hôte')}` : 'Exporter'}
+          {busy ? 'Exporting…' : count ? `Export ${plural(count, 'host')}` : 'Export'}
         </button>
       {:else if loaded}
-        <button class="btn" type="button" onclick={close}>Fermer</button>
+        <button class="btn" type="button" onclick={close}>Close</button>
       {/if}
     </footer>
   </form>
@@ -271,7 +270,7 @@
     font-family: var(--f-mono);
     font-size: var(--fs-code);
   }
-  /* Des lignes simples, séparées par un filet --line (charte, 9.6, liste dans une boîte). */
+  /* Plain rows, separated by a --line rule (guidelines, 9.6, a list inside a dialog). */
   .list {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -299,7 +298,7 @@
     gap: 6px;
     padding: 8px 0;
   }
-  /* La case et l'icône d'un hôte non exporté occupent la même colonne, alignées sur le nom. */
+  /* The checkbox and the icon of a host that is not exported take the same column, aligned with the name. */
   .row input,
   .mark {
     margin-top: 2px;

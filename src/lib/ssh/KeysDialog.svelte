@@ -18,12 +18,12 @@
   let confirm = $state('');
   let comment = $state('');
   let error = $state('');
-  /** Le résultat de la dernière action, dit dans la dernière ligne de la boîte et non dans une
-   *  notification, que le voile de la boîte recouvrirait (charte, 9.11 et 9.15, « Keys »). */
+  /** The result of the last action, said in the last line of the dialog and not in a
+   *  notification, which the veil of the dialog would cover (guidelines, 9.11 and 9.15, "Keys"). */
   let result = $state<{ ok: boolean; text: string } | null>(null);
   const said = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
 
-  // Les clés dont le trousseau du système retient la phrase secrète (charte, section 9.15).
+  // The keys whose passphrase the system keyring keeps (guidelines, section 9.15).
   let held = $state<Record<string, boolean>>({});
   let listEl = $state<HTMLElement>();
   $effect(() => {
@@ -39,10 +39,10 @@
     try {
       await forgetSecret({ kind: 'passphrase', path: key.path });
       held[key.path] = false;
-      // Le bouton a disparu : le focus va au bouton voisin de la même clé.
+      // The button is gone: the focus goes to the button next to it, of the same key.
       focusWithRing(listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key.name)}"] .copy`));
     } catch (e) {
-      result = { ok: false, text: `Le trousseau du système n’a pas pu oublier la phrase secrète de ${key.name} : ${said(e)}` };
+      result = { ok: false, text: `The system keyring could not forget the passphrase of ${key.name}: ${said(e)}` };
     }
   }
 
@@ -63,7 +63,7 @@
   });
 
   function startCreating() {
-    // Premier nom libre : id_ed25519, puis id_ed25519_2, id_ed25519_3…
+    // First free name: id_ed25519, then id_ed25519_2, id_ed25519_3…
     const taken = new Set(ssh.keys.map((k) => k.name));
     let candidate = 'id_ed25519';
     for (let n = 2; taken.has(candidate); n++) candidate = `id_ed25519_${n}`;
@@ -87,7 +87,7 @@
       creating = false;
       passphrase = '';
       confirm = '';
-      result = { ok: true, text: `Clé créée : ${key.path}` };
+      result = { ok: true, text: `Key created: ${key.path}` };
     } catch (err) {
       error = typeof err === 'string' ? err : String(err);
     } finally {
@@ -98,13 +98,13 @@
   async function copy(key: KeyInfo) {
     try {
       await navigator.clipboard.writeText(key.public);
-      result = { ok: true, text: `Clé publique de ${key.name} copiée, à coller sur le serveur ou la forge.` };
+      result = { ok: true, text: `Public key of ${key.name} copied, ready to paste on the server or your Git host.` };
     } catch {
-      result = { ok: false, text: 'Copie impossible : le presse-papiers a refusé l’écriture.' };
+      result = { ok: false, text: 'The public key could not be copied: the clipboard refused it.' };
     }
   }
 
-  // Importer une clé venue d'ailleurs : elle est copiée dans ~/.ssh avec sa clé publique.
+  // Importing a key from elsewhere: it is copied into ~/.ssh with its public key.
   let importing = $state(false);
   let importEl = $state<HTMLButtonElement>();
   async function importKey() {
@@ -112,13 +112,13 @@
     try {
       home = await homeDir();
     } catch {
-      home = undefined; // dossier personnel introuvable : la fenêtre s'ouvre où le système le décide
+      home = undefined; // no home folder: the picker opens where the system decides
     }
     let picked: string | null;
     try {
-      picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: home });
+      picked = await open({ title: 'Choose a private key', multiple: false, directory: false, defaultPath: home });
     } catch (e) {
-      result = { ok: false, text: `La fenêtre de fichiers n’a pas pu s’ouvrir : ${said(e)}` };
+      result = { ok: false, text: `The file picker could not open: ${said(e)}` };
       return;
     }
     if (!picked) return;
@@ -127,13 +127,13 @@
     try {
       const key = await invoke<KeyInfo>('ssh_key_import', { path: picked });
       await ssh.loadKeys();
-      result = { ok: true, text: `Clé importée : ${key.path}` };
+      result = { ok: true, text: `Key imported: ${key.path}` };
     } catch (err) {
       result = { ok: false, text: said(err) };
     } finally {
       importing = false;
-      // Le bouton, désactivé pendant l'import, avait perdu le focus, tombé sur la page ou sur la
-      // boîte : il le retrouve, avec son anneau (charte, 11).
+      // The button, disabled during the import, had lost the focus, which fell on the page or on
+      // the dialog: it gets it back, with its ring (guidelines, 11).
       const active = document.activeElement;
       if (!active || active === document.body || active === element) await tick().then(() => focusWithRing(importEl));
     }
@@ -152,8 +152,8 @@
 >
   <div class="box">
     <header>
-      <h2>Clés SSH</h2>
-      <p>Les clés de <code>~/.ssh</code>. Elles y restent : Ramure n’en garde aucune copie.</p>
+      <h2>SSH keys</h2>
+      <p>The keys of <code>~/.ssh</code>. They stay there: Ramure keeps no copy of them.</p>
     </header>
 
     <div class="list" bind:this={listEl}>
@@ -164,77 +164,77 @@
             <b class="mono">{key.name}</b>
             <small>
               {key.algorithm.replace('ssh-', '')}{key.comment ? ` · ${key.comment}` : ''}
-              {#if key.encrypted}· <span class="locked">protégée par une phrase secrète</span>{/if}
+              {#if key.encrypted}· <span class="locked">protected by a passphrase</span>{/if}
             </small>
             <small class="mono print">{key.fingerprint}</small>
             {#if held[key.path]}
-              <!-- Ce que le trousseau retient pour cette clé, et de quoi l'oublier. -->
+              <!-- What the keyring keeps for this key, and how to forget it. -->
               <span class="kept">
-                <small>Sa phrase secrète est retenue dans le trousseau du système.</small>
-                <!-- Deux clés peuvent porter ce bouton : son nom accessible dit laquelle. -->
-                <button class="btn ghost small" type="button" aria-label="Oublier la phrase secrète de {key.name}" onclick={() => void forgetPassphrase(key)}>
-                  Oublier la phrase secrète
+                <small>Its passphrase is kept in the system keyring.</small>
+                <!-- Two keys can carry this button: its accessible name says which. -->
+                <button class="btn ghost small" type="button" aria-label="Forget passphrase of {key.name}" onclick={() => void forgetPassphrase(key)}>
+                  Forget passphrase
                 </button>
               </span>
             {/if}
           </div>
-          <button class="btn small copy" type="button" onclick={() => void copy(key)}><Icon name="copy" size={14} /> Copier la clé publique</button>
+          <button class="btn small copy" type="button" onclick={() => void copy(key)}><Icon name="copy" size={14} /> Copy public key</button>
         </div>
       {:else}
-        <p class="none">Aucune clé dans ~/.ssh. Génère-en une pour te connecter sans mot de passe.</p>
+        <p class="none">No keys in ~/.ssh. Generate one to connect without a password.</p>
       {/each}
     </div>
 
     {#if creating}
       <form class="create" id="new-key" onsubmit={generate}>
-        <span class="label">Nouvelle clé ed25519</span>
+        <span class="label">New ed25519 key</span>
         <div class="two">
           <label>
-            <span>Nom du fichier</span>
+            <span>File name</span>
             <!-- svelte-ignore a11y_autofocus -->
             <input class="field mono" type="text" spellcheck="false" autocomplete="off" autofocus bind:value={name} />
           </label>
           <label>
-            <span>Commentaire</span>
-            <input class="field mono" type="text" spellcheck="false" autocomplete="off" placeholder="moi@machine" bind:value={comment} />
+            <span>Comment</span>
+            <input class="field mono" type="text" spellcheck="false" autocomplete="off" placeholder="me@machine" bind:value={comment} />
           </label>
         </div>
         <div class="two">
           <label>
-            <span>Phrase secrète (facultative)</span>
+            <span>Passphrase (optional)</span>
             <input class="field" type="password" autocomplete="new-password" bind:value={passphrase} />
           </label>
           <label>
-            <span>Confirmation</span>
+            <span>Confirm passphrase</span>
             <input class="field" class:invalid={mismatch && !!confirm} type="password" autocomplete="new-password" aria-invalid={mismatch && confirm ? 'true' : undefined} bind:value={confirm} />
           </label>
         </div>
-        <!-- Une ligne gardée pour les erreurs : quand l'une paraît, les boutons ne bougent pas (charte, 9.1). -->
+        <!-- A line kept for the errors: when one shows, the buttons do not move (guidelines, 9.1). -->
         <p class="err" role="alert">
-          {#if mismatch && confirm}Les deux phrases secrètes ne sont pas identiques.{:else if error}{error}{/if}
+          {#if mismatch && confirm}The two passphrases do not match.{:else if error}{error}{/if}
         </p>
       </form>
     {/if}
 
-    <!-- La sortie, puis l'action, à droite (charte, 9.1, « Hierarchy »). Une simple sortie n'est jamais
-         le bouton principal : au repos, la boîte n'en a pas ; pendant une création, c'est « Générer
-         la clé », et « Annuler » revient à la liste. -->
+    <!-- The way out, then the action, on the right (guidelines, 9.1, "Hierarchy"). A plain way out is
+         never the main button: at rest, the dialog has none; while a key is being created, it is
+         "Create key", and "Cancel" goes back to the list. -->
     <footer>
-      <!-- Le résultat de la dernière action, à gauche des boutons, qui restent en haut de la ligne. -->
+      <!-- The result of the last action, on the left of the buttons, which stay at the top of the line. -->
       <div class="result">
         <p role="status">{#if result?.ok && !creating}<Icon name="check" size={14} /><span>{result.text}</span>{/if}</p>
         {#if result && !result.ok && !creating}<p class="bad" role="alert"><Icon name="warning" size={14} /><span>{result.text}</span></p>{/if}
       </div>
       {#if creating}
-        <button class="btn" type="button" onclick={() => (creating = false)}>Annuler</button>
-        <button class="btn primary" type="submit" form="new-key" disabled={!ready}>{busy ? 'Création…' : 'Générer la clé'}</button>
+        <button class="btn" type="button" onclick={() => (creating = false)}>Cancel</button>
+        <button class="btn primary" type="submit" form="new-key" disabled={!ready}>{busy ? 'Creating…' : 'Create key'}</button>
       {:else}
-        <button class="btn" type="button" onclick={close}>Fermer</button>
+        <button class="btn" type="button" onclick={close}>Close</button>
         <button class="btn" type="button" bind:this={importEl} disabled={importing} onclick={() => void importKey()}>
           <Icon name="import" size={14} />
-          {importing ? 'Importation…' : 'Importer une clé…'}
+          {importing ? 'Importing…' : 'Import key…'}
         </button>
-        <button class="btn" type="button" onclick={startCreating}><Icon name="plus" size={14} /> Générer une clé</button>
+        <button class="btn" type="button" onclick={startCreating}><Icon name="plus" size={14} /> Generate key</button>
       {/if}
     </footer>
   </div>
@@ -283,8 +283,8 @@
     font-family: var(--f-mono);
     font-size: var(--fs-code);
   }
-  /* Des lignes simples, séparées par un filet --line (--line-soft ne se voit pas sur --raised) :
-     une ligne encadrée dans une boîte serait une carte dans une carte (charte, sections 6 et 9.6). */
+  /* Plain rows, separated by a --line rule (--line-soft does not show on --raised): a framed row
+     inside a dialog would be a card in a card (guidelines, sections 6 and 9.6). */
   .list {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -302,8 +302,9 @@
   .key + .key {
     border-top: 1px solid var(--line);
   }
-  /* L'icône seule, sans carré derrière : un fond --hover ne se verrait pas sur --raised en sombre.
-     Elle informe : pas d'accent, réservé au principal, au focus et à l'élément actif (charte, 2.3). */
+  /* The icon alone, with no square behind it: a --hover background would not show on --raised in
+     dark. It informs: no accent, which is kept for the primary, the focus and the active element
+     (guidelines, 2.3). */
   .glyph {
     flex: none;
     display: grid;
@@ -329,8 +330,8 @@
   .locked {
     color: var(--ok);
   }
-  /* Le bouton, sans fond ni bordure, est tiré de sa marge intérieure (8 px et 1 px de bordure) :
-     son texte s'aligne sur la phrase. */
+  /* The button, with no background nor border, is pulled back by its inner margin (8 px and 1 px
+     of border): its text lines up with the sentence. */
   .kept {
     display: flex;
     flex-direction: column;
@@ -366,7 +367,7 @@
     font-size: var(--fs-label);
     color: var(--muted);
   }
-  /* La ligne des erreurs garde sa hauteur, vide ou non. */
+  /* The line of the errors keeps its height, empty or not. */
   .err {
     min-height: calc(var(--fs-small) * 1.35);
     margin: 0;
@@ -382,8 +383,8 @@
   footer .btn {
     flex: none;
   }
-  /* Le résultat : une région de statut toujours là pour un succès, une alerte pour un échec. Le
-     texte s'aligne à peu près sur celui des boutons, de 30 px de haut. */
+  /* The result: a status region always there for a success, an alert for a failure. The text
+     lines up roughly with that of the buttons, 30 px high. */
   .result {
     flex: 1;
     min-width: 0;

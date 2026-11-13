@@ -1,25 +1,25 @@
-// Le trousseau du système, vu de l'interface : s'il répond, ce qu'il retient, et l'oubli.
-// La valeur d'un secret ne passe jamais par ici : c'est le cœur qui la lit au moment de
-// s'authentifier (charte, section 9.15).
+// The system keyring, as the interface sees it: whether it responds, what it keeps, and
+// forgetting. The value of a secret never goes through here: the core reads it when it
+// authenticates (guidelines, section 9.15).
 
 import { invoke } from '@tauri-apps/api/core';
 
-/** Un secret, désigné par ce à quoi il appartient : un compte sur un serveur, ou une clé. */
+/** A secret, named by what it belongs to: an account on a server, or a key. */
 export type SecretRef =
   | { kind: 'password'; user: string; host: string; port: number }
   | { kind: 'passphrase'; path: string };
 
-/** Le trousseau répond-il ? Sans lui, on ne propose pas de retenir un secret, et on le dit. */
+/** Does the keyring respond? Without it, keeping a secret is not offered, and the interface says so. */
 export const keyringAvailable = () => invoke<boolean>('secrets_available').catch(() => false);
 
-/** Pour chaque secret, dans l'ordre : vrai s'il est retenu. */
+/** For each secret, in order: true if it is kept. */
 export const secretsHeld = (secrets: SecretRef[]) =>
   secrets.length ? invoke<boolean[]>('secrets_held', { secrets }).catch(() => secrets.map(() => false)) : Promise.resolve([]);
 
 export const forgetSecret = (secret: SecretRef) => invoke<void>('secret_forget', { secret });
 
-/** Ce qu'on dit quand le trousseau ne répond pas, pour un mot de passe ou une phrase secrète. */
+/** What is said when the keyring does not respond, for a password or a passphrase. */
 export const NO_KEYRING = {
-  password: 'Le trousseau du système ne répond pas : ce mot de passe sera redemandé à chaque connexion.',
-  passphrase: 'Le trousseau du système ne répond pas : cette phrase secrète sera redemandée à chaque connexion.',
+  password: 'The system keyring does not respond: this password will be asked for every time you connect.',
+  passphrase: 'The system keyring does not respond: this passphrase will be asked for every time you connect.',
 } as const;

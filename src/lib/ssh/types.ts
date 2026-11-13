@@ -1,10 +1,10 @@
-// Miroir des structures du module SSH (src-tauri/src/ssh).
+// Mirror of the structures of the SSH module (src-tauri/src/ssh).
 
 export type AuthKind = 'auto' | 'keyFile' | 'password';
 
-/** Hôte du carnet (src-tauri/src/ssh/store.rs). */
+/** A host of the book (src-tauri/src/ssh/store.rs). */
 export interface Host {
-  /** Vide pour un hôte qui n'est pas encore enregistré. */
+  /** Empty for a host that is not saved yet. */
   id: string;
   alias: string;
   hostname: string;
@@ -14,11 +14,11 @@ export interface Host {
   keyPath: string;
   group: string;
   tags: string[];
-  /** Indice dans la palette des lanes (`0` à `7`), ou vide. */
+  /** Index in the palette of the lanes (`0` to `7`), or empty. */
   color: string;
   startupCommand: string;
   proxyJump: boolean;
-  /** Chaque session de cet hôte enregistre son journal (charte, 9.15, « Journal »). */
+  /** Every session of this host records its log (guidelines, 9.15, "The log of a session"). */
   logSessions: boolean;
   updatedAt: number;
 }
@@ -33,8 +33,8 @@ export interface KeyInfo {
   encrypted: boolean;
 }
 
-/** L'adresse d'un hôte, telle qu'on la montre : `deploy@vps.example.net:2222`. Sans utilisateur,
- *  l'adresse seule, jamais un « @ » isolé ; le port, s'il est donné et n'est pas 22 (charte, 9.21). */
+/** The address of a host, as it is shown: `deploy@vps.example.net:2222`. Without a user, the
+ *  address alone, never an "@" on its own; the port, if it is given and is not 22 (guidelines, 9.21). */
 export function addressOf(user: string, hostname: string, port = 22): string {
   return `${user ? `${user}@` : ''}${hostname}${port && port !== 22 ? `:${port}` : ''}`;
 }
@@ -43,13 +43,13 @@ export interface Connected {
   id: number;
   fingerprint: string;
   knownHost: boolean;
-  /** L'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit : pourquoi. */
+  /** The fingerprint was to be remembered and `known_hosts` could not be written: why. */
   learnFailed?: string | null;
   authMethod: string;
   connectMs: number;
-  /** Le secret devait être retenu et le trousseau l'a refusé : ce qu'il en dit. */
+  /** The secret was to be kept and the keyring refused it: what it says. */
   keepFailed?: string | null;
-  /** Le journal demandé n'a pas pu être ouvert : pourquoi. */
+  /** The log that was asked for could not be opened: why. */
   journalFailed?: string | null;
 }
 
@@ -57,18 +57,18 @@ export interface Closed {
   id: number;
   exitStatus: number | null;
   reason: string | null;
-  /** `user` : fermée par l'utilisateur ; `exit` : terminée par le serveur ; `lost` : connexion perdue. */
+  /** `user`: closed by the user; `exit`: ended by the server; `lost`: connection lost. */
   ending: 'user' | 'exit' | 'lost';
-  /** Terminal local : le signal qui a arrêté le shell, s'il n'a pas fini de lui-même. */
+  /** Local terminal: the signal that stopped the shell, if it did not end by itself. */
   signal?: string | null;
 }
 
 export type SshError =
   | { kind: 'hostKeyUnknown'; fingerprint: string; algorithm: string }
   | { kind: 'hostKeyChanged'; fingerprint: string; line: number }
-  /** `refused` : la phrase secrète essayée ne déverrouille pas la clé, tapée ou retenue (et alors oubliée). */
+  /** `refused`: the passphrase tried does not unlock the key, typed or kept (and then forgotten). */
   | { kind: 'needPassphrase'; path: string; refused?: 'typed' | 'retained' | null }
-  /** `refused` : le mot de passe que le trousseau retenait a été refusé, et oublié. */
+  /** `refused`: the password the keyring kept was refused, and forgotten. */
   | { kind: 'needPassword'; refused: boolean }
   | { kind: 'auth'; message: string }
   | { kind: 'other'; message: string };

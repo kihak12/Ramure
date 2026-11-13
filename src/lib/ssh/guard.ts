@@ -1,14 +1,14 @@
-// Avant d'arrêter des terminaux locaux : y tourne-t-il un programme ? Fermer un onglet ou la
-// fenêtre arrête les shells, et avec eux un serveur de développement ou une longue compilation
-// (charte, sections 9.15 et 9.20).
+// Before stopping local terminals: is a program running in them? Closing a tab or the window
+// stops the shells, and with them a development server or a long build (guidelines, sections
+// 9.15 and 9.20).
 
 import { invoke } from '@tauri-apps/api/core';
 import { dialogs } from '../ui/dialogs.svelte';
 import type { Session } from './ssh.svelte';
 
 /**
- * Ce qui tourne dans `sessions`. `programs` : les terminaux où un programme tourne, autre que le
- * shell. `unknown` : ceux dont le shell tourne sans qu'on puisse en savoir plus (sous Windows).
+ * What runs in `sessions`. `programs`: the terminals where a program runs, other than the shell.
+ * `unknown`: those whose shell runs with no way to know more (on Windows).
  */
 async function running(sessions: Session[]) {
   const open = sessions.filter((s) => s.kind === 'local' && s.localId !== undefined);
@@ -17,57 +17,58 @@ async function running(sessions: Session[]) {
     const busy = await invoke<(boolean | null)[]>('local_busy', { ids: open.map((s) => s.localId) });
     return { programs: busy.filter((b) => b === true).length, unknown: busy.filter((b) => b === null).length };
   } catch {
-    // Le cœur ne répond pas : on ne sait pas. Comme sous Windows, le dépôt et la fenêtre demandent
-    // alors, et l'onglet d'un seul terminal, qu'on a sous les yeux, se ferme sans question.
+    // The core does not answer: there is no way to know. As on Windows, the repository and the
+    // window then ask, and the tab of a single terminal, which the user is looking at, closes
+    // without a question.
     return { programs: 0, unknown: open.length };
   }
 }
 
-const LOST = 'et sa sortie perdue';
+const LOST = 'and its output lost';
 
-/** Fermer un onglet de terminal local : on ne demande que si l'on sait qu'un programme y tourne. */
+/** Closing the tab of a local terminal: ask only when a program is known to run in it. */
 export async function mayCloseTerminal(session: Session): Promise<boolean> {
   const { programs } = await running([session]);
   if (!programs) return true;
   return dialogs.confirm({
-    title: 'Fermer ce terminal ?',
-    body: `Un programme tourne dans ce terminal. Il sera arrêté ${LOST}.`,
-    confirmLabel: 'Fermer le terminal',
+    title: 'Close this terminal?',
+    body: `A program is running in this terminal. It will be stopped ${LOST}.`,
+    confirmLabel: 'Close terminal',
     danger: true,
   });
 }
 
 /**
- * Fermer l'onglet d'un dépôt arrête ses terminaux, qu'on ne voit pas toujours. On demande quand un
- * programme y tourne, et aussi quand on ne peut pas le savoir et qu'un shell est ouvert.
+ * Closing the tab of a repository stops its terminals, which are not always in view. Ask when a
+ * program runs in them, and also when there is no way to know and a shell is open.
  */
 export async function mayCloseRepo(name: string, sessions: Session[]): Promise<boolean> {
   const { programs, unknown } = await running(sessions);
   if (!programs && !unknown) return true;
   return dialogs.confirm({
-    title: `Fermer le dépôt ${name} ?`,
+    title: `Close repository ${name}?`,
     body: programs
       ? programs === 1
-        ? `Un programme tourne dans le terminal de ce dépôt. Il sera arrêté ${LOST}.`
-        : `Des programmes tournent dans ${programs} terminaux de ce dépôt. Ils seront arrêtés et leur sortie perdue.`
+        ? `A program is running in the terminal of this repository. It will be stopped ${LOST}.`
+        : `Programs are running in ${programs} terminals of this repository. They will be stopped and their output lost.`
       : unknown === 1
-        ? `Un terminal est ouvert dans ce dépôt. Ce qui y tourne sera arrêté, ${LOST}.`
-        : `${unknown} terminaux sont ouverts dans ce dépôt. Ce qui y tourne sera arrêté, ${LOST}.`,
-    confirmLabel: 'Fermer le dépôt',
+        ? `A terminal is open in this repository. Whatever runs in it will be stopped ${LOST}.`
+        : `${unknown} terminals are open in this repository. Whatever runs in them will be stopped and its output lost.`,
+    confirmLabel: 'Close repository',
     danger: true,
   });
 }
 
-/** Quitter l'application arrête tous les terminaux locaux, ceux des dépôts et ceux du module SSH. */
+/** Quitting the application stops every local terminal, those of the repositories and those of the SSH module. */
 export async function mayQuit(sessions: Session[]): Promise<boolean> {
   const { programs, unknown } = await running(sessions);
   if (!programs && !unknown) return true;
   const body = programs
     ? programs === 1
-      ? `Un programme tourne dans un terminal. Il sera arrêté ${LOST}.`
-      : `Des programmes tournent dans ${programs} terminaux. Ils seront arrêtés et leur sortie perdue.`
+      ? `A program is running in a terminal. It will be stopped ${LOST}.`
+      : `Programs are running in ${programs} terminals. They will be stopped and their output lost.`
     : unknown === 1
-      ? `Un terminal est ouvert. Ce qui y tourne sera arrêté, ${LOST}.`
-      : `${unknown} terminaux sont ouverts. Ce qui y tourne sera arrêté, ${LOST}.`;
-  return dialogs.confirm({ title: 'Quitter Ramure ?', body, confirmLabel: 'Quitter', danger: true });
+      ? `A terminal is open. Whatever runs in it will be stopped ${LOST}.`
+      : `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`;
+  return dialogs.confirm({ title: 'Quit Ramure?', body, confirmLabel: 'Quit', danger: true });
 }
