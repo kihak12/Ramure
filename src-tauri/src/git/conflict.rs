@@ -1,5 +1,5 @@
-//! Fichier en conflit : lecture de ses versions pour l'éditeur à trois voies, puis écriture
-//! du résultat.
+//! A file in conflict: reading its versions for the three-way editor, then writing the
+//! result.
 
 use std::fs;
 use std::path::{Component, Path, PathBuf};
@@ -9,46 +9,46 @@ use serde::Serialize;
 use super::work::{Status, status};
 use super::{CommandLog, Done, Failed, Opts, blocking, exec, step};
 
-/// Au-delà, le fichier n'est pas ouvert dans l'éditeur : il se résout en gardant un côté.
+/// Beyond this size, the file is not opened in the editor: it is resolved by keeping one side.
 const MAX_BYTES: usize = 2_000_000;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConflictFile {
-    /// Ancêtre commun ; absent si les deux côtés ont créé le fichier.
+    /// Common ancestor; absent if both sides created the file.
     pub base: Option<String>,
-    /// Version « ours » ; absente si ce côté a supprimé le fichier.
+    /// The “ours” version; absent if that side deleted the file.
     pub ours: Option<String>,
-    /// Version « theirs » ; absente si ce côté a supprimé le fichier.
+    /// The “theirs” version; absent if that side deleted the file.
     pub theirs: Option<String>,
-    /// Fichier du répertoire de travail, avec les marqueurs de conflit de git.
+    /// The file in the working tree, with the conflict markers of git.
     pub merged: Option<String>,
-    /// Vrai si une version n'est pas du texte UTF-8, ou est trop volumineuse.
+    /// True if a version is not UTF-8 text, or is too large.
     pub binary: bool,
 }
 
-/// Un chemin de fichier du dépôt : relatif, sans remontée (`..`).
+/// A file path in the repository: relative, never going up (`..`).
 fn inside(repo: &Path, file: &str) -> Result<PathBuf, String> {
     let relative = Path::new(file);
     let plain = relative.components().all(|c| matches!(c, Component::Normal(_)));
     if file.is_empty() || !plain {
-        return Err(format!("chemin invalide : « {file} »"));
+        return Err(format!("Invalid path: “{file}”. The path must stay inside the repository."));
     }
     Ok(repo.join(relative))
 }
 
-/// Contenu d'une version indexée (`1` ancêtre, `2` ours, `3` theirs), si elle existe.
+/// Content of a version in the index (`1` ancestor, `2` ours, `3` theirs), if it exists.
 fn stage(repo: &Path, number: u8, file: &str) -> Option<Vec<u8>> {
     let spec = format!(":{number}:{file}");
     let out = exec(repo, &["show", &spec], Opts::default()).ok()?;
     out.status.success().then_some(out.stdout)
 }
 
-pub fn read(journal: &mut Vec<CommandLog>, repo: &Path, file: &str) -> Result<ConflictFile, String> {
+pub fn read(commands: &mut Vec<CommandLog>, repo: &Path, file: &str) -> Result<ConflictFile, String> {
     let path = inside(repo, file)?;
-    // Garde-fou : seul un fichier que git considère en conflit s'ouvre ici.
-    if step(journal, repo, &["ls-files", "--unmerged", "--", file])?.is_empty() {
-        return Err(format!("« {file} » n'est pas en conflit."));
+    // Safeguard: only a file that git considers in conflict opens here.
+    if step(commands, repo, &["ls-files", "--unmerged", "--", file])?.is_empty() {
+        return Err(format!("The file “{file}” is not in conflict."));
     }
     let mut binary = false;
     let mut decode = |bytes: Option<Vec<u8>>| -> Option<String> {
@@ -72,18 +72,18 @@ pub fn read(journal: &mut Vec<CommandLog>, repo: &Path, file: &str) -> Result<Co
     Ok(ConflictFile { base, ours, theirs, merged, binary })
 }
 
-/// Écrit le résultat de la résolution, puis marque le fichier comme résolu.
-pub fn write(journal: &mut Vec<CommandLog>, repo: &Path, file: &str, content: &str) -> Result<(), String> {
+/// Writes the result of the resolution, then marks the file as resolved.
+pub fn write(commands: &mut Vec<CommandLog>, repo: &Path, file: &str, content: &str) -> Result<(), String> {
     let path = inside(repo, file)?;
-    if step(journal, repo, &["ls-files", "--unmerged", "--", file])?.is_empty() {
-        return Err(format!("« {file} » n'est pas en conflit."));
+    if step(commands, repo, &["ls-files", "--unmerged", "--", file])?.is_empty() {
+        return Err(format!("The file “{file}” is not in conflict."));
     }
-    // Un lien symbolique ferait écrire ailleurs que dans le dépôt.
+    // A symbolic link would make the write land outside the repository.
     if fs::symlink_metadata(&path).is_ok_and(|meta| meta.file_type().is_symlink()) {
-        return Err(format!("« {file} » est un lien symbolique : résous-le en gardant un côté."));
+        return Err(format!("The file “{file}” is a symbolic link. Resolve it by keeping one side."));
     }
-    fs::write(&path, content).map_err(|e| format!("impossible d'écrire « {file} » : {e}"))?;
-    step(journal, repo, &["add", "--", file]).map(drop)
+    fs::write(&path, content).map_err(|e| format!("Could not write the file “{file}”: {e}"))?;
+    step(commands, repo, &["add", "--", file]).map(drop)
 }
 
 type Reply<T> = Result<Done<T>, Failed>;
@@ -112,9 +112,9 @@ mod tests {
 
     #[test]
     fn paths_must_stay_inside_the_repository() {
-        let repo = Path::new("/depot");
+        let repo = Path::new("/repo");
         assert!(inside(repo, "src/a.rs").is_ok());
-        assert!(inside(repo, "../ailleurs").is_err());
+        assert!(inside(repo, "../elsewhere").is_err());
         assert!(inside(repo, "/etc/passwd").is_err());
         assert!(inside(repo, "a/../../b").is_err());
         assert!(inside(repo, "").is_err());
@@ -130,31 +130,31 @@ mod tests {
             stage_files(j, dir, &["a.txt".into()]).unwrap();
             commit(j, dir, message, false).unwrap();
         };
-        save("un\ndeux\ntrois\n", "base", &mut j);
+        save("one\ntwo\nthree\n", "base", &mut j);
         let base = repo.git(&["rev-parse", "HEAD"]);
-        save("un\nDEUX\ntrois\n", "le mien", &mut j);
-        ref_op(&mut j, dir, &RefOp::BranchCreate { name: "autre".into(), start: base, switch: true }).unwrap();
-        save("un\ndeux bis\ntrois\n", "le leur", &mut j);
+        save("one\nTWO\nthree\n", "mine", &mut j);
+        ref_op(&mut j, dir, &RefOp::BranchCreate { name: "other".into(), start: base, switch: true }).unwrap();
+        save("one\ntwo, too\nthree\n", "theirs", &mut j);
         ref_op(&mut j, dir, &RefOp::Switch { name: "main".into() }).unwrap();
 
-        // Hors conflit, rien ne se lit ni ne s'écrit.
+        // Outside a conflict, nothing is read or written.
         assert!(read(&mut j, dir, "a.txt").is_err());
         assert!(write(&mut j, dir, "a.txt", "x").is_err());
 
-        assert_eq!(history(&mut j, dir, &HistoryOp::Merge { target: "autre".into() }).unwrap().stopped, Some("merge"));
+        assert_eq!(history(&mut j, dir, &HistoryOp::Merge { target: "other".into() }).unwrap().stopped, Some("merge"));
         let file = read(&mut j, dir, "a.txt").unwrap();
         assert!(!file.binary);
-        assert_eq!(file.base.as_deref(), Some("un\ndeux\ntrois\n"));
-        assert_eq!(file.ours.as_deref(), Some("un\nDEUX\ntrois\n"));
-        assert_eq!(file.theirs.as_deref(), Some("un\ndeux bis\ntrois\n"));
+        assert_eq!(file.base.as_deref(), Some("one\ntwo\nthree\n"));
+        assert_eq!(file.ours.as_deref(), Some("one\nTWO\nthree\n"));
+        assert_eq!(file.theirs.as_deref(), Some("one\ntwo, too\nthree\n"));
         let merged = file.merged.unwrap();
-        assert!(merged.contains("<<<<<<< ") && merged.contains(">>>>>>> autre"));
+        assert!(merged.contains("<<<<<<< ") && merged.contains(">>>>>>> other"));
 
-        assert!(write(&mut j, dir, "../dehors.txt", "x").is_err());
-        write(&mut j, dir, "a.txt", "un\nDEUX bis\ntrois\n").unwrap();
+        assert!(write(&mut j, dir, "../outside.txt", "x").is_err());
+        write(&mut j, dir, "a.txt", "one\nTWO, too\nthree\n").unwrap();
         let s = status(&mut j, dir).unwrap();
         assert!(s.unstaged.is_empty() && s.staged.len() == 1);
         assert_eq!(operate(&mut j, dir, "continue").unwrap().stopped, None);
-        assert_eq!(repo.git(&["show", "HEAD:a.txt"]), "un\nDEUX bis\ntrois");
+        assert_eq!(repo.git(&["show", "HEAD:a.txt"]), "one\nTWO, too\nthree");
     }
 }

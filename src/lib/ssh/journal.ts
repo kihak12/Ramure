@@ -21,7 +21,7 @@ const two = (n: number) => String(n).padStart(2, '0');
 const time = (d: Date) => `${d.getHours() % 12 || 12}:${two(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
 
 /** The log folder: the one chosen in the settings, otherwise the default of the Rust core,
- *  `Documents/Ramure/Journaux`. */
+ *  `Documents/Ramure/Logs`. */
 export async function journalDir(): Promise<string> {
   return prefs.journalDir || (await invoke<string | null>('journal_default_dir')) || '';
 }

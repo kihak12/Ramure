@@ -1,13 +1,13 @@
-//! Journal d'une session de terminal : ce qui s'est affiché, en texte lisible, dans un fichier.
+//! Log of a terminal session: what was shown, as readable text, in a file.
 //!
-//! Le flux d'une session (SSH ou locale) passe ici avant l'interface : rien ne fait l'aller et
-//! retour. Seul ce qui s'affiche est écrit ; ce que l'utilisateur tape n'est jamais enregistré à
-//! part, et un mot de passe tapé sans écho n'y paraît donc pas.
+//! The stream of a session (SSH or local) goes through here before the interface: nothing makes
+//! the round trip. Only what is shown is written; what the user types is never recorded on its
+//! own, so a password typed without echo does not appear in it.
 //!
-//! Le texte est rendu ligne par ligne, comme un terminal le ferait sans bouger le curseur : les
-//! séquences de contrôle sont retirées, un retour chariot réécrit la ligne (une barre de
-//! progression garde son état final), un retour arrière recule. Un programme plein écran (vim,
-//! htop, less) ne laisse qu'une ligne : son affichage ne se lit pas comme du texte.
+//! The text is rendered line by line, as a terminal would without moving the cursor: control
+//! sequences are removed, a carriage return rewrites the line (a progress bar keeps its final
+//! state), a backspace moves back. A full-screen program (vim, htop, less) leaves only one line:
+//! its display does not read as text.
 
 use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
@@ -17,48 +17,48 @@ use std::sync::{LazyLock, Mutex};
 
 use serde::Deserialize;
 
-/// La ligne qui remplace l'affichage d'un programme plein écran.
-const FULL_SCREEN: &str = "[affichage plein écran omis]";
+/// The line that replaces the display of a full-screen program.
+const FULL_SCREEN: &str = "[full-screen display omitted]";
 
-/// Ce qu'il faut pour ouvrir ou reprendre un journal.
+/// What it takes to open or resume a log.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JournalOpen {
     pub path: String,
-    /// Première ligne d'un fichier neuf : « Journal de serveur-test, commencé le … ».
+    /// First line of a new file: "Log of test-server, started Nov 11, 2026 at 11:05 PM".
     pub header: String,
-    /// Une ligne à écrire avant la suite : la reprise après une reconnexion.
+    /// A line to write before what follows: the resumption after a reconnection.
     pub note: Option<String>,
-    /// Ce que le terminal montrait déjà, quand on commence en cours de session.
+    /// What the terminal showed already, when the log starts during a session.
     pub backlog: Option<String>,
 }
 
-/// Où en est l'analyse d'une séquence d'échappement.
+/// Where the parsing of an escape sequence stands.
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Escape {
     None,
-    /// Après ESC.
+    /// After ESC.
     Start,
-    /// Dans `ESC [ … final`.
+    /// In `ESC [ … final`.
     Csi,
-    /// Dans `ESC ] …` ou `ESC P …`, jusqu'à BEL ou `ESC \`.
+    /// In `ESC ] …` or `ESC P …`, up to BEL or `ESC \`.
     Text,
-    /// Un ESC dans une séquence de texte : peut-être sa fin.
+    /// An ESC in a text sequence: perhaps its end.
     TextEsc,
-    /// `ESC (` et consorts : un octet de plus, puis fin.
+    /// `ESC (` and the like: one more byte, then the end.
     Charset,
 }
 
-/// Le texte rendu d'un flux de terminal.
+/// The rendered text of a terminal stream.
 #[derive(Debug)]
 pub struct Render {
     line: Vec<char>,
     col: usize,
     escape: Escape,
     params: String,
-    /// Octets d'un caractère UTF-8 coupé entre deux paquets.
+    /// Bytes of a UTF-8 character split between two packets.
     pending: Vec<u8>,
-    /// Un programme plein écran occupe l'écran : rien n'est écrit.
+    /// A full-screen program holds the screen: nothing is written.
     alternate: bool,
 }
 
@@ -69,14 +69,14 @@ impl Default for Render {
 }
 
 impl Render {
-    /// Rend `bytes` ; renvoie les lignes terminées, sans leur fin de ligne.
+    /// Renders `bytes`; returns the finished lines, without their line ending.
     pub fn feed(&mut self, bytes: &[u8]) -> Vec<String> {
         let mut data = std::mem::take(&mut self.pending);
         data.extend_from_slice(bytes);
         let text = match std::str::from_utf8(&data) {
             Ok(text) => text.to_string(),
             Err(e) if e.error_len().is_none() => {
-                // La fin du paquet coupe un caractère : il attend le paquet suivant.
+                // The end of the packet splits a character: it waits for the next packet.
                 let valid = e.valid_up_to();
                 self.pending = data[valid..].to_vec();
                 String::from_utf8_lossy(&data[..valid]).into_owned()
@@ -171,7 +171,7 @@ impl Render {
             self.params.trim_start_matches('?').split(';').map(|n| n.parse().unwrap_or(0)).collect();
         let n = numbers.first().copied().unwrap_or(0).max(1);
         match (private, last) {
-            // Écran alternatif : un programme plein écran prend la main, puis la rend.
+            // Alternate screen: a full-screen program takes over, then gives it back.
             (true, 'h') if numbers.iter().any(|&m| matches!(m, 47 | 1047 | 1049)) => {
                 if !self.alternate {
                     if !self.line.is_empty() {
@@ -187,7 +187,7 @@ impl Render {
                 self.col = 0;
             }
             _ if self.alternate => {}
-            // Effacer la fin de la ligne (0), son début (1), ou toute la ligne (2).
+            // Erase the end of the line (0), its start (1), or the whole line (2).
             (false, 'K') => match numbers.first().copied().unwrap_or(0) {
                 0 => self.line.truncate(self.col),
                 1 => (0..self.col.min(self.line.len())).for_each(|i| self.line[i] = ' '),
@@ -201,7 +201,7 @@ impl Render {
     }
 }
 
-/// Un journal ouvert : son fichier et le rendu de son flux.
+/// An open log: its file and the rendering of its stream.
 pub struct Journal {
     path: PathBuf,
     file: BufWriter<File>,
@@ -212,7 +212,7 @@ impl Journal {
     pub fn open(open: &JournalOpen) -> Result<Self, String> {
         let path = PathBuf::from(&open.path);
         let shown = path.display().to_string();
-        let failed = |e: std::io::Error| format!("{shown}\u{a0}: {}", explain(&e));
+        let failed = |e: std::io::Error| format!("{shown}: {}", explain(&e));
         if let Some(dir) = path.parent() {
             fs::create_dir_all(dir).map_err(failed)?;
         }
@@ -221,7 +221,7 @@ impl Journal {
         #[cfg(unix)]
         {
             use std::os::unix::fs::OpenOptionsExt;
-            // Un journal peut contenir des données sensibles : lisible par son seul propriétaire.
+            // A log can hold sensitive data: readable by its owner only.
             options.mode(0o600);
         }
         let file = options.open(&path).map_err(failed)?;
@@ -235,8 +235,8 @@ impl Journal {
             head.push_str(&format!("\n{note}\n\n"));
         }
         if let Some(backlog) = open.backlog.as_deref().filter(|b| !b.trim().is_empty()) {
-            // La dernière ligne affichée est souvent l'invite : elle reste ouverte, et ce qui sera
-            // tapé ensuite la continue, comme à l'écran.
+            // The last line shown is often the prompt: it stays open, and what is typed next
+            // continues it, as on the screen.
             let mut lines: Vec<&str> = backlog.trim_end_matches('\n').split('\n').collect();
             let last = lines.pop().unwrap_or_default();
             for line in lines {
@@ -258,7 +258,7 @@ impl Journal {
         let _ = self.file.flush();
     }
 
-    /// Écrit la ligne en cours, même inachevée (une invite), et ferme le fichier.
+    /// Writes the current line, even unfinished (a prompt), and closes the file.
     pub fn close(mut self) -> PathBuf {
         if !self.render.line.is_empty() && !self.render.alternate {
             let text: String = self.render.line.iter().collect();
@@ -269,37 +269,35 @@ impl Journal {
     }
 }
 
-/// Pourquoi un journal ne s'ouvre pas, et quoi faire, quand la cause est connue ; sinon le texte du
-/// système, tel quel.
+/// Why a log does not open, and what to do, when the cause is known; otherwise the text of the
+/// system, as it is.
 fn explain(e: &std::io::Error) -> String {
     use std::io::ErrorKind;
     match e.kind() {
-        ErrorKind::PermissionDenied => {
-            "accès refusé. Choisis dans les réglages un dossier où ton compte peut écrire.".into()
-        }
-        ErrorKind::ReadOnlyFilesystem => "le disque est en lecture seule. Choisis un autre dossier dans les réglages.".into(),
-        ErrorKind::StorageFull | ErrorKind::QuotaExceeded => "le disque est plein. Libère de la place, ou choisis un autre dossier.".into(),
+        ErrorKind::PermissionDenied => "Access denied. Choose a folder your account can write to in the settings.".into(),
+        ErrorKind::ReadOnlyFilesystem => "The disk is read-only. Choose another folder in the settings.".into(),
+        ErrorKind::StorageFull | ErrorKind::QuotaExceeded => "The disk is full. Free up some space, or choose another folder.".into(),
         ErrorKind::NotADirectory | ErrorKind::AlreadyExists => {
-            "un fichier porte le nom du dossier. Renomme-le, ou choisis un autre dossier dans les réglages.".into()
+            "There is a file where the folder should be. Rename it, or choose another folder in the settings.".into()
         }
         _ => e.to_string(),
     }
 }
 
-/// Les journaux ouverts, par session : `ssh:3`, `local:2`.
+/// The open logs, by session: `ssh:3`, `local:2`.
 static JOURNALS: LazyLock<Mutex<HashMap<String, Journal>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
 pub fn start(key: &str, open: &JournalOpen) -> Result<String, String> {
     let journal = Journal::open(open)?;
     let path = journal.path.display().to_string();
-    let mut journals = JOURNALS.lock().map_err(|_| "journaux indisponibles".to_string())?;
+    let mut journals = JOURNALS.lock().map_err(|_| "The logs are unavailable. Restart Ramure.".to_string())?;
     if let Some(previous) = journals.insert(key.to_string(), journal) {
         previous.close();
     }
     Ok(path)
 }
 
-/// Donne au journal de `key` ce que la session vient d'afficher, s'il y en a un.
+/// Gives the log of `key` what the session has just shown, if there is one.
 pub fn feed(key: &str, bytes: &[u8]) {
     if let Ok(mut journals) = JOURNALS.lock() {
         if let Some(journal) = journals.get_mut(key) {
@@ -308,19 +306,19 @@ pub fn feed(key: &str, bytes: &[u8]) {
     }
 }
 
-/// Ferme le journal de `key` ; renvoie son chemin s'il y en avait un.
+/// Closes the log of `key`; returns its path if there was one.
 pub fn stop(key: &str) -> Option<String> {
     let journal = JOURNALS.lock().ok()?.remove(key)?;
     Some(journal.close().display().to_string())
 }
 
-/// Le dossier des journaux par défaut, visible : `Documents/Ramure/Journaux`, ou le dossier
-/// personnel quand le système n'a pas de dossier Documents.
+/// The default log folder, in view: `Documents/Ramure/Logs`, or `Ramure/Logs` in the home folder
+/// when the system has no Documents folder.
 pub fn default_dir(documents: Option<&Path>, home: Option<&Path>) -> Option<PathBuf> {
-    documents.or(home).map(|base| base.join("Ramure").join("Journaux"))
+    documents.or(home).map(|base| base.join("Ramure").join("Logs"))
 }
 
-/// Le dossier des journaux quand le réglage est vide.
+/// The log folder when the setting is empty.
 #[tauri::command]
 pub fn journal_default_dir(app: tauri::AppHandle) -> Option<String> {
     use tauri::Manager;
@@ -328,11 +326,11 @@ pub fn journal_default_dir(app: tauri::AppHandle) -> Option<String> {
     default_dir(documents.as_deref(), crate::ssh::config::home().as_deref()).map(|dir| dir.display().to_string())
 }
 
-/// Ouvre le dossier des journaux dans le gestionnaire de fichiers du système, en le créant au besoin.
+/// Opens the log folder in the file manager of the system, creating it if needed.
 #[tauri::command]
 pub fn journal_open_dir(path: String) -> Result<(), String> {
     let dir = PathBuf::from(&path);
-    fs::create_dir_all(&dir).map_err(|e| format!("{path}\u{a0}: {e}"))?;
+    fs::create_dir_all(&dir).map_err(|e| format!("{path}: {e}"))?;
     let program = if cfg!(windows) {
         "explorer"
     } else if cfg!(target_os = "macos") {
@@ -344,7 +342,7 @@ pub fn journal_open_dir(path: String) -> Result<(), String> {
         .arg(&dir)
         .spawn()
         .map(|_| ())
-        .map_err(|e| format!("Le gestionnaire de fichiers n’a pas pu s’ouvrir\u{a0}: ouvre {path} à la main. ({e})"))
+        .map_err(|e| format!("The file manager could not open the folder: open “{path}” by hand. ({e})"))
 }
 
 #[tauri::command]
@@ -367,69 +365,69 @@ mod tests {
     }
 
     #[test]
-    fn retire_les_couleurs_et_les_titres() {
-        let lines = render(&[b"\x1b]0;root@vm: ~\x07\x1b[01;32mroot@vm\x1b[00m:~# ls\r\n\x1b[0m\x1b[01;34mdossier\x1b[0m  fichier\r\n"]);
-        assert_eq!(lines, vec!["root@vm:~# ls", "dossier  fichier"]);
+    fn removes_colors_and_titles() {
+        let lines = render(&[b"\x1b]0;root@vm: ~\x07\x1b[01;32mroot@vm\x1b[00m:~# ls\r\n\x1b[0m\x1b[01;34mfolder\x1b[0m  file\r\n"]);
+        assert_eq!(lines, vec!["root@vm:~# ls", "folder  file"]);
     }
 
     #[test]
-    fn une_barre_de_progression_garde_son_etat_final() {
-        let lines = render(&[b"Progression : 10%\rProgression : 50%\rProgression : 100%\r\n", b"fini\n"]);
-        assert_eq!(lines, vec!["Progression : 100%", "fini"]);
-        // Une ligne plus courte qui en efface la fin.
+    fn a_progress_bar_keeps_its_final_state() {
+        let lines = render(&[b"Progress: 10%\rProgress: 50%\rProgress: 100%\r\n", b"done\n"]);
+        assert_eq!(lines, vec!["Progress: 100%", "done"]);
+        // A shorter line that erases the end of it.
         let lines = render(&[b"abcdef\r\x1b[Kxy\r\n"]);
         assert_eq!(lines, vec!["xy"]);
     }
 
     #[test]
-    fn retour_arriere_et_tabulation() {
-        assert_eq!(render(&[b"motx\x08 \x08s\r\n"]), vec!["mots"]);
+    fn backspace_and_tab() {
+        assert_eq!(render(&[b"wordx\x08 \x08s\r\n"]), vec!["words"]);
         assert_eq!(render(&[b"a\tb\r\n"]), vec!["a       b"]);
     }
 
     #[test]
-    fn un_programme_plein_ecran_ne_laisse_qu_une_ligne() {
-        let lines = render(&[b"$ vim notes\r\n\x1b[?1049h\x1b[H\x1b[2Jcontenu de vim\r\n~\r\n", b"\x1b[?1049l$ suite\r\n"]);
-        assert_eq!(lines, vec!["$ vim notes", FULL_SCREEN, "$ suite"]);
+    fn a_full_screen_program_leaves_only_one_line() {
+        let lines = render(&[b"$ vim notes\r\n\x1b[?1049h\x1b[H\x1b[2Jvim content\r\n~\r\n", b"\x1b[?1049l$ next\r\n"]);
+        assert_eq!(lines, vec!["$ vim notes", FULL_SCREEN, "$ next"]);
     }
 
     #[test]
-    fn un_caractere_coupe_entre_deux_paquets() {
-        let text = "déjà fait\n".as_bytes();
-        let (a, b) = text.split_at(2); // coupe le « é »
-        assert_eq!(render(&[a, b]), vec!["déjà fait"]);
+    fn a_character_split_between_two_packets() {
+        let text = "✓ done\n".as_bytes();
+        let (a, b) = text.split_at(2); // splits the "✓"
+        assert_eq!(render(&[a, b]), vec!["✓ done"]);
     }
 
     #[test]
-    fn ecrit_un_fichier_lisible_et_reprend_apres_une_reconnexion() {
+    fn writes_a_readable_file_and_resumes_after_a_reconnection() {
         let dir = std::env::temp_dir().join(format!("ramure-journal-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
-        let path = dir.join("Journaux").join("serveur-test_2026-11-11_23-05-12.log");
+        let path = dir.join("Logs").join("test-server_2026-11-11_23-05-12.log");
         let open = JournalOpen {
             path: path.display().to_string(),
-            header: "Journal de serveur-test, commencé le 11 nov. 2026 à 23:05".into(),
+            header: "Log of test-server, started Nov 11, 2026 at 11:05 PM".into(),
             note: None,
             backlog: Some("root@vm:~# uptime\n 23:05:01 up 3 days\nroot@vm:~# ".into()),
         };
         start("ssh:1", &open).unwrap();
-        // Ce qui est tapé après le début continue l'invite déjà affichée.
+        // What is typed after the start continues the prompt already shown.
         feed("ssh:1", b"echo \x1b[1mok\x1b[0m\r\nok\r\nroot@vm:~# ");
-        feed("autre", b"ne va nulle part\n");
+        feed("other", b"goes nowhere\n");
         assert!(stop("ssh:1").unwrap().ends_with(".log"));
         assert_eq!(stop("ssh:1"), None);
 
-        // Reprise après une connexion perdue : même fichier, une ligne de reprise.
-        let resumed = JournalOpen { note: Some("— connexion perdue, reprise à 23:07 —".into()), backlog: None, ..open };
+        // Resuming after a lost connection: the same file, a line that marks the resumption.
+        let resumed = JournalOpen { note: Some("— connection lost, resumed at 11:07 PM —".into()), backlog: None, ..open };
         start("ssh:2", &resumed).unwrap();
         feed("ssh:2", b"root@vm:~# exit\r\n");
         stop("ssh:2");
 
         assert_eq!(
             fs::read_to_string(&path).unwrap(),
-            "Journal de serveur-test, commencé le 11 nov. 2026 à 23:05\n\n\
+            "Log of test-server, started Nov 11, 2026 at 11:05 PM\n\n\
              root@vm:~# uptime\n 23:05:01 up 3 days\n\
              root@vm:~# echo ok\nok\nroot@vm:~#\n\
-             \n— connexion perdue, reprise à 23:07 —\n\n\
+             \n— connection lost, resumed at 11:07 PM —\n\n\
              root@vm:~# exit\n"
         );
         #[cfg(unix)]
@@ -441,22 +439,22 @@ mod tests {
     }
 
     #[test]
-    fn dit_pourquoi_un_journal_ne_s_ouvre_pas() {
-        let dir = std::env::temp_dir().join(format!("ramure-journal-refus-{}", std::process::id()));
+    fn says_why_a_log_does_not_open() {
+        let dir = std::env::temp_dir().join(format!("ramure-journal-refused-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        // Un fichier à la place du dossier des journaux.
-        fs::write(dir.join("Journaux"), b"").unwrap();
-        let open = JournalOpen { path: dir.join("Journaux").join("a.log").display().to_string(), header: "x".into(), note: None, backlog: None };
-        let error = start("refus", &open).unwrap_err();
-        assert!(error.contains("un fichier porte le nom du dossier"), "{error}");
+        // A file in place of the log folder.
+        fs::write(dir.join("Logs"), b"").unwrap();
+        let open = JournalOpen { path: dir.join("Logs").join("a.log").display().to_string(), header: "x".into(), note: None, backlog: None };
+        let error = start("refused", &open).unwrap_err();
+        assert!(error.contains("There is a file where the folder should be"), "{error}");
         let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn dossier_par_defaut_visible() {
-        let docs = Path::new("/home/moi/Documents");
-        assert_eq!(default_dir(Some(docs), None).unwrap(), Path::new("/home/moi/Documents/Ramure/Journaux"));
-        assert_eq!(default_dir(None, Some(Path::new("/home/moi"))).unwrap(), Path::new("/home/moi/Ramure/Journaux"));
+    fn the_default_folder_is_in_view() {
+        let docs = Path::new("/home/me/Documents");
+        assert_eq!(default_dir(Some(docs), None).unwrap(), Path::new("/home/me/Documents/Ramure/Logs"));
+        assert_eq!(default_dir(None, Some(Path::new("/home/me"))).unwrap(), Path::new("/home/me/Ramure/Logs"));
     }
 }

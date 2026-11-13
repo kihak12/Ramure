@@ -1,7 +1,7 @@
 {
   "name": "ramure",
   "version": "0.0.1",
-  "description": "Client Git graphique et client SSH/SFTP",
+  "description": "Graphical Git client and SSH/SFTP client",
   "license": "MIT",
   "private": true,
   "type": "module",

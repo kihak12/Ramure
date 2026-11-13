@@ -1,4 +1,4 @@
-//! Lecture de l'historique : `git log` → commits parsés → lignes du graphe.
+//! Reading the history: `git log` → parsed commits → rows of the graph.
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -8,13 +8,13 @@ use serde::Serialize;
 
 use super::{CommandLog, graph, ms, step, text};
 
-/// Champs séparés par 0x1f, commits terminés par 0x1e : aucun de ces octets n'apparaît dans un sujet.
+/// Fields separated by 0x1f, commits ended by 0x1e: neither of these bytes appears in a subject.
 const FORMAT: &str = "--format=%H%x1f%P%x1f%an%x1f%at%x1f%D%x1f%s%x1e";
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RefLabel {
     pub name: String,
-    /// `head` (branche courante), `local`, `remote`, `tag` ou `detached`.
+    /// `head` (current branch), `local`, `remote`, `tag` or `detached`.
     pub kind: &'static str,
 }
 
@@ -24,16 +24,16 @@ pub struct CommitRow {
     pub sha: String,
     pub parents: Vec<String>,
     pub author: String,
-    /// Date de l'auteur, en secondes Unix.
+    /// Author date, in Unix seconds.
     pub time: i64,
     pub refs: Vec<RefLabel>,
     pub subject: String,
     pub lane: u16,
     pub edges: Vec<[u16; 3]>,
-    /// Ligne « modifications en cours », placée en tête quand le répertoire de travail n'est pas propre.
+    /// The “work in progress” row, put at the top when the working tree is not clean.
     pub wip: bool,
-    /// Vrai si le commit n'est atteignable depuis aucune branche distante : il n'a pas été poussé.
-    /// Toujours faux quand le dépôt ne suit aucune branche distante.
+    /// True if no remote branch can reach the commit: it has not been pushed.
+    /// Always false when the repository tracks no remote branch.
     pub local_only: bool,
 }
 
@@ -48,17 +48,17 @@ pub struct Timings {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LogResult {
-    /// Racine du dépôt.
+    /// Root of the repository.
     pub repo: String,
     pub name: String,
     pub branch: Option<String>,
     pub commits: Vec<CommitRow>,
     pub max_lanes: u16,
-    /// Vrai si l'historique dépasse la limite demandée.
+    /// True if the history goes beyond the limit asked for.
     pub truncated: bool,
     pub wip_files: usize,
     pub timings: Timings,
-    /// Commandes git lancées, pour le journal.
+    /// git commands run, for the command log.
     pub commands: Vec<CommandLog>,
 }
 
@@ -72,7 +72,7 @@ struct Meta {
     subject: String,
 }
 
-/// Décorations au format `--decorate=full` :
+/// Decorations in the `--decorate=full` format:
 /// `HEAD -> refs/heads/main, tag: refs/tags/v1, refs/remotes/origin/main`.
 fn parse_refs(decorations: &str) -> Vec<RefLabel> {
     let mut refs = Vec::new();
@@ -93,7 +93,7 @@ fn parse_refs(decorations: &str) -> Vec<RefLabel> {
         } else if let Some(name) = full.strip_prefix("refs/heads/") {
             refs.push(RefLabel { name: name.into(), kind: if current { "head" } else { "local" } });
         } else if let Some(name) = full.strip_prefix("refs/remotes/") {
-            // `origin/HEAD` n'apporte rien à l'affichage.
+            // `origin/HEAD` adds nothing to the display.
             if !name.ends_with("/HEAD") {
                 refs.push(RefLabel { name: name.into(), kind: "remote" });
             }
@@ -132,12 +132,12 @@ fn parse_log(raw: &str) -> Vec<Meta> {
     commits
 }
 
-/// Repère les commits absents de toute branche distante.
-/// `commits` est en ordre topologique : chaque commit précède ses parents.
+/// Finds the commits that no remote branch contains.
+/// `commits` is in topological order: each commit comes before its parents.
 fn find_local_only(commits: &[Meta]) -> Vec<bool> {
     let is_remote = |meta: &Meta| meta.refs.iter().any(|r| r.kind == "remote");
     if !commits.iter().any(is_remote) {
-        // Aucune branche distante connue : la distinction n'a pas de sens.
+        // No remote branch known: the distinction has no meaning.
         return vec![false; commits.len()];
     }
     let mut pushed: HashSet<&str> = HashSet::new();
@@ -146,7 +146,7 @@ fn find_local_only(commits: &[Meta]) -> Vec<bool> {
         .map(|meta| {
             let on_remote = is_remote(meta) || pushed.contains(meta.sha.as_str());
             if on_remote {
-                // Tout ancêtre d'un commit poussé l'est aussi.
+                // Every ancestor of a pushed commit is pushed too.
                 pushed.extend(meta.parents.iter().map(String::as_str));
             }
             !on_remote
@@ -154,7 +154,7 @@ fn find_local_only(commits: &[Meta]) -> Vec<bool> {
         .collect()
 }
 
-/// Compte les fichiers modifiés dans la sortie de `git status --porcelain -z`.
+/// Counts the changed files in the output of `git status --porcelain -z`.
 fn count_changes(status: &[u8]) -> usize {
     let mut count = 0;
     let mut skip_next = false;
@@ -163,7 +163,7 @@ fn count_changes(status: &[u8]) -> usize {
             continue;
         }
         if skip_next {
-            // Ancien chemin d'un renommage : il appartient à l'entrée précédente.
+            // Old path of a rename: it belongs to the previous entry.
             skip_next = false;
             continue;
         }
@@ -176,10 +176,10 @@ fn count_changes(status: &[u8]) -> usize {
 }
 
 pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
-    let mut journal = Vec::new();
+    let mut commands = Vec::new();
 
-    let top = step(&mut journal, dir, &["rev-parse", "--show-toplevel"])
-        .map_err(|e| format!("Ce dossier n'est pas un dépôt Git. {e}"))?;
+    let top = step(&mut commands, dir, &["rev-parse", "--show-toplevel"])
+        .map_err(|e| format!("This folder is not a Git repository. {e}"))?;
     let top = text(&top);
     let root = Path::new(&top);
     let name = root
@@ -187,32 +187,32 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| top.clone());
 
-    let head = step(&mut journal, root, &["rev-parse", "--verify", "--quiet", "HEAD"])
+    let head = step(&mut commands, root, &["rev-parse", "--verify", "--quiet", "HEAD"])
         .ok()
         .map(|b| text(&b))
         .filter(|s| !s.is_empty());
-    let branch = step(&mut journal, root, &["symbolic-ref", "--short", "--quiet", "HEAD"])
+    let branch = step(&mut commands, root, &["symbolic-ref", "--short", "--quiet", "HEAD"])
         .ok()
         .map(|b| text(&b))
         .filter(|s| !s.is_empty());
 
-    // Un commit de plus que la limite : c'est ce qui révèle un historique tronqué.
+    // One commit more than the limit: that is what reveals a truncated history.
     let limit = limit.filter(|n| *n > 0).map(|n| n as usize);
     let max_count = limit.map(|n| format!("--max-count={}", n + 1));
     let mut args = vec!["log", "--topo-order", "--decorate=full", FORMAT];
     if let Some(max_count) = &max_count {
         args.push(max_count);
     }
-    // Ni la remise, ni les sauvegardes que Ramure crée avant de réécrire l'historique.
+    // Neither the stash nor the backups Ramure creates before it rewrites history.
     args.extend(["--exclude=refs/stash", "--exclude=refs/ramure/*", "--all"]);
     if head.is_some() {
         args.push("HEAD");
     }
 
     let start = Instant::now();
-    let raw = match step(&mut journal, root, &args) {
+    let raw = match step(&mut commands, root, &args) {
         Ok(raw) => raw,
-        // Dépôt sans aucun commit : git log échoue, l'historique est simplement vide.
+        // A repository with no commit at all: git log fails, and the history is simply empty.
         Err(_) if head.is_none() => Vec::new(),
         Err(e) => return Err(e),
     };
@@ -227,7 +227,7 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
     let local_only = find_local_only(&metas);
     let parse_ms = ms(start);
 
-    let wip_files = step(&mut journal, root, &["status", "--porcelain", "-z", "--untracked-files=all"])
+    let wip_files = step(&mut commands, root, &["status", "--porcelain", "-z", "--untracked-files=all"])
         .map(|out| count_changes(&out))
         .unwrap_or(0);
     let wip_parent = head.as_deref().filter(|_| wip_files > 0);
@@ -286,7 +286,7 @@ pub fn load(dir: &Path, limit: Option<u32>) -> Result<LogResult, String> {
         truncated,
         wip_files,
         timings: Timings { git_ms, parse_ms, layout_ms },
-        commands: journal,
+        commands,
     })
 }
 
@@ -320,11 +320,11 @@ mod tests {
 
     #[test]
     fn log_records_are_parsed() {
-        let raw = "aaa\x1fbbb ccc\x1fJeanne\x1f1730000000\x1fHEAD -> refs/heads/main\x1fMerge: sujet, avec virgule\x1e\nbbb\x1f\x1fPaul\x1f1720000000\x1f\x1finit\x1e\n";
+        let raw = "aaa\x1fbbb ccc\x1fJane\x1f1730000000\x1fHEAD -> refs/heads/main\x1fMerge: subject, with a comma\x1e\nbbb\x1f\x1fPaul\x1f1720000000\x1f\x1finit\x1e\n";
         let commits = parse_log(raw);
         assert_eq!(commits.len(), 2);
         assert_eq!(commits[0].parents, vec!["bbb", "ccc"]);
-        assert_eq!(commits[0].subject, "Merge: sujet, avec virgule");
+        assert_eq!(commits[0].subject, "Merge: subject, with a comma");
         assert_eq!(commits[0].refs[0].kind, "head");
         assert!(commits[1].parents.is_empty());
         assert_eq!(commits[1].time, 1_720_000_000);
@@ -332,9 +332,9 @@ mod tests {
 
     #[test]
     fn unpushed_commits_are_local_only() {
-        // d (main, local) → c (origin/main) → a ; e (sujet, local) → a.
+        // d (main, local) → c (origin/main) → a; e (topic, local) → a.
         let raw = "d\x1fc\x1fA\x1f4\x1fHEAD -> refs/heads/main\x1fd\x1e\
-e\x1fa\x1fA\x1f3\x1frefs/heads/sujet\x1fe\x1e\
+e\x1fa\x1fA\x1f3\x1frefs/heads/topic\x1fe\x1e\
 c\x1fa\x1fA\x1f2\x1frefs/remotes/origin/main\x1fc\x1e\
 a\x1f\x1fA\x1f1\x1f\x1fa\x1e";
         let commits = parse_log(raw);
@@ -353,15 +353,15 @@ a\x1f\x1fA\x1f1\x1f\x1fa\x1e";
         assert_eq!(count_changes(b""), 0);
     }
 
-    /// Mesure sur un vrai dépôt : `RAMURE_TEST_REPO=/chemin cargo test real_repo -- --nocapture`.
+    /// Measures a real repository: `RAMURE_TEST_REPO=/path cargo test real_repo -- --nocapture`.
     #[test]
     fn real_repo_loads() {
         let Ok(path) = std::env::var("RAMURE_TEST_REPO") else { return };
         let limit = std::env::var("RAMURE_TEST_LIMIT").ok().and_then(|v| v.parse().ok());
         let start = Instant::now();
-        let result = load(Path::new(&path), limit).expect("chargement du dépôt");
+        let result = load(Path::new(&path), limit).expect("loading the repository");
         println!(
-            "{} : {} commits, {} lanes, tronqué = {}, WIP = {} fichiers",
+            "{}: {} commits, {} lanes, truncated = {}, WIP = {} files",
             result.name,
             result.commits.len(),
             result.max_lanes,
@@ -376,10 +376,10 @@ a\x1f\x1fA\x1f1\x1f\x1fa\x1e";
             ms(start)
         );
         let json = serde_json::to_string(&result).unwrap();
-        println!("charge utile IPC : {:.1} Mo", json.len() as f64 / 1_048_576.0);
-        // `RAMURE_TEST_DUMP=fichier.json` : écrit la réponse, pour tester l'interface hors de Tauri.
+        println!("IPC payload: {:.1} MB", json.len() as f64 / 1_048_576.0);
+        // `RAMURE_TEST_DUMP=file.json`: writes the reply, to test the interface outside Tauri.
         if let Ok(dump) = std::env::var("RAMURE_TEST_DUMP") {
-            std::fs::write(dump, &json).expect("écriture du fichier de test");
+            std::fs::write(dump, &json).expect("writing the test file");
         }
         assert!(!result.commits.is_empty());
     }

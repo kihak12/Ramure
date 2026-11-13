@@ -1,5 +1,5 @@
-//! Cœur de Ramure : tout ce qui touche au disque et au réseau passe par ici.
-//! L'interface n'appelle que les commandes déclarées dans `invoke_handler`.
+//! Core of Ramure: everything that touches the disk and the network goes through here.
+//! The interface only calls the commands declared in `invoke_handler`.
 
 mod git;
 mod journal;
@@ -10,12 +10,12 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Sous Linux, des barres de défilement classiques, comme sous Windows : WebKitGTK peint ses
-    // barres superposées après tout le reste, par-dessus un menu ouvert (charte, 9.6 et 9.9). Une
-    // valeur déjà donnée par l'utilisateur est respectée.
+    // On Linux, classic scrollbars, as on Windows: WebKitGTK paints its overlay scrollbars after
+    // everything else, over an open menu (guidelines, 9.6 and 9.9). A value the user has already
+    // set is respected.
     #[cfg(target_os = "linux")]
     if std::env::var_os("GTK_OVERLAY_SCROLLING").is_none() {
-        // SAFETY: au démarrage, avant que Tauri ne lance GTK ni aucun autre fil.
+        // SAFETY: at startup, before Tauri starts GTK or any other thread.
         unsafe { std::env::set_var("GTK_OVERLAY_SCROLLING", "0") };
     }
     tauri::Builder::default()
@@ -24,7 +24,7 @@ pub fn run() {
         .manage(local::LocalState::default())
         .manage(git::clone::CloneState::default())
         .setup(|app| {
-            // Carnet d'hôtes : %APPDATA%\Ramure sous Windows, ~/.config/ramure ailleurs.
+            // Host book: %APPDATA%\Ramure on Windows, ~/.config/ramure elsewhere.
             let folder = if cfg!(windows) { "Ramure" } else { "ramure" };
             let store = app
                 .path()
@@ -36,8 +36,8 @@ pub fn run() {
                     ssh::store::Store::open(&dir.join("ramure.db"))
                 })
                 .or_else(|e| {
-                    // Sans fichier, le carnet vit en mémoire le temps de la session.
-                    log::warn!("carnet d'hôtes non enregistré : {e}");
+                    // Without a file, the host book lives in memory for the session.
+                    log::warn!("host book not saved: {e}");
                     ssh::store::Store::in_memory()
                 })?;
             app.manage(store);
@@ -108,5 +108,5 @@ pub fn run() {
             ssh::keyfiles::ssh_key_import,
         ])
         .run(tauri::generate_context!())
-        .expect("erreur au lancement de Ramure");
+        .expect("Ramure failed to start");
 }
