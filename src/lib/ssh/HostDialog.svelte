@@ -15,23 +15,23 @@
   let element = $state<HTMLDialogElement>();
   let form = $state<Host | null>(null);
   let tags = $state('');
-  /** Remarque affichée sous le champ de la clé après un choix dans la fenêtre de fichiers. */
+  /** Note shown under the key field after a choice in the file picker. */
   let keyNote = $state('');
-  /** Ce qui a échoué dans la fiche, dit sous l'élément qui l'a déclenché, jamais dans une
-   *  notification, que le voile de la boîte recouvrirait (charte, 9.11). */
+  /** What failed in the form, said under the element that triggered it, never in a
+   *  notification, which the veil of the dialog would cover (guidelines, 9.11). */
   let keyError = $state('');
   let forgetError = $state<{ password: string; passphrase: string }>({ password: '', passphrase: '' });
-  /** La fiche n'a pas pu être enregistrée ou supprimée : dit dans sa dernière ligne. */
+  /** The host could not be saved or deleted: said in the last line of the form. */
   let failure = $state('');
 
   const editing = $derived(ssh.editing);
   const valid = $derived(!!form && form.alias.trim() !== '' && form.hostname.trim() !== '');
-  // Un hôte qu'on ajoute (ou une copie) n'est pas encore au carnet : on s'y connecte presque
-  // toujours aussitôt, l'enregistrement connecte. Un hôte qu'on modifie s'enregistre seulement.
+  // A host being added (or a copy) is not in the book yet: one nearly always connects to it at
+  // once, so saving connects. A host being edited is only saved.
   const adding = $derived(!editing?.id);
-  /** Ce qui manque tant que la fiche n'est pas valide : dit à côté du test et dans les infobulles (9.1). */
-  const MISSING = 'Indique un nom et une adresse.';
-  // Entrée dans une fiche incomplète : rien ne s'enregistre, la phrase passe en avertissement (9.1).
+  /** What is missing while the form is not valid: said beside the test and in the tooltips (9.1). */
+  const MISSING = 'Enter a name and an address.';
+  // Enter in an incomplete form: nothing is saved, the sentence turns to a warning (9.1).
   let tried = $state(false);
   $effect(() => {
     if (valid) tried = false;
@@ -49,38 +49,38 @@
       forgetError = { password: '', passphrase: '' };
       forget();
       element.showModal();
-      // À la première ouverture, les champs paraissent après la boîte : `autofocus` n'y joue pas. Le
-      // focus va ensuite au premier champ, « Nom » (charte, 9.10).
+      // On the first opening, the fields appear after the dialog: `autofocus` does not act there.
+      // The focus then goes to the first field, "Name" (guidelines, 9.10).
       void tick().then(() => element?.querySelector<HTMLInputElement>('input[autofocus]')?.focus());
     } else if (!editing && element.open) {
       element.close();
     }
   });
 
-  // Fermer la fiche abandonne un test en cours : son résultat ne s'affichera nulle part.
+  // Closing the form drops a test in progress: its result will show nowhere.
   const close = () => {
     forget();
     ssh.editing = null;
   };
 
-  /** Fiche à jour, tags compris. */
+  /** The host as the form has it, tags included. */
   function current(): Host | null {
     if (!form) return null;
     return { ...form, port: Number(form.port) || 22, tags: tags.split(',').map((t) => t.trim()).filter(Boolean) };
   }
 
-  // « Supprimer l'hôte… » : seulement pour un hôte déjà au carnet, pas pour un ajout ni une copie.
+  // "Delete host…": only for a host already in the book, not for one being added nor for a copy.
   let removeButton = $state<HTMLButtonElement>();
   async function removeHost() {
     if (!editing?.id) return;
-    // La fiche telle qu'elle est enregistrée : c'est son compte qui dit quel mot de passe part avec elle.
+    // The host as it is saved: its account says which password goes with it.
     const stored = ssh.hosts.find((h) => h.id === editing.id) ?? editing;
     failure = '';
     if (await ssh.removeAsked(stored, (text) => (failure = text))) {
       close();
       await ssh.focusBook();
     }
-    // Annulée : la confirmation se ferme, le clavier revient au bouton qui l'a ouverte, avec l'anneau.
+    // Canceled: the confirmation closes, the keyboard comes back to the button that opened it, with the ring.
     else focusWithRing(removeButton);
   }
 
@@ -97,7 +97,7 @@
     if (connect) ssh.open(saved);
   }
 
-  /** Choisit la clé privée dans la fenêtre de fichiers du système, ouverte dans `~/.ssh`. */
+  /** Chooses the private key in the file picker of the system, opened in `~/.ssh`. */
   async function browseKey() {
     let home = '';
     let folder: string | undefined;
@@ -105,32 +105,32 @@
       home = (await homeDir()).replace(/[\\/]+$/, '');
       folder = await join(home, '.ssh');
     } catch {
-      folder = undefined; // dossier personnel introuvable : la fenêtre s'ouvre où le système le décide
+      folder = undefined; // home folder not found: the picker opens where the system decides
     }
     let picked: string | null;
     try {
-      picked = await open({ title: 'Choisir une clé privée', multiple: false, directory: false, defaultPath: folder });
+      picked = await open({ title: 'Choose a private key', multiple: false, directory: false, defaultPath: folder });
     } catch (e) {
-      keyError = `La fenêtre de fichiers n’a pas pu s’ouvrir : ${e instanceof Error ? e.message : String(e)}`;
+      keyError = `The file picker could not open: ${e instanceof Error ? e.message : String(e)}`;
       return;
     }
-    // Fenêtre annulée, ou fiche fermée entre-temps : le champ ne change pas.
+    // Picker canceled, or form closed in the meantime: the field does not change.
     if (!picked || !form) return;
     keyNote = '';
     keyError = '';
     if (picked.endsWith('.pub')) {
-      // La connexion se fait avec la clé privée, rangée à côté sous le même nom.
+      // The connection uses the private key, kept beside it under the same name.
       picked = picked.slice(0, -'.pub'.length);
-      keyNote = 'Tu as choisi la clé publique : le champ pointe sur la clé privée du même nom, qui sert à se connecter.';
+      keyNote = 'You chose the public key: the field points to the private key of the same name, which is the one used to connect.';
     }
-    // Dans le dossier personnel, le chemin s'écrit `~/…`, comme les clés proposées par le champ.
+    // In the home folder, the path is written `~/…`, like the keys the field suggests.
     if (home && picked.startsWith(home) && /^[\\/]/.test(picked.slice(home.length))) picked = `~${picked.slice(home.length)}`;
     form.keyPath = picked;
   }
 
-  // --- Secrets retenus dans le trousseau du système (charte, section 9.21) -----------------------
-  // Le mot de passe appartient au compte (utilisateur, serveur, port), la phrase secrète à la clé :
-  // la fiche montre ce que le trousseau retient pour les siens, et permet de l'oublier.
+  // --- Secrets kept in the system keyring (guidelines, section 9.21) -----------------------------
+  // The password belongs to the account (user, server, port), the passphrase to the key: the form
+  // shows what the keyring keeps for them, and lets the user forget it.
   let keyring = $state<boolean | null>(null);
   let held = $state({ password: false, passphrase: false });
   let authEl = $state<HTMLSelectElement>();
@@ -147,7 +147,7 @@
     return { kind: 'passphrase', path: form.keyPath.trim() };
   });
 
-  // Chaque lecture porte un numéro : la réponse d'une lecture dépassée est ignorée.
+  // Each read carries a number: the answer of an outdated read is ignored.
   let reading = 0;
   async function readHeld() {
     const mine = ++reading;
@@ -157,7 +157,7 @@
     held = { password: !!passwordRef && answers[0] === true, passphrase: !!passphraseRef && answers[passwordRef ? 1 : 0] === true };
   }
 
-  // La fiche s'ouvre, ou un champ de la connexion change : on relit, une fois la frappe posée.
+  // The form opens, or a field of the connection changes: read again, once typing has settled.
   $effect(() => {
     if (!form) return;
     void [passwordRef, passphraseRef];
@@ -169,7 +169,7 @@
     if (editing) void keyringAvailable().then((answer) => (keyring = answer));
   });
 
-  /** Oublie le secret retenu ; le focus va au champ dont il dépend, le bouton ayant disparu. */
+  /** Forgets the kept secret; the focus goes to the field it depends on, since the button is gone. */
   async function forgetHeld(kind: 'password' | 'passphrase') {
     const ref = kind === 'password' ? passwordRef : passphraseRef;
     if (!ref) return;
@@ -179,22 +179,22 @@
       held[kind] = false;
       focusWithRing(kind === 'password' ? authEl : keyEl);
     } catch (e) {
-      forgetError[kind] = `Le trousseau du système n’a pas pu l’oublier : ${typeof e === 'string' ? e : String(e)}`;
+      forgetError[kind] = `The system keyring could not forget it: ${typeof e === 'string' ? e : String(e)}`;
     }
   }
 
-  // --- Tester la connexion (charte, section 9.21) ---------------------------------------------
-  /** Ce que le test montre, entre les champs et les boutons. */
+  // --- Test connection (guidelines, section 9.21) --------------------------------------------
+  /** What the test shows, between the fields and the buttons. */
   type Test =
     | { step: 'idle' }
     | { step: 'running' }
-    /** `learnFailed` : l'empreinte devait être mémorisée et `known_hosts` n'a pas pu être écrit. */
+    /** `learnFailed`: the fingerprint was to be remembered and `known_hosts` could not be written. */
     | { step: 'ok'; method: string; ms: number; learnFailed: string | null }
     | { step: 'fail'; message: string }
     | { step: 'hostKey'; fingerprint: string; algorithm: string }
     | { step: 'secret'; kind: 'passphrase' | 'password'; path: string; error: string };
 
-  /** Ce qu'on sait pour ce test : rien n'est gardé une fois le résultat connu. */
+  /** What is known for this test: nothing is kept once the result is known. */
   interface Attempt {
     accept?: string;
     remember?: boolean;
@@ -206,20 +206,20 @@
   let test = $state<Test>({ step: 'idle' });
   let attempt: Attempt = {};
   let secret = $state('');
-  // Chaque test porte un numéro : le résultat d'un test abandonné (fiche fermée, champ changé) est ignoré.
+  // Each test carries a number: the result of a dropped test (form closed, field changed) is ignored.
   let run = 0;
   let secretEl = $state<HTMLInputElement>();
   let testButton = $state<HTMLButtonElement>();
 
-  // Le bouton cliqué a disparu (une question), ou s'est désactivé pendant le test : une fois le
-  // résultat affiché, le clavier revient sur « Tester la connexion » plutôt que de se perdre.
+  // The clicked button is gone (a question), or was disabled during the test: once the result
+  // shows, the keyboard comes back to "Test connection" rather than getting lost.
   $effect(() => {
     if (test.step !== 'ok' && test.step !== 'fail') return;
     const lost = !document.activeElement || document.activeElement === document.body || document.activeElement === element;
     if (lost) void tick().then(() => testButton?.focus());
   });
 
-  /** Oublie le test : son résultat, ses secrets, et celui qui serait encore en cours. */
+  /** Forgets the test: its result, its secrets, and the one that may still be running. */
   function forget() {
     run++;
     attempt = {};
@@ -227,14 +227,14 @@
     test = { step: 'idle' };
   }
 
-  // Un champ de la connexion change : le résultat ne dit plus rien de la fiche, il s'efface.
+  // A field of the connection changes: the result no longer says anything about the form, it goes away.
   $effect(() => {
     if (!form) return;
     void [form.hostname, form.port, form.user, form.auth, form.keyPath, form.proxyJump];
     untrack(forget);
   });
 
-  // Un secret est demandé : son champ prend le focus.
+  // A secret is asked for: its field takes the focus.
   $effect(() => {
     if (test.step === 'secret') secretEl?.focus();
   });
@@ -248,13 +248,13 @@
     secret = '';
     const user = host.user || ssh.defaultUser;
     if (!user) {
-      test = { step: 'fail', message: `Indique un utilisateur${NB}: le compte de cette machine n’a pas pu être lu.` };
+      test = { step: 'fail', message: 'Enter a user: the account of this machine could not be read.' };
       return;
     }
     const keyPath = attempt.keyPath ?? (host.auth === 'keyFile' ? host.keyPath : '');
     const auth =
       host.auth === 'password'
-        ? // Sans mot de passe tapé, le test prend celui que le trousseau retient, comme une connexion.
+        ? // Without a typed password, the test takes the one the keyring keeps, as a connection does.
           { kind: 'password', password: attempt.password ?? null }
         : keyPath
           ? { kind: 'keyFile', path: keyPath, passphrase: attempt.passphrase ?? null }
@@ -286,18 +286,18 @@
         attempt = { ...attempt, passphrase: undefined };
         const error =
           problem.refused === 'typed'
-            ? 'Cette phrase secrète ne déverrouille pas la clé.'
+            ? 'This passphrase does not unlock the key.'
             : problem.refused === 'retained'
-              ? 'La phrase secrète retenue ne déverrouille plus la clé. Elle a été oubliée.'
+              ? 'The remembered passphrase no longer unlocks the key. It has been forgotten.'
               : '';
         test = { step: 'secret', kind: 'passphrase', path: problem.path, error };
-        // Un secret retenu qui est refusé est oublié : la fiche ne le montre plus.
+        // A kept secret that is refused is forgotten: the form no longer shows it.
         if (problem.refused === 'retained') void readHeld();
         return;
       }
       if (problem.kind === 'needPassword') {
         attempt = { ...attempt, password: undefined };
-        test = { step: 'secret', kind: 'password', path: '', error: problem.refused ? 'Le serveur a refusé le mot de passe retenu. Il a été oublié.' : '' };
+        test = { step: 'secret', kind: 'password', path: '', error: problem.refused ? 'The server refused the remembered password. It has been forgotten.' : '' };
         if (problem.refused) void readHeld();
         return;
       }
@@ -311,7 +311,7 @@
         step: 'fail',
         message:
           problem.kind === 'hostKeyChanged'
-            ? `L’empreinte du serveur ne correspond plus à celle de la ligne ${problem.line} de known_hosts${NB}: le test est bloqué, comme une connexion.`
+            ? `The server fingerprint no longer matches the one on line ${problem.line} of known_hosts: the test is blocked, as a connection would be.`
             : explain(problem.message),
       };
     }
@@ -322,8 +322,6 @@
     if (test.kind === 'passphrase') void startTest({ keyPath: test.path, passphrase: secret });
     else void startTest({ password: secret });
   }
-
-  const NB = '\u00a0';
 </script>
 
 <dialog
@@ -335,7 +333,7 @@
   use:veil={close}
 >
   {#if form}
-    <!-- La touche Entrée est seulement observée : les champs restent les éléments interactifs. -->
+    <!-- The Enter key is only watched: the fields stay the interactive elements. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <form
       onsubmit={(e) => {
@@ -343,65 +341,65 @@
         void save(adding);
       }}
       onkeydown={(e) => {
-        // Entrée dans un champ d'une fiche incomplète : le bouton grisé ne fait rien, la phrase le dit.
+        // Enter in a field of an incomplete form: the disabled button does nothing, the sentence says so.
         if (e.key === 'Enter' && !valid && e.target instanceof HTMLInputElement) tried = true;
       }}
     >
-      <!-- Les champs défilent si la fenêtre est trop basse ; la dernière ligne reste en vue (charte, 9.10). -->
+      <!-- The fields scroll if the window is too low; the last line stays in view (guidelines, 9.10). -->
       <div class="content">
-      <h2>{form.id ? `Modifier ${editing?.alias ?? 'l’hôte'}` : 'Nouvel hôte'}</h2>
+      <h2>{form.id ? `Edit ${editing?.alias ?? 'host'}` : 'New host'}</h2>
 
       {#if form.proxyJump}
         <p class="warning">
           <Icon name="warning" />
-          <span>Cet hôte passe par un bastion (ProxyJump). Il est dans le carnet, mais le rebond par bastion n’est pas encore pris en charge.</span>
+          <span>This host goes through a bastion (ProxyJump). It is in your hosts, but connecting through a bastion is not supported yet.</span>
         </p>
       {/if}
 
       <div class="grid">
         <label class="full">
-          <span class="label">Nom</span>
+          <span class="label">Name</span>
           <!-- svelte-ignore a11y_autofocus -->
           <input class="field" type="text" placeholder="vps-prod" spellcheck="false" autocomplete="off" autofocus bind:value={form.alias} />
         </label>
         <label class="most">
-          <span class="label">Adresse</span>
-          <input class="field mono" type="text" placeholder="serveur.example.net" spellcheck="false" autocomplete="off" bind:value={form.hostname} />
+          <span class="label">Address</span>
+          <input class="field mono" type="text" placeholder="server.example.net" spellcheck="false" autocomplete="off" bind:value={form.hostname} />
         </label>
         <label>
           <span class="label">Port</span>
           <input class="field mono" type="number" min="1" max="65535" bind:value={form.port} />
         </label>
         <label class="full">
-          <span class="label">Utilisateur</span>
-          <input class="field mono" type="text" placeholder={ssh.defaultUser || 'utilisateur'} spellcheck="false" autocomplete="off" bind:value={form.user} />
+          <span class="label">User</span>
+          <input class="field mono" type="text" placeholder={ssh.defaultUser || 'user'} spellcheck="false" autocomplete="off" bind:value={form.user} />
         </label>
 
         <label class="full">
-          <span class="label">Authentification</span>
+          <span class="label">Authentication</span>
           <Select bind:element={authEl} bind:value={form.auth}>
-            <option value="auto">Agent SSH, puis clés par défaut de ~/.ssh</option>
-            <option value="keyFile">Fichier de clé</option>
-            <option value="password">Mot de passe</option>
+            <option value="auto">SSH agent, then the default keys of ~/.ssh</option>
+            <option value="keyFile">Key file</option>
+            <option value="password">Password</option>
           </Select>
         </label>
         {#if form.auth === 'password'}
-          <!-- Ce que le trousseau retient pour ce compte, et de quoi l'oublier. -->
+          <!-- What the keyring keeps for this account, and the way to forget it. -->
           <div class="full kept">
             {#if held.password}
-              <small role="status">Le mot de passe de ce compte est retenu dans le trousseau du système.</small>
-              <button class="btn ghost small" type="button" onclick={() => void forgetHeld('password')}>Oublier le mot de passe</button>
+              <small role="status">The password of this account is kept in the system keyring.</small>
+              <button class="btn ghost small" type="button" onclick={() => void forgetHeld('password')}>Forget password</button>
               {#if forgetError.password}<small class="bad" role="alert">{forgetError.password}</small>{/if}
             {:else if keyring === false}
               <small>{NO_KEYRING.password}</small>
             {:else}
-              <small>Demandé à la connexion, où tu peux le faire retenir par le trousseau du système.</small>
+              <small>Asked for when you connect. You can have the system keyring remember it.</small>
             {/if}
           </div>
         {/if}
         {#if form.auth === 'keyFile'}
           <div class="full key">
-            <label for="host-key"><span class="label">Clé privée</span></label>
+            <label for="host-key"><span class="label">Private key</span></label>
             <div class="pick">
               <input
                 id="host-key"
@@ -418,7 +416,7 @@
                   keyError = '';
                 }}
               />
-              <button class="btn" type="button" onclick={() => void browseKey()}><Icon name="folder" size={14} /> Parcourir…</button>
+              <button class="btn" type="button" onclick={() => void browseKey()}><Icon name="folder" size={14} /> Browse…</button>
             </div>
             <datalist id="host-keys">
               {#each ssh.keys as key (key.path)}<option value={key.path}>{key.algorithm}{key.comment ? ` · ${key.comment}` : ''}</option>{/each}
@@ -429,33 +427,33 @@
               <small class="note" role="status">{keyNote}</small>
             {:else if held.passphrase}
               <div class="kept">
-                <small role="status">La phrase secrète de cette clé est retenue dans le trousseau du système.</small>
-                <button class="btn ghost small" type="button" onclick={() => void forgetHeld('passphrase')}>Oublier la phrase secrète</button>
+                <small role="status">The passphrase of this key is kept in the system keyring.</small>
+                <button class="btn ghost small" type="button" onclick={() => void forgetHeld('passphrase')}>Forget passphrase</button>
                 {#if forgetError.passphrase}<small class="bad" role="alert">{forgetError.passphrase}</small>{/if}
               </div>
             {:else}
-              <small>Si la clé est protégée, sa phrase secrète est demandée à la connexion.</small>
+              <small>If the key is protected, its passphrase is asked for when you connect.</small>
             {/if}
           </div>
         {/if}
 
         <label class="full">
-          <span class="label">Commande au démarrage</span>
+          <span class="label">Startup command</span>
           <input class="field mono" type="text" placeholder="cd /srv/docker" spellcheck="false" autocomplete="off" bind:value={form.startupCommand} />
-          <small>Envoyée dans le terminal dès que le shell est prêt.</small>
+          <small>Sent to the terminal as soon as the shell is ready.</small>
         </label>
 
-        <!-- Le journal de chaque session : son dossier est dans les réglages, un seul endroit (9.18). -->
+        <!-- The log of every session: its folder is in the settings, a single place (9.18). -->
         <div class="full journal">
           <label class="check">
             <input type="checkbox" bind:checked={form.logSessions} />
-            <span>Enregistrer le journal de chaque session</span>
+            <span>Record a log of every session</span>
           </label>
-          <small>Un fichier texte par session, dans le dossier des journaux des réglages. Il contient tout ce que le terminal affiche, données sensibles comprises.</small>
+          <small>One text file per session, in the log folder of the settings. It holds everything the terminal shows, sensitive data included.</small>
         </div>
 
         <label class="half">
-          <span class="label">Groupe</span>
+          <span class="label">Group</span>
           <input class="field" type="text" list="host-groups" placeholder="Production" autocomplete="off" bind:value={form.group} />
           <datalist id="host-groups">
             {#each ssh.groups as group (group)}<option value={group}></option>{/each}
@@ -467,19 +465,19 @@
         </label>
 
         <fieldset class="full">
-          <legend class="label">Couleur</legend>
-          <label class="swatch none" class:on={form.color === ''} title="Aucune">
-            <input type="radio" name="host-color" value="" bind:group={form.color} /><span class="spoken">Aucune</span>
+          <legend class="label">Color</legend>
+          <label class="swatch none" class:on={form.color === ''} title="None">
+            <input type="radio" name="host-color" value="" bind:group={form.color} /><span class="spoken">None</span>
           </label>
           {#each COLORS as color (color)}
-            <label class="swatch" class:on={form.color === color} style:--c="var(--l{color})" title="Couleur {Number(color) + 1}">
-              <input type="radio" name="host-color" value={color} bind:group={form.color} /><span class="spoken">Couleur {Number(color) + 1}</span>
+            <label class="swatch" class:on={form.color === color} style:--c="var(--l{color})" title="Color {Number(color) + 1}">
+              <input type="radio" name="host-color" value={color} bind:group={form.color} /><span class="spoken">Color {Number(color) + 1}</span>
             </label>
           {/each}
         </fieldset>
       </div>
 
-      <!-- Le test, seul sur sa ligne sous les champs ; son résultat juste dessous (charte, section 9.21). -->
+      <!-- The test, alone on its line under the fields; its result right under it (guidelines, section 9.21). -->
       <div class="testing">
         <button
           bind:this={testButton}
@@ -487,18 +485,18 @@
           type="button"
           disabled={!testable}
           title={form.proxyJump
-            ? 'Le rebond par bastion n’est pas encore pris en charge'
+            ? 'Connecting through a bastion is not supported yet'
             : valid
-              ? 'Se connecter avec ces valeurs, sans rien enregistrer ni ouvrir de terminal'
+              ? 'Connect with these values, without saving anything or opening a terminal'
               : MISSING}
           onclick={() => {
             attempt = {};
             void startTest();
           }}
         >
-          {#if test.step === 'running'}<span class="spinner" aria-hidden="true"></span> Test en cours…{:else}Tester la connexion{/if}
+          {#if test.step === 'running'}<span class="spinner" aria-hidden="true"></span> Testing…{:else}Test connection{/if}
         </button>
-        <!-- Tant que la fiche n'est pas valide, ce qui manque, à côté du premier bouton grisé. -->
+        <!-- While the form is not valid, what is missing, beside the first disabled button. -->
         {#if !valid && !form.proxyJump}
           <small class="why" class:tried role={tried ? 'alert' : undefined}>{#if tried}<Icon name="warning" size={14} />{/if}{MISSING}</small>
         {/if}
@@ -507,38 +505,38 @@
       {#if test.step === 'ok'}
         <p class="test ok" role="status">
           <Icon name="check" size={14} />
-          <span><b>Connexion réussie</b> <span class="how">{test.method}, en {Math.round(test.ms)}{NB}ms</span></span>
+          <span><b>Connection succeeded</b> <span class="how">{test.method}, in {Math.round(test.ms)} ms</span></span>
         </p>
         {#if test.learnFailed}
-          <!-- Le serveur a été accepté pour ce test, mais pas inscrit dans known_hosts (charte, 9.21). -->
+          <!-- The server was accepted for this test, but not written in known_hosts (guidelines, 9.21). -->
           <p class="test warn" role="status">
             <Icon name="warning" size={14} />
-            <span><b>L’empreinte n’a pas pu être mémorisée</b> <span class="how mono">{test.learnFailed}</span></span>
+            <span><b>The fingerprint could not be remembered</b> <span class="how mono">{test.learnFailed}</span></span>
           </p>
         {/if}
       {:else if test.step === 'fail'}
         <p class="test bad" role="alert"><Icon name="warning" size={14} /> <span>{test.message}</span></p>
       {:else if test.step === 'hostKey'}
-        <div class="test ask" role="group" aria-label="Serveur inconnu">
+        <div class="test ask" role="group" aria-label="Unknown server">
           <p>
-            <b class="mono">{form.hostname}</b> n’est pas dans <span class="mono">known_hosts</span>. Vérifie que cette empreinte {test.algorithm} est
-            bien celle du serveur avant de lui faire confiance{NB}:
+            <b class="mono">{form.hostname}</b> is not in <span class="mono">known_hosts</span>. Check that this {test.algorithm} fingerprint
+            is the server’s before you trust it:
           </p>
           <p class="print mono">{test.fingerprint}</p>
           <div class="row">
             <button class="btn small" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: true })}>
-              Faire confiance et mémoriser
+              Trust and remember
             </button>
             <button class="btn small" type="button" onclick={() => test.step === 'hostKey' && void startTest({ accept: test.fingerprint, remember: false })}>
-              Faire confiance cette fois
+              Trust this time
             </button>
           </div>
         </div>
       {:else if test.step === 'secret'}
-        <div class="test ask" role="group" aria-label={test.kind === 'passphrase' ? 'Phrase secrète de la clé' : 'Mot de passe'}>
+        <div class="test ask" role="group" aria-label={test.kind === 'passphrase' ? 'Key passphrase' : 'Password'}>
           <p>
-            {#if test.kind === 'passphrase'}La clé <span class="mono">{test.path}</span> est protégée{NB}: sa phrase secrète est demandée pour le test, puis oubliée.
-            {:else}Le mot de passe est demandé pour le test, puis oublié{NB}: un test ne retient rien.{/if}
+            {#if test.kind === 'passphrase'}The key <span class="mono">{test.path}</span> is protected: enter its passphrase for the test. It is forgotten afterwards.
+            {:else}Enter the password for the test. It is forgotten afterwards: a test keeps nothing.{/if}
           </p>
           <div class="row">
             <input
@@ -549,17 +547,17 @@
               aria-describedby={test.error ? 'host-secret-error' : undefined}
               type="password"
               autocomplete="off"
-              aria-label={test.kind === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'}
+              aria-label={test.kind === 'passphrase' ? 'Passphrase' : 'Password'}
               bind:value={secret}
               onkeydown={(e) => {
-                // Entrée teste : elle n'enregistre pas la fiche.
+                // Enter tests: it does not save the form.
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   submitSecret();
                 }
               }}
             />
-            <button class="btn small" type="button" disabled={!secret} onclick={submitSecret}>Tester</button>
+            <button class="btn small" type="button" disabled={!secret} onclick={submitSecret}>Test</button>
           </div>
           {#if test.error}<p class="err" id="host-secret-error" role="alert">{test.error}</p>{/if}
         </div>
@@ -567,19 +565,19 @@
 
       </div>
 
-      <!-- « Supprimer l'hôte… » seul à gauche, s'il est au carnet ; « Annuler » puis l'unique
-           enregistrement, à droite (charte, 9.1, « Hierarchy », et 9.21). -->
+      <!-- "Delete host…" alone on the left, if the host is in the book; "Cancel" then the single
+           save, on the right (guidelines, 9.1, "Hierarchy", and 9.21). -->
       <footer>
         {#if editing?.id}
-          <button class="btn ghost bad remove" type="button" bind:this={removeButton} onclick={() => void removeHost()}>Supprimer l’hôte…</button>
+          <button class="btn ghost bad remove" type="button" bind:this={removeButton} onclick={() => void removeHost()}>Delete host…</button>
         {/if}
-        <!-- Un échec d'enregistrer ou de supprimer, à gauche des boutons, qui ne bougent pas (charte, 9.11). -->
+        <!-- A failure to save or to delete, on the left of the buttons, which do not move (guidelines, 9.11). -->
         <div class="failure">
           {#if failure}<p role="alert"><Icon name="warning" size={14} /><span>{failure}</span></p>{/if}
         </div>
-        <button class="btn" type="button" onclick={close}>Annuler</button>
+        <button class="btn" type="button" onclick={close}>Cancel</button>
         <button class="btn primary" type="submit" disabled={!valid} title={valid ? undefined : MISSING}>
-          {adding ? 'Enregistrer et connecter' : 'Enregistrer'}
+          {adding ? 'Save and connect' : 'Save'}
         </button>
       </footer>
     </form>
@@ -604,7 +602,7 @@
     backdrop-filter: blur(2px);
     animation: fade-in var(--t-med) var(--ease);
   }
-  /* Dans une fenêtre basse (1000 × 600), les champs défilent et la dernière ligne reste en vue. */
+  /* In a low window (1000 × 600), the fields scroll and the last line stays in view. */
   dialog[open] {
     display: flex;
     flex-direction: column;
@@ -615,7 +613,7 @@
     min-height: 0;
     padding: 16px 20px;
   }
-  /* 4 px de marge rendus : le halo du focus d'un champ (3 px) n'est pas rogné par le défilement. */
+  /* 4 px of margin given back: the focus halo of a field (3 px) is not cut off by the scrolling. */
   .content {
     display: flex;
     flex-direction: column;
@@ -655,7 +653,7 @@
     gap: 6px;
     min-width: 0;
   }
-  /* Le champ de la clé et son bouton « Parcourir… » côte à côte. */
+  /* The key field and its "Browse…" button side by side. */
   .pick {
     display: flex;
     gap: 8px;
@@ -669,13 +667,13 @@
   small.bad {
     color: var(--bad);
   }
-  /* Une case et son texte, 6 px plus loin, puis son aide (charte, 9.3 et 9.21). */
+  /* A checkbox and its text, 6 px away, then its help (guidelines, 9.3 and 9.21). */
   .journal {
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
-  /* Plus précis que `.grid label`, qui empile un libellé au-dessus de son champ. */
+  /* More specific than `.grid label`, which stacks a label above its field. */
   .grid .check {
     flex-direction: row;
     align-items: center;
@@ -684,9 +682,9 @@
     font-size: var(--fs-body);
     color: var(--ink);
   }
-  /* Un secret retenu : ce que le trousseau garde et, dessous, le bouton qui l'oublie. Le bouton,
-     sans fond ni bordure, est tiré de sa marge intérieure (8 px et 1 px de bordure) : son texte
-     s'aligne sur la phrase. */
+  /* A kept secret: what the keyring keeps and, under it, the button that forgets it. The button,
+     without background or border, is pulled back by its inner margin (8 px and 1 px of border): its
+     text lines up with the sentence. */
   .kept {
     display: flex;
     flex-direction: column;
@@ -696,7 +694,7 @@
   .kept .btn {
     margin-left: -9px;
   }
-  /* Six colonnes : l'adresse en prend cinq, le port une. */
+  /* Six columns: the address takes five, the port one. */
   .full {
     grid-column: 1 / -1;
   }
@@ -751,7 +749,7 @@
       0 0 0 2px var(--raised),
       0 0 0 4px var(--c, var(--muted));
   }
-  /* Une pastille prise au clavier montre l'anneau de focus : son bouton radio, lui, est invisible. */
+  /* A swatch reached with the keyboard shows the focus ring: its radio button is invisible. */
   .swatch:has(input:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
@@ -761,8 +759,8 @@
     opacity: 0;
     pointer-events: none;
   }
-  /* Les boutons du bas se tiennent un peu à l'écart du test et de son résultat : 24 px au lieu de 12. */
-  /* 24 px au-dessus de la dernière ligne (charte, 9.21). */
+  /* The buttons at the bottom stand a little apart from the test and its result: 24 px instead of 12. */
+  /* 24 px above the last line (guidelines, 9.21). */
   footer {
     display: flex;
     align-items: flex-start;
@@ -772,7 +770,7 @@
   footer .btn {
     flex: none;
   }
-  /* Entre l'entrée destructrice, tout à gauche, et les boutons de droite : l'échec, s'il y en a un. */
+  /* Between the destructive button, far left, and the buttons on the right: the failure, if any. */
   .failure {
     flex: 1;
     min-width: 0;
@@ -796,8 +794,8 @@
     align-items: center;
     gap: 8px;
   }
-  /* Pourquoi le test et l'enregistrement sont grisés (charte, 9.1). Après un Entrée tenté quand
-     même, la phrase passe en avertissement, avec son icône. */
+  /* Why the test and the save are disabled (guidelines, 9.1). After Enter is pressed all the
+     same, the sentence turns to a warning, with its icon. */
   .why {
     display: inline-flex;
     align-items: center;
@@ -808,7 +806,7 @@
   .why.tried {
     color: var(--warn);
   }
-  /* Le résultat du test, entre les champs et les boutons (charte, section 9.21). */
+  /* The result of the test, between the fields and the buttons (guidelines, section 9.21). */
   .test {
     display: flex;
     align-items: flex-start;
