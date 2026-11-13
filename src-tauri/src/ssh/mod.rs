@@ -397,7 +397,7 @@ async fn authenticate(
             match encrypted {
                 Some((path, refused)) => Err(SshError::NeedPassphrase { path, refused }),
                 None => Err(SshError::Auth {
-                    message: "No key was accepted: neither those of the SSH agent nor the default keys of ~/.ssh."
+                    message: "No key was accepted: neither those of the SSH agent nor the default keys of ~/.ssh. Choose a key file in the host form, or add your key to the SSH agent."
                         .into(),
                 }),
             }

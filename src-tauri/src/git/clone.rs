@@ -119,7 +119,7 @@ pub fn clone_repo(job: &CloneJob, url: &str, dest: &Path, progress: impl Fn(Stri
         let _ = fs::remove_dir_all(dest);
     }
     if job.cancelled.load(Ordering::SeqCst) {
-        Err("Clone canceled.".into())
+        Err("Clone stopped.".into())
     } else if tail.is_empty() {
         Err("git clone failed.".into())
     } else {
