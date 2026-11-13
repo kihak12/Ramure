@@ -14,16 +14,16 @@
   async function copySha() {
     try {
       await navigator.clipboard.writeText(commit.sha);
-      toasts.ok('SHA copié');
+      toasts.ok('SHA copied');
     } catch {
-      /* presse-papiers refusé : le SHA reste sélectionnable dans le panneau */
+      /* clipboard refused: the SHA stays selectable in the panel */
     }
   }
 </script>
 
 <header class="head">
   <span class="label">Commit</span>
-  <!-- Les modifications en cours restent à un clic, même quand on regarde un autre commit. -->
+  <!-- The working changes stay one click away, even while another commit is shown. -->
   {#if repo.wipCount > 0}
     <button class="btn small" type="button" onclick={() => repo.showWip()}>
       <Icon name="pencil" size={14} />
@@ -37,20 +37,20 @@
   <dt>SHA</dt>
   <dd class="sha">
     <span class="mono sha-full">{commit.sha}</span>
-    <button class="copy" type="button" title="Copier le SHA" aria-label="Copier le SHA" onclick={copySha}><Icon name="copy" size={14} /></button>
+    <button class="copy" type="button" title="Copy SHA" aria-label="Copy SHA" onclick={copySha}><Icon name="copy" size={14} /></button>
   </dd>
-  <dt>Auteur</dt>
+  <dt>Author</dt>
   <dd>{commit.author}</dd>
   <dt>Date</dt>
   <dd>{fullDateFmt.format(commit.time * 1000)}</dd>
-  <dt>Parent{commit.parents.length > 1 ? 's' : ''}</dt>
-  <dd>{#if commit.parents.length}<span class="mono parents">{commit.parents.map((p) => p.slice(0, 7)).join(', ')}</span>{:else}aucun (premier commit){/if}</dd>
+  <dt>Parent{commit.parents.length === 1 ? '' : 's'}</dt>
+  <dd>{#if commit.parents.length}<span class="mono parents">{commit.parents.map((p) => p.slice(0, 7)).join(', ')}</span>{:else}none (first commit){/if}</dd>
   {#if repo.hasRemote}
-    <dt>Emplacement</dt>
-    <dd>{commit.localOnly ? 'Local uniquement, pas encore poussé' : 'Présent sur le dépôt distant'}</dd>
+    <dt>Location</dt>
+    <dd>{commit.localOnly ? 'Local only, not pushed yet' : 'On the remote'}</dd>
   {/if}
   {#if commit.refs.length}
-    <dt>Références</dt>
+    <dt>Refs</dt>
     <dd>{commit.refs.map((r) => r.name).join(', ')}</dd>
   {/if}
 </dl>
@@ -59,7 +59,7 @@
   <p class="err" role="alert">{repo.detailError}</p>
 {:else if detail}
   <span class="label">
-    Fichiers modifiés · {detail.files.length}{commit.parents.length > 1 ? ' (par rapport au premier parent)' : ''}
+    Changed files · {detail.files.length}{commit.parents.length > 1 ? ' (against the first parent)' : ''}
   </span>
   {#if detail.files.length}
     <div class="files">
@@ -70,18 +70,18 @@
       />
     </div>
   {:else}
-    <p class="muted">Ce commit ne modifie aucun fichier.</p>
+    <p class="muted">This commit changes no files.</p>
   {/if}
 {:else}
-  <div class="skeleton" aria-label="Chargement des fichiers">
+  <div class="skeleton" aria-label="Loading files">
     <span></span><span></span><span></span>
   </div>
 {/if}
 
 <style>
   .head {
-    /* Toute la largeur de la carte : le bouton va au bord droit. La hauteur est celle d'un petit
-       bouton, pour que le titre du commit ne bouge pas quand le bouton apparaît. */
+    /* The whole width of the card: the button goes to the right edge. The height is that of a
+       small button, so that the title of the commit does not move when the button appears. */
     align-self: stretch;
     display: flex;
     align-items: center;
@@ -161,7 +161,7 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
-  /* Lignes fantômes pendant que git liste les fichiers. */
+  /* Ghost lines while git lists the files. */
   .skeleton {
     display: grid;
     gap: 8px;

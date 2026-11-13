@@ -13,13 +13,13 @@
   let url = $state('');
   let parent = $state('');
   let name = $state('');
-  // Tant que le nom n'a pas été retouché, il suit l'adresse.
+  // Until the name has been edited, it follows the URL.
   let nameEdited = $state(false);
   let running = $state(false);
   let progress = $state('');
   let error = $state('');
 
-  /** Même règle que `folder_name` côté Rust : `https://hôte/moi/projet.git` → `projet`. */
+  /** Same rule as `folder_name` on the Rust side: `https://host/me/project.git` → `project`. */
   function folderName(address: string) {
     const last = address.trim().replace(/[\\/]+$/, '').split(/[\\/:]/).pop() ?? '';
     return last.replace(/\.git$/, '');
@@ -29,7 +29,7 @@
   const dest = $derived(parent && name ? `${parent.replace(/[\\/]+$/, '')}${separator}${name}` : '');
   const nameValid = $derived(name.trim() !== '' && !/[\\/]/.test(name) && name !== '.' && name !== '..');
   const ready = $derived(url.trim() !== '' && parent.trim() !== '' && nameValid && !running);
-  // « Receiving objects:  42% (…) » → 42
+  // “Receiving objects:  42% (…)” → 42
   const percent = $derived(Number(/(\d+)%/.exec(progress)?.[1] ?? NaN));
 
   $effect(() => {
@@ -56,7 +56,7 @@
   });
 
   async function browse() {
-    const dir = await open({ directory: true, multiple: false, title: 'Dossier où cloner le dépôt' });
+    const dir = await open({ directory: true, multiple: false, title: 'Folder to clone the repository into' });
     if (typeof dir === 'string') parent = dir;
   }
 
@@ -65,7 +65,7 @@
     if (!ready) return;
     running = true;
     error = '';
-    progress = 'Connexion au dépôt distant…';
+    progress = 'Connecting to the remote repository…';
     const onProgress = new Channel<string>();
     onProgress.onmessage = (line) => (progress = line);
     try {
@@ -73,10 +73,10 @@
       try {
         localStorage.setItem(STORAGE_KEY, parent);
       } catch {
-        /* stockage indisponible */
+        /* storage unavailable */
       }
       workspace.cloning = false;
-      toasts.ok('Dépôt cloné', reply.data);
+      toasts.ok('Repository cloned', reply.data);
       await workspace.openCloned(reply.data, reply.commands);
     } catch (e) {
       const failed = e as { message?: string; commands?: CommandLog[] };
@@ -99,22 +99,22 @@
     cancel();
   }}
   use:veil={() => {
-    // Pendant un clonage, un clic de travers sur le voile ne doit pas l'arrêter (charte, 9.10).
+    // During a clone, a stray click on the veil must not stop it (guidelines, 9.10).
     if (!running) cancel();
   }}
 >
   <form onsubmit={run}>
-    <!-- Le contenu défile si la fenêtre est trop basse ; la dernière ligne reste en vue (charte, 9.10). -->
+    <!-- The content scrolls if the window is too low; the last line stays in view (guidelines, 9.10). -->
     <div class="content">
-    <h2>Cloner un dépôt</h2>
+    <h2>Clone repository</h2>
 
     <label class="row">
-      <span class="label">Adresse du dépôt</span>
+      <span class="label">Repository URL</span>
       <!-- svelte-ignore a11y_autofocus -->
       <input
         class="field mono"
         type="text"
-        placeholder="https://github.com/moi/projet.git ou git@github.com:moi/projet.git"
+        placeholder="https://github.com/me/project.git or git@github.com:me/project.git"
         spellcheck="false"
         autocomplete="off"
         autofocus
@@ -124,20 +124,20 @@
     </label>
 
     <div class="row">
-      <label class="label" for="clone-parent">Cloner dans</label>
+      <label class="label" for="clone-parent">Clone into</label>
       <div class="pair">
-        <input id="clone-parent" class="field mono" type="text" placeholder="Dossier parent" spellcheck="false" disabled={running} bind:value={parent} />
-        <button class="btn" type="button" disabled={running} onclick={browse}><Icon name="folder" size={14} /> Parcourir…</button>
+        <input id="clone-parent" class="field mono" type="text" placeholder="Parent folder" spellcheck="false" disabled={running} bind:value={parent} />
+        <button class="btn" type="button" disabled={running} onclick={browse}><Icon name="folder" size={14} /> Browse…</button>
       </div>
     </div>
 
     <label class="row">
-      <span class="label">Nom du dossier</span>
+      <span class="label">Folder name</span>
       <input class="field mono" type="text" spellcheck="false" disabled={running} bind:value={name} oninput={() => (nameEdited = true)} />
     </label>
 
-    <!-- Une place gardée sous les champs : la phrase de destination, puis la progression du clonage à
-         sa place, sans que les boutons bougent au clic sur « Cloner » (charte, 9.1, « Hierarchy »). -->
+    <!-- A place kept under the fields: the destination sentence, then the progress of the clone in
+         its place, without the buttons moving on a click on “Clone” (guidelines, 9.1, “Hierarchy”). -->
     <div class="status">
       {#if running}
         <div class="progress" role="status">
@@ -147,14 +147,14 @@
       {:else if error}
         <p class="error" role="alert"><Icon name="warning" /> <span>{error}</span></p>
       {:else}
-        <small>{dest ? `Le dépôt sera cloné dans ${dest}` : 'Le nom est proposé à partir de l’adresse.'}</small>
+        <small>{dest ? `The repository will be cloned into ${dest}` : 'The name is suggested from the URL.'}</small>
       {/if}
     </div>
     </div>
 
     <footer>
-      <button class="btn" type="button" onclick={cancel}>{running ? 'Interrompre le clonage' : 'Annuler'}</button>
-      <button class="btn primary" type="submit" disabled={!ready}>{running ? 'Clonage en cours…' : 'Cloner'}</button>
+      <button class="btn" type="button" onclick={cancel}>{running ? 'Stop cloning' : 'Cancel'}</button>
+      <button class="btn primary" type="submit" disabled={!ready}>{running ? 'Cloning…' : 'Clone'}</button>
     </footer>
   </form>
 </dialog>
@@ -186,7 +186,7 @@
     min-height: 0;
     padding: 16px 20px;
   }
-  /* 4 px de marge rendus : le halo du focus d'un champ (3 px) n'est pas rogné par le défilement. */
+  /* 4 px of margin given back: the focus halo of a field (3 px) is not clipped by the scrolling. */
   .content {
     display: flex;
     flex-direction: column;
@@ -196,8 +196,8 @@
     padding: 4px;
     overflow-y: auto;
   }
-  /* Assez haute pour la progression (une barre et une ligne) et pour une erreur d'une ligne : la
-     phrase, la barre, puis l'erreur y tiennent sans pousser les boutons. */
+  /* High enough for the progress (a bar and a line) and for a one-line error: the sentence, the
+     bar, then the error fit in it without pushing the buttons. */
   .status {
     min-height: 36px;
   }
@@ -245,7 +245,7 @@
     background: var(--accent);
     animation: sweep var(--t-wait) var(--ease) infinite;
   }
-  /* Pourcentage connu : la barre avance au lieu de balayer. */
+  /* Known percentage: the bar moves forward instead of sweeping. */
   .bar.known span {
     animation: none;
     transition: width var(--t-med) var(--ease);

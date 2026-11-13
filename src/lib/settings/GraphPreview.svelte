@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { GraphStyle } from '../git/prefs.svelte';
 
-  /** Aperçu d'un style de graphe : deux branches et quelques commits, dessinés avec les jetons. */
+  /** Preview of a graph style: two branches and a few commits, drawn with the tokens. */
   let { style }: { style: GraphStyle } = $props();
   const ribbon = $derived(style === 'ribbon');
-  // Commits : leur ligne (y) et leur voie (0 ou 1).
+  // Commits: their row (y) and their lane (0 or 1).
   const COMMITS = [
     { y: 12, lane: 0 },
     { y: 26, lane: 1 },

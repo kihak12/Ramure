@@ -4,29 +4,29 @@
   import SectionHeader from './SectionHeader.svelte';
   import { settingsPage } from './settings.svelte';
 
-  // Action dont on attend la nouvelle combinaison.
+  // The action whose new combination is awaited.
   let recording = $state<string | null>(null);
-  /** Ce qu'il faut dire sous une ligne : une combinaison refusée, ou reprise à une autre action. */
+  /** What to say under a row: a combination refused, or taken from another action. */
   let notice = $state<{ id: string; text: string } | null>(null);
   let filter = $state('');
 
-  // Un raccourci qui n'agit que dans un module le dit à côté de son groupe (charte, section 9.18).
+  // A shortcut that acts in one module only says so beside its group (guidelines, section 9.18).
   const MODULES = { git: 'Git', ssh: 'SSH' } as const;
 
   const custom = $derived(Object.keys(keys.overrides).length > 0);
   const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   const needle = $derived(fold(filter.trim()));
-  // Le filtre cherche dans le nom, le groupe et la combinaison telle qu'elle est affichée.
+  // The filter searches the name, the group and the combination as it is shown.
   const shown = $derived(
     SHORTCUTS.filter((s) => !needle || fold(`${s.title} ${s.group} ${display(keys.binding(s.id))}`).includes(needle)),
   );
 
-  // Les raccourcis de l'application se taisent pendant qu'on en tape un nouveau.
+  // The shortcuts of the application stay silent while a new one is typed.
   $effect(() => {
     keys.recording = recording !== null;
     return () => (keys.recording = false);
   });
-  // Quitter la page abandonne l'enregistrement en cours.
+  // Leaving the page cancels the recording in progress.
   $effect(() => {
     if (!settingsPage.open) recording = null;
   });
@@ -53,20 +53,20 @@
       return;
     }
     const combo = comboOf(event);
-    if (!combo) return; // touche de modification seule : on attend la suite
+    if (!combo) return; // a modifier key alone: wait for the rest
     const problem = refusal(combo);
     if (problem) {
-      notice = { id, text: `${display(combo)} : ${problem}` };
+      notice = { id, text: `${display(combo)}: ${problem}` };
       return;
     }
     const taken = keys.rival(id, combo);
     keys.set(id, combo);
-    notice = taken ? { id, text: `${display(combo)} était le raccourci de « ${taken.title} », qui n’en a plus.` } : null;
+    notice = taken ? { id, text: `${display(combo)} was the shortcut of “${taken.title}”, which now has none.` } : null;
     recording = null;
   }
 
   function onFilterKey(event: KeyboardEvent) {
-    // Échap vide d'abord le filtre ; la page ne se ferme qu'à l'appui suivant.
+    // Escape empties the filter first; the page closes only on the next press.
     if (event.key === 'Escape' && filter) {
       event.stopPropagation();
       filter = '';
@@ -74,12 +74,12 @@
   }
 </script>
 
-<!-- En capture : la combinaison enregistrée ne doit déclencher aucune autre action. -->
+<!-- In the capture phase: the combination being recorded must trigger no other action. -->
 <svelte:window onkeydowncapture={onKey} />
 
 <SectionHeader
-  title="Raccourcis clavier"
-  note="Clique une combinaison, puis tape la nouvelle. Retour arrière la retire, Échap annule."
+  title="Keyboard shortcuts"
+  note="Click a shortcut, then press the new one. Backspace removes it, Escape cancels."
   changed={custom}
   onreset={() => {
     const before = { ...keys.overrides };
@@ -91,13 +91,13 @@
 
 <label class="search">
   <Icon name="search" size={14} />
-  <input type="search" placeholder="Filtrer les raccourcis" aria-label="Filtrer les raccourcis" bind:value={filter} onkeydown={onFilterKey} />
+  <input type="search" placeholder="Filter shortcuts" aria-label="Filter shortcuts" bind:value={filter} onkeydown={onFilterKey} />
 </label>
 
 <div class="list">
   {#each shown as shortcut, i (shortcut.id)}
     {#if i === 0 || shown[i - 1].group !== shortcut.group}
-      <h3>{shortcut.group}{#if shortcut.scope}{' '}<span class="scope">· module {MODULES[shortcut.scope]}</span>{/if}</h3>
+      <h3>{shortcut.group}{#if shortcut.scope}{' '}<span class="scope">· {MODULES[shortcut.scope]} module</span>{/if}</h3>
     {/if}
     {@const combo = keys.binding(shortcut.id)}
     <div class="row" class:recording={recording === shortcut.id}>
@@ -106,23 +106,23 @@
         class="combo"
         type="button"
         aria-label={recording === shortcut.id
-          ? `Raccourci de « ${shortcut.title} » : en attente de la nouvelle combinaison.`
-          : `Raccourci de « ${shortcut.title} » : ${combo ? display(combo) : 'aucun'}. Cliquer pour le changer.`}
+          ? `Shortcut for “${shortcut.title}”: waiting for the new shortcut.`
+          : `Shortcut for “${shortcut.title}”: ${combo ? display(combo) : 'none'}. Click to change it.`}
         onclick={() => start(shortcut.id)}
       >
         {#if recording === shortcut.id}
-          <span class="wait">Appuie sur les touches…</span>
+          <span class="wait">Press the shortcut…</span>
         {:else if combo}
           {#each combo.split('+') as part, n (n)}<kbd>{display(part)}</kbd>{/each}
         {:else}
-          <span class="none">aucun</span>
+          <span class="none">none</span>
         {/if}
       </button>
       <button
         class="reset"
         type="button"
-        title="Revenir au raccourci par défaut"
-        aria-label="Revenir au raccourci par défaut de « {shortcut.title} »"
+        title="Restore default shortcut"
+        aria-label="Restore default shortcut for “{shortcut.title}”"
         disabled={!keys.isCustom(shortcut.id)}
         onclick={() => {
           keys.reset(shortcut.id);
@@ -136,11 +136,11 @@
       <p class="notice" role="status"><Icon name="warning" /> <span>{notice.text}</span></p>
     {/if}
   {:else}
-    <p class="empty">Aucun raccourci ne correspond à « {filter.trim()} ».</p>
+    <p class="empty">No shortcut matches “{filter.trim()}”.</p>
   {/each}
 </div>
 
-<p class="foot">Dans un terminal, seuls les raccourcis avec Maj, Alt ou une touche de fonction sont actifs : les autres restent au shell.</p>
+<p class="foot">In a terminal, only the shortcuts with Shift, Alt or a function key act: the others go to the shell.</p>
 
 <style>
   .search {
@@ -228,7 +228,7 @@
     border-color: var(--line);
     background: var(--raised);
   }
-  /* La touche partagée (app.css), un peu plus haute, et dans la couleur du texte : ici on la lit et on la change. */
+  /* The shared key (app.css), a little higher, and in the color of the text: here it is read and changed. */
   kbd {
     min-width: 0;
     padding: 0 6px;
@@ -240,7 +240,7 @@
     color: var(--muted);
     font-size: var(--fs-label);
   }
-  /* En --ink : sur --accent-soft, l'accent n'a pas le contraste d'un texte courant en thème clair. */
+  /* In --ink: on --accent-soft, the accent does not have the contrast of body text in the light theme. */
   .wait {
     font-size: var(--fs-label);
     font-weight: var(--fw-strong);

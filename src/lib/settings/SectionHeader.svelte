@@ -3,9 +3,9 @@
   import { toasts } from '../ui/toasts.svelte';
 
   /**
-   * En-tête d'une section de réglages : son titre, et le retour aux valeurs par défaut.
-   * `onreset` réinitialise la section et rend de quoi revenir en arrière : la notification qui
-   * suit propose « Annuler » (charte, section 9.18).
+   * The header of a settings section: its title, and the way back to the defaults.
+   * `onreset` resets the section and returns what takes it back: the notification that follows
+   * offers “Undo” (guidelines, section 9.18).
    */
   let { title, note = '', changed, onreset }: { title: string; note?: string; changed: boolean; onreset: () => () => void } = $props();
 
@@ -13,11 +13,11 @@
 
   function reset(event: MouseEvent) {
     const undo = onreset();
-    // Lancé au clavier (un clic sans bouton de souris) : le bouton se grise et perdrait le focus.
-    // Il va sur « Annuler », qui est ainsi à une touche, puis revient ici une fois l'annulation faite.
+    // Started from the keyboard (a click with no mouse button): the button is disabled and would
+    // lose the focus. It goes to “Undo”, which is then one key away, and comes back here once undone.
     const keyboard = event.detail === 0;
-    toasts.ok(`« ${title} » : valeurs par défaut rétablies`, '', {
-      label: 'Annuler',
+    toasts.ok(`“${title}” reset to defaults`, '', {
+      label: 'Undo',
       focus: keyboard,
       run: () => {
         undo();
@@ -37,10 +37,10 @@
     class="btn ghost small"
     type="button"
     disabled={!changed}
-    title={changed ? 'Revenir aux valeurs par défaut de cette section' : 'Cette section est déjà aux valeurs par défaut'}
+    title={changed ? 'Restore the defaults of this section' : 'This section already has its default values'}
     onclick={reset}
   >
-    Tout réinitialiser
+    Reset all
   </button>
 </header>
 

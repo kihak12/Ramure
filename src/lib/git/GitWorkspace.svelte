@@ -9,23 +9,23 @@
   import { workspace } from './workspace.svelte';
   import { motion } from '../ui/motion';
 
-  /** Vrai quand le module Git est à l'écran. */
+  /** True when the Git module is on screen. */
   let { active = true }: { active?: boolean } = $props();
 
-  // L'onglet actif reste à l'écran quand les onglets débordent : la barre défile jusqu'à lui,
-  // et la marge de défilement le garde à gauche du « + ».
+  // The active tab stays on screen when the tabs overflow: the bar scrolls to it, and the scroll
+  // margin keeps it to the left of the “+”.
   let tabsEl = $state<HTMLElement>();
   $effect(() => {
     void workspace.activeId;
     void tick().then(() => tabsEl?.querySelector('.tab.current')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
   });
 
-  // Le « + » dit ce qu'il ouvre, avec son raccourci (charte, section 9.7).
-  const newTab = $derived(`Nouvel onglet${keys.binding('tab-new') ? ` (${display(keys.binding('tab-new'))})` : ''}`);
+  // The “+” says what it opens, with its shortcut (guidelines, section 9.7).
+  const newTab = $derived(`New tab${keys.binding('tab-new') ? ` (${display(keys.binding('tab-new'))})` : ''}`);
 </script>
 
 <div class="workspace">
-  <div class="tabs" role="tablist" aria-label="Dépôts ouverts" bind:this={tabsEl}>
+  <div class="tabs" role="tablist" aria-label="Repository tabs" bind:this={tabsEl}>
     {#each workspace.tabs as tab (tab.id)}
       {@const current = tab.id === workspace.activeId}
       <div class="tab" class:current animate:flip={{ duration: motion.med }} in:scale={{ duration: motion.med, start: 0.9 }}>
@@ -34,23 +34,23 @@
           type="button"
           role="tab"
           aria-selected={current}
-          title={tab.repo.path || 'Nouvel onglet'}
+          title={tab.repo.path || 'New tab'}
           onclick={() => workspace.activate(tab.id)}
           onauxclick={(e) => {
-            // Clic du milieu : ferme l'onglet.
+            // Middle click: closes the tab.
             if (e.button === 1) workspace.closeTab(tab.id);
           }}
         >
           {#if tab.repo.locked}
-            <span class="spinner" aria-label="Opération en cours"></span>
+            <span class="spinner" aria-label="Working"></span>
           {:else if tab.repo.status?.operation}
-            <span class="alert" title="Une opération attend d’être terminée"><Icon name="warning" size={14} /></span>
+            <span class="alert" title="An operation is waiting to be finished"><Icon name="warning" size={14} /></span>
           {:else}
             <Icon name={tab.repo.path ? 'branch' : 'plus'} size={14} />
           {/if}
           <span class="name">{workspace.title(tab)}</span>
         </button>
-        <button class="close" type="button" aria-label="Fermer l’onglet {workspace.title(tab)}" title="Fermer l’onglet" onclick={() => workspace.closeTab(tab.id)}>
+        <button class="close" type="button" aria-label="Close tab {workspace.title(tab)}" title="Close tab" onclick={() => workspace.closeTab(tab.id)}>
           <Icon name="x" size={14} />
         </button>
       </div>
@@ -83,13 +83,13 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    /* 4 px sous les onglets, rendus par une marge négative : la place de l'anneau de focus, que le
-       défilement horizontal rognerait sinon. */
+    /* 4 px under the tabs, given back by a negative margin: room for the focus ring, which the
+       horizontal scrolling would clip otherwise. */
     padding: 8px 8px 4px;
     margin-bottom: -4px;
     min-width: 0;
     overflow-x: auto;
-    /* Un onglet qui prend le focus défile jusqu'à rester visible à gauche du « + », qui colle au bord. */
+    /* A tab that takes the focus scrolls until it is whole to the left of the “+”, which sticks to the edge. */
     scroll-padding-inline-end: 40px;
     scrollbar-width: none;
   }
@@ -108,7 +108,7 @@
     background: var(--hover-side);
     color: var(--ink);
   }
-  /* L'onglet actif est une petite carte, de la même matière que les panneaux : ni cadre ni trait. */
+  /* The active tab is a small card, of the same material as the panels: no frame, no line. */
   .tab.current {
     background: var(--panel);
     color: var(--ink);
@@ -121,7 +121,7 @@
     gap: 7px;
     padding: 6px 4px 6px 10px;
     border: 0;
-    /* Les angles de l'onglet : l'anneau de focus les suit. */
+    /* The corners of the tab: the focus ring follows them. */
     border-radius: var(--radius);
     background: none;
     cursor: pointer;
@@ -152,7 +152,7 @@
       opacity var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
-  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  /* When pressed, a button shrinks to 97% (guidelines, sections 8 and 9.1). */
   .close:active,
   .add:active {
     transform: scale(0.97);
@@ -168,7 +168,7 @@
   .close:focus-visible {
     opacity: 1;
   }
-  /* Il reste visible quand les onglets débordent (charte, section 9.7). */
+  /* It stays visible when the tabs overflow (guidelines, section 9.7). */
   .add {
     position: sticky;
     right: 0;
@@ -176,12 +176,12 @@
     height: 28px;
     margin-left: 2px;
     background: var(--side);
-    /* Les 8 px de marge à sa droite gardent le fond de la barre : aucun onglet n'y dépasse. */
+    /* The 8 px of margin on its right keep the background of the bar: no tab shows past it. */
     box-shadow: 8px 0 0 var(--side);
   }
-  /* La croix est sur un onglet survolé (--hover-side) ou actif (--panel) : un voile de --ink se voit
-     sur l'un et l'autre, en clair et en sombre. Le « + » est sur le fond de la fenêtre : --hover-side
-     (charte, section 9.7). */
+  /* The cross sits on a hovered tab (--hover-side) or on the active one (--panel): a veil of --ink
+     shows on both, in light and in dark. The “+” sits on the window background: --hover-side
+     (guidelines, section 9.7). */
   .close:hover {
     background: color-mix(in srgb, var(--ink) 12%, transparent);
     color: var(--ink);

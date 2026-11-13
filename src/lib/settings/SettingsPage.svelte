@@ -6,16 +6,16 @@
   import SshSection from './SshSection.svelte';
   import { SECTIONS, settingsPage } from './settings.svelte';
 
-  // La page de réglages (charte, section 9.18) : la navigation à gauche, la section à droite.
+  // The settings page (guidelines, section 9.18): the navigation on the left, the section on the right.
   let nav = $state<HTMLElement>();
 
-  // À l'ouverture, le focus arrive sur l'entrée de la section courante.
+  // On opening, the focus goes to the entry of the current section.
   $effect(() => {
     if (!settingsPage.open) return;
     void tick().then(() => nav?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus());
   });
 
-  /** Les flèches passent d'une section à l'autre, et la section s'affiche aussitôt. */
+  /** The arrows move from one section to the next, and the section shows at once. */
   function onNavKey(event: KeyboardEvent) {
     const index = SECTIONS.findIndex((s) => s.id === settingsPage.section);
     const moves: Record<string, number> = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: SECTIONS.length - 1 };
@@ -29,8 +29,8 @@
 
 <div class="page">
   <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
-  <nav class="nav" bind:this={nav} role="tablist" aria-label="Sections des réglages" aria-orientation="vertical" onkeydown={onNavKey}>
-    <span class="label">Réglages</span>
+  <nav class="nav" bind:this={nav} role="tablist" aria-label="Settings sections" aria-orientation="vertical" onkeydown={onNavKey}>
+    <span class="label">Settings</span>
     {#each SECTIONS as section (section.id)}
       {@const current = section.id === settingsPage.section}
       <button
@@ -104,7 +104,7 @@
     background: var(--sel);
     font-weight: var(--fw-strong);
   }
-  /* Focus au clavier : un anneau intérieur sur la ligne, comme dans toute liste (section 9.6). */
+  /* Keyboard focus: an inner ring on the row, as in every list (section 9.6). */
   .nav button:focus-visible {
     outline: none;
     box-shadow: inset 0 0 0 1.5px var(--accent);
@@ -119,7 +119,7 @@
     max-width: 640px;
     padding: 24px;
   }
-  /* Un groupe de réglages : son titre, puis ses lignes, à 12 px l'une de l'autre. */
+  /* A group of settings: its title, then its rows, 12 px apart. */
   .column :global(.group) {
     display: grid;
     gap: 12px;
@@ -130,7 +130,7 @@
     font-weight: var(--fw-strong);
     color: var(--muted);
   }
-  /* Un champ fait 32 px de haut (section 4.3) ; une liste les fait d'elle-même (ui/Select). */
+  /* A field is 32 px high (section 4.3); a list already is (ui/Select). */
   .column :global(.field) {
     height: 32px;
   }

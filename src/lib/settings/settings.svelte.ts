@@ -1,10 +1,10 @@
-// La page de réglages : si elle est à l'écran, et sur quelle section (charte, section 9.18).
+// The settings page: whether it is on screen, and on which section (guidelines, section 9.18).
 
 export const SECTIONS = [
-  { id: 'general', title: 'Général' },
+  { id: 'general', title: 'General' },
   { id: 'git', title: 'Git' },
-  { id: 'ssh', title: 'Terminal et SSH' },
-  { id: 'keys', title: 'Raccourcis clavier' },
+  { id: 'ssh', title: 'Terminal and SSH' },
+  { id: 'keys', title: 'Keyboard shortcuts' },
 ] as const;
 
 export type SectionId = (typeof SECTIONS)[number]['id'];
@@ -13,7 +13,7 @@ class SettingsPage {
   open = $state(false);
   section = $state<SectionId>('general');
 
-  /** Ouvre la page, sur `section` si on en demande une, sinon là où on l'avait laissée. */
+  /** Opens the page, on `section` if one is asked for, otherwise where it was left. */
   show(section?: SectionId) {
     if (section) this.section = section;
     this.open = true;
@@ -23,7 +23,7 @@ class SettingsPage {
     this.open = false;
   }
 
-  /** Ouvre la page sur `section`, ou la ferme si elle est ouverte. */
+  /** Opens the page on `section`, or closes it if it is open. */
   toggle(section?: SectionId) {
     if (this.open) this.hide();
     else this.show(section);

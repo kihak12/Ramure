@@ -4,7 +4,7 @@
 
   interface Action {
     label: string;
-    /** Icône du bouton ; `label` reste le nom accessible. */
+    /** Icon of the button; `label` stays the accessible name. */
     icon: IconName;
     run: (file: FileChange) => void;
     danger?: boolean;
@@ -19,9 +19,9 @@
     onopen,
   }: {
     files: FileChange[];
-    /** Chemins des fichiers qui ne sont indexés qu'en partie. */
+    /** Paths of the files that are only partly staged. */
     partial?: Set<string> | null;
-    /** Chemin du fichier dont le diff est ouvert. */
+    /** Path of the file whose diff is open. */
     active?: string | null;
     actions?: Action[];
     disabled?: boolean;
@@ -31,22 +31,22 @@
   const LETTER: Record<ChangeKind, string> = {
     added: 'A',
     modified: 'M',
-    deleted: 'S',
+    deleted: 'D',
     renamed: 'R',
     copied: 'C',
     typechange: 'T',
-    untracked: 'N',
+    untracked: 'U',
     conflict: '!',
   };
   const WORD: Record<ChangeKind, string> = {
-    added: 'Ajouté',
-    modified: 'Modifié',
-    deleted: 'Supprimé',
-    renamed: 'Renommé',
-    copied: 'Copié',
-    typechange: 'Type modifié',
-    untracked: 'Nouveau fichier',
-    conflict: 'Conflit',
+    added: 'Added',
+    modified: 'Modified',
+    deleted: 'Deleted',
+    renamed: 'Renamed',
+    copied: 'Copied',
+    typechange: 'Type changed',
+    untracked: 'Untracked',
+    conflict: 'Conflict',
   };
 
   function split(path: string) {
@@ -63,7 +63,7 @@
         <span class="kind k-{file.kind}" title={WORD[file.kind]} aria-label={WORD[file.kind]}>{LETTER[file.kind]}</span>
         <span class="path"><span class="dir">{parts.dir}{parts.dir ? '\u200e' : ''}</span><span class="name">{parts.name}</span></span>
         {#if partial?.has(file.path)}
-          <span class="part" title="Seule une partie des modifications de ce fichier est indexée">en partie</span>
+          <span class="part" title="Only some of the changes in this file are staged">partly</span>
         {/if}
       </button>
       {#each actions as action (action.label)}
@@ -72,7 +72,7 @@
           class:danger={action.danger}
           type="button"
           title={action.label}
-          aria-label="{action.label} : {file.path}"
+          aria-label="{action.label}: {file.path}"
           {disabled}
           onclick={() => action.run(file)}><Icon name={action.icon} size={14} /></button
         >
@@ -95,7 +95,7 @@
     min-width: 0;
     transition: background var(--t-fast) var(--ease);
   }
-  /* Le fond suit le pointeur, et le focus clavier : un clic ne laisse pas de survol (charte, 9.6). */
+  /* The background follows the pointer, and the keyboard focus: a click leaves no hover behind (guidelines, 9.6). */
   li:hover,
   li:has(:focus-visible) {
     background: var(--hover);
@@ -141,7 +141,7 @@
   .k-copied {
     --c: var(--accent);
   }
-  /* Le nom du fichier reste visible : c'est le dossier qui est tronqué, par la gauche. */
+  /* The name of the file stays visible: the folder is what gets cut, from the left. */
   .path {
     display: flex;
     min-width: 0;

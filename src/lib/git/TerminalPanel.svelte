@@ -8,8 +8,8 @@
   import type { Repo } from './repo.svelte';
 
   /**
-   * Terminaux d'un dépôt, sous le graphe (charte, section 9.20). `active` : la vue du dépôt est
-   * à l'écran et le panneau affiché.
+   * The terminals of a repository, under the graph (guidelines, section 9.20). `active`: the view of
+   * the repository is on screen and the panel is shown.
    */
   let { repo, active }: { repo: Repo; active: boolean } = $props();
 
@@ -17,21 +17,21 @@
   let panelEl = $state<HTMLElement>();
 
   const combo = $derived(keys.binding('toggle-terminal'));
-  const hideTitle = $derived(`Masquer le terminal${combo ? ` (${display(combo)})` : ''}`);
-  const NEW = 'Nouveau terminal dans le dépôt';
+  const hideTitle = $derived(`Hide terminal${combo ? ` (${display(combo)})` : ''}`);
+  const NEW = 'New terminal in this repository';
 
-  /** La croix ou le clic du milieu : si un programme tourne dans le terminal, on demande d'abord. */
+  /** The cross or the middle click: if a program runs in the terminal, ask first. */
   async function closeTab(session: Session) {
     if (await mayCloseTerminal(session)) terminals.close(session.key);
   }
 
-  /** Ce qu'un onglet dit au survol : le shell et son dossier de départ, que l'en-tête ne montre pas. */
+  /** What a tab says on hover: the shell and its starting folder, which the header does not show. */
   function about(session: Session) {
-    const what = session.status === 'closed' ? 'Terminal local arrêté' : 'Terminal local';
-    return session.opened ? `${what} · ${session.opened.shell} · ouvert dans ${session.opened.cwd}` : what;
+    const what = session.status === 'closed' ? 'Local terminal stopped' : 'Local terminal';
+    return session.opened ? `${what} · ${session.opened.shell} · opened in ${session.opened.cwd}` : what;
   }
 
-  // Une demande de clavier (raccourci) : le terminal actif le prend, une fois le panneau affiché.
+  // A request for the keyboard (a shortcut): the active terminal takes it, once the panel is shown.
   $effect(() => {
     if (!terminals.focusAsk) return;
     void tick().then(() =>
@@ -39,8 +39,9 @@
     );
   });
 
-  // --- Le graphe suit (charte, section 9.20) --------------------------------------------------
-  // Après une commande, le dépôt est relu : quand la sortie s'est tue 600 ms, au plus toutes les 2 s.
+  // --- The graph follows (guidelines, section 9.20) ---------------------------------------------
+  // After a command, the repository is read again: once the output has been quiet for 600 ms, at
+  // most once every 2 s.
   const QUIET = 600;
   const SPACING = 2000;
   let quietTimer: number | undefined;
@@ -65,7 +66,7 @@
     quietTimer = window.setTimeout(() => void reread(), wait);
   }
 
-  // Le panneau se masque : ce qui s'est passé dans le terminal se voit dans le graphe.
+  // The panel hides: what happened in the terminal shows in the graph.
   let wasShown = false;
   $effect(() => {
     const shown = terminals.shown;
@@ -75,9 +76,9 @@
   $effect(() => () => window.clearTimeout(quietTimer));
 </script>
 
-<section class="panel" bind:this={panelEl} data-terminals aria-label="Terminal du dépôt">
+<section class="panel" bind:this={panelEl} data-terminals aria-label="Repository terminal">
   <header>
-    <div class="tabs" role="tablist" aria-label="Terminaux du dépôt">
+    <div class="tabs" role="tablist" aria-label="Repository terminals">
       {#each terminals.sessions as session (session.key)}
         {@const current = session.key === terminals.activeKey}
         {@const stopped = session.status === 'closed'}
@@ -90,17 +91,17 @@
             title={about(session)}
             onclick={() => terminals.activate(session.key)}
             onauxclick={(e) => {
-              // Clic du milieu : ferme l'onglet.
+              // Middle click: closes the tab.
               if (e.button === 1) void closeTab(session);
             }}
           >
-            <!-- Un terminal local porte l'ordinateur, comme partout où « local » est dit (charte, section 7). -->
-            <span class="local" class:stopped role="img" aria-label={stopped ? 'Terminal local arrêté' : 'Terminal local'}>
+            <!-- A local terminal carries the computer, as everywhere “local” is said (guidelines, section 7). -->
+            <span class="local" class:stopped role="img" aria-label={stopped ? 'Local terminal stopped' : 'Local terminal'}>
               <Icon name="laptop" size={14} />
             </span>
             <span class="name">{session.title}</span>
           </button>
-          <button class="close" type="button" aria-label="Fermer le terminal {session.title}" title="Fermer le terminal" onclick={() => void closeTab(session)}>
+          <button class="close" type="button" aria-label="Close terminal {session.title}" title="Close terminal" onclick={() => void closeTab(session)}>
             <Icon name="x" size={14} />
           </button>
         </div>
@@ -109,7 +110,7 @@
         <Icon name="plus" size={16} />
       </button>
     </div>
-    <button class="hide" type="button" aria-label="Masquer le terminal" title={hideTitle} onclick={() => terminals.hide()}>
+    <button class="hide" type="button" aria-label="Hide terminal" title={hideTitle} onclick={() => terminals.hide()}>
       <Icon name="panel-bottom" size={16} />
     </button>
   </header>
@@ -143,8 +144,8 @@
     padding: 0 4px 0 6px;
     border-bottom: 1px solid var(--line-soft);
   }
-  /* Les 4 px de marge, rendus par une marge négative, laissent la place à l'anneau de focus des
-     onglets : sans eux, le défilement horizontal le rognerait. */
+  /* The 4 px of padding, given back by a negative margin, leave room for the focus ring of the
+     tabs: without them, the horizontal scrolling would clip it. */
   .tabs {
     flex: 1;
     display: flex;
@@ -172,7 +173,7 @@
     background: var(--hover);
     color: var(--ink);
   }
-  /* L'onglet actif est déjà sur une carte : il se lit par le fond de la sélection. */
+  /* The active tab already sits on a card: it reads by the background of the selection. */
   .tab.current {
     background: var(--sel);
     color: var(--ink);
@@ -233,7 +234,7 @@
     background: var(--line);
     color: var(--ink);
   }
-  /* « + » après le dernier onglet : il reste visible quand les onglets débordent. */
+  /* “+” after the last tab: it stays visible when the tabs overflow. */
   .add {
     position: sticky;
     right: 0;
@@ -271,7 +272,7 @@
       background var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
-  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  /* When pressed, a button shrinks to 97% (guidelines, sections 8 and 9.1). */
   .close:active,
   .add:active,
   .hide:active {

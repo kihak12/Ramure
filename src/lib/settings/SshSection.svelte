@@ -9,14 +9,14 @@
   import SettingRow from './SettingRow.svelte';
 
   const RECONNECT = [
-    { value: 'on', label: 'Activée', help: 'Une connexion perdue est retentée cinq fois, de 2 à 30 s d’écart.' },
-    { value: 'off', label: 'Désactivée', help: 'L’onglet attend un clic sur « Reconnecter ».' },
+    { value: 'on', label: 'On', help: 'A lost connection is tried again five times, 2 to 30 s apart.' },
+    { value: 'off', label: 'Off', help: 'The tab waits for a click on “Reconnect”.' },
   ] as const;
 
   const changed = $derived(prefs.sshReconnect !== DEFAULTS.sshReconnect || prefs.journalDir !== DEFAULTS.journalDir);
   const setReconnect = (on: boolean) => savePrefs({ sshReconnect: on });
 
-  // Le dossier des journaux : choisi, ou celui par défaut, montré tel qu'il sera employé (9.18).
+  // The log folder: the one chosen, or the default one, shown as it will be used (9.18).
   let folder = $state('');
   let folderError = $state('');
   $effect(() => {
@@ -27,10 +27,10 @@
   async function browse() {
     folderError = '';
     try {
-      const picked = await open({ title: 'Choisir le dossier des journaux', directory: true, multiple: false, defaultPath: folder || undefined });
+      const picked = await open({ title: 'Choose the log folder', directory: true, multiple: false, defaultPath: folder || undefined });
       if (typeof picked === 'string') savePrefs({ journalDir: picked });
     } catch (e) {
-      folderError = `La fenêtre de dossiers n’a pas pu s’ouvrir : réessaie, ou garde le dossier par défaut. (${e instanceof Error ? e.message : String(e)})`;
+      folderError = `The folder picker could not open. Try again, or keep the default folder. (${e instanceof Error ? e.message : String(e)})`;
     }
   }
 
@@ -45,7 +45,7 @@
 </script>
 
 <SectionHeader
-  title="Terminal et SSH"
+  title="Terminal and SSH"
   {changed}
   onreset={() => {
     const before = { sshReconnect: prefs.sshReconnect, journalDir: prefs.journalDir };
@@ -55,11 +55,11 @@
 />
 
 <section class="group" aria-labelledby="group-connection">
-  <h3 id="group-connection">Connexion</h3>
+  <h3 id="group-connection">Connection</h3>
   <SettingRow
     id="set-reconnect"
-    name="Reconnexion automatique"
-    help="Une session fermée par toi ou par le serveur ne se rouvre jamais d’elle-même."
+    name="Automatic reconnection"
+    help="A session closed by you or by the server never reopens on its own."
     group
   >
     <Choice
@@ -73,14 +73,14 @@
   </SettingRow>
 </section>
 
-<section class="group" aria-labelledby="group-journal">
-  <h3 id="group-journal">Journaux de session</h3>
-  <SettingRow id="set-journal" name="Dossier des journaux" help="Là où Ramure écrit un fichier par session enregistrée." error={folderError}>
+<section class="group" aria-labelledby="group-logs">
+  <h3 id="group-logs">Session logs</h3>
+  <SettingRow id="set-log-folder" name="Log folder" help="Where Ramure writes one file per recorded session." error={folderError}>
     <div class="folder">
-      <input id="set-journal" class="field mono" type="text" readonly value={folder} title={folder} aria-describedby={folderError ? 'set-journal-help set-journal-error' : 'set-journal-help'} />
+      <input id="set-log-folder" class="field mono" type="text" readonly value={folder} title={folder} aria-describedby={folderError ? 'set-log-folder-help set-log-folder-error' : 'set-log-folder-help'} />
       <div class="actions">
-        <button class="btn small" type="button" onclick={() => void browse()}><Icon name="folder" size={14} /> Parcourir…</button>
-        <button class="btn ghost small" type="button" onclick={() => void openFolder()}>Ouvrir le dossier</button>
+        <button class="btn small" type="button" onclick={() => void browse()}><Icon name="folder" size={14} /> Browse…</button>
+        <button class="btn ghost small" type="button" onclick={() => void openFolder()}>Open folder</button>
       </div>
     </div>
   </SettingRow>
