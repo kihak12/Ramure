@@ -8,7 +8,8 @@
    * graph says it too, but it scrolls out of sight.
    */
   let { repo }: { repo: Repo } = $props();
-  const files = $derived(`${repo.wipCount} file${repo.wipCount === 1 ? '' : 's'}`);
+  const numbers = new Intl.NumberFormat('en-US');
+  const files = $derived(`${numbers.format(repo.wipCount)} file${repo.wipCount === 1 ? '' : 's'}`);
 </script>
 
 <div class="strip">
@@ -26,7 +27,7 @@
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: 6px 8px;
+    gap: 6px;
     padding: 8px 10px;
     border-radius: var(--radius);
     background: var(--accent-soft);

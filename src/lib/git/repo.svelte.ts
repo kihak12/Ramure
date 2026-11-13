@@ -115,7 +115,6 @@ export class Repo {
       ? new Set([...this.status.staged, ...this.status.unstaged].map((f) => f.path)).size
       : (this.result?.wipFiles ?? 0),
   );
-  /** Label of the button that leads to the working changes. */
   conflicts = $derived(this.status?.unstaged.filter((f) => f.kind === 'conflict') ?? []);
   /** Commit HEAD is on. */
   head = $derived(
