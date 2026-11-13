@@ -135,7 +135,7 @@ export async function deleteRemoteBranch(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
     title: `Delete ${name} from the remote?`,
     warning: 'The branch disappears for everyone. This cannot be undone from Ramure.',
-    confirmLabel: 'Delete from remote',
+    confirmLabel: 'Delete from the remote',
     danger: true,
   });
   if (confirmed) await repo.refOp({ op: 'remote-branch-delete', name }, `${name} deleted from the remote`);
@@ -174,7 +174,7 @@ export async function deleteRemoteTag(repo: Repo, name: string) {
   const confirmed = await dialogs.confirm({
     title: `Delete tag ${name} from the remote?`,
     warning: 'The tag disappears for everyone.',
-    confirmLabel: 'Delete from remote',
+    confirmLabel: 'Delete from the remote',
     danger: true,
   });
   if (confirmed) await repo.refOp({ op: 'tag-delete-remote', name }, `Tag ${name} deleted from the remote`);
@@ -384,7 +384,7 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
       { label: 'Create branch here…', icon: 'branch', run: () => void createBranch(repo, sha, `tag ${label.tag}`) },
       { separator: true },
       { label: 'Delete tag…', icon: 'trash', danger: true, run: () => void deleteTag(repo, label.tag!) },
-      { label: 'Delete tag from remote…', icon: 'trash', danger: true, disabled: !repo.refs?.remoteNames.length, run: () => void deleteRemoteTag(repo, label.tag!) },
+      { label: 'Delete tag from the remote…', icon: 'trash', danger: true, disabled: !repo.refs?.remoteNames.length, run: () => void deleteRemoteTag(repo, label.tag!) },
     ];
   }
   if (label.kind === 'detached') return commitMenuForSha(repo, sha);
@@ -428,7 +428,7 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
     items.push({ label: 'Delete branch…', icon: 'trash', danger: true, disabled: isCurrent, run: () => void deleteBranch(repo, local) });
   }
   for (const name of label.remotes) {
-    items.push({ label: `Delete ${name} from remote…`, icon: 'trash', danger: true, run: () => void deleteRemoteBranch(repo, name) });
+    items.push({ label: `Delete ${name} from the remote…`, icon: 'trash', danger: true, run: () => void deleteRemoteBranch(repo, name) });
   }
   return items;
 }
@@ -455,7 +455,7 @@ export function dropMenu(repo: Repo, source: Label, target: Label): MenuItem[] {
     items.push({ label: `Switch to ${onto}, then merge ${from} into it`, icon: 'merge', run: () => void switchThen(onto, merge) });
   }
   if (source.local === null) {
-    items.push({ label: `Rebase ${from} onto ${onto}`, icon: 'branch', disabled: true, hint: 'You can only rebase a local branch', run: () => {} });
+    items.push({ label: `Rebase ${from} onto ${onto}…`, icon: 'branch', disabled: true, hint: 'You can only rebase a local branch', run: () => {} });
   } else if (source.local === current) {
     items.push({ label: `Rebase ${from} onto ${onto}…`, icon: 'branch', run: () => void rebaseOnto(repo, onto) });
   } else {

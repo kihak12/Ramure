@@ -168,7 +168,7 @@
         {#if data.binary}
           This file is not text, or it is too large for the editor.
         {:else}
-          One of the two sides deleted this file: there are not two texts to bring together.
+          One of the two sides deleted this file: there are not two versions to merge.
         {/if}
         Resolve it by keeping one side.
       </p>

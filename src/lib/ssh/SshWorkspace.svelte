@@ -82,7 +82,7 @@
       { label: 'Duplicate…', icon: 'copy', run: () => (ssh.editing = { ...host, id: '', alias: `${host.alias} (copy)` }) },
       { label: 'Export to ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = host.id) },
       { separator: true },
-      { label: 'Delete…', icon: 'trash', danger: true, run: () => void removeHost(host) },
+      { label: 'Delete host…', icon: 'trash', danger: true, run: () => void removeHost(host) },
     ]);
   }
 

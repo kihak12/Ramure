@@ -11,6 +11,7 @@
 
   function ago(at: number) {
     const minutes = Math.round((at - Date.now()) / 60_000);
+    if (minutes === 0) return 'just now';
     if (Math.abs(minutes) < 60) return relative.format(minutes, 'minute');
     const hours = Math.round(minutes / 60);
     if (Math.abs(hours) < 24) return relative.format(hours, 'hour');
@@ -40,7 +41,7 @@
     {/if}
 
     <div class="actions">
-      {@render action('folder', 'Open repository…', 'A folder already on this computer', () => void workspace.pick())}
+      {@render action('folder', 'Open repository…', 'A folder on this computer', () => void workspace.pick())}
       {@render action('cloud', 'Clone repository…', 'From an HTTPS or SSH URL', () => (workspace.cloning = true))}
       {@render action('plus', 'Initialize repository…', 'In an existing folder', () => void workspace.init())}
     </div>

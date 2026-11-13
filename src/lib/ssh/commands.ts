@@ -26,7 +26,7 @@ export function sshCommands(): Command[] {
       group: 'Terminal',
       icon: 'log',
       title: session?.journal?.live ? 'Stop terminal log' : 'Record terminal log',
-      keywords: 'journal save file output',
+      keywords: 'log journal record save file output',
       disabled: !session || session.status !== 'connected',
       hint: !session ? 'no terminal open' : session.status !== 'connected' ? 'the terminal is not connected' : undefined,
       run: () => {
@@ -37,7 +37,7 @@ export function sshCommands(): Command[] {
       id: 'ssh-export',
       group: 'SSH',
       icon: 'export',
-      title: 'Export hosts to ~/.ssh/config…',
+      title: 'Export to ~/.ssh/config…',
       keywords: 'config ssh write book',
       disabled: !ssh.hosts.length,
       hint: ssh.hosts.length ? undefined : 'no hosts',

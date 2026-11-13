@@ -9,7 +9,7 @@
   import SettingRow from './SettingRow.svelte';
 
   const RECONNECT = [
-    { value: 'on', label: 'On', help: 'A lost connection is tried again five times, 2 to 30 s apart.' },
+    { value: 'on', label: 'On', help: 'A lost connection is retried five times, 2 to 30 s apart.' },
     { value: 'off', label: 'Off', help: 'The tab waits for a click on “Reconnect”.' },
   ] as const;
 

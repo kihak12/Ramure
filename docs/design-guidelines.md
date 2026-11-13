@@ -739,7 +739,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   background nor its actions once the pointer has left. Only the keyboard focus shows them. This
   holds for the rows that hold a button of their own: the host book, the file lists, the recent
   repositories of the start page.
-- The state of a file is a letter on a tinted background (M, A, D, R), never a color alone.
+- The state of a file is a letter on a tinted background, never a color alone: M modified, A
+  added, D deleted, R renamed, C copied, T type changed, U untracked, "!" in conflict.
 - A file that is only partly staged carries the word "partly" after its name, in `--muted`
   at 11.5 px, in both lists.
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
@@ -758,7 +759,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - An inactive tab is `--muted` text on the window background; on hover, a `--hover-side`
   background.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
-- A terminal that records its log carries the "journal" icon, 14 px in `--muted`, between its
+- A terminal that records its log carries the "log" icon, 14 px in `--muted`, between its
   name and its cross, with "Recording log" as tooltip and accessible name
   (9.15).
 - The close cross is visible on the active tab, and on hover on the others. On hover it takes
@@ -1126,7 +1127,7 @@ password typed without echo is not in it.
   (9.21). The session opens recording. The toggle stops that session only: the next one
   records again.
 - **While it records**, the toggle is pressed; the header says "recording log", in `--muted`
-  like its other words, its tooltip giving the path of the file; the tab carries the "journal"
+  like its other words, its tooltip giving the path of the file; the tab carries the "log"
   icon (9.7). No color of its own and no animation: `--bad` is for errors (2.3), and nothing
   loops (8). While a lost connection is being retried, the log keeps recording: it goes on in
   the same file as soon as the session is back.
@@ -1633,7 +1634,7 @@ here is what is read in the documentation of git and in a terminal.
 
 | Git | In the interface |
 |---|---|
-| fetch, pull, push | Fetch, Pull, Push; a fetch, a pull |
+| fetch, pull, push | Fetch, Pull, Push; a fetch, a pull. A push that creates the upstream of a branch: "Publish branch" |
 | stash, stash pop | Stash, Pop stash; a stash |
 | stage, unstage | Stage, Unstage |
 | merge, rebase, cherry-pick | Merge, Rebase, Cherry-pick |
@@ -1649,9 +1650,9 @@ here is what is read in the documentation of git and in a terminal.
 Typography:
 
 - curly quotation marks “ ” and a curly apostrophe ’, an ellipsis as a single character …; in the
-  interface, a period or a comma that ends the sentence goes inside the closing quotation mark,
-  as American usage has it (this document quotes labels on their own, with the punctuation
-  outside);
+  interface as in this document, a period or a comma goes outside the closing quotation mark
+  unless it belongs to what is quoted: what is quoted is a label, a name or a value, read as it
+  is (“Reconnect”, “.pub”), and a period inside would seem to be part of it;
 - no space before ":", ";", "?" and "!";
 - plurals agree: "1 commit", "10 commits";
 - dates and numbers in the American format, whatever the language of the system: a short date

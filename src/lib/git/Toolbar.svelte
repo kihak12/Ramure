@@ -69,12 +69,12 @@
     disabled={repo.locked}
     title={repo.result ? `${repo.result.name} — open another repository…` : 'Open a repository…'}
   >
-    <span class="small">repository</span>
+    <span class="small">Repository</span>
     <b>{repo.result?.name ?? 'No repository'}</b>
   </button>
   <span class="sep"><Icon name="chevron" size={14} /></span>
   <div class="crumb static" title={repo.result ? (repo.branch ?? 'Detached HEAD') : undefined}>
-    <span class="small">branch</span>
+    <span class="small">Branch</span>
     <b class="mono">{repo.result ? (repo.branch ?? 'detached HEAD') : '—'}</b>
   </div>
 

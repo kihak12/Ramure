@@ -17,7 +17,7 @@
   const PALETTES = [
     { value: 'slate', label: 'Slate', help: 'Neutral grays, blue accent. The default.' },
     { value: 'ink', label: 'Ink', help: 'Grays close to black or white, indigo accent.' },
-    { value: 'undergrowth', label: 'Undergrowth', help: 'Dark greens or paper, moss accent, like success.' },
+    { value: 'undergrowth', label: 'Undergrowth', help: 'Dark green or paper, moss accent: the color of success.' },
     { value: 'ember', label: 'Ember', help: 'Charcoal or cream, amber accent, close to the warning color.' },
   ] as const satisfies readonly { value: Palette; label: string; help: string }[];
 

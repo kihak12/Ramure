@@ -172,7 +172,7 @@
         title={blocker || 'Ctrl + Enter'}
       >
         {#if repo.amend}
-          Amend commit
+          Amend last commit
         {:else if status.staged.length}
           Commit {status.staged.length} file{plural(status.staged.length)}
         {:else}

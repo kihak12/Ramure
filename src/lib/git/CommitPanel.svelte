@@ -8,6 +8,8 @@
   let { repo, commit }: { repo: Repo; commit: CommitRow } = $props();
 
   const fullDateFmt = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' });
+  /** The full date, its time kept on one line with AM or PM. */
+  const fullDate = (ms: number) => fullDateFmt.format(ms).replace(/ (AM|PM)$/, '\u00a0$1');
   const detail = $derived(repo.detail);
   const body = $derived(detail ? detail.message.split('\n').slice(1).join('\n').trim() : '');
 
@@ -42,7 +44,7 @@
   <dt>Author</dt>
   <dd>{commit.author}</dd>
   <dt>Date</dt>
-  <dd>{fullDateFmt.format(commit.time * 1000)}</dd>
+  <dd>{fullDate(commit.time * 1000)}</dd>
   <dt>Parent{commit.parents.length === 1 ? '' : 's'}</dt>
   <dd>{#if commit.parents.length}<span class="mono parents">{commit.parents.map((p) => p.slice(0, 7)).join(', ')}</span>{:else}none (first commit){/if}</dd>
   {#if repo.hasRemote}
