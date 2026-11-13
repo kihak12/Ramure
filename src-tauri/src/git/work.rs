@@ -1,4 +1,4 @@
-//! Répertoire de travail et index : état, diff, indexation, commit, synchronisation.
+//! Working tree and index: status, diff, staging, commit, synchronization.
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -8,32 +8,32 @@ use serde::Serialize;
 use super::ops::{Outcome, default_remote, guarded, operation};
 use super::{CommandLog, Done, Failed, Opts, blocking, patch, step, step_with, text};
 
-/// Au-delà, le diff est coupé : l'interface n'afficherait pas plus de toute façon.
+/// Beyond this, the diff is cut: the interface would not show more anyway.
 const MAX_DIFF_BYTES: usize = 1_000_000;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileChange {
     pub path: String,
-    /// Ancien chemin, pour un renommage ou une copie.
+    /// Old path, for a rename or a copy.
     pub old_path: Option<String>,
-    /// `added`, `modified`, `deleted`, `renamed`, `copied`, `typechange`, `untracked` ou `conflict`.
+    /// `added`, `modified`, `deleted`, `renamed`, `copied`, `typechange`, `untracked` or `conflict`.
     pub kind: &'static str,
 }
 
 #[derive(Debug, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Status {
-    /// Commit courant, absent tant que le dépôt n'a aucun commit.
+    /// Current commit, absent as long as the repository has no commit.
     pub head: Option<String>,
-    /// Branche courante, absente si HEAD est détaché.
+    /// Current branch, absent if HEAD is detached.
     pub branch: Option<String>,
     pub upstream: Option<String>,
     pub ahead: u32,
     pub behind: u32,
     pub staged: Vec<FileChange>,
     pub unstaged: Vec<FileChange>,
-    /// Opération en suspens : `merge`, `rebase`, `cherry-pick` ou `revert`.
+    /// Operation that stopped: `merge`, `rebase`, `cherry-pick` or `revert`.
     pub operation: Option<&'static str>,
 }
 
@@ -47,9 +47,9 @@ pub struct Diff {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommitDetail {
-    /// Message complet, sujet compris.
+    /// Whole message, subject included.
     pub message: String,
-    /// Fichiers modifiés par rapport au premier parent.
+    /// Files changed relative to the first parent.
     pub files: Vec<FileChange>,
 }
 
@@ -68,8 +68,8 @@ fn utf8(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).into_owned()
 }
 
-/// Découpe `champ champ … chemin` : `fields` champs séparés par des espaces, puis le chemin,
-/// qui peut lui-même contenir des espaces.
+/// Splits `field field … path`: `fields` fields separated by spaces, then the path, which may
+/// itself contain spaces.
 fn split_entry(entry: &[u8], fields: usize) -> Option<(Vec<&[u8]>, &[u8])> {
     let mut parts = entry.splitn(fields + 1, |b| *b == b' ');
     let head: Vec<&[u8]> = parts.by_ref().take(fields).collect();
@@ -77,7 +77,7 @@ fn split_entry(entry: &[u8], fields: usize) -> Option<(Vec<&[u8]>, &[u8])> {
     (head.len() == fields).then_some((head, path))
 }
 
-/// Parse la sortie de `git status --porcelain=v2 --branch -z`.
+/// Parses the output of `git status --porcelain=v2 --branch -z`.
 fn parse_status(raw: &[u8]) -> Status {
     let mut status = Status::default();
     let mut entries = raw.split(|b| *b == 0);
@@ -100,7 +100,7 @@ fn parse_status(raw: &[u8]) -> Status {
             Some(b'1') | Some(b'2') => {
                 let renamed = entry[0] == b'2';
                 let Some((head, path)) = split_entry(entry, if renamed { 9 } else { 8 }) else { continue };
-                // Pour un renommage, l'ancien chemin occupe l'entrée suivante.
+                // For a rename, the old path takes the next entry.
                 let old_path = if renamed { entries.next().map(utf8) } else { None };
                 let xy = head[1];
                 if xy.len() != 2 {
@@ -140,7 +140,7 @@ fn parse_status(raw: &[u8]) -> Status {
     status
 }
 
-/// Parse la sortie de `git diff --name-status -z` : `M\0chemin\0` ou `R100\0ancien\0nouveau\0`.
+/// Parses the output of `git diff --name-status -z`: `M\0path\0` or `R100\0old\0new\0`.
 fn parse_name_status(raw: &[u8]) -> Vec<FileChange> {
     let mut files = Vec::new();
     let mut entries = raw.split(|b| *b == 0).filter(|e| !e.is_empty());
@@ -157,13 +157,12 @@ fn parse_name_status(raw: &[u8]) -> Vec<FileChange> {
     files
 }
 
-/// Un identifiant de commit ne contient que des chiffres hexadécimaux : rien qui puisse
-/// passer pour une option de git.
+/// A commit hash holds only hexadecimal digits: nothing that could pass for an option of git.
 pub fn check_sha(sha: &str) -> Result<(), String> {
     if (4..=64).contains(&sha.len()) && sha.bytes().all(|b| b.is_ascii_hexdigit()) {
         Ok(())
     } else {
-        Err(format!("identifiant de commit invalide : {sha}"))
+        Err(format!("Invalid commit hash: “{sha}”. A hash holds 4 to 64 hexadecimal digits."))
     }
 }
 
@@ -193,7 +192,7 @@ pub fn status(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<Status, Stri
     Ok(status)
 }
 
-/// Diff d'un fichier du répertoire de travail (`staged = false`) ou de l'index (`staged = true`).
+/// Diff of a file of the working tree (`staged = false`) or of the index (`staged = true`).
 pub fn diff_file(
     journal: &mut Vec<CommandLog>,
     repo: &Path,
@@ -204,7 +203,7 @@ pub fn diff_file(
 ) -> Result<Diff, String> {
     const COMMON: [&str; 4] = ["diff", "--no-color", "--no-ext-diff", "-M"];
     let out = if untracked {
-        // Fichier inconnu de git : on le compare au vide. Le code 1 signale « différences ».
+        // File unknown to git: it is compared with nothing. Code 1 means “differences”.
         let args = ["diff", "--no-color", "--no-ext-diff", "--no-index", "--", "/dev/null", file];
         step_with(journal, repo, &args, Opts { accepted: &[1], ..Opts::default() })?.stdout
     } else {
@@ -213,7 +212,7 @@ pub fn diff_file(
             args.push("--cached");
         }
         args.push("--");
-        // Les deux chemins sont nécessaires pour que git reconnaisse le renommage.
+        // Both paths are needed for git to recognize the rename.
         args.extend(old_path);
         args.push(file);
         step(journal, repo, &args)?
@@ -234,7 +233,7 @@ pub fn commit_detail(
             check_sha(parent)?;
             step(journal, repo, &["diff", "--name-status", "-z", "-M", parent, sha])?
         }
-        // Premier commit : tout son contenu est un ajout.
+        // First commit: all of its content is an addition.
         None => step(
             journal,
             repo,
@@ -276,11 +275,11 @@ pub fn unstage(journal: &mut Vec<CommandLog>, repo: &Path, paths: &[String]) -> 
     if paths.is_empty() {
         return Ok(());
     }
-    // `git reset` fonctionne aussi dans un dépôt sans commit, contrairement à `git restore --staged`.
+    // `git reset` also works in a repository without commits, unlike `git restore --staged`.
     step(journal, repo, &with_paths(&["reset", "-q"], paths)).map(drop)
 }
 
-/// Abandonne les modifications non indexées : restaure les fichiers suivis, supprime les nouveaux.
+/// Discards the unstaged changes: restores the tracked files, deletes the new ones.
 pub fn discard(
     journal: &mut Vec<CommandLog>,
     repo: &Path,
@@ -296,8 +295,8 @@ pub fn discard(
     Ok(())
 }
 
-/// Indexe (`staged = false`) ou retire de l'index (`staged = true`) les lignes choisies
-/// dans le diff d'un fichier. `lines` : indices dans `diff.split('\n')`.
+/// Stages (`staged = false`) or unstages (`staged = true`) the lines chosen in the diff of a
+/// file. `lines`: indices in `diff.split('\n')`.
 pub fn apply_lines(
     journal: &mut Vec<CommandLog>,
     repo: &Path,
@@ -315,27 +314,27 @@ pub fn apply_lines(
     step_with(journal, repo, &args, Opts { input: Some(patch.as_bytes()), ..Opts::default() }).map(drop)
 }
 
-/// Crée un commit, ou remplace le dernier si `amend` est vrai.
+/// Creates a commit, or replaces the last one if `amend` is true.
 pub fn commit(journal: &mut Vec<CommandLog>, repo: &Path, message: &str, amend: bool) -> Result<(), String> {
     let message = message.trim();
     if message.is_empty() {
-        return Err("Le message de commit est vide.".into());
+        return Err("The commit message is empty. Write one, then commit again.".into());
     }
     let mut args = vec!["commit", "--cleanup=strip"];
     if amend {
         args.push("--amend");
     }
-    // Le message passe par l'entrée standard : aucune limite de longueur ni d'échappement.
+    // The message goes through the standard input: no length limit and no escaping.
     args.extend(["-F", "-"]);
     step_with(journal, repo, &args, Opts { input: Some(message.as_bytes()), ..Opts::default() }).map(drop)
 }
 
-/// Message complet du dernier commit, pour préremplir un amend.
+/// Whole message of the last commit, to prefill an amend.
 pub fn head_message(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<String, String> {
     step(journal, repo, &["log", "-1", "--format=%B"]).map(|out| text(&out))
 }
 
-/// `fetch`, `pull`, `push` ou `push-force`. `pull_mode` : `ff-only` (par défaut), `rebase` ou `merge`.
+/// `fetch`, `pull`, `push` or `push-force`. `pull_mode`: `ff-only` (the default), `rebase` or `merge`.
 pub fn sync(
     journal: &mut Vec<CommandLog>,
     repo: &Path,
@@ -350,34 +349,34 @@ pub fn sync(
                 "ff-only" => "--ff-only",
                 "rebase" => "--rebase",
                 "merge" => "--no-rebase",
-                other => return Err(format!("stratégie de pull inconnue : {other}")),
+                other => return Err(format!("Unknown pull mode: “{other}”. Use ff-only, rebase or merge.")),
             };
             step_with(journal, repo, &["pull", flag], plain)
         }
         "push" | "push-force" => {
             let current = status(journal, repo)?;
             if current.branch.is_none() {
-                return Err("HEAD est détaché : il n'y a pas de branche à pousser.".into());
+                return Err("HEAD is detached: there is no branch to push. Switch to a branch first.".into());
             }
-            // `--force-with-lease` refuse d'écraser un travail distant qu'on n'a pas encore récupéré.
+            // `--force-with-lease` refuses to overwrite remote work that has not been fetched yet.
             let force: &[&str] = if action == "push-force" { &["--force-with-lease"] } else { &[] };
             let mut args = vec!["push"];
             args.extend(force);
             let remote;
             if current.upstream.is_none() {
-                // Première publication de la branche : on la relie à son homologue distante.
+                // First publication of the branch: it is linked to its remote counterpart.
                 remote = default_remote(journal, repo)?;
                 args.extend(["-u", &remote, "HEAD"]);
             }
             step_with(journal, repo, &args, plain)
         }
-        other => return Err(format!("action inconnue : {other}")),
+        other => return Err(format!("Unknown action: “{other}”.")),
     };
-    // Un pull en mode rebase ou fusion peut s'arrêter sur un conflit.
+    // A pull in rebase or merge mode can stop on a conflict.
     guarded(repo, result)
 }
 
-// --- Commandes exposées à l'interface -----------------------------------------------------
+// --- Commands exposed to the interface ----------------------------------------------------
 
 type Reply<T> = Result<Done<T>, Failed>;
 
@@ -416,7 +415,7 @@ pub async fn git_diff_commit(
     .await
 }
 
-/// Les commandes qui modifient l'index renvoient le nouvel état : un seul aller-retour.
+/// The commands that change the index return the new status: a single round trip.
 #[tauri::command]
 pub async fn git_stage(repo: String, paths: Vec<String>) -> Reply<Status> {
     blocking(move |j| {
@@ -531,7 +530,7 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         assert!(check_sha("").is_err());
     }
 
-    /// Dépôt jetable dans le dossier temporaire, supprimé à la fin du test.
+    /// Throwaway repository in the temporary folder, deleted at the end of the test.
     pub struct Scratch(pub PathBuf);
 
     impl Scratch {
@@ -566,14 +565,14 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         let dir = repo.0.as_path();
         let mut j = Vec::new();
 
-        // Dépôt sans commit : indexer puis désindexer doit fonctionner.
-        repo.write("a.txt", "un\n");
-        repo.write("b c.txt", "deux\n");
+        // Repository without commits: staging then unstaging must work.
+        repo.write("a.txt", "one\n");
+        repo.write("b c.txt", "two\n");
         let s = status(&mut j, dir).unwrap();
         assert_eq!(s.unstaged.len(), 2);
         assert!(s.unstaged.iter().all(|f| f.kind == "untracked"));
         let untracked = diff_file(&mut j, dir, "b c.txt", None, false, true).unwrap();
-        assert!(untracked.text.contains("+deux"));
+        assert!(untracked.text.contains("+two"));
 
         stage(&mut j, dir, &["a.txt".into(), "b c.txt".into()]).unwrap();
         unstage(&mut j, dir, &["b c.txt".into()]).unwrap();
@@ -583,36 +582,36 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         assert_eq!(s.unstaged.len(), 1);
 
         assert!(commit(&mut j, dir, "   ", false).is_err());
-        commit(&mut j, dir, "premier commit\n\ncorps du message", false).unwrap();
+        commit(&mut j, dir, "first commit\n\nbody of the message", false).unwrap();
         let first = repo.git(&["rev-parse", "HEAD"]);
         let detail = commit_detail(&mut j, dir, &first, None).unwrap();
-        assert_eq!(detail.message, "premier commit\n\ncorps du message");
+        assert_eq!(detail.message, "first commit\n\nbody of the message");
         assert_eq!(detail.files.len(), 1);
         assert_eq!(detail.files[0].kind, "added");
 
-        // Modification, renommage et second commit.
-        repo.write("a.txt", "un\nbis\n");
+        // Change, rename and second commit.
+        repo.write("a.txt", "one\nmore\n");
         let d = diff_file(&mut j, dir, "a.txt", None, false, false).unwrap();
-        assert!(d.text.contains("+bis") && !d.truncated);
+        assert!(d.text.contains("+more") && !d.truncated);
         stage(&mut j, dir, &["a.txt".into(), "b c.txt".into()]).unwrap();
         let d = diff_file(&mut j, dir, "a.txt", None, true, false).unwrap();
-        assert!(d.text.contains("+bis"));
+        assert!(d.text.contains("+more"));
         commit(&mut j, dir, "second", false).unwrap();
         let second = repo.git(&["rev-parse", "HEAD"]);
         let detail = commit_detail(&mut j, dir, &second, Some(&first)).unwrap();
         assert_eq!(detail.files.len(), 2);
         let d = diff_commit(&mut j, dir, &second, Some(&first), "a.txt", None).unwrap();
-        assert!(d.text.contains("+bis"));
+        assert!(d.text.contains("+more"));
         let d = diff_commit(&mut j, dir, &first, None, "a.txt", None).unwrap();
-        assert!(d.text.contains("+un"));
+        assert!(d.text.contains("+one"));
 
-        // Abandon : le fichier suivi retrouve son contenu, le nouveau disparaît.
-        repo.write("a.txt", "cassé\n");
-        repo.write("neuf.txt", "x\n");
-        discard(&mut j, dir, &["a.txt".into()], &["neuf.txt".into()]).unwrap();
+        // Discard: the tracked file gets its content back, the new one disappears.
+        repo.write("a.txt", "broken\n");
+        repo.write("new.txt", "x\n");
+        discard(&mut j, dir, &["a.txt".into()], &["new.txt".into()]).unwrap();
         let s = status(&mut j, dir).unwrap();
         assert!(s.staged.is_empty() && s.unstaged.is_empty());
-        assert_eq!(fs::read_to_string(dir.join("a.txt")).unwrap(), "un\nbis\n");
+        assert_eq!(fs::read_to_string(dir.join("a.txt")).unwrap(), "one\nmore\n");
         assert!(j.iter().all(|c| c.ok || c.command.starts_with("git commit")));
     }
 
@@ -620,7 +619,7 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
     fn push_pull_and_fetch_between_clones() {
         let origin = Scratch::new("origin");
         origin.git(&["config", "receive.denyCurrentBranch", "ignore"]);
-        origin.write("a.txt", "un\n");
+        origin.write("a.txt", "one\n");
         origin.git(&["add", "-A"]);
         origin.git(&["commit", "-q", "-m", "init"]);
 
@@ -630,23 +629,23 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         clone.git(&["pull", "-q", "origin", "main"]);
         let mut j = Vec::new();
 
-        // Branche sans amont : le premier push la publie et la relie.
-        clone.git(&["checkout", "-q", "-b", "sujet"]);
-        clone.write("b.txt", "deux\n");
+        // Branch without an upstream: the first push publishes it and links it.
+        clone.git(&["checkout", "-q", "-b", "topic"]);
+        clone.write("b.txt", "two\n");
         stage(&mut j, dir, &["b.txt".into()]).unwrap();
-        commit(&mut j, dir, "ajout de b", false).unwrap();
+        commit(&mut j, dir, "add b", false).unwrap();
         assert!(status(&mut j, dir).unwrap().upstream.is_none());
         sync(&mut j, dir, "push", None).unwrap();
         let s = status(&mut j, dir).unwrap();
-        assert_eq!(s.upstream.as_deref(), Some("origin/sujet"));
+        assert_eq!(s.upstream.as_deref(), Some("origin/topic"));
         assert_eq!((s.ahead, s.behind), (0, 0));
-        assert_eq!(origin.git(&["log", "-1", "--format=%s", "sujet"]), "ajout de b");
+        assert_eq!(origin.git(&["log", "-1", "--format=%s", "topic"]), "add b");
 
-        // Un commit arrive côté distant : fetch le signale, pull l'intègre.
-        origin.git(&["checkout", "-q", "sujet"]);
-        origin.write("c.txt", "trois\n");
+        // A commit arrives on the remote side: fetch reports it, pull brings it in.
+        origin.git(&["checkout", "-q", "topic"]);
+        origin.write("c.txt", "three\n");
         origin.git(&["add", "-A"]);
-        origin.git(&["commit", "-q", "-m", "distant"]);
+        origin.git(&["commit", "-q", "-m", "remote"]);
         sync(&mut j, dir, "fetch", None).unwrap();
         assert_eq!(status(&mut j, dir).unwrap().behind, 1);
         sync(&mut j, dir, "pull", None).unwrap();
@@ -655,14 +654,14 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
 
         assert!(sync(&mut j, dir, "rebase", None).is_err());
 
-        // Amend puis push forcé : le push simple est refusé, le forcé passe.
-        assert_eq!(head_message(&mut j, dir).unwrap(), "distant");
-        clone.write("c.txt", "trois, corrigé\n");
+        // Amend then force push: the plain push is refused, the forced one goes through.
+        assert_eq!(head_message(&mut j, dir).unwrap(), "remote");
+        clone.write("c.txt", "three, fixed\n");
         stage(&mut j, dir, &["c.txt".into()]).unwrap();
-        commit(&mut j, dir, "distant, corrigé", true).unwrap();
+        commit(&mut j, dir, "remote, fixed", true).unwrap();
         assert!(sync(&mut j, dir, "push", None).is_err());
         sync(&mut j, dir, "push-force", None).unwrap();
-        assert_eq!(origin.git(&["log", "-1", "--format=%s", "sujet"]), "distant, corrigé");
+        assert_eq!(origin.git(&["log", "-1", "--format=%s", "topic"]), "remote, fixed");
     }
 
     #[test]
@@ -674,18 +673,18 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         stage(&mut j, dir, &["f.txt".into()]).unwrap();
         commit(&mut j, dir, "init", false).unwrap();
 
-        // Deux modifications éloignées : « b » remplacé, « k » supprimé.
+        // Two changes far apart: “b” replaced, “k” deleted.
         repo.write("f.txt", "a\nB\nc\nd\ne\nf\ng\nh\ni\nj\nl\n");
         let diff = diff_file(&mut j, dir, "f.txt", None, false, false).unwrap().text;
         let index_of = |needle: &str| diff.split('\n').position(|l| l == needle).unwrap();
 
-        // On n'indexe que la suppression de « k ».
+        // Only the deletion of “k” is staged.
         apply_lines(&mut j, dir, &diff, &[index_of("-k")], false).unwrap();
         assert_eq!(repo.git(&["show", ":f.txt"]), "a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nl");
         let s = status(&mut j, dir).unwrap();
         assert_eq!((s.staged.len(), s.unstaged.len()), (1, 1));
 
-        // Puis le remplacement de « b », et on retire la suppression de « k » de l'index.
+        // Then the replacement of “b”, and the deletion of “k” is unstaged.
         let diff = diff_file(&mut j, dir, "f.txt", None, false, false).unwrap().text;
         let at = |needle: &str| diff.split('\n').position(|l| l == needle).unwrap();
         apply_lines(&mut j, dir, &diff, &[at("-b"), at("+B")], false).unwrap();
@@ -697,8 +696,8 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         assert!(apply_lines(&mut j, dir, &cached, &[], true).is_err());
     }
 
-    /// N'indexer que la moitié d'une ligne remplacée : l'index garde l'ancienne ligne et la nouvelle,
-    /// ou perd la ligne sans sa remplaçante. C'est ce dont l'interface avertit.
+    /// Staging only half of a replaced line: the index keeps the old line and the new one, or
+    /// loses the line without its replacement. That is what the interface warns about.
     #[test]
     fn staging_half_of_a_replaced_line_keeps_or_drops_it() {
         let repo = Scratch::new("half");
@@ -709,13 +708,13 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         commit(&mut j, dir, "init", false).unwrap();
         repo.write("f.txt", "a\nB\nc\n");
 
-        // Seulement l'ajout : l'ancienne ligne reste à côté de la nouvelle.
+        // Only the addition: the old line stays beside the new one.
         let diff = diff_file(&mut j, dir, "f.txt", None, false, false).unwrap().text;
         let at = |needle: &str| diff.split('\n').position(|l| l == needle).unwrap();
         apply_lines(&mut j, dir, &diff, &[at("+B")], false).unwrap();
         assert_eq!(repo.git(&["show", ":f.txt"]), "a\nb\nB\nc");
 
-        // Seulement la suppression : la ligne disparaît de l'index, sans sa remplaçante.
+        // Only the deletion: the line disappears from the index, without its replacement.
         repo.git(&["reset", "-q"]);
         apply_lines(&mut j, dir, &diff, &[at("-b")], false).unwrap();
         assert_eq!(repo.git(&["show", ":f.txt"]), "a\nc");

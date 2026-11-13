@@ -1,5 +1,5 @@
-//! Références et historique : branches, tags, remises, fusion, rebase, cherry-pick, reset,
-//! opérations interrompues par un conflit et rebase interactif.
+//! References and history: branches, tags, stashes, merge, rebase, cherry-pick, reset,
+//! operations stopped by a conflict, and interactive rebase.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -11,10 +11,10 @@ use serde::{Deserialize, Serialize};
 use super::work::{Diff, Status, check_sha, status, to_diff};
 use super::{CommandLog, Done, Failed, Opts, blocking, check_name, report, run, step, step_with, text};
 
-/// Messages de git en anglais, pour les rares sorties que Ramure doit interpréter.
+/// git's messages in English, for the few outputs that Ramure has to interpret.
 const ENGLISH: [(&str, &str); 1] = [("LC_ALL", "C")];
 
-// --- Lecture des références ---------------------------------------------------------------
+// --- Reading the references ---------------------------------------------------------------
 
 #[derive(Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,7 +24,7 @@ pub struct Branch {
     pub upstream: Option<String>,
     pub ahead: u32,
     pub behind: u32,
-    /// La branche distante suivie n'existe plus.
+    /// The remote branch it tracks no longer exists.
     pub gone: bool,
     pub current: bool,
 }
@@ -33,7 +33,7 @@ pub struct Branch {
 #[serde(rename_all = "camelCase")]
 pub struct NamedRef {
     pub name: String,
-    /// Commit désigné (pour un tag annoté, le commit et non l'objet tag).
+    /// Commit it points to (for an annotated tag, the commit and not the tag object).
     pub sha: String,
 }
 
@@ -56,7 +56,7 @@ pub struct Refs {
     pub remote_names: Vec<String>,
 }
 
-/// `[ahead 2, behind 1]`, `[ahead 2]`, `[gone]` ou vide → (avance, retard, disparue).
+/// `[ahead 2, behind 1]`, `[ahead 2]`, `[gone]` or empty → (ahead, behind, gone).
 fn parse_track(track: &str) -> (u32, u32, bool) {
     let inner = track.trim_matches(['[', ']']);
     let (mut ahead, mut behind, mut gone) = (0, 0, false);
@@ -72,12 +72,12 @@ fn parse_track(track: &str) -> (u32, u32, bool) {
     (ahead, behind, gone)
 }
 
-/// Parse la sortie de `for-each-ref` au format de [`refs`].
+/// Parses the output of `for-each-ref` in the format of [`refs`].
 fn parse_refs(raw: &str, refs: &mut Refs) {
     for line in raw.lines() {
         let fields: Vec<&str> = line.split('\x1f').collect();
         let [full, object, peeled, upstream, track, head] = fields[..] else { continue };
-        // Tag annoté : `*objectname` est le commit visé.
+        // Annotated tag: `*objectname` is the commit it points to.
         let sha = if peeled.is_empty() { object } else { peeled }.to_string();
         if let Some(name) = full.strip_prefix("refs/heads/") {
             let (ahead, behind, gone) = parse_track(track);
@@ -118,7 +118,7 @@ fn parse_stashes(raw: &str) -> Vec<Stash> {
 pub fn refs(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<Refs, String> {
     let mut refs = Refs::default();
     let format = "--format=%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track)%1f%(HEAD)";
-    // `upstream:track` est traduit par git : on impose l'anglais pour le lire.
+    // git translates `upstream:track`: English is forced to read it.
     let opts = Opts { envs: &ENGLISH, ..Opts::default() };
     let raw = step_with(journal, repo, &["for-each-ref", format, "refs/heads", "refs/remotes", "refs/tags"], opts)?;
     parse_refs(&String::from_utf8_lossy(&raw.stdout), &mut refs);
@@ -128,7 +128,7 @@ pub fn refs(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<Refs, String> 
     Ok(refs)
 }
 
-/// Dépôt distant par défaut : `origin` s'il existe, sinon le premier.
+/// Default remote: `origin` if it exists, otherwise the first one.
 pub fn default_remote(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<String, String> {
     let remotes = text(&step(journal, repo, &["remote"])?);
     remotes
@@ -136,16 +136,16 @@ pub fn default_remote(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<Stri
         .find(|r| *r == "origin")
         .or_else(|| remotes.lines().next())
         .map(str::to_string)
-        .ok_or_else(|| "Ce dépôt n'a aucun dépôt distant configuré.".to_string())
+        .ok_or_else(|| "This repository has no remote. Add one with git remote add.".to_string())
 }
 
-// --- Branches, tags et remises ------------------------------------------------------------
+// --- Branches, tags and stashes -----------------------------------------------------------
 
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "kebab-case", rename_all_fields = "camelCase")]
 pub enum RefOp {
     Switch { name: String },
-    /// Bascule sur la branche locale qui suit `name` (`origin/x`), en la créant au besoin.
+    /// Switches to the local branch that tracks `name` (`origin/x`), creating it if needed.
     SwitchRemote { name: String },
     Detach { sha: String },
     BranchCreate { name: String, start: String, switch: bool },
@@ -166,18 +166,18 @@ pub enum RefOp {
 fn split_remote(name: &str) -> Result<(&str, &str), String> {
     name.split_once('/')
         .filter(|(remote, branch)| !remote.is_empty() && !branch.is_empty())
-        .ok_or_else(|| format!("branche distante invalide : « {name} »"))
+        .ok_or_else(|| format!("Invalid remote branch: “{name}”. Name a remote and a branch, as in “origin/main”."))
 }
 
-/// Position de la branche locale qui porte le nom d'une branche distante, par rapport à elle.
+/// Position of the local branch that bears the name of a remote branch, relative to it.
 #[derive(Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Relation {
-    /// Nom de la branche locale ; `None` si elle n'existe pas encore.
+    /// Name of the local branch; `None` if it does not exist yet.
     pub local: Option<String>,
-    /// Commits de la branche locale absents de la branche distante.
+    /// Commits of the local branch missing from the remote branch.
     pub ahead: u32,
-    /// Commits de la branche distante absents de la branche locale.
+    /// Commits of the remote branch missing from the local branch.
     pub behind: u32,
 }
 
@@ -185,7 +185,7 @@ fn local_exists(repo: &Path, local: &str) -> bool {
     run(repo, &["show-ref", "--verify", "--quiet", &format!("refs/heads/{local}")]).is_ok()
 }
 
-/// Compare la branche distante `remote` (`origin/main`) à la branche locale de même nom.
+/// Compares the remote branch `remote` (`origin/main`) with the local branch of the same name.
 pub fn relation(journal: &mut Vec<CommandLog>, repo: &Path, remote: &str) -> Result<Relation, String> {
     check_name(remote)?;
     let (_, local) = split_remote(remote)?;
@@ -199,9 +199,9 @@ pub fn relation(journal: &mut Vec<CommandLog>, repo: &Path, remote: &str) -> Res
     Ok(Relation { local: Some(local.to_string()), ahead, behind })
 }
 
-/// Fichiers modifiés qui empêcheraient de basculer sur une branche : ceux que le dossier de
-/// travail ou l'index a touchés, et qui diffèrent entre HEAD et cette branche. Git refuse alors le
-/// basculement, pour ne pas écraser ces modifications. `remote` : `name` est une branche distante.
+/// Changed files that would prevent a switch to a branch: those that the working tree or the
+/// index has touched, and that differ between HEAD and that branch. git then refuses the switch,
+/// so as not to overwrite these changes. `remote`: `name` is a remote branch.
 pub fn switch_blockers(journal: &mut Vec<CommandLog>, repo: &Path, name: &str, remote: bool) -> Result<Vec<String>, String> {
     check_name(name)?;
     let target = format!("refs/{}/{name}", if remote { "remotes" } else { "heads" });
@@ -230,8 +230,8 @@ pub fn ref_op(journal: &mut Vec<CommandLog>, repo: &Path, op: &RefOp) -> Result<
                 return git(journal, &["switch", "--track", name]);
             }
             let switched = git(journal, &["switch", local])?;
-            // La branche locale est en retard sur la branche distante, sans commit à elle : on
-            // l'avance. Si elle a divergé, on n'y touche pas : c'est à l'utilisateur de décider.
+            // The local branch is behind the remote branch, with no commit of its own: move it
+            // forward. If it has diverged, leave it alone: that is for the user to decide.
             let behind = relation(journal, repo, name)?;
             if behind.ahead == 0 && behind.behind > 0 {
                 let target = format!("refs/remotes/{name}");
@@ -247,7 +247,7 @@ pub fn ref_op(journal: &mut Vec<CommandLog>, repo: &Path, op: &RefOp) -> Result<
             check_name(name)?;
             check_name(start)?;
             step(journal, repo, &["check-ref-format", "--branch", name])
-                .map_err(|_| format!("« {name} » n'est pas un nom de branche valide."))?;
+                .map_err(|_| format!("“{name}” is not a valid branch name."))?;
             if *switch {
                 git(journal, &["switch", "-c", name, start])
             } else {
@@ -272,12 +272,12 @@ pub fn ref_op(journal: &mut Vec<CommandLog>, repo: &Path, op: &RefOp) -> Result<
             check_name(name)?;
             check_sha(sha)?;
             step(journal, repo, &["check-ref-format", &format!("refs/tags/{name}")])
-                .map_err(|_| format!("« {name} » n'est pas un nom de tag valide."))?;
+                .map_err(|_| format!("“{name}” is not a valid tag name."))?;
             let message = message.trim();
             if message.is_empty() {
                 git(journal, &["tag", name, sha])
             } else {
-                // Tag annoté : le message passe par l'entrée standard.
+                // Annotated tag: the message goes through the standard input.
                 let opts = Opts { input: Some(message.as_bytes()), ..Opts::default() };
                 step_with(journal, repo, &["tag", "-a", name, sha, "-F", "-"], opts).map(|out| report(&out))
             }
@@ -310,7 +310,7 @@ pub fn ref_op(journal: &mut Vec<CommandLog>, repo: &Path, op: &RefOp) -> Result<
     }
 }
 
-/// Contenu d'une remise, fichiers non suivis compris quand git le permet (2.32 ou plus récent).
+/// Content of a stash, untracked files included when git allows it (2.32 or later).
 pub fn stash_show(journal: &mut Vec<CommandLog>, repo: &Path, index: u32) -> Result<Diff, String> {
     let name = format!("stash@{{{index}}}");
     let common = ["stash", "show", "-p", "--no-color", "--no-ext-diff"];
@@ -327,16 +327,16 @@ pub fn stash_show(journal: &mut Vec<CommandLog>, repo: &Path, index: u32) -> Res
     Ok(to_diff(raw))
 }
 
-// --- Opérations d'historique --------------------------------------------------------------
+// --- History operations -------------------------------------------------------------------
 
-/// Résultat d'une opération qui peut s'arrêter sur un conflit.
+/// Result of an operation that can stop on a conflict.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Outcome {
-    /// Ce que git a écrit.
+    /// What git wrote.
     pub output: String,
-    /// Opération restée en suspens (`merge`, `rebase`, `cherry-pick`, `revert`) : il faut
-    /// résoudre les conflits puis continuer, ou abandonner.
+    /// Operation left stopped (`merge`, `rebase`, `cherry-pick`, `revert`): the conflicts must
+    /// be resolved, then it continues, or it is aborted.
     pub stopped: Option<&'static str>,
 }
 
@@ -344,10 +344,10 @@ pub fn git_dir(repo: &Path) -> Option<PathBuf> {
     run(repo, &["rev-parse", "--absolute-git-dir"]).ok().map(|out| PathBuf::from(text(&out)))
 }
 
-/// Opération en cours dans le dépôt, d'après les fichiers que git laisse dans `.git`.
+/// Operation in progress in the repository, from the files that git leaves in `.git`.
 pub fn operation(repo: &Path) -> Option<&'static str> {
     let dir = git_dir(repo)?;
-    // Un rebase arrêté sur un commit laisse aussi CHERRY_PICK_HEAD : on le teste en premier.
+    // A rebase stopped on a commit also leaves CHERRY_PICK_HEAD: it is tested first.
     if dir.join("rebase-merge").is_dir() || dir.join("rebase-apply").is_dir() {
         Some("rebase")
     } else if dir.join("CHERRY_PICK_HEAD").exists() {
@@ -361,7 +361,7 @@ pub fn operation(repo: &Path) -> Option<&'static str> {
     }
 }
 
-/// Un échec qui laisse une opération en suspens n'est pas une erreur : c'est un conflit.
+/// A failure that leaves an operation stopped is not an error: it is a conflict.
 pub fn guarded(repo: &Path, result: Result<Output, String>) -> Result<Outcome, String> {
     match result {
         Ok(out) => Ok(Outcome { output: report(&out), stopped: operation(repo) }),
@@ -372,10 +372,10 @@ pub fn guarded(repo: &Path, result: Result<Output, String>) -> Result<Outcome, S
     }
 }
 
-/// `AAAAMMJJ-HHMMSS` en temps universel, pour un instant donné en secondes Unix.
+/// `YYYYMMDD-HHMMSS` in universal time, for an instant given in Unix seconds.
 fn stamp_at(secs: i64) -> String {
     let (days, rem) = (secs.div_euclid(86_400), secs.rem_euclid(86_400));
-    // Conversion jours → date civile (algorithme de Howard Hinnant).
+    // Days → civil date conversion (Howard Hinnant's algorithm).
     let z = days + 719_468;
     let (era, doe) = (z.div_euclid(146_097), z.rem_euclid(146_097));
     let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
@@ -387,11 +387,11 @@ fn stamp_at(secs: i64) -> String {
     format!("{year:04}{month:02}{day:02}-{:02}{:02}{:02}", rem / 3_600, rem % 3_600 / 60, rem % 60)
 }
 
-/// Avant de réécrire l'historique, garde la position de la branche dans
-/// `refs/ramure/backup/<branche>-<date>` : `git reset --hard <cette référence>` y revient.
+/// Before rewriting the history, keeps the position of the branch in
+/// `refs/ramure/backup/<branch>-<date>`: `git reset --hard <that reference>` goes back to it.
 fn backup(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<(), String> {
     let Ok(branch) = run(repo, &["symbolic-ref", "--short", "--quiet", "HEAD"]) else {
-        return Ok(()); // HEAD détaché : aucune branche ne bouge
+        return Ok(()); // detached HEAD: no branch moves
     };
     let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0);
     let name = format!("refs/ramure/backup/{}-{}", text(&branch), stamp_at(now));
@@ -401,14 +401,14 @@ fn backup(journal: &mut Vec<CommandLog>, repo: &Path) -> Result<(), String> {
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "kebab-case", rename_all_fields = "camelCase")]
 pub enum HistoryOp {
-    /// Fusionne `target` dans la branche courante.
+    /// Merges `target` into the current branch.
     Merge { target: String },
-    /// Rejoue la branche courante sur `onto`.
+    /// Replays the current branch onto `onto`.
     Rebase { onto: String },
-    /// `mainline` : le commit est une fusion, on reprend ses changements par rapport au premier parent.
+    /// `mainline`: the commit is a merge, its changes are taken relative to the first parent.
     CherryPick { sha: String, mainline: bool },
     Revert { sha: String, mainline: bool },
-    /// `mode` : `soft`, `mixed` ou `hard`.
+    /// `mode`: `soft`, `mixed` or `hard`.
     Reset { sha: String, mode: String },
 }
 
@@ -437,7 +437,7 @@ pub fn history(journal: &mut Vec<CommandLog>, repo: &Path, op: &HistoryOp) -> Re
                 "soft" => "--soft",
                 "mixed" => "--mixed",
                 "hard" => "--hard",
-                other => return Err(format!("mode de reset inconnu : {other}")),
+                other => return Err(format!("Unknown reset mode: “{other}”. Use soft, mixed or hard.")),
             };
             backup(journal, repo)?;
             vec!["reset", flag, sha]
@@ -447,68 +447,68 @@ pub fn history(journal: &mut Vec<CommandLog>, repo: &Path, op: &HistoryOp) -> Re
     guarded(repo, result)
 }
 
-/// Continue, passe ou abandonne l'opération en cours. `action` : `continue`, `skip` ou `abort`.
+/// Continues, skips or aborts the operation in progress. `action`: `continue`, `skip` or `abort`.
 pub fn operate(journal: &mut Vec<CommandLog>, repo: &Path, action: &str) -> Result<Outcome, String> {
-    let op = operation(repo).ok_or("Aucune opération n'est en cours dans ce dépôt.")?;
+    let op = operation(repo).ok_or("No operation is in progress in this repository.")?;
     let flag = match action {
         "continue" => "--continue",
         "skip" => "--skip",
         "abort" => "--abort",
-        other => return Err(format!("action inconnue : {other}")),
+        other => return Err(format!("Unknown action: “{other}”.")),
     };
     let args: Vec<&str> = match (op, action) {
-        // `git merge --continue` n'existe que depuis git 2.12 ; `git commit` fait la même chose.
+        // `git merge --continue` only exists since git 2.12; `git commit` does the same thing.
         ("merge", "continue") => vec!["commit", "--no-edit"],
-        ("merge", "skip") => return Err("Une fusion ne se passe pas : il faut la terminer ou l'abandonner.".into()),
+        ("merge", "skip") => return Err("A merge cannot be skipped. Continue it or abort it.".into()),
         (op, _) => vec![op, flag],
     };
     let result = step_with(journal, repo, &args, Opts::default());
     guarded(repo, result)
 }
 
-/// Résout un fichier en conflit en gardant un seul côté. `side` : `ours` ou `theirs`.
+/// Resolves a file in conflict by keeping a single side. `side`: `ours` or `theirs`.
 pub fn resolve(journal: &mut Vec<CommandLog>, repo: &Path, file: &str, side: &str) -> Result<(), String> {
     let flag = match side {
         "ours" => "--ours",
         "theirs" => "--theirs",
-        other => return Err(format!("côté inconnu : {other}")),
+        other => return Err(format!("Unknown side: “{other}”. Use ours or theirs.")),
     };
     let opts = Opts { envs: &ENGLISH, ..Opts::default() };
     match step_with(journal, repo, &["checkout", flag, "--", file], opts) {
         Ok(_) => step(journal, repo, &["add", "--", file]).map(drop),
-        // Ce côté a supprimé le fichier : le garder, c'est supprimer le fichier.
+        // This side deleted the file: keeping it means deleting the file.
         Err(message) if message.contains("does not have") => step(journal, repo, &["rm", "-q", "--", file]).map(drop),
         Err(message) => Err(message),
     }
 }
 
-// --- Rebase interactif --------------------------------------------------------------------
+// --- Interactive rebase -------------------------------------------------------------------
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlanCommit {
     pub sha: String,
     pub subject: String,
-    /// Message complet, pour le reformuler sans perdre sa description.
+    /// Whole message, to reword it without losing its description.
     pub message: String,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RebasePlan {
-    /// Commit sur lequel rejouer ; absent si la plage commence au tout premier commit.
+    /// Commit to replay onto; absent if the range starts at the very first commit.
     pub base: Option<String>,
-    /// Commits à rejouer, du plus ancien au plus récent.
+    /// Commits to replay, from the oldest to the most recent.
     pub commits: Vec<PlanCommit>,
-    /// Au moins un commit de la plage existe sur un dépôt distant : il faudra un push forcé.
+    /// At least one commit of the range exists on a remote: a force push will be needed.
     pub pushed: bool,
 }
 
-/// Prépare un rebase interactif de `sha` (inclus) jusqu'à HEAD.
+/// Prepares an interactive rebase from `sha` (included) up to HEAD.
 pub fn rebase_plan(journal: &mut Vec<CommandLog>, repo: &Path, sha: &str) -> Result<RebasePlan, String> {
     check_sha(sha)?;
     step(journal, repo, &["merge-base", "--is-ancestor", sha, "HEAD"])
-        .map_err(|_| "Ce commit ne fait pas partie de la branche courante.".to_string())?;
+        .map_err(|_| "This commit is not on the current branch. Switch to a branch that contains it.".to_string())?;
     let parents = text(&step(journal, repo, &["rev-list", "--parents", "-n", "1", sha])?);
     let base = parents.split_whitespace().nth(1).map(str::to_string);
     let range = match &base {
@@ -521,7 +521,7 @@ pub fn rebase_plan(journal: &mut Vec<CommandLog>, repo: &Path, sha: &str) -> Res
         let mut fields = record.trim_start_matches(['\n', '\r']).splitn(3, '\x1f');
         let (Some(sha), Some(parents), Some(message)) = (fields.next(), fields.next(), fields.next()) else { continue };
         if parents.split_whitespace().count() > 1 {
-            return Err("La plage contient un commit de fusion : le rebase interactif l'aplatirait. Choisis un commit plus récent.".into());
+            return Err("The range contains a merge commit, which an interactive rebase would flatten. Choose a more recent commit.".into());
         }
         let message = message.trim();
         let subject = message.lines().next().unwrap_or("").to_string();
@@ -534,22 +534,22 @@ pub fn rebase_plan(journal: &mut Vec<CommandLog>, repo: &Path, sha: &str) -> Res
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TodoItem {
-    /// `pick`, `reword`, `squash`, `fixup` ou `drop`.
+    /// `pick`, `reword`, `squash`, `fixup` or `drop`.
     pub action: String,
     pub sha: String,
-    /// Nouveau message, pour `reword`.
+    /// New message, for `reword`.
     pub message: Option<String>,
 }
 
-/// Chemin entre apostrophes pour le shell de git, barres obliques comprises sous Windows.
+/// Path in single quotes for git's shell, with forward slashes on Windows too.
 fn sh_quote(path: &Path) -> String {
     let text = path.to_string_lossy().replace('\\', "/");
     format!("'{}'", text.replace('\'', "'\\''"))
 }
 
-/// Écrit la liste des actions et les messages modifiés dans `<.git>/ramure/`.
+/// Writes the list of actions and the reworded messages into `<.git>/ramure/`.
 fn write_todo(dir: &Path, todo: &[TodoItem]) -> Result<PathBuf, String> {
-    let io = |e: std::io::Error| format!("impossible de préparer le rebase : {e}");
+    let io = |e: std::io::Error| format!("Could not prepare the rebase: {e}");
     let _ = fs::remove_dir_all(dir);
     fs::create_dir_all(dir).map_err(io)?;
 
@@ -561,36 +561,36 @@ fn write_todo(dir: &Path, todo: &[TodoItem]) -> Result<PathBuf, String> {
             "drop" => continue,
             "pick" | "reword" => lines.push_str(&format!("pick {}\n", item.sha)),
             "squash" | "fixup" if first => {
-                return Err("Le premier commit conservé ne peut pas être fusionné dans un précédent.".into());
+                return Err("The first commit kept cannot be squashed or fixed up: there is no commit above it.".into());
             }
             "squash" | "fixup" => lines.push_str(&format!("{} {}\n", item.action, item.sha)),
-            other => return Err(format!("action de rebase inconnue : {other}")),
+            other => return Err(format!("Unknown rebase action: “{other}”.")),
         }
         first = false;
         if item.action == "reword" {
             let message = item.message.as_deref().map(str::trim).unwrap_or("");
             if message.is_empty() {
-                return Err("Un commit à reformuler a un message vide.".into());
+                return Err("A commit to reword has an empty message.".into());
             }
             let file = dir.join(format!("message-{i}.txt"));
             fs::write(&file, message).map_err(io)?;
-            // Le message est remplacé juste après que le commit a été rejoué.
+            // The message is replaced right after the commit has been replayed.
             lines.push_str(&format!("exec git commit --amend -q -F {}\n", sh_quote(&file)));
         }
     }
     if first {
-        return Err("Tous les commits seraient supprimés : utilise plutôt un reset.".into());
+        return Err("Every commit would be dropped: use a reset instead.".into());
     }
     let file = dir.join("todo");
     fs::write(&file, lines).map_err(io)?;
     Ok(file)
 }
 
-/// Lance `git rebase -i` avec une liste d'actions écrite par Ramure.
+/// Runs `git rebase -i` with a list of actions written by Ramure.
 ///
-/// git demande à « l'éditeur de séquence » de modifier sa liste ; `editor` est une commande
-/// qui la remplace par la nôtre. Par défaut, c'est Ramure lui-même, relancé avec
-/// `--sequence-editor` (voir `main.rs`) : aucun outil extérieur n'est requis, sur aucun système.
+/// git asks the “sequence editor” to edit its list; `editor` is a command that replaces it with
+/// ours. By default, it is Ramure itself, run again with `--sequence-editor` (see `main.rs`): no
+/// outside tool is required, on any system.
 pub fn rebase_interactive(
     journal: &mut Vec<CommandLog>,
     repo: &Path,
@@ -601,12 +601,12 @@ pub fn rebase_interactive(
     if let Some(base) = base {
         check_sha(base)?;
     }
-    let dir = git_dir(repo).ok_or("dossier .git introuvable")?.join("ramure");
+    let dir = git_dir(repo).ok_or("The .git folder of this repository was not found.")?.join("ramure");
     let file = write_todo(&dir, todo)?;
     let editor = match editor {
         Some(editor) => format!("{editor} {}", sh_quote(&file)),
         None => {
-            let exe = std::env::current_exe().map_err(|e| format!("exécutable de Ramure introuvable : {e}"))?;
+            let exe = std::env::current_exe().map_err(|e| format!("The Ramure executable was not found: {e}"))?;
             format!("{} --sequence-editor {}", sh_quote(&exe), sh_quote(&file))
         }
     };
@@ -618,7 +618,7 @@ pub fn rebase_interactive(
     guarded(repo, result)
 }
 
-// --- Commandes exposées à l'interface -----------------------------------------------------
+// --- Commands exposed to the interface ----------------------------------------------------
 
 type Reply<T> = Result<Done<T>, Failed>;
 
@@ -694,7 +694,7 @@ mod tests {
     #[test]
     fn for_each_ref_is_parsed() {
         let raw = "refs/heads/main\x1faaa\x1f\x1forigin/main\x1f[ahead 1]\x1f*\n\
-refs/heads/sujet\x1fbbb\x1f\x1f\x1f\x1f \n\
+refs/heads/topic\x1fbbb\x1f\x1f\x1f\x1f \n\
 refs/remotes/origin/HEAD\x1faaa\x1f\x1f\x1f\x1f \n\
 refs/remotes/origin/main\x1fccc\x1f\x1f\x1f\x1f \n\
 refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
@@ -705,7 +705,7 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         assert_eq!(refs.branches[0].upstream.as_deref(), Some("origin/main"));
         assert!(!refs.branches[1].current && refs.branches[1].upstream.is_none());
         assert_eq!(refs.remotes, vec![NamedRef { name: "origin/main".into(), sha: "ccc".into() }]);
-        // Tag annoté : c'est le commit visé qui compte.
+        // Annotated tag: what counts is the commit it points to.
         assert_eq!(refs.tags, vec![NamedRef { name: "v1".into(), sha: "eee".into() }]);
     }
 
@@ -716,11 +716,11 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         assert_eq!(stamp_at(951_782_400), "20000229-000000");
     }
 
-    /// Dépôt avec trois commits sur `main` : a.txt = "1\n", puis "1\n2\n", puis "1\n2\n3\n".
+    /// Repository with three commits on `main`: a.txt = "1\n", then "1\n2\n", then "1\n2\n3\n".
     fn three_commits(label: &str) -> Scratch {
         let repo = Scratch::new(label);
         let mut j = Vec::new();
-        for (content, message) in [("1\n", "un"), ("1\n2\n", "deux"), ("1\n2\n3\n", "trois")] {
+        for (content, message) in [("1\n", "one"), ("1\n2\n", "two"), ("1\n2\n3\n", "three")] {
             repo.write("a.txt", content);
             stage(&mut j, &repo.0, &["a.txt".into()]).unwrap();
             commit(&mut j, &repo.0, message, false).unwrap();
@@ -730,34 +730,34 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
 
     #[test]
     fn local_changes_that_block_a_switch_are_listed() {
-        let repo = three_commits("bloque");
+        let repo = three_commits("blockers");
         let dir = repo.0.as_path();
         let mut j = Vec::new();
-        repo.git(&["branch", "avant", "HEAD~1"]);
-        repo.git(&["branch", "ici"]);
-        repo.write("b.txt", "autre\n");
+        repo.git(&["branch", "before", "HEAD~1"]);
+        repo.git(&["branch", "here"]);
+        repo.write("b.txt", "other\n");
         stage(&mut j, dir, &["b.txt".into()]).unwrap();
-        commit(&mut j, dir, "quatre", false).unwrap();
+        commit(&mut j, dir, "four", false).unwrap();
 
-        // Rien de modifié : rien n'empêche de basculer.
-        assert!(switch_blockers(&mut j, dir, "avant", false).unwrap().is_empty());
+        // Nothing changed: nothing prevents a switch.
+        assert!(switch_blockers(&mut j, dir, "before", false).unwrap().is_empty());
 
-        // « b.txt » est modifié, et il diffère entre HEAD et les deux branches : il bloque.
-        repo.write("b.txt", "en cours\n");
-        assert_eq!(switch_blockers(&mut j, dir, "ici", false).unwrap(), vec!["b.txt".to_string()]);
-        assert!(ref_op(&mut j, dir, &RefOp::Switch { name: "ici".into() }).is_err());
+        // “b.txt” is changed, and it differs between HEAD and both branches: it blocks.
+        repo.write("b.txt", "in progress\n");
+        assert_eq!(switch_blockers(&mut j, dir, "here", false).unwrap(), vec!["b.txt".to_string()]);
+        assert!(ref_op(&mut j, dir, &RefOp::Switch { name: "here".into() }).is_err());
 
-        // « a.txt » est modifié, mais identique entre HEAD et « ici » : git l'emporte avec lui.
+        // “a.txt” is changed, but the same between HEAD and “here”: git carries it along.
         repo.git(&["checkout", "--", "b.txt"]);
-        repo.write("a.txt", "1\n2\n3\nen cours\n");
-        assert!(switch_blockers(&mut j, dir, "ici", false).unwrap().is_empty());
-        assert_eq!(switch_blockers(&mut j, dir, "avant", false).unwrap(), vec!["a.txt".to_string()]);
-        assert!(ref_op(&mut j, dir, &RefOp::Switch { name: "ici".into() }).is_ok());
+        repo.write("a.txt", "1\n2\n3\nin progress\n");
+        assert!(switch_blockers(&mut j, dir, "here", false).unwrap().is_empty());
+        assert_eq!(switch_blockers(&mut j, dir, "before", false).unwrap(), vec!["a.txt".to_string()]);
+        assert!(ref_op(&mut j, dir, &RefOp::Switch { name: "here".into() }).is_ok());
     }
 
     #[test]
     fn switching_to_a_remote_branch_updates_the_local_one() {
-        let repo = three_commits("suivi");
+        let repo = three_commits("tracking");
         let dir = repo.0.as_path();
         let mut j = Vec::new();
         let third = repo.git(&["rev-parse", "HEAD"]);
@@ -765,31 +765,31 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         let origin = |sha: &str| repo.git(&["update-ref", "refs/remotes/origin/main", sha]);
         let switch = RefOp::SwitchRemote { name: "origin/main".into() };
 
-        // Pas de branche locale de ce nom : rien à comparer.
-        repo.git(&["update-ref", "refs/remotes/origin/autre", &third]);
-        assert_eq!(relation(&mut j, dir, "origin/autre").unwrap(), Relation { local: None, ahead: 0, behind: 0 });
+        // No local branch of that name: nothing to compare.
+        repo.git(&["update-ref", "refs/remotes/origin/other", &third]);
+        assert_eq!(relation(&mut j, dir, "origin/other").unwrap(), Relation { local: None, ahead: 0, behind: 0 });
 
-        // Branche locale en retard d'un commit : basculer l'avance jusqu'à la branche distante.
+        // Local branch one commit behind: the switch moves it forward to the remote branch.
         origin(&third);
         repo.git(&["reset", "-q", "--hard", &second]);
-        repo.git(&["switch", "-q", "-c", "ailleurs"]);
+        repo.git(&["switch", "-q", "-c", "elsewhere"]);
         let late = Relation { local: Some("main".into()), ahead: 0, behind: 1 };
         assert_eq!(relation(&mut j, dir, "origin/main").unwrap(), late);
         ref_op(&mut j, dir, &switch).unwrap();
         assert_eq!(repo.git(&["rev-parse", "--abbrev-ref", "HEAD"]), "main");
         assert_eq!(repo.git(&["rev-parse", "HEAD"]), third);
 
-        // Branche locale en avance : on bascule sans y toucher.
+        // Local branch ahead: the switch leaves it alone.
         origin(&second);
         assert_eq!(relation(&mut j, dir, "origin/main").unwrap(), Relation { local: Some("main".into()), ahead: 1, behind: 0 });
         ref_op(&mut j, dir, &switch).unwrap();
         assert_eq!(repo.git(&["rev-parse", "HEAD"]), third);
 
-        // Branches divergées : on bascule, mais c'est à l'utilisateur de choisir comment les réunir.
+        // Diverged branches: the switch happens, but the user chooses how to bring them together.
         repo.git(&["switch", "-q", "--detach", &second]);
-        repo.write("b.txt", "distant\n");
+        repo.write("b.txt", "remote\n");
         stage(&mut j, dir, &["b.txt".into()]).unwrap();
-        commit(&mut j, dir, "distant", false).unwrap();
+        commit(&mut j, dir, "remote", false).unwrap();
         origin(&repo.git(&["rev-parse", "HEAD"]));
         assert_eq!(relation(&mut j, dir, "origin/main").unwrap(), Relation { local: Some("main".into()), ahead: 1, behind: 1 });
         ref_op(&mut j, dir, &switch).unwrap();
@@ -804,9 +804,9 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         let mut j = Vec::new();
         let head = repo.git(&["rev-parse", "HEAD"]);
 
-        let create = RefOp::BranchCreate { name: "sujet".into(), start: head.clone(), switch: true };
+        let create = RefOp::BranchCreate { name: "topic".into(), start: head.clone(), switch: true };
         ref_op(&mut j, dir, &create).unwrap();
-        ref_op(&mut j, dir, &RefOp::BranchRename { name: "sujet".into(), new_name: "sujet/2".into() }).unwrap();
+        ref_op(&mut j, dir, &RefOp::BranchRename { name: "topic".into(), new_name: "topic/2".into() }).unwrap();
         let bad = RefOp::BranchCreate { name: "a..b".into(), start: head.clone(), switch: false };
         assert!(ref_op(&mut j, dir, &bad).is_err());
         assert!(ref_op(&mut j, dir, &RefOp::Switch { name: "--orphan".into() }).is_err());
@@ -815,19 +815,19 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         let annotated = RefOp::TagCreate { name: "v2".into(), sha: head.clone(), message: "version 2".into() };
         ref_op(&mut j, dir, &annotated).unwrap();
 
-        repo.write("a.txt", "modifié\n");
-        repo.write("neuf.txt", "x\n");
-        ref_op(&mut j, dir, &RefOp::StashPush { message: "en cours".into() }).unwrap();
+        repo.write("a.txt", "changed\n");
+        repo.write("new.txt", "x\n");
+        ref_op(&mut j, dir, &RefOp::StashPush { message: "in progress".into() }).unwrap();
         assert!(status(&mut j, dir).unwrap().unstaged.is_empty());
 
         let all = refs(&mut j, dir).unwrap();
         let names: Vec<_> = all.branches.iter().map(|b| (b.name.as_str(), b.current)).collect();
-        assert_eq!(names, vec![("main", false), ("sujet/2", true)]);
+        assert_eq!(names, vec![("main", false), ("topic/2", true)]);
         assert_eq!(all.tags.len(), 2);
         assert!(all.tags.iter().all(|t| t.sha == head));
         assert_eq!(all.stashes.len(), 1);
-        assert!(all.stashes[0].message.ends_with("en cours"));
-        assert!(stash_show(&mut j, dir, 0).unwrap().text.contains("+modifié"));
+        assert!(all.stashes[0].message.ends_with("in progress"));
+        assert!(stash_show(&mut j, dir, 0).unwrap().text.contains("+changed"));
 
         ref_op(&mut j, dir, &RefOp::StashPop { index: 0 }).unwrap();
         assert_eq!(status(&mut j, dir).unwrap().unstaged.len(), 2);
@@ -835,7 +835,7 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         ref_op(&mut j, dir, &RefOp::StashDrop { index: 0 }).unwrap();
 
         ref_op(&mut j, dir, &RefOp::Switch { name: "main".into() }).unwrap();
-        ref_op(&mut j, dir, &RefOp::BranchDelete { name: "sujet/2".into(), force: false }).unwrap();
+        ref_op(&mut j, dir, &RefOp::BranchDelete { name: "topic/2".into(), force: false }).unwrap();
         ref_op(&mut j, dir, &RefOp::TagDelete { name: "v1".into() }).unwrap();
         let all = refs(&mut j, dir).unwrap();
         assert_eq!(all.branches.len(), 1);
@@ -850,31 +850,31 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         let mut j = Vec::new();
         let base = repo.git(&["rev-parse", "HEAD~1"]);
 
-        // `sujet` part de « deux » et modifie la même ligne que « trois ».
-        ref_op(&mut j, dir, &RefOp::BranchCreate { name: "sujet".into(), start: base, switch: true }).unwrap();
-        repo.write("a.txt", "1\n2\nTROIS\n");
+        // `topic` starts from “two” and changes the same line as “three”.
+        ref_op(&mut j, dir, &RefOp::BranchCreate { name: "topic".into(), start: base, switch: true }).unwrap();
+        repo.write("a.txt", "1\n2\nTHREE\n");
         stage(&mut j, dir, &["a.txt".into()]).unwrap();
-        commit(&mut j, dir, "trois, autrement", false).unwrap();
+        commit(&mut j, dir, "three, differently", false).unwrap();
         ref_op(&mut j, dir, &RefOp::Switch { name: "main".into() }).unwrap();
 
-        let merge = HistoryOp::Merge { target: "sujet".into() };
+        let merge = HistoryOp::Merge { target: "topic".into() };
         let outcome = history(&mut j, dir, &merge).unwrap();
         assert_eq!(outcome.stopped, Some("merge"));
         let s = status(&mut j, dir).unwrap();
         assert_eq!(s.operation, Some("merge"));
         assert_eq!(s.unstaged[0].kind, "conflict");
 
-        // Continuer sans résoudre : git refuse, l'opération reste en suspens.
+        // Continuing without resolving: git refuses, the operation stays stopped.
         assert_eq!(operate(&mut j, dir, "continue").unwrap().stopped, Some("merge"));
         assert!(operate(&mut j, dir, "skip").is_err());
         assert_eq!(operate(&mut j, dir, "abort").unwrap().stopped, None);
         assert_eq!(status(&mut j, dir).unwrap().operation, None);
 
-        // Seconde tentative : on garde la version de `sujet`, puis on termine.
+        // Second try: keep the version of `topic`, then finish.
         history(&mut j, dir, &merge).unwrap();
         resolve(&mut j, dir, "a.txt", "theirs").unwrap();
         assert_eq!(operate(&mut j, dir, "continue").unwrap().stopped, None);
-        assert_eq!(std::fs::read_to_string(dir.join("a.txt")).unwrap(), "1\n2\nTROIS\n");
+        assert_eq!(std::fs::read_to_string(dir.join("a.txt")).unwrap(), "1\n2\nTHREE\n");
         assert_eq!(repo.git(&["rev-list", "--parents", "-n", "1", "HEAD"]).split(' ').count(), 3);
         assert!(operate(&mut j, dir, "continue").is_err());
     }
@@ -887,20 +887,20 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         let first = repo.git(&["rev-parse", "HEAD~2"]);
         let third = repo.git(&["rev-parse", "HEAD"]);
 
-        // Branche partie du premier commit, avec un fichier à elle.
-        ref_op(&mut j, dir, &RefOp::BranchCreate { name: "sujet".into(), start: first.clone(), switch: true }).unwrap();
+        // Branch started from the first commit, with a file of its own.
+        ref_op(&mut j, dir, &RefOp::BranchCreate { name: "topic".into(), start: first.clone(), switch: true }).unwrap();
         repo.write("b.txt", "b\n");
         stage(&mut j, dir, &["b.txt".into()]).unwrap();
-        commit(&mut j, dir, "ajout de b", false).unwrap();
+        commit(&mut j, dir, "add b", false).unwrap();
         let on_topic = repo.git(&["rev-parse", "HEAD"]);
 
-        // Rebase sans conflit : la branche repart de `main`, et une sauvegarde existe.
+        // Rebase without conflict: the branch starts again from `main`, and a backup exists.
         assert_eq!(history(&mut j, dir, &HistoryOp::Rebase { onto: "main".into() }).unwrap().stopped, None);
         assert_eq!(repo.git(&["rev-parse", "HEAD~1"]), third);
         let backups = repo.git(&["for-each-ref", "--format=%(refname) %(objectname)", "refs/ramure/backup"]);
-        assert!(backups.starts_with("refs/ramure/backup/sujet-") && backups.ends_with(&on_topic));
+        assert!(backups.starts_with("refs/ramure/backup/topic-") && backups.ends_with(&on_topic));
 
-        // Cherry-pick sur main, puis revert.
+        // Cherry-pick onto main, then revert.
         ref_op(&mut j, dir, &RefOp::Switch { name: "main".into() }).unwrap();
         let pick = HistoryOp::CherryPick { sha: on_topic.clone(), mainline: false };
         assert_eq!(history(&mut j, dir, &pick).unwrap().stopped, None);
@@ -909,14 +909,14 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         assert_eq!(history(&mut j, dir, &HistoryOp::Revert { sha: picked, mainline: false }).unwrap().stopped, None);
         assert!(!dir.join("b.txt").exists());
 
-        // Reset : soft garde les changements indexés, hard les jette.
+        // Reset: soft keeps the changes staged, hard throws them away.
         history(&mut j, dir, &HistoryOp::Reset { sha: third.clone(), mode: "soft".into() }).unwrap();
         assert_eq!(repo.git(&["rev-parse", "HEAD"]), third);
         history(&mut j, dir, &HistoryOp::Reset { sha: first.clone(), mode: "hard".into() }).unwrap();
         assert_eq!(std::fs::read_to_string(dir.join("a.txt")).unwrap(), "1\n");
-        assert!(history(&mut j, dir, &HistoryOp::Reset { sha: first, mode: "dur".into() }).is_err());
+        assert!(history(&mut j, dir, &HistoryOp::Reset { sha: first, mode: "harder".into() }).is_err());
 
-        // Les sauvegardes ne doivent pas polluer le graphe.
+        // The backups must not clutter the graph.
         let log = crate::git::log::load(dir, None).unwrap();
         assert!(log.commits.iter().all(|c| c.subject != "revert" && !c.refs.iter().any(|r| r.name.contains("ramure"))));
     }
@@ -928,29 +928,29 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         let mut j = Vec::new();
         repo.write("c.txt", "c\n");
         stage(&mut j, dir, &["c.txt".into()]).unwrap();
-        commit(&mut j, dir, "quatre", false).unwrap();
+        commit(&mut j, dir, "four", false).unwrap();
 
         let second = repo.git(&["rev-parse", "HEAD~2"]);
         let plan = rebase_plan(&mut j, dir, &second).unwrap();
         let subjects: Vec<_> = plan.commits.iter().map(|c| c.subject.as_str()).collect();
-        assert_eq!(subjects, vec!["deux", "trois", "quatre"]);
+        assert_eq!(subjects, vec!["two", "three", "four"]);
         assert!(plan.base.is_some() && !plan.pushed);
 
-        // « quatre » passe en premier et change de message, « trois » est fusionné dans « deux ».
+        // “four” goes first and gets a new message, “three” is melded into “two”.
         let item = |action: &str, n: usize, message: Option<&str>| TodoItem {
             action: action.into(),
             sha: plan.commits[n].sha.clone(),
             message: message.map(str::to_string),
         };
-        let todo = [item("reword", 2, Some("QUATRE")), item("pick", 0, None), item("fixup", 1, None)];
+        let todo = [item("reword", 2, Some("FOUR")), item("pick", 0, None), item("fixup", 1, None)];
         let outcome = rebase_interactive(&mut j, dir, plan.base.as_deref(), &todo, Some("cp")).unwrap();
         assert_eq!(outcome.stopped, None, "{}", outcome.output);
-        assert_eq!(repo.git(&["log", "--format=%s"]), "deux\nQUATRE\nun");
+        assert_eq!(repo.git(&["log", "--format=%s"]), "two\nFOUR\none");
         assert_eq!(std::fs::read_to_string(dir.join("a.txt")).unwrap(), "1\n2\n3\n");
 
-        // Garde-fous.
+        // Safeguards.
         let plan = rebase_plan(&mut j, dir, &repo.git(&["rev-parse", "HEAD~2"])).unwrap();
-        assert!(plan.base.is_none(), "la plage part du premier commit");
+        assert!(plan.base.is_none(), "the range starts at the first commit");
         let squash_first = [TodoItem { action: "squash".into(), sha: plan.commits[0].sha.clone(), message: None }];
         assert!(rebase_interactive(&mut j, dir, None, &squash_first, Some("cp")).is_err());
         let drop_all = [TodoItem { action: "drop".into(), sha: plan.commits[0].sha.clone(), message: None }];

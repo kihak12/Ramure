@@ -1,5 +1,5 @@
-//! Pilotage du binaire `git` installé sur la machine.
-//! Ramure ne réimplémente pas Git : il lance les commandes officielles et parse leur sortie.
+//! Driving the `git` binary installed on the machine.
+//! Ramure does not reimplement Git: it runs the official commands and parses their output.
 
 pub mod clone;
 pub mod conflict;
@@ -16,7 +16,7 @@ use std::time::Instant;
 
 use serde::Serialize;
 
-/// Une commande git lancée par Ramure, telle qu'elle apparaît dans le journal.
+/// A git command run by Ramure, as it appears in the command log.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommandLog {
@@ -25,7 +25,7 @@ pub struct CommandLog {
     pub ok: bool,
 }
 
-/// Résultat d'une opération réussie, avec les commandes qu'elle a lancées.
+/// Result of an operation that succeeded, with the commands it ran.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Done<T> {
@@ -33,7 +33,7 @@ pub struct Done<T> {
     pub commands: Vec<CommandLog>,
 }
 
-/// Échec d'une opération : le message de git, et les commandes lancées jusque-là.
+/// Failure of an operation: the message of git, and the commands run until then.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Failed {
@@ -41,14 +41,14 @@ pub struct Failed {
     pub commands: Vec<CommandLog>,
 }
 
-/// Options d'une commande git. Les valeurs par défaut conviennent à la plupart des appels.
+/// Options of a git command. The default values suit most calls.
 #[derive(Default, Clone, Copy)]
 pub struct Opts<'a> {
-    /// Écrit sur l'entrée standard de git.
+    /// Written to the standard input of git.
     pub input: Option<&'a [u8]>,
-    /// Codes de retour à considérer comme des réussites, en plus de zéro.
+    /// Exit codes to treat as successes, besides zero.
     pub accepted: &'a [i32],
-    /// Variables d'environnement ajoutées à celles de Ramure.
+    /// Environment variables added to those of Ramure.
     pub envs: &'a [(&'a str, &'a str)],
 }
 
@@ -60,15 +60,15 @@ pub fn text(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).trim().to_string()
 }
 
-/// Nettoie une sortie destinée à un terminal : git y réécrit sa ligne d'avancement avec des
-/// retours chariot et des séquences d'effacement. On ne garde que l'état final de chaque ligne.
+/// Cleans up output meant for a terminal: git rewrites its progress line there with carriage
+/// returns and erase sequences. Only the final state of each line is kept.
 pub fn plain(bytes: &[u8]) -> String {
     let raw = String::from_utf8_lossy(bytes);
     let mut out = String::with_capacity(raw.len());
     let mut chars = raw.chars().peekable();
     while let Some(c) = chars.next() {
         if c == '\x1b' && chars.peek() == Some(&'[') {
-            // Séquence `ESC [ … lettre` : couleur ou effacement de ligne.
+            // `ESC [ … letter` sequence: a color or a line erase.
             chars.next();
             for c in chars.by_ref() {
                 if c.is_ascii_alphabetic() {
@@ -87,12 +87,12 @@ pub fn plain(bytes: &[u8]) -> String {
         .to_string()
 }
 
-/// Commande `git` de base : sans fenêtre de console, sans question, sans éditeur.
+/// Base `git` command: no console window, no question, no editor.
 pub fn command() -> Command {
     let mut cmd = Command::new("git");
-    // Jamais de question posée dans un terminal invisible.
+    // Never a question asked in an invisible terminal.
     cmd.env("GIT_TERMINAL_PROMPT", "0")
-        // Ni d'éditeur : `:` est l'éditeur « ne rien faire » de git, il garde le texte proposé.
+        // Nor an editor: `:` is git's “do nothing” editor, it keeps the proposed text.
         .env("GIT_EDITOR", ":")
         .env("GIT_SEQUENCE_EDITOR", ":");
 
@@ -105,7 +105,7 @@ pub fn command() -> Command {
     cmd
 }
 
-/// Lance `git` dans `dir` et renvoie sa sortie complète, quel que soit le code de retour.
+/// Runs `git` in `dir` and returns its whole output, whatever the exit code.
 pub fn exec(dir: &Path, args: &[&str], opts: Opts) -> Result<Output, String> {
     let mut cmd = command();
     cmd.arg("--no-optional-locks")
@@ -119,31 +119,34 @@ pub fn exec(dir: &Path, args: &[&str], opts: Opts) -> Result<Output, String> {
 
     let mut child = cmd
         .spawn()
-        .map_err(|e| format!("impossible de lancer git : {e}"))?;
+        .map_err(|e| format!("Could not start git: {e}. Check that git is installed."))?;
     if let (Some(input), Some(mut stdin)) = (opts.input, child.stdin.take()) {
-        // Si git s'arrête avant d'avoir tout lu, son message d'erreur est plus utile que le nôtre.
+        // If git stops before reading everything, its error message is more useful than ours.
         let _ = stdin.write_all(input);
     }
     child
         .wait_with_output()
-        .map_err(|e| format!("impossible de lancer git : {e}"))
+        .map_err(|e| format!("Could not run git: {e}"))
 }
 
 fn failure(out: &Output) -> String {
     let stderr = plain(&out.stderr);
     let stdout = plain(&out.stdout);
-    // Une fusion en conflit s'explique sur la sortie standard, un rebase sur la sortie d'erreur :
-    // on garde les deux.
+    // A merge with conflicts explains itself on the standard output, a rebase on the error
+    // output: both are kept.
     match (stdout.is_empty(), stderr.is_empty()) {
-        (true, true) => format!("git s'est arrêté avec le code {:?}", out.status.code()),
+        (true, true) => match out.status.code() {
+            Some(code) => format!("git stopped with code {code} and wrote no message."),
+            None => "git was interrupted and wrote no message.".to_string(),
+        },
         (true, false) => stderr,
         (false, true) => stdout,
         (false, false) => format!("{stdout}\n{stderr}"),
     }
 }
 
-/// Ce que git a écrit, sortie standard puis sortie d'erreur : l'avancement d'un push ou
-/// d'un fetch passe par la seconde, même en cas de succès.
+/// What git wrote, standard output then error output: the progress of a push or a fetch goes
+/// through the latter, even when it succeeds.
 pub fn report(out: &Output) -> String {
     let mut report = plain(&out.stdout);
     let stderr = plain(&out.stderr);
@@ -156,13 +159,13 @@ pub fn report(out: &Output) -> String {
     report
 }
 
-/// Lance `git` sans le consigner : pour les lectures internes qui encombreraient le journal.
+/// Runs `git` without logging it: for internal reads that would clutter the command log.
 pub fn run(dir: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
     let out = exec(dir, args, Opts::default())?;
     if out.status.success() { Ok(out.stdout) } else { Err(failure(&out)) }
 }
 
-/// Lance git avec des options et consigne la commande dans le journal.
+/// Runs git with options and records the command in the command log.
 pub fn step_with(
     journal: &mut Vec<CommandLog>,
     dir: &Path,
@@ -182,22 +185,22 @@ pub fn step_with(
     result
 }
 
-/// Lance git, consigne la commande dans le journal et renvoie la sortie standard.
+/// Runs git, records the command in the command log and returns the standard output.
 pub fn step(journal: &mut Vec<CommandLog>, dir: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
     step_with(journal, dir, args, Opts::default()).map(|out| out.stdout)
 }
 
-/// Un nom fourni par l'utilisateur (branche, tag, commit) ne doit jamais pouvoir passer pour
-/// une option de git.
+/// A name given by the user (branch, tag, commit) must never be able to pass for an option of
+/// git.
 pub fn check_name(name: &str) -> Result<(), String> {
     if name.is_empty() || name.starts_with('-') || name.chars().any(char::is_control) {
-        Err(format!("nom invalide : « {name} »"))
+        Err(format!("Invalid name: “{name}”. A name cannot be empty, start with “-” or contain control characters."))
     } else {
         Ok(())
     }
 }
 
-/// Exécute une opération git hors du fil de l'interface et lui attache son journal.
+/// Runs a git operation off the interface thread and attaches its command log to it.
 pub async fn blocking<T, F>(op: F) -> Result<Done<T>, Failed>
 where
     T: Send + 'static,
@@ -216,7 +219,7 @@ where
     }
 }
 
-/// Charge l'historique d'un dépôt, déjà mis en page pour le graphe.
+/// Loads the history of a repository, already laid out for the graph.
 #[tauri::command]
 pub async fn git_log(repo: String, limit: Option<u32>) -> Result<log::LogResult, String> {
     tauri::async_runtime::spawn_blocking(move || log::load(Path::new(&repo), limit))
