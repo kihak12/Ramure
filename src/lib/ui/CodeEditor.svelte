@@ -2,11 +2,11 @@
   import { StateEffect, StateField, type EditorState } from '@codemirror/state';
   import { Decoration, type DecorationSet, EditorView } from '@codemirror/view';
 
-  /** Lignes à mettre en évidence : de `from` à `to` inclus, numérotées à partir de 1. */
+  /** Lines to highlight: from `from` to `to` included, numbered from 1. */
   export interface Mark {
     from: number;
     to: number;
-    /** Donne la classe `cm-mark-<kind>`. */
+    /** Gives the class `cm-mark-<kind>`. */
     kind: 'ours' | 'theirs' | 'base' | 'marker' | 'focus';
   }
 
@@ -36,7 +36,7 @@
     provide: (field) => EditorView.decorations.from(field),
   });
 
-  // Les couleurs viennent des jetons de l'application : le thème clair ou sombre suit tout seul.
+  // The colors come from the tokens of the application: the light or dark theme follows on its own.
   const theme = EditorView.theme({
     '&': { height: '100%', fontSize: 'var(--fs-code)', backgroundColor: 'var(--bg)', color: 'var(--ink)' },
     '&.cm-focused': { outline: 'none' },
@@ -58,7 +58,7 @@
     '.cm-mark-theirs': { backgroundColor: 'color-mix(in srgb, var(--l1) 18%, transparent)' },
     '.cm-mark-base': { backgroundColor: 'color-mix(in srgb, var(--muted) 14%, transparent)' },
     '.cm-mark-marker': { backgroundColor: 'var(--warn-soft)', color: 'var(--warn)', fontWeight: 'var(--fw-strong)' },
-    // Le conflit courant se lit à sa teinte plus forte, sans trait de couleur sur le bord de la ligne.
+    // The current conflict reads by its stronger tint, with no colored bar on the edge of the line.
     '.cm-mark-focus': { backgroundColor: 'color-mix(in srgb, var(--c, var(--accent)) 30%, transparent)' },
   });
 </script>
@@ -77,11 +77,11 @@
     label,
     onchange,
   }: {
-    /** Texte initial. Le changer remplace tout le document. */
+    /** Initial text. Changing it replaces the whole document. */
     value: string;
     readonly?: boolean;
     marks?: Mark[];
-    /** Fin de ligne du fichier : `\r\n` est conservé tel quel quand le fichier l'utilise. */
+    /** Line ending of the file: `\r\n` is kept as it is when the file uses it. */
     lineSeparator?: string;
     label: string;
     onchange?: (text: string) => void;
@@ -123,7 +123,7 @@
     return () => view?.destroy();
   });
 
-  // Un autre fichier : on repart d'un document neuf (et d'un historique d'annulation vide).
+  // Another file: start again from a new document (and an empty undo history).
   $effect(() => {
     if (view && value !== loaded) {
       loaded = value;
@@ -136,12 +136,12 @@
     view?.dispatch({ effects: setMarks.of(next) });
   });
 
-  /** Texte courant, avec les fins de ligne du fichier. */
+  /** Current text, with the line endings of the file. */
   export function getText() {
     return view ? view.state.sliceDoc() : value;
   }
 
-  /** Remplace les lignes `from` à `to` (incluses, à partir de 1) par `lines` ; une liste vide les supprime. */
+  /** Replaces lines `from` to `to` (included, from 1) with `lines`; an empty list deletes them. */
   export function replaceLines(from: number, to: number, lines: string[]) {
     if (!view) return;
     const doc = view.state.doc;
@@ -156,7 +156,7 @@
     }
   }
 
-  /** Amène la ligne `line` (à partir de 1) au milieu de la vue. */
+  /** Brings line `line` (from 1) to the middle of the view. */
   export function scrollToLine(line: number) {
     if (!view) return;
     const target = view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, line)));

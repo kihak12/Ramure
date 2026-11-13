@@ -1,15 +1,15 @@
-// Lecture des marqueurs de conflit que git écrit dans un fichier :
+// Reading the conflict markers that git writes in a file:
 //
-//   <<<<<<< HEAD            ← début, avec le nom du premier côté
-//   lignes du premier côté
-//   ||||||| ancêtre         ← seulement avec merge.conflictStyle = diff3 ou zdiff3
-//   lignes de l'ancêtre
+//   <<<<<<< HEAD            ← start, with the name of the first side
+//   lines of the first side
+//   ||||||| ancestor        ← only with merge.conflictStyle = diff3 or zdiff3
+//   lines of the ancestor
 //   =======
-//   lignes du second côté
-//   >>>>>>> autre-branche   ← fin, avec le nom du second côté
+//   lines of the second side
+//   >>>>>>> other-branch    ← end, with the name of the second side
 
 export interface ConflictBlock {
-  /** Indices (à partir de 0) des lignes `<<<<<<<` et `>>>>>>>`. */
+  /** Indexes (from 0) of the `<<<<<<<` and `>>>>>>>` lines. */
   start: number;
   end: number;
   ours: string[];
@@ -17,20 +17,20 @@ export interface ConflictBlock {
   theirs: string[];
   oursLabel: string;
   theirsLabel: string;
-  /** Indices de la première ligne de chaque partie, pour la mise en couleur. */
+  /** Indexes of the first line of each part, for the coloring. */
   oursAt: number;
   baseAt: number;
   theirsAt: number;
 }
 
-/** Découpe un texte en lignes comme le fait l'éditeur, selon la fin de ligne du fichier. */
+/** Splits a text into lines as the editor does, according to the line ending of the file. */
 export function splitLines(text: string, separator: string): string[] {
   return separator === '\r\n' ? text.split('\r\n') : text.split(/\r\n|\r|\n/);
 }
 
 const marker = (line: string, sign: string) => line === sign || line.startsWith(`${sign} `);
 
-/** Trouve les conflits encore présents dans `lines`. Un bloc mal formé est ignoré. */
+/** Finds the conflicts still present in `lines`. A malformed block is ignored. */
 export function parseConflicts(lines: string[]): ConflictBlock[] {
   const blocks: ConflictBlock[] = [];
   let i = 0;
@@ -45,7 +45,7 @@ export function parseConflicts(lines: string[]): ConflictBlock[] {
     let end = -1;
     for (let j = start + 1; j < lines.length; j++) {
       const line = lines[j];
-      if (marker(line, '<<<<<<<')) break; // un nouveau début avant la fin : bloc mal formé
+      if (marker(line, '<<<<<<<')) break; // a new start before the end: malformed block
       if (middle < 0 && baseAt < 0 && marker(line, '|||||||')) baseAt = j;
       else if (middle < 0 && line === '=======') middle = j;
       else if (middle >= 0 && marker(line, '>>>>>>>')) {
@@ -76,8 +76,8 @@ export function parseConflicts(lines: string[]): ConflictBlock[] {
 }
 
 /**
- * Cherche la suite de lignes `needle` dans `haystack` et renvoie l'indice de l'occurrence
- * la plus proche de `near`, ou -1.
+ * Looks for the sequence of lines `needle` in `haystack` and returns the index of the occurrence
+ * closest to `near`, or -1.
  */
 export function locate(haystack: string[], needle: string[], near: number): number {
   if (!needle.length || needle.length > haystack.length) return -1;

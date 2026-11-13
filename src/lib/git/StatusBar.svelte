@@ -6,11 +6,11 @@
 
   let { repo }: { repo: Repo } = $props();
 
-  let showJournal = $state(false);
-  // Horloge de la barre d'état : fait vieillir « il y a 2 min » sans autre événement.
+  let showLog = $state(false);
+  // Clock of the status bar: ages “2 min ago” without any other event.
   let now = $state(Date.now());
 
-  const numFmt = new Intl.NumberFormat('fr-FR');
+  const numFmt = new Intl.NumberFormat('en-US');
   const ms = (n: number) => `${numFmt.format(Math.round(n))} ms`;
 
   const result = $derived(repo.result);
@@ -19,11 +19,11 @@
 
   const fetchText = $derived.by(() => {
     if (!result || !repo.refs?.remoteNames.length) return '';
-    if (!repo.settings.autoFetch) return 'Récupération auto désactivée';
-    if (!repo.lastFetch) return `Récupération auto toutes les ${repo.settings.autoFetch} min`;
+    if (!repo.settings.autoFetch) return 'Automatic fetch off';
+    if (!repo.lastFetch) return `Automatic fetch every ${repo.settings.autoFetch} min`;
     const minutes = Math.floor((now - repo.lastFetch.at) / 60_000);
-    const when = minutes < 1 ? 'à l’instant' : `il y a ${minutes} min`;
-    return repo.lastFetch.ok ? `Dernière récupération ${when}` : `Dernière récupération en échec, ${when}`;
+    const when = minutes < 1 ? 'just now' : `${minutes} min ago`;
+    return repo.lastFetch.ok ? `Last fetch ${when}` : `Last fetch failed, ${when}`;
   });
 
   $effect(() => {
@@ -34,33 +34,33 @@
 
 <footer class="status">
   <span class="branch mono">{#if repo.branch}<Icon name="branch" size={14} /> {repo.branch}{/if}</span>
-  <button class="journal-btn" type="button" aria-expanded={showJournal} onclick={() => (showJournal = !showJournal)} disabled={!repo.journal.length}>
-    {last ? `$ ${last.command}` : 'Journal des commandes'}
+  <button class="log-btn" type="button" aria-expanded={showLog} onclick={() => (showLog = !showLog)} disabled={!repo.journal.length}>
+    {last ? `$ ${last.command}` : 'Command log'}
   </button>
   <div class="stats" aria-live="polite">
     {#if repo.busy}
-      {@const doing = repo.switching ? `Basculement sur ${repo.switching}…` : 'Opération en cours…'}
+      {@const doing = repo.switching ? `Switching to ${repo.switching}…` : 'Working…'}
       <span class="busy" title={doing}><span class="spinner" aria-hidden="true"></span><span class="doing">{doing}</span></span>
     {/if}
     {#if fetchText}<span class="fetch" class:bad={repo.lastFetch?.ok === false} title={fetchText}>{fetchText}</span>{/if}
     {#if repo.loading}
-      <span>Chargement…</span>
+      <span>Loading…</span>
     {:else if result}
-      <span><b>{numFmt.format(count)}</b> commit{count > 1 ? 's' : ''}{result.truncated ? ' (tronqué)' : ''}</span>
-      <span title="Durée de git log, calcul des lanes, puis temps total jusqu’à l’affichage">
-        git {ms(result.timings.gitMs)} · lanes {ms(result.timings.layoutMs)} · affiché en <b>{ms(repo.perf.paint)}</b>
+      <span><b>{numFmt.format(count)}</b> commit{count === 1 ? '' : 's'}{result.truncated ? ' (truncated)' : ''}</span>
+      <span title="Time of git log, then of the lane layout, then total time until the graph is shown">
+        git {ms(result.timings.gitMs)} · lanes {ms(result.timings.layoutMs)} · shown in <b>{ms(repo.perf.paint)}</b>
       </span>
       {#if repo.frames}
-        <span title="Temps moyen entre deux images pendant le dernier défilement, et pire image (99e centile). 16,7 ms = 60 images par seconde.">
-          défilement <b>{repo.frames.avg.toFixed(1)} ms</b>/image, pire {repo.frames.worst.toFixed(0)} ms
+        <span title="Average time between two frames during the last scroll, and worst frame (99th percentile). 16.7 ms = 60 frames per second.">
+          scrolling <b>{repo.frames.avg.toFixed(1)} ms</b>/frame, worst {repo.frames.worst.toFixed(0)} ms
         </span>
       {/if}
     {/if}
   </div>
 
-  {#if showJournal}
-    <div class="journal" transition:fly={{ y: 10, duration: motion.med }}>
-      <span class="label">Journal des commandes · les plus récentes d’abord</span>
+  {#if showLog}
+    <div class="log" transition:fly={{ y: 10, duration: motion.med }}>
+      <span class="label">Command log · most recent first</span>
       {#each [...repo.journal].reverse() as entry, i (i)}
         <div class="entry mono" class:failed={!entry.ok}>
           <span>{ms(entry.ms)}</span><span>$ {entry.command}</span>
@@ -90,7 +90,7 @@
     color: var(--ink);
     white-space: nowrap;
   }
-  .journal-btn {
+  .log-btn {
     flex: 0 1 auto;
     border: 0;
     background: none;
@@ -106,11 +106,11 @@
     min-width: 0;
     transition: background var(--t-fast) var(--ease);
   }
-  .journal-btn:hover:not(:disabled) {
+  .log-btn:hover:not(:disabled) {
     background: var(--hover-side);
     color: var(--ink);
   }
-  .journal-btn:disabled {
+  .log-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }
@@ -127,16 +127,16 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    /* Pendant l'opération, c'est ce message qui compte : il ne cède pas sa place aux durées. */
+    /* During the operation, this message is what matters: it does not give its place up to the timings. */
     flex: none;
   }
-  /* Quand la place manque, c'est ce texte qui se coupe, avec une ellipse. */
+  /* When room runs short, this text is the one that is cut, with an ellipsis. */
   .fetch {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  /* Un nom de branche long ne doit pas chasser le reste de la barre. */
+  /* A long branch name must not push the rest of the bar away. */
   .doing {
     max-width: 300px;
     overflow: hidden;
@@ -149,7 +149,7 @@
   .stats .bad {
     color: var(--bad);
   }
-  .journal {
+  .log {
     position: absolute;
     left: 10px;
     bottom: 30px;

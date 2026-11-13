@@ -1,4 +1,4 @@
-// État du module SSH : carnet d'hôtes, clés, et terminaux ouverts, distants ou locaux.
+// State of the SSH module: host book, keys, and open terminals, remote or local.
 
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
@@ -8,44 +8,44 @@ import { secretsHeld } from './secrets';
 import { addressOf, type Host, type KeyInfo } from './types';
 
 export interface Session {
-  /** Identifiant de l'onglet (différent de celui de la connexion côté Rust). */
+  /** Id of the tab (not the same as that of the connection on the Rust side). */
   key: number;
-  /** `ssh` : une session sur un hôte du carnet. `local` : le shell de cette machine. */
+  /** `ssh`: a session on a host of the book. `local`: the shell of this machine. */
   kind: 'ssh' | 'local';
-  /** L'hôte d'une session SSH ; pour un terminal local, une fiche vide qui ne sert pas. */
+  /** The host of an SSH session; for a local terminal, an empty host that is not used. */
   host: Host;
-  /** Dossier de départ d'un terminal local ; le dossier personnel s'il est vide. */
+  /** Starting folder of a local terminal; the home folder if it is empty. */
   cwd: string;
   title: string;
   status: 'connecting' | 'reconnecting' | 'connected' | 'closed';
-  /** La barre de recherche du terminal est ouverte. */
+  /** The search bar of the terminal is open. */
   searching: boolean;
-  /** Compte les demandes d'ouverture : chacune rend le focus au champ, même barre ouverte. */
+  /** Counts the requests to open it: each one gives the focus back to the field, even with the bar open. */
   searchAsk: number;
-  /** Le journal de l'onglet : son fichier, s'il enregistre, s'il a déjà été ouvert, et s'il peut
-   *  reprendre (après une connexion perdue, pas après une fin normale : une session, un fichier).
-   *  Il reste après l'arrêt : l'en-tête dit « journal enregistré » et où il est. */
+  /** The log of the tab: its file, whether it records, whether it was opened already, and whether
+   *  it can resume (after a lost connection, not after a normal end: one session, one file).
+   *  It stays after it stops: the header says "log saved" and where it is. */
   journal?: { path: string; header: string; live: boolean; opened: boolean; resumable: boolean } | null;
-  /** Le journal a été arrêté à la main : une reconnexion ne le reprend pas, même pour un hôte
-   *  qui enregistre chaque session. */
+  /** The log was stopped by hand: a reconnection does not resume it, even for a host that
+   *  records every session. */
   journalStopped?: boolean;
-  /** Compte les demandes de bascule du journal venues de la palette ou d'un raccourci. */
+  /** Counts the requests to toggle the log that come from the palette or a shortcut. */
   journalAsk?: number;
-  /** Ce que le cœur dit d'un terminal local ouvert : son shell et son dossier de départ. */
+  /** What the core says of an open local terminal: its shell and its starting folder. */
   opened?: { shell: string; cwd: string };
-  /** L'identifiant du terminal local côté cœur, tant que son shell tourne. */
+  /** The id of the local terminal on the core side, while its shell runs. */
   localId?: number;
 }
 
-/** L'état d'une session en mots : le point d'un onglet ou d'un en-tête ne le dit jamais par sa seule couleur. */
+/** The state of a session in words: the dot of a tab or of a header never says it by its color alone. */
 export const STATUS: Record<Session['status'], string> = {
-  connecting: 'Connexion en cours',
-  reconnecting: 'Reconnexion en cours',
-  connected: 'Connecté',
-  closed: 'Session terminée',
+  connecting: 'Connecting',
+  reconnecting: 'Reconnecting',
+  connected: 'Connected',
+  closed: 'Session ended',
 };
 
-/** La fiche d'hôte d'un terminal local : il n'en a pas, celle-ci ne sert qu'à remplir le champ. */
+/** The host of a local terminal: it has none, this one only fills the field. */
 const LOCAL_HOST: Host = {
   id: '',
   alias: '',
@@ -63,12 +63,12 @@ const LOCAL_HOST: Host = {
   updatedAt: 0,
 };
 
-/** Identifiants des onglets de terminal, communs au module SSH et aux terminaux des dépôts. */
+/** Ids of the terminal tabs, shared by the SSH module and the terminals of the repositories. */
 let nextKey = 1;
 
 /**
- * Un terminal local qui démarre dans `cwd` (le dossier personnel s'il est vide), titré
- * « Terminal », puis « Terminal 2 »… le plus petit numéro libre parmi `siblings`.
+ * A local terminal that starts in `cwd` (the home folder if it is empty), titled "Terminal",
+ * then "Terminal 2"… the smallest free number among `siblings`.
  */
 export function localSession(cwd: string, siblings: Session[]): Session {
   const taken = new Set(siblings.filter((s) => s.kind === 'local').map((s) => s.title));
@@ -91,17 +91,17 @@ const message = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error 
 class Ssh {
   hosts = $state.raw<Host[]>([]);
   keys = $state.raw<KeyInfo[]>([]);
-  /** Utilisateur de la machine, proposé quand un hôte n'en précise pas. */
+  /** User of the machine, offered when a host does not give one. */
   defaultUser = $state('');
   loaded = $state(false);
 
   sessions = $state<Session[]>([]);
   activeKey = $state(0);
 
-  /** Hôte en cours de modification ; la fiche s'ouvre quand il existe. */
+  /** Host being edited; the form opens when there is one. */
   editing = $state.raw<Host | null>(null);
   showKeys = $state(false);
-  /** La boîte d'export vers ~/.ssh/config : pour tout le carnet, pour un hôte (son id), ou fermée. */
+  /** The dialog that exports to ~/.ssh/config: for the whole book, for one host (its id), or closed. */
   exporting = $state<'all' | string | null>(null);
 
   active = $derived(this.sessions.find((s) => s.key === this.activeKey) ?? null);
@@ -111,12 +111,12 @@ class Ssh {
     try {
       this.hosts = await invoke<Host[]>('hosts_list');
     } catch (e) {
-      toasts.err('Le carnet d’hôtes n’a pas pu être lu', message(e));
+      toasts.err('The hosts could not be loaded', message(e));
     }
     try {
       this.defaultUser = (await invoke<{ user: string }>('ssh_defaults')).user;
     } catch {
-      /* l'utilisateur sera saisi dans la fiche */
+      /* the user will be typed in the form */
     }
     await this.loadKeys();
     this.loaded = true;
@@ -130,65 +130,66 @@ class Ssh {
     }
   }
 
-  /** La fiche enregistrée, ou ce qui a empêché de l'enregistrer : la fiche le dit elle-même, une
-   *  notification restant sous son voile (charte, 9.11). */
+  /** The saved host, or what kept it from being saved: the form says it itself, since a
+   *  notification would stay under its veil (guidelines, 9.11). */
   async save(host: Host): Promise<Host | string> {
     try {
       const saved = await invoke<Host>('host_save', { host });
       this.hosts = await invoke<Host[]>('hosts_list');
       return saved;
     } catch (e) {
-      return `L’hôte n’a pas pu être enregistré : ${message(e)}`;
+      return `The host could not be saved: ${message(e)}`;
     }
   }
 
-  /** Vrai si la fiche a été supprimée. `failed` : à qui dire l'échec, à la place d'une notification. */
+  /** True if the host was deleted. `failed`: who to tell the failure to, instead of a notification. */
   async remove(host: Host, failed?: (text: string) => void): Promise<boolean> {
     try {
       await invoke('host_delete', { id: host.id });
       this.hosts = this.hosts.filter((h) => h.id !== host.id);
-      toasts.ok('Hôte supprimé', host.alias);
+      toasts.ok('Host deleted', host.alias);
       return true;
     } catch (e) {
-      if (failed) failed(`L’hôte n’a pas pu être supprimé : ${message(e)}`);
-      else toasts.err('L’hôte n’a pas pu être supprimé', message(e));
+      if (failed) failed(`The host could not be deleted: ${message(e)}`);
+      else toasts.err('The host could not be deleted', message(e));
       return false;
     }
   }
 
-  /** Le compte d'un hôte sur son serveur : c'est à lui qu'appartient un mot de passe retenu. */
+  /** The account of a host on its server: a kept password belongs to it. */
   #account(host: Host) {
     return `${host.user || this.defaultUser}@${host.hostname}:${host.port || 22}`;
   }
 
   /**
-   * Demande confirmation, puis supprime la fiche : du clic droit sur sa ligne, ou de la fiche
-   * elle-même. Vrai si elle a été supprimée.
+   * Asks for confirmation, then deletes the host: from the right-click on its row, or from the
+   * form itself. True if it was deleted.
    */
   async removeAsked(host: Host, failed?: (text: string) => void): Promise<boolean> {
-    // Le mot de passe retenu pour ce compte part avec sa dernière fiche : la confirmation le dit.
+    // The password kept for this account goes with its last host: the confirmation says so.
     const last = !this.hosts.some((other) => other.id !== host.id && this.#account(other) === this.#account(host));
     const [kept] =
       host.auth === 'password' && last
         ? await secretsHeld([{ kind: 'password', user: host.user || this.defaultUser, host: host.hostname, port: host.port || 22 }])
         : [false];
     const confirmed = await dialogs.confirm({
-      title: `Supprimer ${host.alias} du carnet ?`,
+      title: `Delete ${host.alias}?`,
       body: `${
         kept
-          ? 'La fiche est supprimée, et le mot de passe que le trousseau du système retient pour ce compte est oublié : ni l’un ni l’autre ne pourra être récupéré.'
-          : 'La fiche est supprimée et ne pourra pas être récupérée.'
-      } Le serveur, ses clés et ~/.ssh/config ne sont pas touchés.`,
-      confirmLabel: 'Supprimer',
+          ? 'The host is deleted, and the password the system keyring keeps for this account is forgotten: neither can be recovered.'
+          : 'The host is deleted and cannot be recovered.'
+      } The server, its keys and ~/.ssh/config are left untouched.`,
+      confirmLabel: 'Delete',
       danger: true,
     });
     return confirmed && (await this.remove(host, failed));
   }
 
   /**
-   * Après une suppression, la ligne de l'hôte est partie, et avec elle ce qui avait le focus : il va
-   * au filtre du carnet, qui est toujours là, même carnet vide (charte, section 9.21). À appeler
-   * une fois les boîtes fermées : en se fermant, une boîte rend le focus à ce qui l'avait avant elle.
+   * After a deletion, the row of the host is gone, and with it what had the focus: it goes to the
+   * filter of the book, which is always there, even with no hosts (guidelines, section 9.21). To be
+   * called once the dialogs are closed: as it closes, a dialog gives the focus back to what had it
+   * before.
    */
   async focusBook() {
     await tick();
@@ -199,15 +200,14 @@ class Ssh {
     try {
       const report = await invoke<{ added: number; skipped: number }>('hosts_import');
       this.hosts = await invoke<Host[]>('hosts_list');
-      const plural = (n: number) => (n > 1 ? 's' : '');
-      const added = report.added ? `${report.added} hôte${plural(report.added)} importé${plural(report.added)}` : 'Aucun nouvel hôte';
-      toasts.ok(added, report.skipped ? `${report.skipped} déjà présent${plural(report.skipped)} dans le carnet.` : '');
+      const added = report.added ? `${report.added} host${report.added === 1 ? '' : 's'} imported` : 'No new hosts';
+      toasts.ok(added, report.skipped ? `${report.skipped} already listed.` : '');
     } catch (e) {
-      toasts.err('L’import de ~/.ssh/config a échoué', message(e));
+      toasts.err('~/.ssh/config could not be imported', message(e));
     }
   }
 
-  /** Ouvre un terminal sur `host` dans un nouvel onglet. */
+  /** Opens a terminal on `host` in a new tab. */
   open(host: Host) {
     const user = host.user || this.defaultUser;
     const session: Session = {
@@ -224,7 +224,7 @@ class Ssh {
     this.activeKey = session.key;
   }
 
-  /** Ouvre un terminal local dans un nouvel onglet : « Terminal », puis « Terminal 2 »… le plus petit numéro libre. */
+  /** Opens a local terminal in a new tab: "Terminal", then "Terminal 2"… the smallest free number. */
   openLocal(cwd = '') {
     const session = localSession(cwd, this.sessions);
     this.sessions.push(session);

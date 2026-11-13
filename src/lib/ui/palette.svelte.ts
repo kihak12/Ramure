@@ -1,28 +1,28 @@
-// Palette de commandes : une recherche unique sur les actions disponibles (Ctrl + K).
+// Command palette: one search over the actions available (Ctrl + K).
 import type { IconName } from './Icon.svelte';
 
 export interface Command {
   id: string;
   title: string;
-  /** Rubrique sous laquelle la commande est rangée : « Actions », « Branches »… */
+  /** Group the command is listed under: “Actions”, “Branches”… */
   group: string;
   icon?: IconName;
-  /** Précision affichée à droite : raccourci clavier, chemin, état. */
+  /** Detail shown on the right: keyboard shortcut, path, state. */
   hint?: string;
-  /** Raccourci clavier attaché à la commande, déjà mis en forme (`Ctrl + Maj + F`). */
+  /** Keyboard shortcut bound to the command, already formatted (`Ctrl + Shift + F`). */
   shortcut?: string;
-  /** Mots supplémentaires pour la recherche (le nom git d'une action, par exemple). */
+  /** Extra words for the search (other words for an action, for instance). */
   keywords?: string;
   disabled?: boolean;
   run: () => void;
-  /** Ce que fait le raccourci, quand il en fait plus que la palette (le terminal d'un dépôt). */
+  /** What the shortcut does, when it does more than the palette (the terminal of a repository). */
   key?: () => void;
 }
 
 class Palette {
   commands = $state.raw<Command[] | null>(null);
 
-  /** Ouvre la palette sur la liste de commandes du moment. */
+  /** Opens the palette on the list of commands of the moment. */
   show(commands: Command[]) {
     this.commands = commands;
   }
@@ -34,17 +34,17 @@ class Palette {
 
 export const palette = new Palette();
 
-/** Minuscules sans accents : « Récupérer » et « recuperer » se trouvent l'un l'autre. */
+/** Lower case without diacritics: a name with accents is found when typed without them. */
 export const fold = (text: string) =>
   text
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
 /**
- * Note une commande pour une recherche ; 0 si elle ne correspond pas. Chaque mot de la
- * recherche doit apparaître : au début du titre (le mieux), au début d'un mot, ailleurs,
- * ou lettre par lettre dans l'ordre (le moins bien).
+ * Scores a command for a search; 0 if it does not match. Each word of the search must appear: at
+ * the start of the title (the best), at the start of a word, elsewhere, or letter by letter in
+ * order (the worst).
  */
 export function score(command: Command, words: string[]): number {
   const title = fold(command.title);
@@ -59,7 +59,7 @@ export function score(command: Command, words: string[]): number {
     else if (subsequence(title, word)) total += 8;
     else return 0;
   }
-  // À correspondance égale, le titre le plus court est le plus précis.
+  // For an equal match, the shortest title is the most precise.
   return total - Math.min(title.length, 60) / 100;
 }
 

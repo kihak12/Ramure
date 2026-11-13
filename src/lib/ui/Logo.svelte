@@ -1,16 +1,16 @@
 <script lang="ts">
   /**
-   * Le symbole de Ramure : une tête de cerf d'un seul trait (charte graphique, section « Logo »).
-   * Le dessin vient de `docs/logo`, sa seule source. Il prend la couleur du texte, et passe au
-   * dessin simplifié en dessous de 40 px.
+   * Ramure's symbol: a deer's head in a single stroke (design guidelines, section 13, "Logo").
+   * The drawing comes from `docs/logo`, its only source. It takes the color of the text, and
+   * switches to the simplified drawing below 40 px.
    */
   import full from '../../../docs/logo/ramure-symbole.svg?raw';
   import small from '../../../docs/logo/ramure-symbole-petit.svg?raw';
 
-  /** `label` : nom lu par un lecteur d'écran ; sans lui, le symbole est décoratif. */
+  /** `label`: name read by a screen reader; without it, the symbol is decorative. */
   let { size = 32, label = '' }: { size?: number; label?: string } = $props();
 
-  // Le fichier porte son propre titre : on ne garde que le dessin, le nom accessible vient de `label`.
+  // The file carries its own title: only the drawing is kept, the accessible name comes from `label`.
   const drawing = $derived((size < 40 ? small : full).replace(/<title>.*?<\/title>/, ''));
 </script>
 

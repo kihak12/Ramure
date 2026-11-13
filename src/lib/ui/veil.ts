@@ -1,11 +1,11 @@
-// Un clic sur le voile d'une boîte de dialogue l'annule (charte, section 9.10).
+// A click on the veil of a dialog cancels it (guidelines, section 9.10).
 //
-// Le clic compte s'il a été pressé et relâché sur le voile. Un glissé parti de la boîte, une
-// sélection de texte ou une ligne qu'on déplace et qu'on lâche dehors, ne la ferme pas : le
-// navigateur donne alors la boîte pour cible au clic, comme pour un vrai clic sur le voile.
+// The click counts if it was pressed and released on the veil. A drag that started in the dialog,
+// a text selection or a row being moved and dropped outside does not close it: the browser then
+// gives the dialog as the target of the click, as for a real click on the veil.
 
-/** Action Svelte : `<dialog use:veil={annuler}>`. La boîte n'a pas de marge intérieure : ce qui
- *  touche la boîte elle-même, et non son contenu, est le voile. */
+/** Svelte action: `<dialog use:veil={cancel}>`. The dialog has no padding: what touches the
+ *  dialog itself, and not its content, is the veil. */
 export function veil(dialog: HTMLDialogElement, cancel: () => void) {
   let close = cancel;
   let pressedOnVeil = false;

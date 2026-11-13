@@ -1,5 +1,5 @@
-// État d'un dépôt ouvert et toutes les opérations qu'on peut lui appliquer.
-// Les composants lisent cet état et appellent ces méthodes ; aucun n'invoque le cœur Rust lui-même.
+// State of an open repository and every operation that can be applied to it.
+// The components read this state and call these methods; none of them invokes the Rust core itself.
 
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
@@ -25,28 +25,28 @@ import type {
   TodoItem,
 } from './types';
 
-const JOURNAL_MAX = 300; // commandes conservées dans le journal
+const JOURNAL_MAX = 300; // commands kept in the command log
 
 export interface OpenFile {
-  /** `u:chemin`, `s:chemin` (répertoire de travail), `c:chemin` (commit) ou `stash:n`. */
+  /** `u:path`, `s:path` (working directory), `c:path` (commit) or `stash:n`. */
   key: string;
   title: string;
   subtitle: string;
-  /** Lignes sélectionnables, pour indexer ou retirer une partie du fichier. */
+  /** Selectable lines, to stage or unstage part of the file. */
   selectable: 'stage' | 'unstage' | null;
 }
 
 export type SyncAction = 'fetch' | 'pull' | 'push' | 'push-force';
 
 const SYNC: Record<SyncAction, { done: string; failed: string }> = {
-  fetch: { done: 'Récupération terminée', failed: 'La récupération a échoué' },
-  pull: { done: 'Branche mise à jour', failed: 'Le tirage a échoué' },
-  push: { done: 'Branche poussée', failed: 'Le push a échoué' },
-  'push-force': { done: 'Branche poussée (forcé)', failed: 'Le push forcé a échoué' },
+  fetch: { done: 'Fetch complete', failed: 'Fetch failed' },
+  pull: { done: 'Branch updated', failed: 'Pull failed' },
+  push: { done: 'Branch pushed', failed: 'Push failed' },
+  'push-force': { done: 'Branch force-pushed', failed: 'Force push failed' },
 };
 
 export const OPERATION: Record<Operation, string> = {
-  merge: 'Fusion',
+  merge: 'Merge',
   rebase: 'Rebase',
   'cherry-pick': 'Cherry-pick',
   revert: 'Revert',
@@ -55,25 +55,25 @@ export const OPERATION: Record<Operation, string> = {
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export class Repo {
-  // `$state.raw` : 50 000 lignes ne doivent pas être enveloppées dans des proxys réactifs.
+  // `$state.raw`: 50,000 rows must not be wrapped in reactive proxies.
   result = $state.raw<LogResult | null>(null);
   status = $state.raw<Status | null>(null);
   refs = $state.raw<Refs | null>(null);
   journal = $state.raw<CommandLog[]>([]);
   loading = $state(false);
-  /** Opération en cours (`fetch`, `commit`, `index`…) ; vide quand le dépôt est libre. */
+  /** Operation running (`fetch`, `commit`, `index`…); empty when the repository is free. */
   busy = $state('');
-  /** Branche visée par le basculement en cours, pour montrer l'attente là où il a été demandé. */
+  /** Branch targeted by the switch in progress, to show the wait where it was asked for. */
   switching = $state<string | null>(null);
   error = $state('');
   selected = $state(-1);
   perf = $state({ ipc: 0, paint: 0 });
-  /** Dossier demandé, puis racine du dépôt une fois celui-ci ouvert ; vide pour un onglet neuf. */
+  /** Folder asked for, then root of the repository once it is open; empty for a new tab. */
   path = $state('');
-  /** Augmente à chaque ouverture ou rechargement complet : le graphe rejoue son apparition. */
+  /** Goes up at each opening or full reload: the graph plays its entrance again. */
   loadCount = $state(0);
   lastFetch = $state<{ at: number; ok: boolean } | null>(null);
-  /** Fluidité du dernier défilement du graphe, mesurée par celui-ci. */
+  /** Smoothness of the last scroll of the graph, measured by the graph. */
   frames = $state<{ avg: number; worst: number } | null>(null);
 
   message = $state('');
@@ -84,30 +84,30 @@ export class Repo {
   diff = $state.raw<Diff | null>(null);
   diffLoading = $state(false);
   diffError = $state('');
-  /** Fichier ouvert dans l'éditeur de conflits. */
+  /** File open in the conflict editor. */
   conflictFile = $state.raw<FileChange | null>(null);
-  /** Plan d'un rebase interactif en préparation ; la boîte de dialogue s'ouvre quand il existe. */
+  /** Plan of an interactive rebase being prepared; the dialog opens when it exists. */
   rebasePlan = $state.raw<RebasePlan | null>(null);
-  /** Terminaux locaux ouverts dans le dossier du dépôt, sous le graphe (charte, section 9.20). */
+  /** Local terminals opened in the folder of the repository, under the graph (guidelines, section 9.20). */
   readonly terminals = new RepoTerminals();
 
-  /** Posé par l'espace de travail : prévenu chaque fois qu'un dépôt vient d'être ouvert. */
+  /** Set by the workspace: told each time a repository has just been opened. */
   onopened: (repo: Repo) => void = () => {};
-  /** Posés par le graphe : amener une ligne à l'écran, revenir en haut. */
+  /** Set by the graph: bring a row into view, go back to the top. */
   reveal: (index: number) => void = () => {};
   resetScroll: () => void = () => {};
 
-  /** Réglages, communs à tous les dépôts ouverts. */
+  /** Settings, shared by all the open repositories. */
   get settings(): Settings {
     return prefs;
   }
 
   commits = $derived(this.result?.commits ?? []);
   current = $derived(this.selected >= 0 ? (this.commits[this.selected] ?? null) : null);
-  /** Clé du commit sélectionné : ne change pas quand l'historique est simplement rechargé. */
+  /** Key of the selected commit: does not change when the history is merely reloaded. */
   currentKey = $derived(this.current ? `${this.current.sha}|${this.current.parents[0] ?? ''}` : '');
   locked = $derived(this.loading || this.busy !== '');
-  /** Sans branche distante connue, distinguer « local » de « distant » n'a pas de sens. */
+  /** With no known remote branch, telling “local” from “remote” makes no sense. */
   hasRemote = $derived(this.commits.some((c) => c.refs.some((r) => r.kind === 'remote')));
   shortRemotes = $derived((this.refs?.remoteNames.length ?? 1) <= 1);
   wipCount = $derived(
@@ -115,28 +115,28 @@ export class Repo {
       ? new Set([...this.status.staged, ...this.status.unstaged].map((f) => f.path)).size
       : (this.result?.wipFiles ?? 0),
   );
-  /** Libellé du bouton qui mène aux modifications en cours. */
-  wipText = $derived(this.wipCount > 1 ? `Voir les ${this.wipCount} fichiers modifiés` : 'Voir le fichier modifié');
+  /** Label of the button that leads to the working changes. */
+  wipText = $derived(this.wipCount === 1 ? 'Show changed file' : `Show ${this.wipCount} changed files`);
   conflicts = $derived(this.status?.unstaged.filter((f) => f.kind === 'conflict') ?? []);
-  /** Commit sur lequel se trouve HEAD. */
+  /** Commit HEAD is on. */
   head = $derived(
     this.commits.find((c) => !c.wip && c.refs.some((r) => r.kind === 'head' || r.kind === 'detached')) ?? null,
   );
   branch = $derived(this.status?.branch ?? this.result?.branch ?? null);
 
-  // Commit courant au moment du dernier chargement de l'historique ; `undefined` tant qu'il est inconnu.
+  // Current commit when the history was last loaded; `undefined` while it is unknown.
   #logHead: string | null | undefined;
   #opened = Date.now();
   #diffToken = 0;
   #detailTimer = 0;
 
-  // --- Appels au cœur Rust ----------------------------------------------------------------
+  // --- Calls to the Rust core -------------------------------------------------------------
 
   record(commands: CommandLog[]) {
     if (commands.length) this.journal = [...this.journal, ...commands].slice(-JOURNAL_MAX);
   }
 
-  /** Appelle une commande git du cœur Rust et verse ses commandes au journal, réussite ou non. */
+  /** Calls a git command of the Rust core and adds its commands to the log, success or not. */
   async git<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
     try {
       const reply = await invoke<Done<T>>(command, { repo: this.result?.repo, ...args });
@@ -152,13 +152,13 @@ export class Repo {
     }
   }
 
-  // --- Chargement -------------------------------------------------------------------------
+  // --- Loading ----------------------------------------------------------------------------
 
   open(path: string) {
     return this.load(path, false);
   }
 
-  /** Recharge l'historique en conservant la sélection et la position. */
+  /** Reloads the history, keeping the selection and the position. */
   async reload() {
     if (this.result) await this.load(this.result.repo, true);
   }
@@ -199,14 +199,14 @@ export class Repo {
       void this.refreshStatus(true);
       void this.refreshRefs();
       await tick();
-      // Deux images plus tard, le graphe est réellement à l'écran.
+      // Two frames later, the graph is really on screen.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => (this.perf = { ipc: t1 - t0, paint: performance.now() - t0 })),
       );
     } catch (e) {
       const text = typeof e === 'string' ? e : String(e);
       if (keep && this.result) {
-        toasts.err("Impossible de relire l'historique", text);
+        toasts.err('Could not reload history', text);
       } else {
         this.error = text;
         this.result = null;
@@ -217,10 +217,10 @@ export class Repo {
     }
   }
 
-  /** Enregistre un nouvel état ; recharge l'historique s'il ne lui correspond plus. */
+  /** Records a new status; reloads the history if it no longer matches it. */
   applyStatus(next: Status, fromLoad = false) {
     this.status = next;
-    // Le fichier ouvert dans l'éditeur de conflits a pu être résolu ou abandonné entre-temps.
+    // The file open in the conflict editor may have been resolved or discarded in the meantime.
     const editing = this.conflictFile?.path;
     if (editing && !next.unstaged.some((f) => f.kind === 'conflict' && f.path === editing)) this.conflictFile = null;
     if (fromLoad || this.#logHead === undefined) {
@@ -238,7 +238,7 @@ export class Repo {
       const next = await this.git<Status>('git_status');
       if (repo === this.result?.repo) this.applyStatus(next, fromLoad);
     } catch (e) {
-      if (!fromLoad) toasts.err("Impossible de lire l'état du dépôt", errorText(e));
+      if (!fromLoad) toasts.err('Could not read repository status', errorText(e));
     }
   }
 
@@ -249,15 +249,15 @@ export class Repo {
       const next = await this.git<Refs>('git_refs');
       if (repo === this.result?.repo) this.refs = next;
     } catch {
-      /* la barre latérale garde sa dernière liste ; l'erreur est dans le journal */
+      /* the sidebar keeps its last list; the error is in the command log */
     }
   }
 
-  /** Sélectionne le commit `sha` et l'amène à l'écran, s'il est chargé. */
+  /** Selects the commit `sha` and brings it into view, if it is loaded. */
   selectSha(sha: string) {
     const index = this.commits.findIndex((c) => c.sha === sha);
     if (index < 0) {
-      toasts.warn('Commit hors de la partie chargée', "Augmente le nombre de commits chargés dans les réglages pour l'atteindre.");
+      toasts.warn('Commit not loaded', 'Load more commits in the settings to reach it.');
       return;
     }
     this.selected = index;
@@ -265,9 +265,9 @@ export class Repo {
   }
 
   /**
-   * Sélectionne les modifications en cours. C'est une demande de les voir : le panneau de détail
-   * revient s'il était masqué. `quiet` : l'appel ne vient pas de l'utilisateur, le panneau reste
-   * comme il l'a laissé (charte, section 9.17).
+   * Selects the working changes. It is a request to see them: the detail panel comes back if it
+   * was hidden. `quiet`: the call does not come from the user, the panel stays as they left it
+   * (guidelines, section 9.17).
    */
   showWip(quiet = false) {
     if (this.commits[0]?.wip) {
@@ -277,9 +277,9 @@ export class Repo {
     }
   }
 
-  // --- Index et commit --------------------------------------------------------------------
+  // --- Index and commit -------------------------------------------------------------------
 
-  /** Lance une commande qui modifie l'index et renvoie le nouvel état. */
+  /** Runs a command that changes the index and returns the new status. */
   async #mutate(command: string, args: Record<string, unknown>) {
     if (!this.result || this.busy) return;
     this.busy = 'index';
@@ -287,7 +287,7 @@ export class Repo {
       this.applyStatus(await this.git<Status>(command, args));
       this.#syncOpenDiff();
     } catch (e) {
-      toasts.err("L'opération a échoué", errorText(e));
+      toasts.err('Operation failed', errorText(e));
       void this.refreshStatus();
     } finally {
       this.busy = '';
@@ -298,7 +298,7 @@ export class Repo {
     return this.#mutate('git_stage', { paths: files.map((f) => f.path) });
   }
 
-  /** Retirer un renommage de l'index concerne ses deux chemins. */
+  /** Unstaging a rename concerns both its paths. */
   unstage(files: FileChange[]) {
     return this.#mutate('git_unstage', { paths: files.flatMap((f) => (f.oldPath ? [f.oldPath, f.path] : [f.path])) });
   }
@@ -310,7 +310,7 @@ export class Repo {
     });
   }
 
-  /** Indexe ou retire de l'index les lignes choisies dans le diff ouvert. */
+  /** Stages or unstages the lines picked in the open diff. */
   applyLines(lines: number[]) {
     if (!this.diff || !this.openFile?.selectable) return Promise.resolve();
     return this.#mutate('git_apply_lines', {
@@ -320,33 +320,33 @@ export class Repo {
     });
   }
 
-  /** Résout un conflit en gardant un seul côté. */
+  /** Resolves a conflict by keeping one side. */
   resolve(file: FileChange, side: 'ours' | 'theirs') {
     return this.#mutate('git_resolve', { path: file.path, side });
   }
 
-  /** Ouvre un fichier en conflit dans l'éditeur à trois voies. */
+  /** Opens a conflicted file in the three-way editor. */
   openConflict(file: FileChange) {
     this.closeDiff();
     this.conflictFile = file;
   }
 
-  /** Versions d'un fichier en conflit : ancêtre, les deux côtés, et le fichier avec ses marqueurs. */
+  /** Versions of a conflicted file: base, both sides, and the file with its markers. */
   readConflict(file: FileChange) {
     return this.git<ConflictFile>('git_conflict_read', { path: file.path });
   }
 
-  /** Écrit le résultat de la résolution et marque le fichier comme résolu. */
+  /** Writes the result of the resolution and marks the file as resolved. */
   async saveConflict(file: FileChange, content: string) {
     if (!this.result || this.busy) return false;
     this.busy = 'index';
     try {
       this.applyStatus(await this.git<Status>('git_conflict_write', { path: file.path, content }));
       this.conflictFile = null;
-      toasts.ok('Conflit résolu', file.path);
+      toasts.ok('Conflict resolved', file.path);
       return true;
     } catch (e) {
-      toasts.err("Le fichier n'a pas pu être enregistré", errorText(e));
+      toasts.err('Could not save file', errorText(e));
       return false;
     } finally {
       this.busy = '';
@@ -359,7 +359,7 @@ export class Repo {
     try {
       this.message = await this.git<string>('git_head_message');
     } catch {
-      /* le champ reste vide : l'utilisateur saisit son message */
+      /* the field stays empty: the user types their message */
     }
   }
 
@@ -368,31 +368,31 @@ export class Repo {
     this.busy = 'commit';
     try {
       await this.git<null>('git_commit', { message: this.message, amend: this.amend });
-      toasts.ok(this.amend ? 'Dernier commit modifié' : 'Commit créé');
+      toasts.ok(this.amend ? 'Last commit amended' : 'Commit created');
       this.message = '';
       this.amend = false;
       this.closeDiff();
     } catch (e) {
-      toasts.err('Le commit a échoué', errorText(e));
+      toasts.err('Commit failed', errorText(e));
     } finally {
       this.busy = '';
     }
     await this.reload();
-    // La ligne WIP a disparu : on montre le commit qui vient d'être créé.
+    // The WIP row is gone: show the commit just created.
     if (this.selected < 0 && this.commits.length) this.selected = 0;
   }
 
-  // --- Synchronisation, références, historique --------------------------------------------
+  // --- Sync, references, history ----------------------------------------------------------
 
   #settle(outcome: Outcome, done: string) {
     if (outcome.stopped) {
-      toasts.warn(`${OPERATION[outcome.stopped]} en suspens : des conflits sont à résoudre`, outcome.output);
+      toasts.warn(`${OPERATION[outcome.stopped]} stopped: resolve the conflicts`, outcome.output);
     } else {
       toasts.ok(done, outcome.output);
     }
   }
 
-  /** Exécute une opération longue, affiche son résultat, puis recharge l'historique. */
+  /** Runs a long operation, shows its result, then reloads the history. */
   async #task(label: string, failed: string, action: () => Promise<Outcome | string>, done: string) {
     if (!this.result || this.busy) return false;
     this.busy = label;
@@ -417,7 +417,7 @@ export class Repo {
     return ok;
   }
 
-  /** `quiet` : fetch automatique, sans notification ; l'échec se lit dans la barre d'état. */
+  /** `quiet`: automatic fetch, with no notification; a failure is read in the status bar. */
   async sync(action: SyncAction, quiet = false) {
     if (!this.result || this.busy) return;
     if (!quiet) {
@@ -444,11 +444,11 @@ export class Repo {
     } finally {
       this.busy = '';
     }
-    // Rien de neuf : inutile de redessiner le graphe.
+    // Nothing new: no need to redraw the graph.
     if (changed) await this.reload();
   }
 
-  async refOp(op: RefOp, done: string, failed = "L'opération a échoué") {
+  async refOp(op: RefOp, done: string, failed = 'Operation failed') {
     if (this.busy) return false;
     if (op.op === 'switch' || op.op === 'switch-remote') this.switching = op.name;
     try {
@@ -458,37 +458,37 @@ export class Repo {
     }
   }
 
-  history(op: HistoryOp, done: string, failed = "L'opération a échoué") {
+  history(op: HistoryOp, done: string, failed = 'Operation failed') {
     return this.#task(op.op, failed, () => this.git<Outcome>('git_history', { op }), done);
   }
 
-  /** Continue, passe ou abandonne l'opération en suspens. */
+  /** Continues, skips or aborts the operation that stopped. */
   operate(action: 'continue' | 'skip' | 'abort') {
-    const name = this.status?.operation ? OPERATION[this.status.operation] : 'Opération';
-    const done = action === 'abort' ? `${name} abandonné(e)` : `${name} terminé(e)`;
-    return this.#task(action, "L'opération n'a pas pu avancer", () => this.git<Outcome>('git_operate', { action }), done);
+    const name = this.status?.operation ? OPERATION[this.status.operation] : 'Operation';
+    const done = action === 'abort' ? `${name} aborted` : `${name} complete`;
+    return this.#task(action, 'The operation could not proceed', () => this.git<Outcome>('git_operate', { action }), done);
   }
 
-  /** Prépare un rebase interactif de `sha` jusqu'à HEAD ; la boîte de dialogue prend le relais. */
+  /** Prepares an interactive rebase from `sha` up to HEAD; the dialog takes over. */
   async planRebase(sha: string) {
     if (!this.result || this.busy) return;
     try {
       this.rebasePlan = await this.git<RebasePlan>('git_rebase_plan', { sha });
     } catch (e) {
-      toasts.err('Rebase interactif impossible', errorText(e));
+      toasts.err('Could not start interactive rebase', errorText(e));
     }
   }
 
   rebaseInteractive(base: string | null, todo: TodoItem[]) {
     return this.#task(
       'rebase',
-      'Le rebase interactif a échoué',
+      'Interactive rebase failed',
       () => this.git<Outcome>('git_rebase_interactive', { base, todo }),
-      'Historique réécrit',
+      'History rewritten',
     );
   }
 
-  /** Démarre le fetch automatique ; renvoie la fonction qui l'arrête. */
+  /** Starts the automatic fetch; returns the function that stops it. */
   startAutoFetch() {
     const timer = window.setInterval(() => {
       const every = this.settings.autoFetch;
@@ -506,7 +506,7 @@ export class Repo {
     const token = ++this.#diffToken;
     if (this.openFile?.key !== file.key) this.diff = null;
     this.openFile = file;
-    // Le diff s'ouvre sur la carte du graphe : la demander la ramène si elle était masquée.
+    // The diff opens on the card of the graph: asking for it brings the card back if it was hidden.
     this.terminals.setGraph(true);
     this.diffLoading = true;
     this.diffError = '';
@@ -532,13 +532,13 @@ export class Repo {
   }
 
   openWorkDiff(file: FileChange, staged: boolean) {
-    // L'indexation partielle ne vaut que pour un fichier texte modifié.
+    // Partial staging only holds for a modified text file.
     const partial = file.kind === 'modified';
     void this.#showDiff(
       {
         key: `${staged ? 's' : 'u'}:${file.path}`,
         title: file.path,
-        subtitle: `${staged ? 'Indexé' : 'Non indexé'}${file.oldPath ? ` · renommé depuis ${file.oldPath}` : ''}`,
+        subtitle: `${staged ? 'Staged' : 'Unstaged'}${file.oldPath ? ` · renamed from ${file.oldPath}` : ''}`,
         selectable: partial ? (staged ? 'unstage' : 'stage') : null,
       },
       () =>
@@ -558,7 +558,7 @@ export class Repo {
       {
         key: `c:${file.path}`,
         title: file.path,
-        subtitle: `${commit.sha.slice(0, 7)} · ${commit.subject}${file.oldPath ? ` · renommé depuis ${file.oldPath}` : ''}`,
+        subtitle: `${commit.sha.slice(0, 7)} · ${commit.subject}${file.oldPath ? ` · renamed from ${file.oldPath}` : ''}`,
         selectable: null,
       },
       () =>
@@ -573,12 +573,12 @@ export class Repo {
 
   openStashDiff(index: number, message: string) {
     void this.#showDiff(
-      { key: `stash:${index}`, title: `Remise ${index}`, subtitle: message, selectable: null },
+      { key: `stash:${index}`, title: `Stash ${index}`, subtitle: message, selectable: null },
       () => this.git<Diff>('git_stash_show', { index }),
     );
   }
 
-  /** Après une modification de l'index : le diff ouvert suit son fichier, ou se ferme s'il a quitté sa liste. */
+  /** After a change to the index: the open diff follows its file, or closes if the file left its list. */
   #syncOpenDiff() {
     const key = this.openFile?.key;
     if (!key || !this.status || !(key.startsWith('u:') || key.startsWith('s:'))) return;
@@ -589,11 +589,11 @@ export class Repo {
     else this.closeDiff();
   }
 
-  // --- Détail du commit sélectionné -------------------------------------------------------
+  // --- Detail of the selected commit -----------------------------------------------------
 
   /**
-   * À appeler quand la sélection change. Le chargement attend une courte pause, pour ne pas
-   * lancer git à chaque ligne survolée au clavier.
+   * To call when the selection changes. The loading waits for a short pause, so as not to run
+   * git for every row passed over from the keyboard.
    */
   loadDetail() {
     window.clearTimeout(this.#detailTimer);

@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  // Jeu d'icônes de Ramure : traits de 1,4 px sur une grille de 16, sans remplissage.
+  // Ramure's icon set: 1.4 px strokes on a 16 grid, with no fill.
   const PATHS = {
     branch:
       '<circle cx="4.5" cy="3.5" r="1.6"/><circle cx="4.5" cy="12.5" r="1.6"/><circle cx="11.5" cy="5.5" r="1.6"/><path d="M4.5 5.1v5.8M11.5 7.1c0 3-7 2-7 3.8"/>',
@@ -10,7 +10,7 @@
     tag: '<path d="M2.5 2.5h5.2l5.8 5.8-5.2 5.2-5.8-5.8z"/><circle cx="5.6" cy="5.6" r=".6"/>',
     key: '<circle cx="5.5" cy="10.5" r="3"/><path d="m7.6 8.4 5.9-5.9M11.5 4.5l1.8 1.8M9.6 6.4l1.5 1.5"/>',
     import: '<path d="M5.5 5.5v-2a1 1 0 0 1 1-1h4l3 3v7a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2M2 8h7M7 5.8 9.2 8 7 10.2"/>',
-    journal: '<rect x="3.5" y="2.5" width="9" height="11" rx="1"/><path d="M6 6h4M6 8.5h4M6 11h2.5"/>',
+    log: '<rect x="3.5" y="2.5" width="9" height="11" rx="1"/><path d="M6 6h4M6 8.5h4M6 11h2.5"/>',
     export: '<path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-4l-3 3v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2M7 8h7M11.8 5.8 14 8l-2.2 2.2"/>',
     stash:
       '<path d="M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M2.5 9.5h3l1 1.5h3l1-1.5h3M8 2.5v5M5.8 5.5 8 7.7l2.2-2.2"/>',
@@ -60,5 +60,5 @@
   let { name, size = 16 }: { name: IconName; size?: number } = $props();
 </script>
 
-<!-- Les tracés sont des constantes de ce fichier : rien d'extérieur n'est injecté. -->
+<!-- The paths are constants of this file: nothing from outside is injected. -->
 <svg class="icon" viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">{@html PATHS[name]}</svg>

@@ -2,8 +2,8 @@
   import type { Palette, ThemeChoice } from '../git/prefs.svelte';
 
   /**
-   * Aperçu d'un thème : une fenêtre en petit, dessinée avec les jetons de ce thème de couleurs, en
-   * clair ou en sombre. « Système » montre les deux moitiés.
+   * Preview of a theme: a small window, drawn with the tokens of that color theme, in light or in
+   * dark. "System" shows both halves.
    */
   let { choice, palette }: { choice: ThemeChoice; palette: Palette } = $props();
   const themes = $derived(choice === 'system' ? (['light', 'dark'] as const) : [choice]);
@@ -73,7 +73,7 @@
   .main i:nth-child(even) {
     width: 60%;
   }
-  /* Une ligne en accent, une en texte : ce que le thème change le plus. */
+  /* One line in the accent, one in text: what the theme changes most. */
   .main .a {
     background: var(--accent);
   }

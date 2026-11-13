@@ -22,10 +22,10 @@
     diff: Diff | null;
     loading?: boolean;
     error?: string;
-    /** Indexation partielle : les lignes modifiées se sélectionnent pour être indexées ou retirées. */
+    /** Partial staging: the changed lines can be selected to be staged or unstaged. */
     selectable?: 'stage' | 'unstage' | null;
     busy?: boolean;
-    /** Reçoit les indices des lignes choisies, dans `diff.text.split('\n')`. */
+    /** Receives the indices of the picked lines, in `diff.text.split('\n')`. */
     onapply?: (lines: number[]) => void;
     onclose: () => void;
   } = $props();
@@ -33,13 +33,13 @@
   const MAX_LINES = 5000;
 
   interface Line {
-    /** Position dans le texte du diff : c'est elle que le cœur Rust attend. */
+    /** Position in the text of the diff: it is what the Rust core expects. */
     index: number;
     type: 'add' | 'del' | 'ctx' | 'hunk' | 'meta';
     old: number | null;
     new: number | null;
     text: string;
-    /** Numéro du bloc auquel la ligne appartient. */
+    /** Number of the hunk the line belongs to. */
     hunk: number;
   }
 
@@ -63,7 +63,7 @@
         hunk++;
         lines.push({ index, type: 'hunk', old: null, new: null, text: line, hunk });
       } else if (!inHunk || line.startsWith('diff --git ')) {
-        // En-tête de fichier : chemins, modes, index.
+        // File header: paths, modes, index.
         inHunk = false;
         lines.push({ index, type: 'meta', old: null, new: null, text: line, hunk });
       } else if (line.startsWith('+')) {
@@ -73,7 +73,7 @@
         removed++;
         lines.push({ index, type: 'del', old: oldNo++, new: null, text: line.slice(1), hunk });
       } else if (line.startsWith('\\')) {
-        // « \ No newline at end of file »
+        // “\ No newline at end of file”
         lines.push({ index, type: 'meta', old: null, new: null, text: line, hunk });
       } else {
         lines.push({ index, type: 'ctx', old: oldNo++, new: newNo++, text: line.slice(1), hunk });
@@ -83,16 +83,16 @@
   }
 
   const parsed = $derived(diff ? parse(diff.text) : null);
-  // Un diff coupé ne permet pas de construire un patch fiable.
+  // A cut diff cannot give a reliable patch.
   const canSelect = $derived(!!selectable && !!parsed && !parsed.cut && !diff?.truncated);
   const changes = $derived(parsed?.lines.filter((l) => l.type === 'add' || l.type === 'del') ?? []);
-  const verb = $derived(selectable === 'unstage' ? 'Retirer' : 'Indexer');
+  const verb = $derived(selectable === 'unstage' ? 'Unstage' : 'Stage');
   const SIGN = { add: '+', del: '−', ctx: '', hunk: '', meta: '' } as const;
 
   const selected = new SvelteSet<number>();
   let anchor = -1;
 
-  // Un nouveau diff remet la sélection et le curseur à zéro.
+  // A new diff resets the selection and the cursor.
   $effect(() => {
     void diff;
     selected.clear();
@@ -103,7 +103,7 @@
   function toggle(line: Line, event: MouseEvent) {
     if (!canSelect || (line.type !== 'add' && line.type !== 'del')) return;
     if (event.shiftKey && anchor >= 0) {
-      // Majuscule + clic : toute la plage depuis la dernière ligne cliquée.
+      // Shift + click: the whole range from the last line clicked.
       const [from, to] = [Math.min(anchor, line.index), Math.max(anchor, line.index)];
       for (const change of changes) if (change.index >= from && change.index <= to) selected.add(change.index);
     } else if (selected.has(line.index)) {
@@ -115,13 +115,13 @@
     cursor = line.index;
   }
 
-  // --- Clavier --------------------------------------------------------------------------------
+  // --- Keyboard -------------------------------------------------------------------------------
 
-  /** Ligne modifiée qui porte le curseur du clavier, par sa position dans le texte du diff. */
+  /** Changed line that carries the keyboard cursor, by its position in the text of the diff. */
   let cursor = $state(-1);
   let linesEl = $state<HTMLDivElement>();
 
-  /** Déplace le curseur d'une ligne modifiée à l'autre ; `extend` choisit les lignes traversées. */
+  /** Moves the cursor from one changed line to another; `extend` picks the lines it crosses. */
   function move(to: number, extend: boolean) {
     if (!changes.length) return;
     const from = changes.findIndex((l) => l.index === cursor);
@@ -132,11 +132,11 @@
     }
     cursor = changes[next].index;
     anchor = cursor;
-    // Une fois la ligne marquée, on l'amène dans la vue.
+    // Once the line is marked, bring it into view.
     requestAnimationFrame(() => linesEl?.querySelector('.cursor')?.scrollIntoView({ block: 'nearest' }));
   }
 
-  // La zone des lignes garde le focus et traite elle-même les touches, comme les autres listes.
+  // The area of the lines keeps the focus and handles the keys itself, like the other lists.
   function onKey(event: KeyboardEvent) {
     if (!canSelect || event.target !== linesEl) return;
     const at = changes.findIndex((l) => l.index === cursor);
@@ -171,32 +171,32 @@
     event.preventDefault();
   }
 
-  // À la prise du focus sans curseur, il se pose sur la première ligne modifiée.
+  // On taking the focus without a cursor, it goes to the first changed line.
   function onFocus() {
     if (canSelect && cursor < 0 && changes.length) cursor = changes[0].index;
   }
 
-  // --- Affichage côte à côte ----------------------------------------------------------------
+  // --- Side-by-side layout -----------------------------------------------------------------
 
-  /** Une ligne du tableau à deux colonnes : ancien à gauche, nouveau à droite. */
+  /** A row of the two-column table: old on the left, new on the right. */
   interface Pair {
     key: number;
-    /** En-tête de fichier ou de bloc, sur toute la largeur. */
+    /** File or hunk header, across the whole width. */
     full: Line | null;
     left: Line | null;
     right: Line | null;
-    /** Partie réellement modifiée de chaque côté, quand les deux lignes se ressemblent. */
+    /** Part really changed on each side, when the two lines look alike. */
     inline: { pre: string; old: string; new: string; post: string } | null;
   }
 
-  /** Ce qui change entre deux lignes : leur début et leur fin communs encadrent la différence. */
+  /** What changes between two lines: their common start and end frame the difference. */
   function inlineChange(before: string, after: string): Pair['inline'] {
     let pre = 0;
     const max = Math.min(before.length, after.length);
     while (pre < max && before[pre] === after[pre]) pre++;
     let post = 0;
     while (post < max - pre && before[before.length - 1 - post] === after[after.length - 1 - post]) post++;
-    // Trop peu en commun : surligner presque toute la ligne n'apprendrait rien.
+    // Too little in common: highlighting nearly the whole line would tell nothing.
     if (pre + post < Math.min(before.length, after.length) * 0.3) return null;
     return {
       pre: before.slice(0, pre),
@@ -206,7 +206,7 @@
     };
   }
 
-  /** Aligne suppressions et ajouts d'un même changement sur les mêmes lignes du tableau. */
+  /** Lines up the removals and additions of one change on the same rows of the table. */
   function pairUp(lines: Line[]): Pair[] {
     const out: Pair[] = [];
     let removed: Line[] = [];
@@ -229,7 +229,7 @@
     };
     for (const line of lines) {
       if (line.type === 'del') {
-        // Une suppression après des ajouts ouvre un nouveau changement.
+        // A removal after additions starts a new change.
         if (added.length) flush();
         removed.push(line);
       } else if (line.type === 'add') {
@@ -248,10 +248,10 @@
   const allPairs = $derived(parsed ? pairUp(parsed.lines) : []);
   const pairs = $derived(split ? allPairs : []);
 
-  // Une ligne modifiée, c'est une suppression et un ajout qui vont ensemble. N'en choisir qu'une
-  // moitié laisse l'ancienne version à côté de la nouvelle, ou retire la ligne sans la remplacer.
-  // Ne comptent que les paires dont les deux lignes se ressemblent : les autres sont deux
-  // changements distincts que le hasard a placés côte à côte.
+  // A modified line is a removal and an addition that go together. Picking only one half leaves
+  // the old version next to the new one, or removes the line without replacing it. Only the pairs
+  // whose two lines look alike count: the others are two separate changes that chance placed side
+  // by side.
   const halves = $derived.by(() => {
     const missing: number[] = [];
     if (!canSelect || !selected.size) return missing;
@@ -265,7 +265,7 @@
   let root = $state<HTMLElement>();
   const pickHalves = () => {
     for (const index of halves) selected.add(index);
-    // Le bouton disparaît avec l'avertissement : le focus retourne dans les lignes.
+    // The button goes away with the warning: the focus goes back to the lines.
     root?.querySelector<HTMLElement>('.lines')?.focus();
   };
   const setMode = (mode: DiffMode) => savePrefs({ diffMode: mode });
@@ -274,38 +274,38 @@
   const applyHunk = (hunk: number) => onapply?.(changes.filter((l) => l.hunk === hunk).map((l) => l.index));
 </script>
 
-<section class="diff" bind:this={root} aria-label="Diff de {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
+<section class="diff" bind:this={root} aria-label="Diff of {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <div class="names">
       <b class="mono">{title}</b>
       {#if subtitle}<small>{subtitle}</small>{/if}
     </div>
     {#if canSelect && selected.size}
-      <button class="btn small" type="button" onclick={() => selected.clear()}>Désélectionner</button>
-      <button class="btn primary small" type="button" disabled={busy} onclick={applySelection} title="Entrée, dans la liste des lignes">
-        {verb} {selected.size} ligne{selected.size > 1 ? 's' : ''}
+      <button class="btn small" type="button" onclick={() => selected.clear()}>Clear selection</button>
+      <button class="btn primary small" type="button" disabled={busy} onclick={applySelection} title="Enter, in the list of lines">
+        {verb} {selected.size} line{selected.size === 1 ? '' : 's'}
       </button>
     {:else if canSelect}
-      <small class="hint" title="Au clavier : ↑ et ↓ pour passer d’une ligne à l’autre, Début et Fin pour aller aux extrémités, Espace pour choisir ou retirer, Maj pour étendre, Entrée pour valider">Clique des lignes pour n’en {selectable === 'unstage' ? 'retirer' : 'indexer'} qu’une partie</small>
+      <small class="hint" title="From the keyboard: ↑ and ↓ to move from one line to the next, Home and End to go to the ends, Space to pick a line or let go of it, Shift to extend, Enter to confirm">Click lines to {selectable === 'unstage' ? 'unstage' : 'stage'} only some of them</small>
     {/if}
     {#if parsed && (parsed.added || parsed.removed)}
       <span class="count mono"><span class="plus">+{parsed.added}</span> <span class="minus">−{parsed.removed}</span></span>
     {/if}
-    <div class="modes" role="group" aria-label="Disposition du diff">
-      <button type="button" aria-pressed={!split} onclick={() => setMode('unified')} title="Une seule colonne">Unifié</button>
-      <button type="button" aria-pressed={split} onclick={() => setMode('split')} title="Ancien à gauche, nouveau à droite">Côte à côte</button>
+    <div class="modes" role="group" aria-label="Diff layout">
+      <button type="button" aria-pressed={!split} onclick={() => setMode('unified')} title="One column">Unified</button>
+      <button type="button" aria-pressed={split} onclick={() => setMode('split')} title="Old on the left, new on the right">Side by side</button>
     </div>
-    <button class="btn" type="button" onclick={onclose} title="Fermer le diff (Échap)"><Icon name="x" size={14} /> Fermer</button>
+    <button class="btn" type="button" onclick={onclose} title="Close the diff (Escape)"><Icon name="x" size={14} /> Close</button>
   </header>
 
   {#if error}
     <p class="note err">{error}</p>
   {:else if loading && !parsed}
-    <p class="note">Chargement du diff…</p>
+    <p class="note">Loading the diff…</p>
   {:else if parsed && parsed.lines.length === 0}
-    <p class="note">Aucune différence de contenu à afficher (fichier vide, ou seul le mode a changé).</p>
+    <p class="note">No content changes to show: the file is empty, or only its mode changed.</p>
   {:else if parsed && split}
-    <!-- La zone garde le focus et traite les touches, comme les listes de l'application. -->
+    <!-- The area keeps the focus and handles the keys, like the lists of the application. -->
     <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
     <div class="lines mono" class:selectable={canSelect} class:has-cursor={cursor >= 0} tabindex="0" bind:this={linesEl} onkeydown={onKey} onfocus={onFocus}>
       <table class="split">
@@ -316,7 +316,7 @@
               <tr class="t-{pair.full.type}">
                 <td class="code" colspan="6">
                   {pair.full.text}{#if canSelect && pair.full.type === 'hunk'}
-                    <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(pair.full!.hunk)}>{verb} ce bloc</button>
+                    <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(pair.full!.hunk)}>{verb} hunk</button>
                   {/if}
                 </td>
               </tr>
@@ -360,11 +360,11 @@
         </tbody>
       </table>
       {#if parsed.cut || diff?.truncated}
-        <p class="note">Diff trop long : seul le début est affiché.</p>
+        <p class="note">This diff is too long: only its beginning is shown.</p>
       {/if}
     </div>
   {:else if parsed}
-    <!-- La zone garde le focus et traite les touches, comme les listes de l'application. -->
+    <!-- The area keeps the focus and handles the keys, like the lists of the application. -->
     <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
     <div class="lines mono" class:selectable={canSelect} class:has-cursor={cursor >= 0} tabindex="0" bind:this={linesEl} onkeydown={onKey} onfocus={onFocus}>
       <table>
@@ -385,7 +385,7 @@
               <td class="sign">{SIGN[line.type]}</td>
               <td class="code">
                 {line.text}{#if canSelect && line.type === 'hunk'}
-                  <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(line.hunk)}>{verb} ce bloc</button>
+                  <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(line.hunk)}>{verb} hunk</button>
                 {/if}
               </td>
             </tr>
@@ -393,20 +393,20 @@
         </tbody>
       </table>
       {#if parsed.cut || diff?.truncated}
-        <p class="note">Diff trop long : seul le début est affiché.</p>
+        <p class="note">This diff is too long: only its beginning is shown.</p>
       {/if}
     </div>
   {/if}
 
-  <!-- Sous les lignes, pour ne pas les déplacer sous le pointeur au moment où on les choisit. -->
+  <!-- Under the lines, so as not to move them under the pointer while they are being picked. -->
   {#if halves.length}
     <p class="lonely" role="status">
       <Icon name="warning" size={14} />
       <span>
-        Tu n’as choisi qu’une moitié {halves.length > 1 ? `de ${halves.length} lignes modifiées` : 'd’une ligne modifiée'} : l’ancienne version et
-        la nouvelle ne seront pas {selectable === 'unstage' ? 'retirées' : 'indexées'} ensemble.
+        You picked only one half of {halves.length === 1 ? 'a modified line' : `${halves.length} modified lines`}: the old version and
+        the new one will not be {selectable === 'unstage' ? 'unstaged' : 'staged'} together.
       </span>
-      <button class="btn small" type="button" onclick={pickHalves}>Choisir l’autre moitié</button>
+      <button class="btn small" type="button" onclick={pickHalves}>Pick the other half</button>
     </p>
   {/if}
 </section>
@@ -436,7 +436,7 @@
     inset: 0;
     z-index: 3;
     display: grid;
-    /* L'en-tête, les lignes, qui prennent la place, puis l'avertissement quand il y en a un. */
+    /* The header, the lines, which take the room, then the warning when there is one. */
     grid-template-rows: auto minmax(0, 1fr) auto;
     background: var(--panel);
   }
@@ -482,7 +482,7 @@
     font-size: var(--fs-label);
     white-space: nowrap;
   }
-  /* Bascule entre les deux dispositions */
+  /* Toggle between the two layouts */
   .modes {
     display: flex;
     padding: 2px;
@@ -536,8 +536,8 @@
   .lines:focus-visible {
     outline-offset: -2px;
   }
-  /* Le curseur du clavier se lit sur sa ligne, par un anneau intérieur : pas de cadre autour de la
-     liste (charte, section 9.6). Sans curseur, le cadre reste, pour que le focus se voie toujours. */
+  /* The keyboard cursor shows on its line, as an inner ring: no frame around the list
+     (guidelines, section 9.6). Without a cursor, the frame stays, so that the focus always shows. */
   .lines.selectable.has-cursor:focus-visible {
     outline: none;
   }
@@ -594,7 +594,7 @@
   .t-meta .code {
     padding-left: 4px;
   }
-  /* Côte à côte : deux moitiés de largeur égale, les longues lignes passent à la ligne. */
+  /* Side by side: two halves of equal width, long lines wrap. */
   .split {
     width: 100%;
     table-layout: fixed;
@@ -633,7 +633,7 @@
   .c-add .sign {
     color: var(--ok);
   }
-  /* Côté sans ligne correspondante. */
+  /* Side with no matching line. */
   .c-void {
     background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--muted) 9%, transparent) 6px 12px);
   }
@@ -662,8 +662,8 @@
     background: color-mix(in srgb, var(--ok) 38%, transparent);
   }
 
-  /* Sélection de lignes : une ligne choisie se lit à sa teinte plus forte et à son signe en gras,
-     sans trait de couleur sur le bord. */
+  /* Picking lines: a picked line shows by its stronger tint and its bold sign, with no colored bar
+     on the edge. */
   .pickable {
     cursor: pointer;
     transition: background var(--t-fast) var(--ease);

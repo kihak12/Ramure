@@ -7,10 +7,11 @@
   let { repo }: { repo: Repo } = $props();
 
   const recents = $derived(workspace.recents);
-  const relative = new Intl.RelativeTimeFormat('fr-FR', { numeric: 'auto' });
+  const relative = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
 
   function ago(at: number) {
     const minutes = Math.round((at - Date.now()) / 60_000);
+    if (minutes === 0) return 'just now';
     if (Math.abs(minutes) < 60) return relative.format(minutes, 'minute');
     const hours = Math.round(minutes / 60);
     if (Math.abs(hours) < 24) return relative.format(hours, 'hour');
@@ -31,7 +32,7 @@
       <span class="mark"><Logo size={42} /></span>
       <div>
         <h1>Ramure</h1>
-        <p>Ouvre un dépôt pour afficher son graphe.</p>
+        <p>Open a repository to see its graph.</p>
       </div>
     </header>
 
@@ -40,14 +41,14 @@
     {/if}
 
     <div class="actions">
-      {@render action('folder', 'Ouvrir un dépôt…', 'Un dossier déjà présent sur cette machine', () => void workspace.pick())}
-      {@render action('cloud', 'Cloner un dépôt…', 'Depuis une adresse HTTPS ou SSH', () => (workspace.cloning = true))}
-      {@render action('plus', 'Initialiser un dépôt…', 'Dans un dossier existant', () => void workspace.init())}
+      {@render action('folder', 'Open repository…', 'A folder on this computer', () => void workspace.pick())}
+      {@render action('cloud', 'Clone repository…', 'From an HTTPS or SSH URL', () => (workspace.cloning = true))}
+      {@render action('plus', 'Initialize repository…', 'In an existing folder', () => void workspace.init())}
     </div>
 
     {#if recents.length}
       <section>
-        <span class="label">Dépôts récents</span>
+        <span class="label">Recent repositories</span>
         <ul>
           {#each recents as recent, i (recent.path)}
             <li style:--i={i}>
@@ -57,7 +58,7 @@
                 <span class="path mono">{recent.path}</span>
                 <span class="when">{ago(recent.at)}</span>
               </button>
-              <button class="forget" type="button" aria-label="Retirer {recent.name} de la liste" title="Retirer de la liste" onclick={() => workspace.forget(recent.path)}>
+              <button class="forget" type="button" aria-label="Remove {recent.name} from the list" title="Remove from the list" onclick={() => workspace.forget(recent.path)}>
                 <Icon name="x" size={14} />
               </button>
             </li>
@@ -97,7 +98,7 @@
     align-items: center;
     gap: 16px;
   }
-  /* L'icône de l'application : le symbole en blanc sur sa tuile bleue. */
+  /* The icon of the application: the symbol in white on its blue tile. */
   .mark {
     display: grid;
     place-items: center;
@@ -143,7 +144,7 @@
     gap: 12px;
     padding: 12px;
     border: 1px solid var(--line);
-    /* Un grand bouton standard : les coins de tout ce qui se clique (charte, sections 5 et 9.1). */
+    /* A large standard button: the corners of everything that can be clicked (guidelines, sections 5 and 9.1). */
     border-radius: var(--radius-s);
     background: var(--raised);
     box-shadow: var(--shadow-soft);
@@ -154,7 +155,7 @@
       background var(--t-fast) var(--ease),
       border-color var(--t-fast) var(--ease);
   }
-  /* Un bouton : au survol, le fond --hover et une bordure plus marquée ; il ne flotte pas (section 9.1). */
+  /* A button: on hover, the --hover background and a stronger border; it does not float (section 9.1). */
   .action:hover {
     background: var(--hover);
     border-color: color-mix(in srgb, var(--muted) 45%, var(--line));
@@ -162,9 +163,9 @@
   .action:active {
     transform: scale(0.97);
   }
-  /* L'icône seule, sans carré derrière : un fond --hover se confondrait avec --raised en sombre, et
-     avec le bouton survolé. Elle informe : pas d'accent, réservé au principal, au focus et à
-     l'élément actif (charte, sections 2.3 et 9.1). */
+  /* The icon alone, with no square behind it: a --hover background would blend with --raised in
+     dark, and with the hovered button. It informs: no accent, which is kept for the primary, the
+     focus and the active element (guidelines, sections 2.3 and 9.1). */
   .glyph {
     flex: none;
     display: grid;
@@ -197,7 +198,7 @@
     animation-delay: calc(var(--i) * var(--t-step) + var(--t-fast));
     transition: background var(--t-fast) var(--ease);
   }
-  /* Le fond suit le pointeur, et le focus clavier : un clic ne laisse pas de survol (charte, 9.6). */
+  /* The background follows the pointer, and the keyboard focus: a click leaves no hover behind (guidelines, 9.6). */
   li:hover,
   li:has(:focus-visible) {
     background: var(--hover);
@@ -257,7 +258,7 @@
       opacity var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
-  /* À l'appui, un bouton se resserre à 97 % (charte, sections 8 et 9.1). */
+  /* When pressed, a button shrinks to 97% (guidelines, sections 8 and 9.1). */
   .forget:active {
     transform: scale(0.97);
   }

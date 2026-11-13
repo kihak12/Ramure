@@ -2,11 +2,12 @@
   import type { Snippet } from 'svelte';
 
   /**
-   * Une ligne de réglage : son nom et son aide à gauche, son contrôle à droite (charte, section 9.18).
-   * `error` : la valeur saisie n'est pas valide, elle n'a pas été appliquée.
-   * `busy` : l'application du réglage est en cours, et ce qu'elle fait.
-   * `group` : le contrôle est un choix (section 9.19). Il se place sous le nom, sur toute la
-   * largeur, et c'est `{id}-name` qui le nomme.
+   * The row of a setting: its name and its help on the left, its control on the right (guidelines,
+   * section 9.18).
+   * `error`: the value entered is not valid, and it has not been applied.
+   * `busy`: the setting is being applied, and what that is doing.
+   * `group`: the control is a choice (section 9.19). It sits under the name, on the whole width,
+   * and `{id}-name` is what names it.
    */
   let {
     id,
@@ -48,7 +49,7 @@
   .text {
     display: grid;
     gap: 2px;
-    /* Le nom est à la hauteur du contrôle : 32 px, comme un champ. */
+    /* The name is level with the control: 32 px, like a field. */
     padding-top: 6px;
   }
   .name {
@@ -79,7 +80,7 @@
     align-items: center;
     gap: 6px;
   }
-  /* Colonne étroite : le contrôle passe sous son nom. */
+  /* Narrow column: the control goes under its name. */
   @container (max-width: 480px) {
     .setting {
       grid-template-columns: minmax(0, 1fr);

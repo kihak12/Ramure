@@ -11,26 +11,26 @@
   const status = $derived(repo.status);
   const ready = $derived(!!repo.result && !repo.locked);
   const stashes = $derived(repo.refs?.stashes.length ?? 0);
-  // Terminal du dépôt (charte, section 9.20) : l'action est enfoncée quand il est affiché ; masqué,
-  // sa pastille compte les shells qui tournent encore.
+  // Terminal of the repository (guidelines, section 9.20): the action is pressed while it is shown;
+  // hidden, its badge counts the shells still running.
   const terminals = $derived(repo.terminals);
   const terminalCombo = $derived(keys.binding('toggle-terminal'));
   const terminalBadge = $derived(!terminals.shown && terminals.running ? String(terminals.running) : undefined);
 
-  // Menu « Affichage » : une case par carte de la vue, de gauche à droite (charte, sections 9.2 et 9.17).
-  // Le centre garde toujours le graphe ou le terminal : la case de celui qui y est seul est désactivée.
+  // “View” menu: one item per card of the view, from left to right (guidelines, sections 9.2 and
+  // 9.17). The center always keeps the graph or the terminal: the item of the one alone there is disabled.
   let viewsEl = $state<HTMLButtonElement>();
   function views(): MenuItem[] {
     const graphAlone = !terminals.shown;
     return [
-      { label: 'Liste des branches', icon: 'panel-left', checked: !layout.sidebarHidden, keys: keys.binding('toggle-sidebar'), run: () => toggleSide('sidebar') },
+      { label: 'Branch list', icon: 'panel-left', checked: !layout.sidebarHidden, keys: keys.binding('toggle-sidebar'), run: () => toggleSide('sidebar') },
       {
-        label: 'Graphe des commits',
+        label: 'Commit graph',
         icon: 'commit',
         checked: !terminals.alone,
         keys: keys.binding('toggle-graph'),
         disabled: graphAlone,
-        hint: graphAlone ? 'Le graphe reste affiché tant que le terminal ne l’est pas.' : undefined,
+        hint: graphAlone ? 'The graph stays shown while the terminal is hidden.' : undefined,
         run: () => terminals.toggleGraph(),
       },
       {
@@ -39,15 +39,15 @@
         checked: terminals.shown,
         keys: terminalCombo,
         disabled: terminals.alone,
-        hint: terminals.alone ? 'Le terminal reste affiché tant que le graphe ne l’est pas.' : undefined,
+        hint: terminals.alone ? 'The terminal stays shown while the graph is hidden.' : undefined,
         run: () => terminals.toggle(repo.path),
       },
-      { label: 'Panneau de détail', icon: 'panel-right', checked: !layout.detailHidden, keys: keys.binding('toggle-detail'), run: () => toggleSide('detail') },
+      { label: 'Detail panel', icon: 'panel-right', checked: !layout.detailHidden, keys: keys.binding('toggle-detail'), run: () => toggleSide('detail') },
     ];
   }
 
   function popStash() {
-    void repo.refOp({ op: 'stash-pop', index: 0 }, 'Remise appliquée', 'La remise n’a pas pu être appliquée');
+    void repo.refOp({ op: 'stash-pop', index: 0 }, 'Stash popped', 'Could not pop stash');
   }
 </script>
 
@@ -67,69 +67,69 @@
     type="button"
     onclick={onpick}
     disabled={repo.locked}
-    title={repo.result ? `${repo.result.name} — ouvrir un autre dépôt…` : 'Ouvrir un dépôt…'}
+    title={repo.result ? `${repo.result.name} — open another repository…` : 'Open a repository…'}
   >
-    <span class="small">dépôt</span>
-    <b>{repo.result?.name ?? 'Aucun dépôt'}</b>
+    <span class="small">Repository</span>
+    <b>{repo.result?.name ?? 'No repository'}</b>
   </button>
   <span class="sep"><Icon name="chevron" size={14} /></span>
-  <div class="crumb static" title={repo.result ? (repo.branch ?? 'HEAD détaché') : undefined}>
-    <span class="small">branche</span>
-    <b class="mono">{repo.result ? (repo.branch ?? 'HEAD détaché') : '—'}</b>
+  <div class="crumb static" title={repo.result ? (repo.branch ?? 'Detached HEAD') : undefined}>
+    <span class="small">Branch</span>
+    <b class="mono">{repo.result ? (repo.branch ?? 'detached HEAD') : '—'}</b>
   </div>
 
-  <div class="tools" role="group" aria-label="Synchronisation">
-    {@render tool('fetch', 'Récupérer', 'git fetch --all --prune', !ready, () => void repo.sync('fetch'), undefined, repo.busy === 'fetch')}
+  <div class="tools" role="group" aria-label="Sync">
+    {@render tool('fetch', 'Fetch', 'git fetch --all --prune', !ready, () => void repo.sync('fetch'), undefined, repo.busy === 'fetch')}
     {@render tool(
       'pull',
-      'Tirer',
-      status?.upstream ? `git pull depuis ${status.upstream}` : 'Cette branche n’a pas de branche distante associée',
+      'Pull',
+      status?.upstream ? `git pull from ${status.upstream}` : 'This branch is not linked to a remote branch',
       !ready || !status?.upstream,
       () => void repo.sync('pull'),
       status?.behind ? String(status.behind) : undefined,
     )}
     {@render tool(
       'push',
-      status && status.branch && !status.upstream ? 'Publier' : 'Pousser',
-      status?.upstream ? `git push vers ${status.upstream}` : 'Publie la branche et la relie à son homologue distante',
+      status && status.branch && !status.upstream ? 'Publish' : 'Push',
+      status?.upstream ? `git push to ${status.upstream}` : 'Publish the branch and link it to its counterpart on the remote',
       !ready || !status?.branch,
       () => void repo.sync('push'),
       status?.ahead ? String(status.ahead) : undefined,
     )}
   </div>
-  <div class="tools" role="group" aria-label="Branches et remises">
-    {@render tool('branch', 'Branche', 'Créer une branche à partir du commit courant', !ready || !repo.head, () => {
+  <div class="tools" role="group" aria-label="Branches and stashes">
+    {@render tool('branch', 'Branch', 'Create a branch from the current commit', !ready || !repo.head, () => {
       if (repo.head) void createBranch(repo, repo.head.sha, repo.branch ?? 'HEAD');
     })}
-    {@render tool('stash', 'Remiser', 'Mettre de côté les modifications en cours', !ready || repo.wipCount === 0, () => void stashChanges(repo))}
-    {@render tool('pop', 'Dépiler', 'Appliquer la dernière remise et la supprimer', !ready || stashes === 0, popStash, stashes ? String(stashes) : undefined)}
+    {@render tool('stash', 'Stash', 'Set the working changes aside', !ready || repo.wipCount === 0, () => void stashChanges(repo))}
+    {@render tool('pop', 'Pop', 'Apply the latest stash and drop it', !ready || stashes === 0, popStash, stashes ? String(stashes) : undefined)}
   </div>
 
   <div class="tools right">
     {@render tool(
       'terminal',
       'Terminal',
-      `${terminals.shown ? 'Masquer' : 'Afficher'} le terminal du dépôt${terminalCombo ? ` (${display(terminalCombo)})` : ''}`,
+      `${terminals.shown ? 'Hide' : 'Show'} the terminal of this repository${terminalCombo ? ` (${display(terminalCombo)})` : ''}`,
       !repo.result || !!repo.conflictFile,
       () => terminals.toggle(repo.path),
       terminalBadge,
       false,
       terminals.shown,
     )}
-    {@render tool('refresh', 'Recharger', 'Relire l’historique du dépôt', !ready, () => void repo.reload())}
-    {@render tool('folder', 'Ouvrir', 'Ouvrir un autre dépôt…', repo.locked, onpick)}
+    {@render tool('refresh', 'Reload', 'Read the history of the repository again', !ready, () => void repo.reload())}
+    {@render tool('folder', 'Open', 'Open another repository…', repo.locked, onpick)}
   </div>
-  <!-- « Affichage » : le seul bouton de vue, il déroule le choix des cartes. Menu ouvert, son
-       infobulle se tait : elle couvrirait le premier élément. L'éditeur d'un conflit couvre les
-       cartes : il n'y a rien à choisir tant qu'il est ouvert. -->
+  <!-- “View”: the one view button, it opens the choice of the cards. While its menu is open, its
+       tooltip keeps quiet: it would cover the first item. The editor of a conflict covers the
+       cards: there is nothing to choose while it is open. -->
   <button
     class="view"
     type="button"
     bind:this={viewsEl}
-    aria-label="Affichage"
+    aria-label="View"
     aria-haspopup="menu"
     aria-expanded={menu.isUnder(viewsEl)}
-    title={menu.isUnder(viewsEl) ? undefined : 'Choisir les cartes à afficher'}
+    title={menu.isUnder(viewsEl) ? undefined : 'Choose the panels to show'}
     disabled={!repo.result || !!repo.conflictFile}
     onclick={(event) => viewsEl && menu.openUnder(viewsEl, views, event.detail === 0)}
   >
@@ -143,7 +143,7 @@
     display: flex;
     align-items: stretch;
     gap: 4px;
-    /* 8 px sur les côtés : le fil d'Ariane et « Affichage » s'alignent sur les bords des cartes. */
+    /* 8 px on the sides: the breadcrumb and “View” line up with the edges of the cards. */
     padding: 6px 8px;
     min-width: 0;
   }
@@ -151,7 +151,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    /* Largeur fixe : les actions gardent leur place, quel que soit le nom. Elle ne cède qu'à une fenêtre étroite. */
+    /* Fixed width: the actions keep their place, whatever the name. It only yields to a narrow window. */
     flex: 0 1 140px;
     min-width: 70px;
     padding: 4px 8px;
@@ -226,7 +226,7 @@
   .tool:active:not(:disabled) {
     transform: scale(0.97);
   }
-  /* « Terminal » enfoncé : la teinte du module actif dans le rail, l'icône en accent, le libellé tel quel. */
+  /* “Terminal” pressed: the tint of the active module in the rail, the icon in accent, the label as it is. */
   .tool[aria-pressed='true'] {
     background: var(--accent-soft);
   }
@@ -242,7 +242,7 @@
     opacity: 0.45;
     cursor: not-allowed;
   }
-  /* « Affichage », au bout droit de la barre : une icône seule (charte, section 9.2). */
+  /* “View”, at the right end of the bar: an icon alone (guidelines, section 9.2). */
   .view {
     flex: none;
     align-self: center;

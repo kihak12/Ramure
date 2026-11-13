@@ -13,7 +13,7 @@
 
   let data = $state.raw<ConflictFile | null>(null);
   let error = $state('');
-  // Texte du résultat, tenu à jour par l'éditeur du bas.
+  // Text of the result, kept up to date by the bottom editor.
   let text = $state('');
   let index = $state(0);
   let showBase = $state(false);
@@ -22,10 +22,10 @@
   let oursView = $state<ReturnType<typeof CodeEditor>>();
   let theirsView = $state<ReturnType<typeof CodeEditor>>();
 
-  // Pendant un rebase, git inverse les rôles : « ours » est la base, « theirs » le commit rejoué.
+  // During a rebase, git swaps the roles: “ours” is the base, “theirs” the commit being replayed.
   const rebase = $derived(repo.status?.operation === 'rebase');
   const names = $derived(
-    rebase ? { ours: 'La base', theirs: 'Mon commit' } : { ours: 'Ma version', theirs: 'La version entrante' },
+    rebase ? { ours: 'The base', theirs: 'Your commit' } : { ours: 'Your version', theirs: 'The incoming version' },
   );
 
   const separator = $derived(data?.merged?.includes('\r\n') ? '\r\n' : '\n');
@@ -37,7 +37,7 @@
 
   const oursLines = $derived(splitLines(data?.ours ?? '', separator));
   const theirsLines = $derived(splitLines(data?.theirs ?? '', separator));
-  // Où se trouve, dans chaque version, le passage du conflit courant.
+  // Where the passage of the current conflict is, in each version.
   const oursAt = $derived(current ? locate(oursLines, current.ours, current.start) : -1);
   const theirsAt = $derived(current ? locate(theirsLines, current.theirs, current.start) : -1);
 
@@ -62,7 +62,7 @@
   const oursMarks = $derived(current ? sideMarks(oursAt, current.ours.length) : []);
   const theirsMarks = $derived(current ? sideMarks(theirsAt, current.theirs.length) : []);
 
-  // Chargement des versions du fichier.
+  // Loading the versions of the file.
   $effect(() => {
     const target = file;
     data = null;
@@ -80,8 +80,8 @@
       });
   });
 
-  // Le conflit courant est amené à l'écran dans les trois volets : quand on en change, ou quand
-  // il en reste un de moins. Jamais pendant une simple saisie dans le résultat.
+  // The current conflict is brought into view in the three panes: when it changes, or when one
+  // fewer is left. Never during plain typing in the result.
   $effect(() => {
     void index;
     void blocks.length;
@@ -90,7 +90,7 @@
       const block = current;
       if (!block) return;
       const [mine, theirs] = [oursAt, theirsAt];
-      // Après la mise à jour des documents, pas pendant.
+      // After the documents are updated, not during.
       queueMicrotask(() => {
         result?.scrollToLine(block.start + 1 + Math.floor((block.end - block.start) / 2));
         if (mine >= 0) oursView?.scrollToLine(mine + 1);
@@ -114,7 +114,7 @@
     if (current) result?.replaceLines(current.start + 1, current.end + 1, chosen(current, choice));
   }
 
-  /** Applique le même choix à tous les conflits restants, du dernier au premier : les positions restent justes. */
+  /** Applies the same choice to all the remaining conflicts, from the last to the first: the positions stay right. */
   function takeAll(choice: 'ours' | 'theirs') {
     for (const block of [...blocks].reverse()) result?.replaceLines(block.start + 1, block.end + 1, chosen(block, choice));
   }
@@ -124,9 +124,9 @@
   async function close() {
     if (modified) {
       const sure = await dialogs.confirm({
-        title: 'Fermer sans enregistrer ?',
-        body: 'Les choix et les corrections faits dans cet éditeur seront perdus. Le fichier garde ses marqueurs de conflit.',
-        confirmLabel: 'Fermer sans enregistrer',
+        title: 'Close without saving?',
+        body: 'The choices and corrections made in this editor will be lost. The file keeps its conflict markers.',
+        confirmLabel: 'Close without saving',
         danger: true,
       });
       if (!sure) return;
@@ -137,44 +137,44 @@
   const save = () => void repo.saveConflict(file, result?.getText() ?? text);
 </script>
 
-<section class="conflict" aria-label="Éditeur de conflits : {file.path}" in:fly={{ y: 16, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
+<section class="conflict" aria-label="Conflict editor: {file.path}" in:fly={{ y: 16, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <span class="glyph"><Icon name="merge" size={18} /></span>
     <div class="names">
       <b class="mono">{file.path}</b>
       <small>
         {#if !data && !error}
-          Lecture des versions…
+          Reading the versions…
         {:else if blocks.length}
-          {blocks.length} conflit{blocks.length > 1 ? 's' : ''} à résoudre
+          {blocks.length} conflict{blocks.length === 1 ? '' : 's'} to resolve
         {:else if editable}
-          Plus aucun marqueur de conflit : le fichier peut être enregistré
+          No conflict markers left: the file can be saved
         {/if}
       </small>
     </div>
-    <button class="btn" type="button" onclick={close}><Icon name="x" size={14} /> Fermer</button>
-    <button class="btn primary" type="button" disabled={!editable || blocks.length > 0 || repo.locked} onclick={save} title="Écrit le fichier et le marque comme résolu (git add)">
-      <Icon name="check" size={14} /> Enregistrer et marquer résolu
+    <button class="btn" type="button" onclick={close}><Icon name="x" size={14} /> Close</button>
+    <button class="btn primary" type="button" disabled={!editable || blocks.length > 0 || repo.locked} onclick={save} title="Write the file and mark it as resolved (git add)">
+      <Icon name="check" size={14} /> Save and mark resolved
     </button>
   </header>
 
   {#if error}
     <p class="note err">{error}</p>
   {:else if !data}
-    <p class="note">Lecture des versions du fichier…</p>
+    <p class="note">Reading the versions of the file…</p>
   {:else if !editable}
     <div class="note">
       <p>
         {#if data.binary}
-          Ce fichier n’est pas du texte, ou il est trop volumineux pour l’éditeur.
+          This file is not text, or it is too large for the editor.
         {:else}
-          L’un des deux côtés a supprimé ce fichier : il n’y a pas deux textes à réunir.
+          One of the two sides deleted this file: there are not two versions to merge.
         {/if}
-        Résous-le en gardant un côté.
+        Resolve it by keeping one side.
       </p>
       <div class="pick">
-        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'ours')}>Garder : {names.ours.toLowerCase()}</button>
-        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'theirs')}>Garder : {names.theirs.toLowerCase()}</button>
+        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'ours')}>Keep {names.ours.toLowerCase()}</button>
+        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'theirs')}>Keep {names.theirs.toLowerCase()}</button>
       </div>
     </div>
   {:else}
@@ -184,39 +184,39 @@
           <span class="dot"></span>
           <b>{names.ours}</b>
           {#if current?.oursLabel}<small class="mono">{current.oursLabel}</small>{/if}
-          <button class="btn small" type="button" disabled={!blocks.length} onclick={() => takeAll('ours')} title="Prend ce côté pour tous les conflits restants">Tout prendre</button>
+          <button class="btn small" type="button" disabled={!blocks.length} onclick={() => takeAll('ours')} title="Take this side for all the remaining conflicts">Take all</button>
         </div>
-        <CodeEditor bind:this={oursView} value={data.ours ?? ''} readonly marks={oursMarks} lineSeparator={separator} label="{names.ours}, en lecture seule" />
+        <CodeEditor bind:this={oursView} value={data.ours ?? ''} readonly marks={oursMarks} lineSeparator={separator} label="{names.ours}, read-only" />
       </div>
       <div class="side theirs">
         <div class="bar">
           <span class="dot"></span>
           <b>{names.theirs}</b>
           {#if current?.theirsLabel}<small class="mono">{current.theirsLabel}</small>{/if}
-          <button class="btn small" type="button" disabled={!blocks.length} onclick={() => takeAll('theirs')} title="Prend ce côté pour tous les conflits restants">Tout prendre</button>
+          <button class="btn small" type="button" disabled={!blocks.length} onclick={() => takeAll('theirs')} title="Take this side for all the remaining conflicts">Take all</button>
         </div>
-        <CodeEditor bind:this={theirsView} value={data.theirs ?? ''} readonly marks={theirsMarks} lineSeparator={separator} label="{names.theirs}, en lecture seule" />
+        <CodeEditor bind:this={theirsView} value={data.theirs ?? ''} readonly marks={theirsMarks} lineSeparator={separator} label="{names.theirs}, read-only" />
       </div>
     </div>
 
     <div class="choose">
       {#if current}
         <div class="nav">
-          <button class="btn small" type="button" aria-label="Conflit précédent" disabled={blocks.length < 2} onclick={() => step(-1)}><Icon name="up" size={14} /></button>
-          <span class="count">Conflit <b>{Math.min(index, blocks.length - 1) + 1}</b> sur {blocks.length}</span>
-          <button class="btn small" type="button" aria-label="Conflit suivant" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
+          <button class="btn small" type="button" aria-label="Previous conflict" disabled={blocks.length < 2} onclick={() => step(-1)}><Icon name="up" size={14} /></button>
+          <span class="count">Conflict <b>{Math.min(index, blocks.length - 1) + 1}</b> of {blocks.length}</span>
+          <button class="btn small" type="button" aria-label="Next conflict" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
         </div>
-        <button class="btn small take ours" type="button" onclick={() => take('ours')}>Prendre : {names.ours.toLowerCase()}</button>
-        <button class="btn small take theirs" type="button" onclick={() => take('theirs')}>Prendre : {names.theirs.toLowerCase()}</button>
-        <button class="btn small" type="button" onclick={() => take('both')} title="{names.ours}, puis {names.theirs.toLowerCase()}">Prendre les deux</button>
-        <button class="btn small" type="button" onclick={() => take('both-reversed')} title="{names.theirs}, puis {names.ours.toLowerCase()}">Prendre les deux, inversés</button>
+        <button class="btn small take ours" type="button" onclick={() => take('ours')}>Take {names.ours.toLowerCase()}</button>
+        <button class="btn small take theirs" type="button" onclick={() => take('theirs')}>Take {names.theirs.toLowerCase()}</button>
+        <button class="btn small" type="button" onclick={() => take('both')} title="{names.ours}, then {names.theirs.toLowerCase()}">Take both</button>
+        <button class="btn small" type="button" onclick={() => take('both-reversed')} title="{names.theirs}, then {names.ours.toLowerCase()}">Take both, reversed</button>
         {#if data.base !== null}
-          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l’ancêtre commun</label>
+          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Show the common ancestor</label>
         {/if}
       {:else}
-        <span class="done"><Icon name="check" size={16} /> Tous les conflits sont résolus. Relis le résultat, corrige-le au besoin, puis enregistre.</span>
+        <span class="done"><Icon name="check" size={16} /> All conflicts are resolved. Read the result again, correct it if needed, then save.</span>
         {#if data.base !== null}
-          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Voir l’ancêtre commun</label>
+          <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Show the common ancestor</label>
         {/if}
       {/if}
     </div>
@@ -225,15 +225,15 @@
       <div class="side result">
         <div class="bar">
           <span class="dot"></span>
-          <b>Résultat</b>
-          <small>modifiable : les choix ci-dessus s’y appliquent, et tu peux le corriger à la main</small>
+          <b>Result</b>
+          <small>editable: the choices above apply to it, and you can correct it by hand</small>
         </div>
-        <CodeEditor bind:this={result} value={data.merged ?? ''} marks={resultMarks} lineSeparator={separator} label="Résultat de la résolution" onchange={(next) => (text = next)} />
+        <CodeEditor bind:this={result} value={data.merged ?? ''} marks={resultMarks} lineSeparator={separator} label="Result of the resolution" onchange={(next) => (text = next)} />
       </div>
       {#if showBase && data.base !== null}
         <div class="side base">
-          <div class="bar"><span class="dot"></span><b>Ancêtre commun</b><small>avant les deux modifications</small></div>
-          <CodeEditor value={data.base} readonly lineSeparator={separator} label="Ancêtre commun, en lecture seule" />
+          <div class="bar"><span class="dot"></span><b>Common ancestor</b><small>before both changes</small></div>
+          <CodeEditor value={data.base} readonly lineSeparator={separator} label="Common ancestor, read-only" />
         </div>
       {/if}
     </div>
@@ -241,7 +241,7 @@
 </section>
 
 <style>
-  /* Une seule carte, à la place des trois de la vue. */
+  /* One card, in place of the three of the view. */
   .conflict {
     position: absolute;
     inset: 0 8px 8px;

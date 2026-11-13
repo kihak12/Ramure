@@ -1,15 +1,15 @@
-/* Jetons de Ramure : la seule source des couleurs, des tailles, des formes et des durées.
-   Leurs valeurs sont celles de docs/design-guidelines.md (thème Ardoise). Aucun composant
-   n'écrit ces valeurs en dur : `npm run check` le vérifie. */
-/* `data-theme` (clair ou sombre) et `data-palette` (le thème de couleurs) donnent à un élément
-   les jetons de ce thème, quel que soit celui de la fenêtre : posés sur la racine, ils règlent
-   toute la fenêtre ; sur un élément, ils dessinent un aperçu (charte, sections 2.5 et 9.19). */
+/* Ramure's tokens: the only source of colors, sizes, shapes and durations. Their values are
+   those of docs/design-guidelines.md (Slate theme). No component hard-codes these values:
+   `npm run check` makes sure of it. */
+/* `data-theme` (light or dark) and `data-palette` (the color theme) give an element the tokens of
+   that theme, whatever the window's: set on the root, they style the whole window; on an
+   element, they draw a preview (guidelines, sections 2.5 and 9.19). */
 :root,
 [data-theme='light'],
-[data-palette='ardoise'] {
+[data-palette='slate'] {
   color-scheme: light;
 
-  /* Couleurs (charte, section 2) */
+  /* Colors (guidelines, section 2) */
   --side: #eaecf1;
   --panel: #ffffff;
   --bg: #f6f7f9;
@@ -33,7 +33,7 @@
   --bad-soft: #ffe4e0;
   --term-bg: #fbfbfc;
   --term-ink: #1c1f27;
-  /* Les 16 couleurs ANSI du terminal (section 2.6) : 0 à 7, puis leurs versions vives, 8 à 15. */
+  /* The 16 ANSI colors of the terminal (section 2.6): 0 to 7, then their bright versions, 8 to 15. */
   --ansi-0: #1c1f27;
   --ansi-1: #ac190f;
   --ansi-2: #046434;
@@ -51,7 +51,7 @@
   --ansi-14: #077b85;
   --ansi-15: #585b65;
   --scrim: rgb(18 22 30 / 0.32);
-  /* Couleurs des branches du graphe */
+  /* Branch colors of the graph */
   --l0: #126bed;
   --l1: #c43e01;
   --l2: #018051;
@@ -61,16 +61,16 @@
   --l6: #03808b;
   --l7: #5d6c02;
 
-  /* Couleurs de la marque (section 13) : celles de l'icône. Elles ne changent ni en sombre, ni avec
-     le thème de couleurs. */
+  /* Brand colors (section 13): those of the icon. They change neither in dark nor with the color
+     theme. */
   --brand: #2b6fdb;
   --on-brand: #ffffff;
 
-  /* Ombres (section 6) : neutres, elles ne prennent pas la teinte du thème. */
+  /* Shadows (section 6): neutral, they do not take the tint of the theme. */
   --shadow-soft: 0 1px 2px rgb(18 22 30 / 0.06);
   --shadow-pop: 0 18px 44px -14px rgb(18 22 30 / 0.3), 0 2px 6px rgb(18 22 30 / 0.08);
 
-  /* Typographie (section 3) */
+  /* Typography (section 3) */
   --f-ui: 'DM Sans Variable', 'Segoe UI Variable Text', 'Segoe UI', Ubuntu, system-ui, sans-serif;
   --f-mono: 'DM Mono', 'Cascadia Mono', 'Ubuntu Mono', Consolas, 'DejaVu Sans Mono', monospace;
   --fs-micro: 10.5px;
@@ -84,7 +84,7 @@
   --fw-regular: 400;
   --fw-strong: 650;
 
-  /* Formes (section 5) */
+  /* Shapes (section 5) */
   --radius-xs: 4px;
   --radius-s: 6px;
   --radius: 8px;
@@ -92,7 +92,7 @@
   --radius-card: 14px;
   --radius-pill: 999px;
 
-  /* Mouvement (section 8) : une courbe, trois durées, et les cycles des indicateurs. */
+  /* Motion (section 8): one curve, three durations, and the cycles of the indicators. */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --t-fast: 110ms;
   --t-med: 200ms;
@@ -103,13 +103,12 @@
   --t-halo: 2.4s;
 }
 
-/* Thème sombre. Les mêmes valeurs sont écrites deux fois, CSS n'ayant pas de quoi les partager :
-   une fois pour qui suit le système, une fois pour qui a choisi « Sombre » dans les réglages
-   (`data-theme` sur la racine, posé par src/lib/settings/theme.svelte.ts). Les deux blocs
-   changent ensemble. */
+/* Dark theme. The same values are written twice, since CSS has no way to share them: once for
+   whoever follows the system, once for whoever chose "Dark" in the settings (`data-theme` on the
+   root, set by src/lib/settings/theme.svelte.ts). The two blocks change together. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']),
-  [data-palette='ardoise']:not([data-theme='light']) {
+  [data-palette='slate']:not([data-theme='light']) {
     color-scheme: dark;
     --side: #0c0d11;
     --panel: #181b21;
@@ -164,7 +163,7 @@
   }
 }
 [data-theme='dark'],
-[data-palette='ardoise'][data-theme='dark'] {
+[data-palette='slate'][data-theme='dark'] {
   color-scheme: dark;
   --side: #0c0d11;
   --panel: #181b21;
@@ -218,12 +217,12 @@
   --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
-/* Thèmes de couleurs autres qu'Ardoise (charte, section 2.5). Chacun redéfinit les couleurs des
-   sections 2.1 et 2.2, en clair puis en sombre ; le sombre est écrit deux fois, comme celui
-   d'Ardoise. `npm run check` vérifie les contrastes de chaque thème. */
+/* Color themes other than Slate (guidelines, section 2.5). Each redefines the colors of sections
+   2.1 and 2.2, in light then in dark; the dark is written twice, like Slate's. `npm run check`
+   checks the contrasts of every theme. */
 
-/* Encre */
-[data-palette='encre'] {
+/* Ink */
+[data-palette='ink'] {
   color-scheme: light;
   --bg: #f7f7f9;
   --panel: #ffffff;
@@ -274,7 +273,7 @@
   --l7: #5e7c00;
 }
 @media (prefers-color-scheme: dark) {
-  [data-palette='encre']:not([data-theme='light']) {
+  [data-palette='ink']:not([data-theme='light']) {
     color-scheme: dark;
     --bg: #0e0f12;
     --panel: #14161a;
@@ -325,7 +324,7 @@
     --l7: #b3db10;
   }
 }
-[data-palette='encre'][data-theme='dark'] {
+[data-palette='ink'][data-theme='dark'] {
   color-scheme: dark;
   --bg: #0e0f12;
   --panel: #14161a;
@@ -376,8 +375,8 @@
   --l7: #b3db10;
 }
 
-/* Sous-bois */
-[data-palette='sous-bois'] {
+/* Undergrowth */
+[data-palette='undergrowth'] {
   color-scheme: light;
   --bg: #f6f5ef;
   --panel: #fffefa;
@@ -428,7 +427,7 @@
   --l7: #89601e;
 }
 @media (prefers-color-scheme: dark) {
-  [data-palette='sous-bois']:not([data-theme='light']) {
+  [data-palette='undergrowth']:not([data-theme='light']) {
     color-scheme: dark;
     --bg: #0f1512;
     --panel: #141c18;
@@ -479,7 +478,7 @@
     --l7: #dab882;
   }
 }
-[data-palette='sous-bois'][data-theme='dark'] {
+[data-palette='undergrowth'][data-theme='dark'] {
   color-scheme: dark;
   --bg: #0f1512;
   --panel: #141c18;
@@ -530,8 +529,8 @@
   --l7: #dab882;
 }
 
-/* Braise */
-[data-palette='braise'] {
+/* Ember */
+[data-palette='ember'] {
   color-scheme: light;
   --bg: #faf7f2;
   --panel: #fffdf9;
@@ -582,7 +581,7 @@
   --l7: #ce216e;
 }
 @media (prefers-color-scheme: dark) {
-  [data-palette='braise']:not([data-theme='light']) {
+  [data-palette='ember']:not([data-theme='light']) {
     color-scheme: dark;
     --bg: #141210;
     --panel: #1a1815;
@@ -633,7 +632,7 @@
     --l7: #fa87b6;
   }
 }
-[data-palette='braise'][data-theme='dark'] {
+[data-palette='ember'][data-theme='dark'] {
   color-scheme: dark;
   --bg: #141210;
   --panel: #1a1815;
@@ -684,7 +683,7 @@
   --l7: #fa87b6;
 }
 
-/* Qui a demandé moins d'animations n'en reçoit presque plus : les états changent sans transition. */
+/* Whoever asked for less motion gets almost none: states change without a transition. */
 @media (prefers-reduced-motion: reduce) {
   :root,
   [data-theme] {
@@ -715,14 +714,14 @@ body,
 }
 
 body {
-  /* Le fond de la fenêtre : les cartes posées dessus sont plus claires, c'est lui qui les sépare. */
+  /* The window background: the cards on it are lighter, and it is what separates them. */
   background: var(--side);
   color: var(--ink);
   font-family: var(--f-ui);
   font-size: var(--fs-body);
   font-weight: var(--fw-regular);
   line-height: 1.35;
-  /* DM Mono s'arrête à la graisse 500 : pas de faux gras fabriqué par le navigateur. */
+  /* DM Mono stops at weight 500: no fake bold made by the browser. */
   font-synthesis-weight: none;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
@@ -741,21 +740,21 @@ textarea {
   outline-offset: 1px;
 }
 
-/* Une boîte de dialogue est ancrée à 11 % du haut de la fenêtre, comme la palette : quand elle
-   grandit, seul ce qui est sous le changement descend (charte, sections 9.1 et 9.10). Au-delà de
-   la hauteur de la fenêtre, chaque boîte fait défiler son contenu et garde sa dernière ligne. */
+/* A dialog is anchored 11% from the top of the window, like the palette: when it grows, only what
+   is below the change moves down (guidelines, sections 9.1 and 9.10). Past the height of the
+   window, each dialog scrolls its content and keeps its last line. */
 dialog {
   margin: 11vh auto auto;
   max-height: calc(89vh - 24px);
 }
 
-/* Un focus donné par un script : le même anneau (voir lib/ui/focus.ts). */
+/* A focus given by a script: the same ring (see lib/ui/focus.ts). */
 .focus-ring:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
-/* Une boîte de dialogue reçoit le focus à l'ouverture : ce sont ses champs qui le montrent. */
+/* A dialog takes the focus when it opens: its fields are what show it. */
 dialog:focus-visible {
   outline: none;
 }
@@ -764,7 +763,7 @@ dialog:focus-visible {
   background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-/* Barres de défilement fines, dans les tons de l'interface. */
+/* Thin scrollbars, in the tones of the interface. */
 * {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;
@@ -810,8 +809,8 @@ dialog:focus-visible {
   color: var(--on-accent);
   font-weight: var(--fw-strong);
 }
-/* Au survol, le fond va de 10 % vers --ink : son texte y gagne du contraste dans les deux thèmes
-   (charte, section 9.1). L'éclaircir le faisait tomber sous 4,5:1 en clair. */
+/* On hover, the background moves 10% toward --ink: its text gains contrast in both themes
+   (guidelines, section 9.1). Lightening it dropped it under 4.5:1 in light. */
 .btn.primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 90%, var(--ink));
   border-color: color-mix(in srgb, var(--accent) 90%, var(--ink));
@@ -831,8 +830,8 @@ dialog:focus-visible {
   border-color: transparent;
   box-shadow: none;
 }
-/* Fantôme destructeur : il ouvre une action destructrice qu'une boîte confirme ensuite, comme
-   l'élément destructeur d'un menu (charte, sections 9.1 et 9.9). */
+/* Ghost danger: it opens a destructive action that a dialog then confirms, like the destructive
+   item of a menu (guidelines, sections 9.1 and 9.9). */
 .btn.ghost.bad {
   color: var(--bad);
 }
@@ -865,7 +864,7 @@ dialog:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
-/* Champ en erreur : bordure et halo en --bad, son message dessous (charte, section 9.3). */
+/* A field in error: border and halo in --bad, its message below (guidelines, section 9.3). */
 .field.invalid,
 .field.invalid:focus-visible {
   border-color: var(--bad);
@@ -874,14 +873,14 @@ dialog:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent);
 }
 
-/* Le texte d'aide d'un champ vide ne se lit jamais comme du texte saisi (charte, section 9.3). */
+/* The hint of an empty field never reads as typed text (guidelines, section 9.3). */
 ::placeholder {
   color: var(--faint);
   opacity: 1;
 }
 
-/* Case à cocher, dessinée par l'application : celle du système est un carré blanc plein en thème
-   sombre, qui se lit comme cochée (charte, section 9.3). */
+/* Checkbox, drawn by the application: the system's is a solid white square in the dark theme,
+   which reads as checked (guidelines, section 9.3). */
 input[type='checkbox'] {
   appearance: none;
   flex: none;
@@ -910,7 +909,7 @@ input[type='checkbox']:indeterminate:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--accent) 90%, var(--ink));
   background: color-mix(in srgb, var(--accent) 90%, var(--ink));
 }
-/* La coche : le tracé de l'icône « check », découpé dans la couleur du texte sur l'accent. */
+/* The check mark: the path of the "check" icon, cut out in the color of text on the accent. */
 input[type='checkbox']:checked::before {
   content: '';
   position: absolute;
@@ -919,8 +918,8 @@ input[type='checkbox']:checked::before {
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.5 8.5 3 3 6-7' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
     center / 13px no-repeat;
 }
-/* En partie cochée (« Tout cocher » sur une liste dont certaines lignes le sont) : le trait de
-   l'icône « minus », découpé de la même façon. */
+/* Partly checked ("Check all" on a list where only some rows are): the stroke of the "minus"
+   icon, cut out the same way. */
 input[type='checkbox']:indeterminate::before {
   content: '';
   position: absolute;
@@ -933,8 +932,8 @@ input[type='checkbox']:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
-/* Le texte d'une case se clique aussi : c'est la cible, 24 px de haut au moins, et son survol est
-   celui de la case. Désactivée, la case grise son texte avec elle. */
+/* The text of a checkbox is clickable too: it is the target, 24 px high at least, and its hover is
+   that of the box. Disabled, the box grays out its text with it. */
 label:has(> input[type='checkbox']) {
   min-height: 24px;
   cursor: pointer;
@@ -955,7 +954,7 @@ label:has(> input[type='checkbox']:disabled) > input[type='checkbox'] {
   opacity: 1;
 }
 
-/* Deux graisses, pas plus (charte, section 3.3) : le gras du navigateur (700) n'en est pas une. */
+/* Two weights, no more (guidelines, section 3.3): the browser's bold (700) is not one of them. */
 b,
 strong {
   font-weight: var(--fw-strong);
@@ -967,8 +966,8 @@ strong {
   font-weight: var(--fw-strong);
 }
 
-/* Un texte pour les lecteurs d'écran seulement : caché à l'œil, jamais à l'arbre d'accessibilité,
-   ce que `visibility: hidden` ou `display: none` feraient (charte, section 11). */
+/* A text for screen readers only: hidden from the eye, never from the accessibility tree, which
+   `visibility: hidden` or `display: none` would do (guidelines, section 11). */
 .spoken {
   position: absolute;
   width: 1px;
@@ -978,7 +977,7 @@ strong {
   white-space: nowrap;
 }
 
-/* Petite pastille : compteur, nombre de commits en avance ou en retard. */
+/* Small pill: a counter, the number of commits ahead or behind. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -992,7 +991,7 @@ strong {
   white-space: nowrap;
 }
 
-/* Touche d'un raccourci, dessinée comme une touche (charte, section 9.12). */
+/* The key of a shortcut, drawn as a key (guidelines, section 9.12). */
 kbd {
   display: inline-block;
   min-width: 18px;
@@ -1015,7 +1014,7 @@ kbd {
   stroke-linejoin: round;
 }
 
-/* Indicateur d'attente : un anneau qui tourne tant que dure l'opération (charte, section 8). */
+/* Waiting indicator: a ring that spins as long as the operation lasts (guidelines, section 8). */
 .spinner {
   flex: none;
   display: inline-block;
@@ -1032,7 +1031,7 @@ kbd {
   }
 }
 
-/* Apparitions partagées. */
+/* Shared entrances. */
 @keyframes pop-in {
   from {
     opacity: 0;

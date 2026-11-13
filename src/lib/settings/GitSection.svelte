@@ -11,22 +11,22 @@
   const FIELDS = ['autoFetch', 'pullMode', 'graphStyle', 'limit', 'diffMode'] as const satisfies readonly (keyof Settings)[];
   const changed = $derived(FIELDS.some((field) => prefs[field] !== DEFAULTS[field]));
 
-  // Chaque option dit ce qu'elle entraîne : on compare sans rien ouvrir (charte, section 9.19).
+  // Each option says what it entails: they are compared without opening anything (guidelines, section 9.19).
   const PULL_MODES = [
-    { value: 'ff-only', label: 'Avance rapide seulement', help: 'Le tirage est refusé si ta branche et la branche distante ont divergé.' },
-    { value: 'rebase', label: 'Rebaser mes commits', help: 'Tes commits sont rejoués au-dessus de ceux de la branche distante.' },
-    { value: 'merge', label: 'Fusionner la branche distante', help: 'La branche distante est fusionnée dans la tienne.' },
+    { value: 'ff-only', label: 'Fast-forward only', help: 'The pull is refused if your branch and the remote branch have diverged.' },
+    { value: 'rebase', label: 'Rebase your commits', help: 'Your commits are replayed on top of those of the remote branch.' },
+    { value: 'merge', label: 'Merge the remote branch', help: 'The remote branch is merged into yours.' },
   ] as const satisfies readonly { value: PullMode; label: string; help: string }[];
   const GRAPH_STYLES = [
-    { value: 'ribbon', label: 'Ruban', help: 'Pastilles d’auteur, messages en capsule.' },
-    { value: 'classic', label: 'Classique', help: 'Points et courbes, plus compact.' },
+    { value: 'ribbon', label: 'Ribbon', help: 'Author initials on the dots, messages in capsules.' },
+    { value: 'classic', label: 'Classic', help: 'Points and curves, more compact.' },
   ] as const satisfies readonly { value: GraphStyle; label: string; help: string }[];
   const DIFF_MODES = [
-    { value: 'unified', label: 'Unifié', help: 'Sur une colonne.' },
-    { value: 'split', label: 'Côte à côte', help: 'L’ancien à gauche, le nouveau à droite.' },
+    { value: 'unified', label: 'Unified', help: 'In one column.' },
+    { value: 'split', label: 'Side by side', help: 'The old version on the left, the new one on the right.' },
   ] as const satisfies readonly { value: DiffMode; label: string; help: string }[];
 
-  // Récupération automatique : le champ garde ce qu'on y tape ; la valeur n'est appliquée que valide.
+  // Automatic fetch: the field keeps what is typed in it; the value is applied only when it is valid.
   let minutes = $state(String(prefs.autoFetch));
   let minutesError = $state('');
   $effect(() => {
@@ -34,10 +34,11 @@
   });
 
   function applyMinutes() {
-    const value = Number(minutes.trim());
-    if (minutes.trim() === '' || !Number.isInteger(value) || value < AUTO_FETCH.min || value > AUTO_FETCH.max) {
-      // Ce qui s'est passé, puis quoi faire (charte, section 12).
-      minutesError = `« ${minutes.trim() || 'vide'} » n’est pas appliqué. Entre un nombre entier de ${AUTO_FETCH.min} à ${AUTO_FETCH.max}.`;
+    const typed = minutes.trim();
+    const value = Number(typed);
+    if (typed === '' || !Number.isInteger(value) || value < AUTO_FETCH.min || value > AUTO_FETCH.max) {
+      // What happened, then what to do (guidelines, section 12).
+      minutesError = `${typed ? `“${typed}” is` : 'An empty field is'} not applied. Enter a whole number from ${AUTO_FETCH.min} to ${AUTO_FETCH.max}.`;
       return;
     }
     minutesError = '';
@@ -45,7 +46,7 @@
     minutes = String(value);
   }
 
-  // Le nombre de commits chargés change ce que chaque dépôt ouvert a lu : on les relit tous.
+  // The number of commits loaded changes what each open repository has read: they are all read again.
   const reloading = $derived(workspace.tabs.some((tab) => tab.repo.loading));
   function setLimit(limit: number) {
     if (limit === prefs.limit) return;
@@ -56,7 +57,7 @@
   }
 
   type GitSettings = Pick<Settings, (typeof FIELDS)[number]>;
-  /** Les réglages de cette section, et eux seuls. */
+  /** The settings of this section, and only them. */
   const own = (all: Settings): GitSettings => ({
     autoFetch: all.autoFetch,
     pullMode: all.pullMode,
@@ -65,14 +66,14 @@
     diffMode: all.diffMode,
   });
 
-  /** Applique d'un coup les réglages de la section, et relit les dépôts si leur taille change. */
+  /** Applies the settings of the section at once, and reads the repositories again if their size changes. */
   function apply({ limit, ...rest }: GitSettings) {
     savePrefs(rest);
     minutesError = '';
     setLimit(limit);
   }
 
-  /** Revient aux valeurs par défaut, et rend de quoi retrouver les réglages d'avant. */
+  /** Goes back to the defaults, and returns what brings back the settings from before. */
   function reset() {
     const before = own(prefs);
     apply(own(DEFAULTS));
@@ -80,11 +81,11 @@
   }
 </script>
 
-<SectionHeader title="Git" note="S’applique à tous les dépôts." {changed} onreset={reset} />
+<SectionHeader title="Git" note="Applies to every repository." {changed} onreset={reset} />
 
 <section class="group" aria-labelledby="group-sync">
-  <h3 id="group-sync">Synchronisation</h3>
-  <SettingRow id="set-fetch" name="Récupération automatique" help="En minutes. 0 la désactive." error={minutesError}>
+  <h3 id="group-sync">Sync</h3>
+  <SettingRow id="set-fetch" name="Automatic fetch" help="In minutes. 0 turns it off." error={minutesError}>
     <span class="unit">
       <input
         id="set-fetch"
@@ -101,36 +102,36 @@
       <span aria-hidden="true">min</span>
     </span>
   </SettingRow>
-  <SettingRow id="set-pull" name="Tirage (pull)" group>
+  <SettingRow id="set-pull" name="Pull" group>
     <Choice name="set-pull" labelledby="set-pull-name" value={prefs.pullMode} options={PULL_MODES} onchange={(pullMode) => savePrefs({ pullMode })} />
   </SettingRow>
 </section>
 
 <section class="group" aria-labelledby="group-graph">
-  <h3 id="group-graph">Graphe</h3>
-  <SettingRow id="set-style" name="Style du graphe" group>
+  <h3 id="group-graph">Graph</h3>
+  <SettingRow id="set-style" name="Graph style" group>
     <Choice name="set-style" layout="tiles" labelledby="set-style-name" value={prefs.graphStyle} options={GRAPH_STYLES} onchange={(graphStyle) => savePrefs({ graphStyle })}>
       {#snippet preview(style: GraphStyle)}<GraphPreview {style} />{/snippet}
     </Choice>
   </SettingRow>
   <SettingRow
     id="set-limit"
-    name="Commits chargés dans le graphe"
-    help="« Tout l’historique » peut être long sur un gros dépôt."
-    busy={reloading ? 'Rechargement du graphe…' : ''}
+    name="Commits loaded in the graph"
+    help="“Whole history” can be slow on a large repository."
+    busy={reloading ? 'Reloading the graph…' : ''}
   >
     <Select id="set-limit" aria-describedby="set-limit-help" value={prefs.limit} onchange={(e) => setLimit(Number(e.currentTarget.value))}>
-      <option value={1000}>1 000</option>
-      <option value={10000}>10 000</option>
-      <option value={50000}>50 000</option>
-      <option value={0}>Tout l’historique</option>
+      <option value={1000}>1,000</option>
+      <option value={10000}>10,000</option>
+      <option value={50000}>50,000</option>
+      <option value={0}>Whole history</option>
     </Select>
   </SettingRow>
 </section>
 
 <section class="group" aria-labelledby="group-diff">
   <h3 id="group-diff">Diff</h3>
-  <SettingRow id="set-diff" name="Affichage du diff" help="Se change aussi depuis le diff lui-même." group>
+  <SettingRow id="set-diff" name="Diff layout" help="Can also be changed from the diff itself." group>
     <Choice name="set-diff" layout="tiles" labelledby="set-diff-name" describedby="set-diff-help" value={prefs.diffMode} options={DIFF_MODES} onchange={(diffMode) => savePrefs({ diffMode })}>
       {#snippet preview(mode: DiffMode)}<DiffPreview {mode} />{/snippet}
     </Choice>

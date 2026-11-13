@@ -6,40 +6,41 @@
   let element = $state<HTMLDivElement>();
   let veil = $state<HTMLDivElement>();
   let position = $state({ x: 0, y: 0 });
-  // On parcourt le menu au clavier : l'élément qui a le focus le montre. La souris reprend la main en bougeant.
+  // The menu is being browsed from the keyboard: the item that has the focus shows it. The mouse takes over again by moving.
   let keyboard = $state(false);
 
   const open = $derived(menu.current);
-  // Les cases d'un menu déroulant suivent leur état pendant qu'il est ouvert.
+  // The checkable items of a drop-down menu follow their state while it is open.
   const items = $derived(!open ? [] : typeof open.items === 'function' ? open.items() : open.items);
 
-  // Le menu s'ouvre sous le pointeur, ou sous son bouton et aligné sur son bord droit, puis est
-  // ramené dans la fenêtre s'il en dépasse.
+  // The menu opens under the pointer, or under its button and aligned on its right edge, then is
+  // brought back inside the window if it overflows it.
   $effect(() => {
     if (!open) return;
     keyboard = !!open.keyboard;
     position = { x: open.x, y: open.y };
     queueMicrotask(() => {
       if (!element) return;
-      // offsetWidth et offsetHeight : la taille vraie, que l'animation d'apparition ne rétrécit pas.
+      // offsetWidth and offsetHeight: the true size, which the appearing animation does not shrink.
       const { offsetWidth: width, offsetHeight: height } = element;
       const x = open.anchor ? open.x - width : open.x;
       position = {
         x: Math.max(4, Math.min(x, window.innerWidth - width - 6)),
         y: Math.max(4, Math.min(open.y, window.innerHeight - height - 6)),
       };
-      // Ouvert au clavier, le premier élément prend le focus. À la souris, c'est le menu : aucun
-      // élément n'est en cours tant qu'on n'en a pas survolé ou atteint un, Espace ne coche rien.
+      // Opened from the keyboard, the first item takes the focus. With the mouse, the menu does: no
+      // item is current until one has been hovered or reached, and Space checks nothing.
       if (keyboard) element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
       else element.focus();
     });
   });
 
-  // L'infobulle de l'élément qui a ouvert le menu se tait tant qu'il est ouvert (charte, 9.9) : le
-  // voile la couvre. Mais WebKitGTK ne relit l'infobulle qu'à un mouvement du pointeur, et un clic
-  // droit donné en bougeant encore la souris ouvre le menu avant que celle de la ligne arrive : elle
-  // s'afficherait par-dessus jusqu'au mouvement suivant. Le voile défile d'un pixel, bouton relâché :
-  // WebKit simule alors un mouvement, trouve le voile sous le pointeur, et l'infobulle se tait.
+  // The tooltip of the element that opened the menu keeps quiet while it is open (guidelines, 9.9):
+  // the veil covers it. But WebKitGTK only reads the tooltip again on a move of the pointer, and a
+  // right-click given while the mouse is still moving opens the menu before the tooltip of the row
+  // arrives: it would show on top until the next move. The veil scrolls by one pixel once the button
+  // is released: WebKit then simulates a move, finds the veil under the pointer, and the tooltip
+  // keeps quiet.
   $effect(() => {
     if (!open) return;
     const nudge = () =>
@@ -51,15 +52,15 @@
     return () => window.removeEventListener('mouseup', nudge, { capture: true });
   });
 
-  /** `pointer` : choisi au clic, et non au clavier (Entrée ou Espace donnent un clic sans `detail`). */
+  /** `pointer`: chosen with a click, not from the keyboard (Enter or Space give a click without `detail`). */
   function pick(item: MenuItem, pointer = false) {
     if ('separator' in item || item.disabled) return;
-    // Une case à cocher s'applique tout de suite et laisse le menu ouvert : on en change plusieurs d'affilée.
+    // A checkable item applies at once and leaves the menu open: several can be changed in a row.
     if (item.checked === undefined) menu.close(false, pointer);
     item.run();
   }
 
-  // L'élément survolé prend le focus : Espace et Entrée agissent sur celui qu'on voit en surbrillance.
+  // The hovered item takes the focus: Space and Enter act on the one seen highlighted.
   function onKey(event: KeyboardEvent) {
     if (!element) return;
     if (event.key === 'Escape') {
@@ -72,7 +73,7 @@
     keyboard = true;
     const buttons = [...element.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
     const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    // Aucun élément en cours : ↓ va au premier, ↑ au dernier.
+    // No current item: ↓ goes to the first, ↑ to the last.
     const from = at < 0 && event.key === 'ArrowUp' ? 0 : at;
     const next = (from + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
     buttons[next]?.focus();
@@ -87,7 +88,7 @@
     class="veil"
     bind:this={veil}
     onmousedown={(e) => {
-      // Le clic sur le voile ne déplace pas le focus : le menu le rend à qui l'avait.
+      // A click on the veil does not move the focus: the menu gives it back to whoever had it.
       e.preventDefault();
       menu.close(false, true);
     }}
@@ -130,7 +131,7 @@
           {#if item.keys}
             <span class="keys">{#each display(item.keys).split(' + ') as part, n (n)}<kbd>{part}</kbd>{/each}</span>
           {/if}
-          <!-- La place de la coche est gardée sur les cases décochées : un élément ne change pas de taille. -->
+          <!-- The place of the check mark is kept on unchecked items: an item does not change size. -->
           {#if item.checked !== undefined}
             <span class="check">{#if item.checked}<Icon name="check" size={16} />{/if}</span>
           {/if}
@@ -147,7 +148,7 @@
     z-index: 70;
     overflow: hidden;
   }
-  /* Un pixel de plus que le voile : de quoi le faire défiler (voir plus haut). */
+  /* One pixel more than the veil: enough to make it scroll (see above). */
   .room {
     height: calc(100% + 1px);
   }
@@ -164,7 +165,7 @@
     transform-origin: top left;
     animation: pop-in var(--t-fast) var(--ease);
   }
-  /* Déroulé sous un bouton, il vient de ce bouton : son coin haut droit. */
+  /* Dropped down under a button, it comes from that button: its top right corner. */
   .menu.under {
     transform-origin: top right;
   }
@@ -202,7 +203,7 @@
   .keyboard button.danger:focus {
     background: var(--bad-soft);
   }
-  /* Au clavier, seul l'élément qui a le focus est en surbrillance : le pointeur resté sur un autre ne compte plus. */
+  /* From the keyboard, only the item that has the focus is highlighted: the pointer left on another no longer counts. */
   .keyboard button:hover:not(:focus) {
     background: none;
   }

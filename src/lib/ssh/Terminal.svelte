@@ -29,15 +29,15 @@
     session: Session;
     active: boolean;
     onclose: () => void;
-    /** Sans en-tête : le panneau qui l'accueille dit lui-même ce qu'est le terminal (charte, 9.20). */
+    /** No header: the panel that holds it says itself what the terminal is (guidelines, 9.20). */
     bare?: boolean;
-    /** Le terminal prend le clavier quand son onglet s'affiche. Sous le graphe, jamais de lui-même. */
+    /** The terminal takes the keyboard when its tab shows. Under the graph, never on its own. */
     autofocus?: boolean;
-    /** Appelé à chaque sortie du shell : le dépôt se relit quand elle se tait. */
+    /** Called on every output of the shell: the repository is read again once it goes quiet. */
     onoutput?: () => void;
   } = $props();
 
-  /** Ce que la session attend de l'utilisateur, ou son état. */
+  /** What the session waits for from the user, or its state. */
   type Phase =
     | { step: 'connecting' }
     | { step: 'connected' }
@@ -46,48 +46,47 @@
     | { step: 'passphrase'; path: string; error: string }
     | { step: 'password'; error: string }
     | { step: 'error'; message: string }
-    /** `brief` : la même chose en une ligne, pour la bande d'un terminal de dépôt. */
+    /** `brief`: the same in one line, for the strip of a repository terminal. */
     | { step: 'closed'; message: string; lost?: boolean; brief?: string }
-    /** Connexion perdue : la tentative `attempt` (de 1 à 5) part à l'instant `at`. */
+    /** Connection lost: attempt `attempt` (1 to 5) starts at the instant `at`. */
     | { step: 'lost'; attempt: number; at: number; reason: string };
 
-  // Délais entre deux tentatives de reconnexion, en secondes (charte, section 9.15).
+  // Delays between two reconnection attempts, in seconds (guidelines, section 9.15).
   const RETRIES = [2, 5, 10, 20, 30];
-  const NB = '\u00a0'; // espace insécable, avant « : » et entre un nombre et son unité
 
-  /** Ce qu'on sait déjà pour cette tentative : rien n'est conservé une fois la session ouverte. */
+  /** What is known already for this attempt: nothing is kept once the session is open. */
   interface Attempt {
     accept?: string;
     remember?: boolean;
     keyPath?: string;
     passphrase?: string;
     password?: string;
-    /** Retenir le secret tapé dans le trousseau du système, une fois qu'il a servi. */
+    /** Keep the typed secret in the system keyring, once it has worked. */
     keep?: boolean;
   }
 
   let phase = $state<Phase>({ step: 'connecting' });
-  // Le trousseau du système : s'il répond, la demande d'un secret propose de le retenir (9.15).
+  // The system keyring: when it responds, the panel that asks for a secret offers to keep it (9.15).
   let keyring = $state<boolean | null>(null);
   let keep = $state(false);
-  // Demandé dès l'ouverture d'une session, pour que la demande d'un secret s'affiche d'un bloc, et
-  // à nouveau quand elle s'affiche : le trousseau a pu arriver ou partir entre-temps.
+  // Asked as soon as a session opens, so that the panel asking for a secret shows in one piece, and
+  // again when it shows: the keyring may have come or gone in the meantime.
   $effect(() => {
     if (session.kind !== 'ssh') return;
     void phase.step;
     if (phase.step !== 'connecting' && phase.step !== 'passphrase' && phase.step !== 'password') return;
     void keyringAvailable().then((answer) => (keyring = answer));
   });
-  // Un secret est demandé : son champ prend le clavier, dès que l'onglet est à l'écran. L'attribut
-  // `autofocus` ne suffit pas : il ne joue que si rien d'autre n'a le focus, or la ligne de l'hôte
-  // qu'on vient de double-cliquer l'a encore.
+  // A secret is asked for: its field takes the keyboard as soon as the tab is on screen. The
+  // `autofocus` attribute is not enough: it only acts when nothing else has the focus, and the row of
+  // the host that was just double-clicked still has it.
   let secretEl = $state<HTMLInputElement>();
   $effect(() => {
     if ((phase.step !== 'passphrase' && phase.step !== 'password') || !active) return;
     void tick().then(() => secretEl?.focus());
   });
-  // Reconnexion automatique : la tentative en cours (0 quand il n'y en a pas), son minuteur, et
-  // l'heure, rafraîchie chaque seconde pour le compte à rebours.
+  // Automatic reconnection: the current attempt (0 when there is none), its timer, and the time,
+  // refreshed every second for the countdown.
   let retry = $state(0);
   let retryTimer: number | undefined;
   let now = $state(Date.now());
@@ -99,40 +98,42 @@
   const waitText = $derived.by(() => {
     if (phase.step !== 'lost') return '';
     const seconds = Math.max(0, Math.ceil((phase.at - now) / 1000));
-    const which = `${phase.attempt}${NB}sur${NB}${RETRIES.length}`;
-    return seconds > 0 ? `Nouvelle tentative dans ${seconds}${NB}s, ${which}.` : `Tentative ${which}…`;
+    const which = `${phase.attempt} of ${RETRIES.length}`;
+    return seconds > 0 ? `Next attempt in ${seconds} s, ${which}.` : `Attempt ${which}…`;
   });
-  // Ce qu'un lecteur d'écran entend : une fois par tentative, pas à chaque seconde.
-  const announce = $derived(
-    phase.step === 'lost' ? `Connexion perdue. Tentative ${phase.attempt} sur ${RETRIES.length} dans ${RETRIES[phase.attempt - 1]} secondes.` : '',
-  );
+  // What a screen reader hears: once per attempt, not every second.
+  const announce = $derived.by(() => {
+    if (phase.step !== 'lost') return '';
+    const delay = RETRIES[phase.attempt - 1];
+    return `Connection lost. Attempt ${phase.attempt} of ${RETRIES.length} in ${delay} second${delay === 1 ? '' : 's'}.`;
+  });
   let retryButton = $state<HTMLButtonElement>();
   let endButton = $state<HTMLButtonElement>();
-  // Un panneau de fin apparaît : le focus va sur son bouton principal, que le clavier n'atteindrait
-  // pas autrement, le terminal gardant la touche Tab (charte, section 9.15).
+  // An end panel appears: the focus goes to its main button, which the keyboard could not reach
+  // otherwise, since the terminal keeps the Tab key (guidelines, section 9.15).
   let rootEl = $state<HTMLElement>();
   $effect(() => {
     if (phase.step !== 'closed' && phase.step !== 'error') return;
-    // Sous le graphe, le terminal ne prend jamais le clavier de lui-même (section 9.20) : le bouton
-    // ne le prend que si le clavier était déjà dans ce terminal.
+    // Under the graph, the terminal never takes the keyboard on its own (section 9.20): the button
+    // takes it only if the keyboard was already in this terminal.
     if (bare && !untrack(() => rootEl?.contains(document.activeElement))) return;
     void tick().then(() => focusWithRing(endButton));
   });
-  // La carte apparaît : le focus va sur « Reconnecter maintenant ». Le terminal, coupé, ne sert plus,
-  // et il garde la touche Tab pour lui : sans cela, le clavier n'atteindrait pas la carte.
+  // The card appears: the focus goes to "Reconnect now". The terminal, cut off, is of no use any
+  // more, and it keeps the Tab key for itself: without this, the keyboard could not reach the card.
   $effect(() => {
     if (phase.step !== 'lost' || phase.attempt !== 1) return;
     void tick().then(() => focusWithRing(retryButton));
   });
 
-  /** Programme la tentative `attempt`, ou s'arrête après la dernière. */
+  /** Schedules attempt `attempt`, or stops after the last one. */
   function scheduleRetry(attempt: number, reason: string) {
     window.clearTimeout(retryTimer);
     if (attempt > RETRIES.length) {
       retry = 0;
       journalEnded(true);
       session.status = 'closed';
-      phase = { step: 'closed', lost: true, message: `Les ${RETRIES.length} tentatives de reconnexion ont échoué${reason ? `${NB}: ${explain(reason)}` : '.'}` };
+      phase = { step: 'closed', lost: true, message: `All ${RETRIES.length} reconnection attempts failed${reason ? `: ${explain(reason)}` : '.'}` };
       return;
     }
     retry = attempt;
@@ -143,20 +144,20 @@
     retryTimer = window.setTimeout(() => void connect({}, attempt), delay);
   }
 
-  /** « Reconnecter maintenant » : la tentative prévue part sans attendre. */
+  /** "Reconnect now": the planned attempt starts without waiting. */
   function retryNow() {
     if (phase.step !== 'lost') return;
     window.clearTimeout(retryTimer);
     void connect({}, phase.attempt);
   }
 
-  /** « Arrêter » : plus de tentative, l'onglet attend un clic. */
+  /** "Stop": no more attempts, the tab waits for a click. */
   function stopRetrying() {
     window.clearTimeout(retryTimer);
     retry = 0;
     journalEnded(true);
     session.status = 'closed';
-    phase = { step: 'closed', lost: true, message: 'La reconnexion automatique est arrêtée.' };
+    phase = { step: 'closed', lost: true, message: 'Automatic reconnection stopped.' };
   }
   let info = $state.raw<Connected | null>(null);
   let echo = $state<number | null>(null);
@@ -167,12 +168,12 @@
   let fit: FitAddon | undefined;
   let search: SearchAddon | undefined;
 
-  // --- Recherche dans le terminal (charte, section 9.15) -------------------------------------
-  const MATCH = 0.3; // part de l'accent dans le fond d'un résultat, comme dans verifier-contrastes.mjs
+  // --- Search in the terminal (guidelines, section 9.15) -------------------------------------
+  const MATCH = 0.3; // share of the accent in the background of a result, as in verifier-contrastes.mjs
   let query = $state('');
   let caseSensitive = $state(false);
   let regex = $state(false);
-  /** Résultats de la dernière recherche ; `index` vaut -1 au-delà de 1 000 résultats surlignés. */
+  /** Results of the last search; `index` is -1 beyond 1,000 highlighted results. */
   let results = $state<{ index: number; count: number } | null>(null);
   let searchEl = $state<HTMLInputElement>();
   const invalid = $derived.by(() => {
@@ -184,25 +185,27 @@
       return true;
     }
   });
+  // Numbers in the American format, "1,234" (guidelines, section 12).
+  const numbers = new Intl.NumberFormat('en-US');
   const countText = $derived(
     !query || !results
         ? ''
         : results.count === 0
-          ? 'Aucun résultat'
+          ? 'No results'
           : results.index < 0
-            ? `${results.count} résultats`
-            : `${results.index + 1} sur ${results.count}`,
+            ? `${numbers.format(results.count)} result${results.count === 1 ? '' : 's'}`
+            : `${numbers.format(results.index + 1)} of ${numbers.format(results.count)}`,
   );
 
-  /** `#rrggbb` mêlé à `p` sur `#rrggbb` : le terminal veut une couleur pleine, pas `color-mix()`. */
+  /** `#rrggbb` mixed at `p` over `#rrggbb`: the terminal wants a solid color, not `color-mix()`. */
   function blend(hex: string, p: number, over: string) {
     const channels = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
     const [a, b] = [channels(hex), channels(over)];
     return `#${a.map((v, i) => Math.round(v * p + b[i] * (1 - p)).toString(16).padStart(2, '0')).join('')}`;
   }
 
-  /** Les couleurs des résultats, lues dans les jetons au moment de chercher : elles suivent le thème.
-   *  Un résultat est l'accent à 30 % sur le fond du terminal (charte, section 9.15). */
+  /** The colors of the results, read from the tokens when searching: they follow the theme.
+   *  A result is the accent at 30% over the background of the terminal (guidelines, section 9.15). */
   function searchOptions(incremental = false): ISearchOptions {
     const css = getComputedStyle(document.documentElement);
     const v = (name: string) => css.getPropertyValue(name).trim();
@@ -246,7 +249,7 @@
     }
   }
 
-  /** Échap ferme la barre, d'où que vienne la frappe : le champ, un bouton ou une bascule. */
+  /** Escape closes the bar, wherever the key is pressed: the field, a button or a toggle. */
   function onBarKey(e: KeyboardEvent) {
     if (e.key !== 'Escape') return;
     e.preventDefault();
@@ -254,8 +257,8 @@
     closeSearch();
   }
 
-  // Ouverture demandée (raccourci, palette), même barre déjà ouverte : le champ prend le focus et
-  // son texte est sélectionné.
+  // Opening asked for (shortcut, palette), even with the bar already open: the field takes the focus
+  // and its text is selected.
   $effect(() => {
     void session.searchAsk;
     if (!session.searching) return;
@@ -265,107 +268,107 @@
     });
   });
 
-  // Les options changent : la recherche est refaite sur place.
+  // The options change: the search runs again in place.
   $effect(() => {
     void caseSensitive;
     void regex;
     if (session.searching && query) find('next', true);
   });
-  // Hors réactivité : lus dans les rappels du terminal, à chaque frappe.
+  // Outside reactivity: read in the callbacks of the terminal, on every keystroke.
   let sessionId: number | null = null;
-  /** Quelque chose a été tapé dans ce shell : un arrêt en erreur n'est alors pas un échec de démarrage. */
+  /** Something was typed in this shell: a stop on an error is then not a failure to start. */
   let typed = false;
   let lastKey = 0;
   let echoes: number[] = [];
   let attempt: Attempt = {};
 
   const host = $derived(session.host);
-  // Un terminal local parle au cœur Rust par ses propres commandes ; le reste du composant est commun.
-  // La nature d'un onglet ne change pas : la lire une fois suffit.
+  // A local terminal talks to the Rust core through its own commands; the rest of the component is
+  // shared. The kind of a tab does not change: reading it once is enough.
   // svelte-ignore state_referenced_locally
   const local = session.kind === 'local';
-  // Le terminal d'un dépôt dit l'état de son shell dans une bande, pas sur un voile.
+  // The terminal of a repository says the state of its shell in a strip, not on a veil.
   const strip = $derived(bare && local);
   const API = local
     ? { write: 'local_write', resize: 'local_resize', close: 'local_close', closed: 'local-closed' }
     : { write: 'ssh_write', resize: 'ssh_resize', close: 'ssh_close', closed: 'ssh-closed' };
-  /** Ce que le cœur dit d'un terminal local ouvert : son shell et son dossier de départ. */
+  /** What the core says of an open local terminal: its shell and its starting folder. */
   let opened = $state<{ shell: string; cwd: string } | null>(null);
   const onWindows = navigator.userAgent.includes('Windows');
 
-  // --- Journal (charte, 9.15, « The journal of a session ») -----------------------------------
+  // --- Log (guidelines, 9.15, "The log of a session") -----------------------------------------
   const recording = $derived(!!session.journal?.live);
-  /** La clé du journal dans le cœur : celle de la session en cours. */
+  /** The key of the log in the core: that of the current session. */
   const journalKey = () => `${local ? 'local' : 'ssh'}:${sessionId}`;
-  const stem = () => (local ? 'terminal-local' : host.alias || host.hostname);
-  const title = () => (local ? 'Journal du terminal local' : `Journal de ${host.alias || host.hostname}`);
+  const stem = () => (local ? 'local-terminal' : host.alias || host.hostname);
+  const title = () => (local ? 'Log of the local terminal' : `Log of ${host.alias || host.hostname}`);
 
-  /** Le journal à ouvrir avec cette connexion : celui de l'onglet tant qu'on ne l'a pas arrêté,
-   *  avec une ligne de reprise s'il a déjà servi ; ou un neuf, pour un hôte qui enregistre chaque
+  /** The log to open with this connection: that of the tab as long as it has not been stopped,
+   *  with a resume line if it has been used already; or a new one, for a host that records every
    *  session. */
   async function journalToOpen(): Promise<JournalOpen | null> {
     if (session.journalStopped) return null;
     const previous = session.journal;
-    // Une connexion perdue qui revient continue son fichier, après une ligne de reprise.
+    // A lost connection that comes back goes on in its file, after a resume line.
     if (previous?.resumable) return { path: previous.path, header: previous.header, note: previous.opened ? resumed() : null };
-    // Une session nouvelle : l'en-tête ne parle plus du journal de la précédente.
+    // A new session: the header no longer speaks of the log of the previous one.
     session.journal = null;
-    // Sinon, c'est une session nouvelle : un fichier neuf, pour un hôte qui enregistre chacune.
+    // Otherwise, it is a new session: a new file, for a host that records each one.
     if (local || !host.logSessions) return null;
     session.journal = { ...(await newJournal(stem(), title())), live: false, opened: false, resumable: true };
     return { path: session.journal.path, header: session.journal.header, note: null };
   }
 
-  /** Le cœur a ouvert le journal demandé, ou dit pourquoi il n'a pas pu : la session s'ouvre quand
-   *  même. L'onglet ne dit « en cours » qu'une fois le fichier ouvert. */
+  /** The core has opened the log asked for, or says why it could not: the session opens all the
+   *  same. The tab says "recording" only once the file is open. */
   function journalOpened(asked: JournalOpen | null, failed: string | null | undefined) {
     if (!asked || !session.journal) return;
     if (failed) {
       session.journal = null;
-      toasts.warn('Le journal n’a pas pu être ouvert', failed);
+      toasts.warn('The log could not be opened', failed);
     } else {
       session.journal.live = true;
       session.journal.opened = true;
     }
   }
 
-  /** La session s'est terminée : le cœur a fermé le fichier, l'en-tête dit où il est. Après une
-   *  connexion perdue, « Reconnecter » le reprendra ; après une fin normale, non. */
+  /** The session has ended: the core has closed the file, the header says where it is. After a
+   *  lost connection, "Reconnect" will resume it; after a normal end, it will not. */
   function journalEnded(lost = false) {
-    if (!lost) session.journalStopped = false; // la session suivante enregistre de nouveau
+    if (!lost) session.journalStopped = false; // the next session records again
     if (!session.journal) return;
     session.journal.live = false;
     session.journal.resumable = lost && session.journal.resumable;
   }
 
-  /** Les mots de l'en-tête, après le nom : ils cèdent la place aux boutons, coupés par une
-   *  ellipse, et l'infobulle les redonne en entier (charte, 3.4 et 9.15). */
+  /** The words of the header, after the name: they give way to the buttons, cut with an
+   *  ellipsis, and the tooltip gives them whole (guidelines, 3.4 and 9.15). */
   type Word = { text: string; mono?: boolean; before?: string };
   const metaWords = $derived.by((): Word[] => {
-    // Le shell et son dossier de départ en police de code (charte, 9.15).
-    if (local) return opened ? [{ text: opened.shell, mono: true }, { before: 'ouvert dans ', text: opened.cwd, mono: true }] : [];
+    // The shell and its starting folder in the code font (guidelines, 9.15).
+    if (local) return opened ? [{ text: opened.shell, mono: true }, { before: 'opened in ', text: opened.cwd, mono: true }] : [];
     if (phase.step === 'connected' && info) {
       const words: Word[] = [
-        { text: info.knownHost ? 'serveur connu' : 'empreinte acceptée pour cette session' },
+        { text: info.knownHost ? 'known server' : 'fingerprint accepted for this session' },
         { text: info.authMethod },
-        { text: `connexion en ${Math.round(info.connectMs)} ms` },
+        { text: `connected in ${Math.round(info.connectMs)} ms` },
       ];
-      if (echo !== null) words.push({ text: `écho ${Math.round(echo)} ms` });
+      if (echo !== null) words.push({ text: `echo ${Math.round(echo)} ms` });
       return words;
     }
-    if (phase.step === 'connecting') return [{ text: session.status === 'reconnecting' ? 'reconnexion…' : 'connexion…' }];
+    if (phase.step === 'connecting') return [{ text: session.status === 'reconnecting' ? 'reconnecting…' : 'connecting…' }];
     return [];
   });
   const metaTitle = $derived(metaWords.map((w) => `${w.before ?? ''}${w.text}`).join(' · '));
 
-  /** « Enregistrer le journal » : commence, avec ce que le terminal montre déjà, ou s'arrête. */
+  /** "Record log": starts, with what the terminal shows already, or stops. */
   async function toggleJournal() {
     if (sessionId === null) return;
     if (session.journal?.live) {
       const path = await invoke<string | null>('journal_stop', { key: journalKey() }).catch(() => null);
       session.journal.live = false;
       session.journalStopped = true;
-      toasts.ok('Journal enregistré', path ?? session.journal.path);
+      toasts.ok('Log saved', path ?? session.journal.path);
       return;
     }
     try {
@@ -374,17 +377,17 @@
       session.journal = { ...fresh, path, live: true, opened: true, resumable: true };
       session.journalStopped = false;
     } catch (e) {
-      toasts.warn('Le journal n’a pas pu être ouvert', typeof e === 'string' ? e : String(e));
+      toasts.warn('The log could not be opened', typeof e === 'string' ? e : String(e));
     }
   }
 
-  // Bascule demandée par la palette ou un raccourci.
+  // Toggle asked for by the palette or a shortcut.
   $effect(() => {
     if (!session.journalAsk) return;
     untrack(() => void toggleJournal());
   });
 
-  /** Lance le shell de cette machine dans un pseudo-terminal. */
+  /** Starts the shell of this machine in a pseudo-terminal. */
   async function openLocal() {
     if (!term || !fit) return;
     phase = { step: 'connecting' };
@@ -416,7 +419,7 @@
       relaunched = false;
     } catch (e) {
       session.status = 'closed';
-      const what = onWindows ? 'Vérifie que PowerShell est installé.' : 'Vérifie la variable SHELL de ton compte.';
+      const what = onWindows ? 'Check that PowerShell is installed.' : 'Check the SHELL variable of your account.';
       phase = { step: 'error', message: `${typeof e === 'string' ? e : String(e)} ${what}` };
     }
   }
@@ -432,19 +435,19 @@
     return { kind: 'other', message: typeof e === 'string' ? e : String(e) };
   }
 
-  /** Ouvre la session. `auto` : numéro de la tentative de reconnexion automatique, 0 sinon. */
+  /** Opens the session. `auto`: number of the automatic reconnection attempt, 0 otherwise. */
   async function connect(next: Attempt = {}, auto = 0) {
     if (!term || !fit) return;
     if (local) return openLocal();
     retry = auto;
     attempt = { ...attempt, ...next };
     if (host.proxyJump) {
-      phase = { step: 'error', message: 'Cet hôte passe par un bastion (ProxyJump). Le rebond par bastion n’est pas encore pris en charge.' };
+      phase = { step: 'error', message: 'This host goes through a bastion (ProxyJump). Connecting through a bastion is not supported yet.' };
       session.status = 'closed';
       return;
     }
     if (!host.user) {
-      phase = { step: 'error', message: 'Cet hôte n’a pas d’utilisateur : ajoute-le dans sa fiche.' };
+      phase = { step: 'error', message: 'This host has no user: edit the host to add one.' };
       session.status = 'closed';
       return;
     }
@@ -469,7 +472,7 @@
     const keyPath = attempt.keyPath ?? (host.auth === 'keyFile' ? host.keyPath : '');
     const auth =
       host.auth === 'password'
-        ? // Sans mot de passe tapé, le cœur prend celui que le trousseau retient, ou le demande.
+        ? // Without a typed password, the core takes the one the keyring keeps, or asks for it.
           { kind: 'password', password: attempt.password ?? null }
         : keyPath
           ? { kind: 'keyFile', path: keyPath, passphrase: attempt.passphrase ?? null }
@@ -498,10 +501,10 @@
       sessionId = connected.id;
       phase = { step: 'connected' };
       session.status = 'connected';
-      // Les secrets ne survivent pas à l'ouverture de la session.
+      // Secrets do not outlive the opening of the session.
       attempt = {};
-      if (connected.learnFailed) toasts.warn('L’empreinte n’a pas pu être mémorisée', connected.learnFailed);
-      if (connected.keepFailed) toasts.warn('Le secret n’a pas pu être retenu', `Le trousseau du système l’a refusé${NB}: ${connected.keepFailed}`);
+      if (connected.learnFailed) toasts.warn('The fingerprint could not be remembered', connected.learnFailed);
+      if (connected.keepFailed) toasts.warn('The secret could not be kept', `The system keyring refused it: ${connected.keepFailed}`);
       retry = 0;
       term.focus();
     } catch (e) {
@@ -518,25 +521,25 @@
           path: problem.path,
           error:
             problem.refused === 'typed'
-              ? 'Cette phrase secrète ne déverrouille pas la clé.'
+              ? 'This passphrase does not unlock the key.'
               : problem.refused === 'retained'
-                ? 'La phrase secrète retenue ne déverrouille plus la clé. Elle a été oubliée.'
+                ? 'The remembered passphrase no longer unlocks the key. It has been forgotten.'
                 : '',
         };
       } else if (problem.kind === 'needPassword') {
-        // Rien de retenu, ou ce qui l'était a été refusé : la série de tentatives s'arrête, l'onglet
-        // attend l'utilisateur.
+        // Nothing kept, or what was kept has been refused: the series of attempts stops, the tab
+        // waits for the user.
         retry = 0;
         attempt.password = undefined;
-        phase = { step: 'password', error: problem.refused ? 'Le serveur a refusé le mot de passe retenu. Il a été oublié.' : '' };
+        phase = { step: 'password', error: problem.refused ? 'The server refused the remembered password. It has been forgotten.' : '' };
       } else if (problem.kind === 'auth' && host.auth === 'password') {
         attempt.password = undefined;
         phase = { step: 'password', error: problem.message };
       } else if (auto) {
-        // Le serveur ne répond toujours pas : la tentative suivante est programmée.
+        // The server still does not answer: the next attempt is scheduled.
         scheduleRetry(auto + 1, problem.message);
       } else {
-        // Le motif du système, dit en français quand on le connaît (charte, section 9.15).
+        // The reason the system gives, said in plain words when it is known (guidelines, section 9.15).
         phase = { step: 'error', message: explain(problem.message) };
       }
     }
@@ -544,13 +547,13 @@
 
   function submitSecret(e: SubmitEvent) {
     e.preventDefault();
-    // Sans trousseau, rien n'est proposé : rien n'est retenu.
+    // Without a keyring, nothing is offered: nothing is kept.
     const kept = keep && keyring === true;
     if (phase.step === 'passphrase') void connect({ keyPath: phase.path, passphrase: secret, keep: kept });
     else if (phase.step === 'password') void connect({ password: secret, keep: kept });
   }
 
-  /** « Relancer » vient d'être cliqué : le terminal rouvert reprend le clavier, même sous le graphe. */
+  /** "Restart" has just been clicked: the reopened terminal takes the keyboard back, even under the graph. */
   let relaunched = false;
 
   function reconnect() {
@@ -564,7 +567,7 @@
   onMount(() => {
     const css = getComputedStyle(document.documentElement);
     const v = (name: string) => css.getPropertyValue(name).trim();
-    // Les 16 couleurs ANSI, dans l'ordre de xterm.js : 0 à 7, puis leurs versions vives (charte, 2.6).
+    // The 16 ANSI colors, in the order of xterm.js: 0 to 7, then their bright versions (guidelines, 2.6).
     const ANSI = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'] as const;
     const bright = (name: string) => `bright${name[0].toUpperCase()}${name.slice(1)}`;
     const theme = () => ({
@@ -572,13 +575,13 @@
       foreground: v('--term-ink'),
       cursor: v('--accent'),
       selectionBackground: v('--sel'),
-      // La marge des résultats de recherche, sans trait sur son bord.
+      // The margin of the search results, without a line on its edge.
       overviewRulerBorder: v('--term-bg'),
       ...Object.fromEntries(ANSI.flatMap((name, i) => [[name, v(`--ansi-${i}`)], [bright(name), v(`--ansi-${i + 8}`)]])),
     });
 
     const terminal = new Terminal({
-      // La recherche surligne ses résultats par des décorations, une API encore « proposée ».
+      // The search highlights its results with decorations, an API still "proposed".
       allowProposedApi: true,
       overviewRuler: { width: 8 },
       fontFamily: v('--f-mono'),
@@ -587,9 +590,9 @@
       cursorBlink: true,
       scrollback: 5000,
       theme: theme(),
-      // Filet de sécurité : un texte d'une couleur choisie par le programme (256 couleurs, couleurs
-      // vraies, ou le noir et le blanc qui servent de fonds) est éclairci ou foncé jusqu'à 4,5:1 sur
-      // le fond de sa cellule.
+      // Safety net: a text in a color chosen by the program (256 colors, true colors, or the black
+      // and white that serve as backgrounds) is lightened or darkened up to 4.5:1 over the background
+      // of its cell.
       minimumContrastRatio: 4.5,
     });
     const fitAddon = new FitAddon();
@@ -608,8 +611,8 @@
       typed = true;
       void invoke(API.write, { id: sessionId, data }).catch(() => {});
     });
-    // Le pseudo-terminal ne suit qu'une fois le geste fini : pendant qu'on glisse une poignée, le
-    // shell redessinerait son invite à chaque image.
+    // The pseudo-terminal follows only once the gesture is over: while a handle is dragged, the
+    // shell would redraw its prompt on every frame.
     let resizeTimer: number | undefined;
     terminal.onResize(({ cols, rows }) => {
       window.clearTimeout(resizeTimer);
@@ -619,12 +622,12 @@
     });
 
     const observer = new ResizeObserver(() => {
-      // Onglet masqué : la taille est nulle, on ne recalcule rien.
+      // Hidden tab: the size is zero, nothing is computed again.
       if (termEl && termEl.offsetParent !== null && termEl.clientWidth > 0) fitAddon.fit();
     });
     if (termEl) observer.observe(termEl);
 
-    // Le terminal lit ses couleurs dans les jetons : il les relit quand le thème change.
+    // The terminal reads its colors from the tokens: it reads them again when the theme changes.
     const stopTheme = $effect.root(() => {
       $effect(() => {
         void appTheme.key;
@@ -637,23 +640,23 @@
       sessionId = null;
       info = null;
       const { exitStatus, reason, ending, signal } = event.payload;
-      // Terminal local : un shell qu'on quitte (`exit`, Ctrl + D) ferme son onglet, quel que soit son
-      // code de sortie, qui n'est que celui de la dernière commande. L'onglet reste, avec « Relancer »,
-      // quand le shell est arrêté par un signal, ou s'arrête en erreur avant qu'on y ait rien tapé.
+      // Local terminal: a shell that is left (`exit`, Ctrl + D) closes its tab, whatever its exit
+      // code, which is only that of the last command. The tab stays, with "Restart", when the shell is
+      // stopped by a signal, or stops on an error before anything was typed in it.
       if (local) {
         session.localId = undefined;
         journalEnded();
         if (!signal && (exitStatus === 0 || typed)) return onclose();
         session.status = 'closed';
-        const how = signal ? ` (signal${NB}: ${signal})` : exitStatus === null ? '' : ` (code de sortie ${exitStatus})`;
+        const how = signal ? ` (signal: ${signal})` : exitStatus === null ? '' : ` (exit code ${exitStatus})`;
         phase = {
           step: 'closed',
-          message: `Le shell s’est arrêté${how}. Relance-le, ou ferme l’onglet.`,
-          brief: `Shell arrêté${how}.`,
+          message: `The shell stopped${how}. Restart it, or close the tab.`,
+          brief: `Shell stopped${how}.`,
         };
         return;
       }
-      // Seule une connexion perdue se rouvre d'elle-même, et seulement si le réglage le permet.
+      // Only a lost connection opens again on its own, and only if the setting allows it.
       if (ending === 'lost' && prefs.sshReconnect) {
         term?.write('\r\n');
         scheduleRetry(1, reason ?? '');
@@ -663,14 +666,14 @@
       session.status = 'closed';
       phase =
         ending === 'lost'
-          ? { step: 'closed', lost: true, message: reason ? explain(reason) : 'La connexion au serveur a été coupée.' }
+          ? { step: 'closed', lost: true, message: reason ? explain(reason) : 'The connection to the server was cut.' }
           : {
               step: 'closed',
               message: reason
-                ? `Connexion interrompue\u00a0: ${reason}`
+                ? `Connection interrupted: ${reason}`
                 : exitStatus === null || exitStatus === 0
-                  ? 'Le serveur a fermé la session.'
-                  : `Session terminée (code de sortie ${exitStatus}).`,
+                  ? 'The server closed the session.'
+                  : `Session ended (exit code ${exitStatus}).`,
             };
     });
 
@@ -688,7 +691,7 @@
   });
 
   $effect(() => {
-    // À l'affichage de l'onglet : la taille du terminal a pu changer pendant qu'il était masqué.
+    // When the tab shows: the size of the terminal may have changed while it was hidden.
     if (!active) return;
     const connected = phase.step === 'connected';
     requestAnimationFrame(() => {
@@ -702,53 +705,53 @@
   {#if !bare}
   <header>
     {#if local}
-      <!-- Un terminal local : l'ordinateur, comme partout où « local » est dit (charte, section 7). -->
-      <span class="what"><Icon name="laptop" size={14} /> <b>Terminal local</b></span>
+      <!-- A local terminal: the computer, as everywhere "local" is said (guidelines, section 7). -->
+      <span class="what"><Icon name="laptop" size={14} /> <b>Local terminal</b></span>
     {:else}
       {#if session.status === 'connecting'}
-        <!-- La connexion s'ouvre : l'anneau d'attente tient la place du point, comme sur l'onglet.
-             « connexion… » le dit à côté : l'anneau lui-même n'est pas lu. -->
+        <!-- The connection is opening: the waiting ring takes the place of the dot, as on the tab.
+             "connecting…" says it beside it: the ring itself is not read. -->
         <span class="spinner" aria-hidden="true"></span>
       {:else}
         <span class="dot s-{session.status}" role="img" aria-label={STATUS[session.status]} title={STATUS[session.status]}></span>
       {/if}
       <b class="mono">{target}</b>
     {/if}
-    <!-- Les mots de l'en-tête cèdent la place avant les boutons, coupés par une ellipse (9.15) : un
-         seul texte, séparé par des espaces cadratins, pour que l'ellipse se dessine. -->
+    <!-- The words of the header give way before the buttons, cut with an ellipsis (9.15): a single
+         text, separated by em spaces, so that the ellipsis is drawn. -->
     <span class="meta" title={metaTitle}
       >{#each metaWords as word, i (i)}{#if i}{'\u2003'}{/if}{word.before ?? ''}<span class:mono={word.mono}>{word.text}</span>{/each}</span
     >
     {#if session.journal}
-      <span class="journal" title={session.journal.path}>{recording ? 'journal en cours' : 'journal enregistré'}</span>
+      <span class="journal" title={session.journal.path}>{recording ? 'recording log' : 'log saved'}</span>
     {/if}
     {#if phase.step === 'connected' && (local || info)}
       <button
         class="btn ghost small toggle"
         type="button"
         aria-pressed={recording}
-        title={recording ? 'Arrête l’enregistrement\u00a0: le fichier reste.' : 'Enregistre ce qui est affiché et la suite, dans un fichier texte.'}
+        title={recording ? 'Stop recording: the file stays.' : 'Record what is shown, and what follows, in a text file.'}
         onclick={() => void toggleJournal()}
       >
-        Enregistrer le journal
+        Record log
       </button>
     {/if}
     {#if !local && phase.step === 'connected' && info}
-      <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke(API.close, { id: sessionId })}>Déconnecter</button>
+      <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke(API.close, { id: sessionId })}>Disconnect</button>
     {/if}
   </header>
   {/if}
 
   {#if session.searching}
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-    <div class="search" role="search" aria-label="Chercher dans le terminal" onkeydown={onBarKey}>
+    <div class="search" role="search" aria-label="Search the terminal" onkeydown={onBarKey}>
       <label class="filter" class:invalid>
         <Icon name="search" size={14} />
         <input
           bind:this={searchEl}
           type="search"
-          placeholder="Chercher dans le terminal"
-          aria-label="Chercher dans le terminal"
+          placeholder="Search the terminal"
+          aria-label="Search the terminal"
           aria-invalid={invalid ? 'true' : undefined}
           aria-describedby="search-count-{session.key}"
           spellcheck="false"
@@ -759,19 +762,19 @@
         />
       </label>
       {#if invalid}
-        <span class="count bad" id="search-count-{session.key}" role="alert">Expression non valide</span>
+        <span class="count bad" id="search-count-{session.key}" role="alert">Invalid expression</span>
       {:else}
         <span class="count" id="search-count-{session.key}" role="status">{countText}</span>
       {/if}
-      <button class="btn ghost small" type="button" aria-label="Résultat précédent" title="Résultat précédent (Maj + Entrée)" disabled={!results?.count} onclick={() => find('previous')}>
+      <button class="btn ghost small" type="button" aria-label="Previous result" title="Previous result (Shift + Enter)" disabled={!results?.count} onclick={() => find('previous')}>
         <Icon name="up" size={14} />
       </button>
-      <button class="btn ghost small" type="button" aria-label="Résultat suivant" title="Résultat suivant (Entrée)" disabled={!results?.count} onclick={() => find('next')}>
+      <button class="btn ghost small" type="button" aria-label="Next result" title="Next result (Enter)" disabled={!results?.count} onclick={() => find('next')}>
         <Icon name="down" size={14} />
       </button>
-      <button class="btn ghost small toggle" type="button" aria-pressed={caseSensitive} title="Respecter la casse" aria-label="Respecter la casse" onclick={() => (caseSensitive = !caseSensitive)}>Aa</button>
-      <button class="btn ghost small toggle mono" type="button" aria-pressed={regex} title="Expression régulière" aria-label="Expression régulière" onclick={() => (regex = !regex)}>.*</button>
-      <button class="btn ghost small close" type="button" aria-label="Fermer la recherche" title="Fermer la recherche (Échap)" onclick={closeSearch}>
+      <button class="btn ghost small toggle" type="button" aria-pressed={caseSensitive} title="Match case" aria-label="Match case" onclick={() => (caseSensitive = !caseSensitive)}>Aa</button>
+      <button class="btn ghost small toggle mono" type="button" aria-pressed={regex} title="Regular expression" aria-label="Regular expression" onclick={() => (regex = !regex)}>.*</button>
+      <button class="btn ghost small close" type="button" aria-label="Close search" title="Close search (Escape)" onclick={closeSearch}>
         <Icon name="x" size={14} />
       </button>
     </div>
@@ -786,48 +789,48 @@
           {#if phase.step === 'connecting'}
             <span class="spinner wait" aria-hidden="true"></span>
             <p class="lead">
-              {#if local}Ouverture du terminal local…{:else}{retry ? 'Reconnexion' : 'Connexion'} à <b class="mono">{target}</b>…{/if}
+              {#if local}Opening local terminal…{:else}{retry ? 'Reconnecting' : 'Connecting'} to <b class="mono">{target}</b>…{/if}
             </p>
           {:else if phase.step === 'hostKey'}
-            <h3><Icon name="warning" /> Serveur inconnu</h3>
+            <h3><Icon name="warning" /> Unknown server</h3>
             <p>
-              <b class="mono">{host.hostname}</b> n’est pas dans <code>known_hosts</code>. Vérifie que cette empreinte
-              {phase.algorithm} est bien celle du serveur avant de lui faire confiance :
+              <b class="mono">{host.hostname}</b> is not in <code>known_hosts</code>. Check that this {phase.algorithm}
+              fingerprint is the server’s before you trust it:
             </p>
             <p class="print mono">{phase.fingerprint}</p>
             <div class="row">
               <button class="btn primary" type="button" onclick={() => void connect({ accept: phase.step === 'hostKey' ? phase.fingerprint : undefined, remember: true })}>
-                Faire confiance et mémoriser
+                Trust and remember
               </button>
               <button class="btn" type="button" onclick={() => void connect({ accept: phase.step === 'hostKey' ? phase.fingerprint : undefined, remember: false })}>
-                Faire confiance cette fois
+                Trust this time
               </button>
-              <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Cancel</button>
             </div>
           {:else if phase.step === 'hostKeyChanged'}
-            <h3><Icon name="warning" /> L’empreinte du serveur a changé</h3>
+            <h3><Icon name="warning" /> Server fingerprint changed</h3>
             <p>
-              L’empreinte présentée par <b class="mono">{host.hostname}</b> ne correspond plus à celle enregistrée à la ligne
-              {phase.line} de <code>known_hosts</code>. La connexion est bloquée : le serveur a peut-être été réinstallé, ou
-              quelqu’un s’interpose entre toi et lui.
+              The fingerprint presented by <b class="mono">{host.hostname}</b> no longer matches the one saved on line
+              {phase.line} of <code>known_hosts</code>. The connection is blocked: the server may have been reinstalled, or
+              someone may be intercepting the connection.
             </p>
             <p class="print mono">{phase.fingerprint}</p>
-            <p class="muted">Si le changement est légitime, retire l’ancienne ligne de <code>known_hosts</code>, puis reconnecte-toi.</p>
+            <p class="muted">If the change is legitimate, remove the old line from <code>known_hosts</code>, then reconnect.</p>
             <div class="row">
-              <button class="btn" type="button" onclick={reconnect}>Réessayer</button>
-              <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
+              <button class="btn" type="button" onclick={reconnect}>Try again</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Close tab</button>
             </div>
           {:else if phase.step === 'passphrase' || phase.step === 'password'}
             <form onsubmit={submitSecret}>
-              <h3>{phase.step === 'passphrase' ? 'Phrase secrète de la clé' : `Mot de passe de ${host.user}`}</h3>
+              <h3>{phase.step === 'passphrase' ? 'Key passphrase' : `Password for ${host.user}`}</h3>
               <p class="muted">
                 {#if phase.step === 'passphrase'}
-                  La clé <span class="mono">{phase.path}</span> est protégée.
+                  The key <span class="mono">{phase.path}</span> is protected.
                 {:else}
-                  Pour <span class="mono">{target}</span>.
+                  For <span class="mono">{target}</span>.
                 {/if}
               </p>
-              <!-- Secret refusé : le champ passe en erreur, son message dessous (charte, section 9.3). -->
+              <!-- Secret refused: the field turns to its error state, its message under it (guidelines, section 9.3). -->
               <div class="secret">
                 <input
                   class="field"
@@ -835,52 +838,53 @@
                   type="password"
                   autocomplete="off"
                   bind:this={secretEl}
-                  aria-label={phase.step === 'passphrase' ? 'Phrase secrète' : 'Mot de passe'}
+                  aria-label={phase.step === 'passphrase' ? 'Passphrase' : 'Password'}
                   aria-invalid={phase.error ? 'true' : undefined}
                   aria-describedby={phase.error ? `secret-error-${session.key}` : undefined}
                   bind:value={secret}
                 />
                 {#if phase.error}<p class="err small" id="secret-error-{session.key}" role="alert">{phase.error}</p>{/if}
               </div>
-              <!-- Retenir le secret : proposé si le trousseau du système répond ; sinon on le dit. -->
+              <!-- Keeping the secret: offered when the system keyring responds; otherwise that is said. -->
               {#if keyring}
                 <label class="keep">
                   <input type="checkbox" bind:checked={keep} />
-                  <span>Retenir dans le trousseau du système</span>
+                  <span>Remember in the system keyring</span>
                 </label>
               {:else if keyring === false}
                 <p class="muted">{NO_KEYRING[phase.step]}</p>
               {/if}
               <div class="row">
-                <button class="btn primary" type="submit" disabled={!secret}>Se connecter</button>
-                <button class="btn ghost" type="button" onclick={onclose}>Annuler</button>
+                <button class="btn primary" type="submit" disabled={!secret}>Connect</button>
+                <button class="btn ghost" type="button" onclick={onclose}>Cancel</button>
               </div>
             </form>
           {:else if phase.step === 'lost'}
-            <h3><Icon name="warning" /> Connexion perdue</h3>
-            <!-- Le compte à rebours change chaque seconde : il n'est pas lu, seule l'annonce l'est. -->
+            <h3><Icon name="warning" /> Connection lost</h3>
+            <!-- The countdown changes every second: it is not read, only the announcement is. -->
             <p aria-hidden="true">{waitText}</p>
             <p class="spoken" role="status">{announce}</p>
-            <!-- La ligne du motif garde sa place : les boutons ne bougent pas d'une tentative à l'autre. -->
-            <p class="muted reason">{phase.reason || NB}</p>
+            <!-- The line of the reason keeps its place: the buttons do not move from one attempt to the
+                 next. Empty, it holds a non-breaking space, which keeps its height. -->
+            <p class="muted reason">{phase.reason || '\u00a0'}</p>
             <div class="row">
-              <button class="btn primary" type="button" bind:this={retryButton} onclick={retryNow}><Icon name="refresh" size={14} /> Reconnecter maintenant</button>
-              <button class="btn ghost" type="button" onclick={stopRetrying}>Arrêter</button>
+              <button class="btn primary" type="button" bind:this={retryButton} onclick={retryNow}><Icon name="refresh" size={14} /> Reconnect now</button>
+              <button class="btn ghost" type="button" onclick={stopRetrying}>Stop</button>
             </div>
           {:else}
             <h3>
-              {#if local}Shell arrêté{:else}{phase.step === 'error'
-                  ? 'Connexion impossible'
+              {#if local}Shell stopped{:else}{phase.step === 'error'
+                  ? 'Connection failed'
                   : phase.lost
-                    ? 'Connexion perdue'
-                    : 'Session terminée'}{/if}
+                    ? 'Connection lost'
+                    : 'Session ended'}{/if}
             </h3>
-            <!-- Un échec est annoncé aussitôt : le focus part sur le bouton, le motif ne serait pas lu. -->
+            <!-- A failure is announced at once: the focus goes to the button, and the reason would not be read. -->
             <p class:err={phase.step === 'error'} role={phase.step === 'error' ? 'alert' : undefined}>{phase.message}</p>
             <div class="row">
-              <!-- Un terminal local n'est jamais « reconnecté » : il est relancé. -->
-              <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Relancer' : 'Reconnecter'}</button>
-              <button class="btn ghost" type="button" onclick={onclose}>Fermer l’onglet</button>
+              <!-- A local terminal is never "reconnected": it is restarted. -->
+              <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Restart' : 'Reconnect'}</button>
+              <button class="btn ghost" type="button" onclick={onclose}>Close tab</button>
             </div>
           {/if}
         </div>
@@ -889,17 +893,17 @@
   </div>
 
   {#if strip && phase.step !== 'connected'}
-    <!-- Sous le graphe, ni voile ni carte : une bande d'une ligne, qui laisse lire les dernières
-         lignes de sortie, celles qui disent pourquoi le shell s'est arrêté (charte, section 9.20). -->
+    <!-- Under the graph, neither veil nor card: a strip one line high, which leaves the last lines
+         of output readable, those that say why the shell stopped (guidelines, section 9.20). -->
     <div class="strip">
       {#if phase.step === 'connecting'}
         <span class="spinner" aria-hidden="true"></span>
-        <span class="said" role="status">Ouverture du terminal local…</span>
+        <span class="said" role="status">Opening local terminal…</span>
       {:else if phase.step === 'closed' || phase.step === 'error'}
         {@const said = phase.step === 'closed' ? (phase.brief ?? phase.message) : phase.message}
         <span class="said" class:bad={phase.step === 'error'} role="alert" title={said}>{said}</span>
-        <button class="btn primary small" type="button" bind:this={endButton} onclick={reconnect}>Relancer</button>
-        <button class="btn ghost small" type="button" onclick={onclose}>Fermer l’onglet</button>
+        <button class="btn primary small" type="button" bind:this={endButton} onclick={reconnect}>Restart</button>
+        <button class="btn ghost small" type="button" onclick={onclose}>Close tab</button>
       {/if}
     </div>
   {/if}
@@ -912,7 +916,7 @@
     height: 100%;
     min-height: 0;
   }
-  /* Barre de recherche : une bande sous l'en-tête, qui pousse le terminal sans cacher son texte. */
+  /* Search bar: a strip under the header, which pushes the terminal down without hiding its text. */
   .search {
     flex: none;
     display: flex;
@@ -961,7 +965,7 @@
     outline: none;
     color: var(--ink);
   }
-  /* Assez large pour « Expression non valide » : les boutons ne bougent pas quand le texte change. */
+  /* Wide enough for "Invalid expression": the buttons do not move when the text changes. */
   .count {
     min-width: 124px;
     color: var(--muted);
@@ -972,7 +976,7 @@
   .count.bad {
     color: var(--bad);
   }
-  /* Bascule : un bouton fantôme, enfoncé en --accent-soft bordé d'accent (charte, section 9.1). */
+  /* Toggle: a ghost button, pressed in --accent-soft with an accent border (guidelines, section 9.1). */
   .toggle[aria-pressed='true'],
   .toggle[aria-pressed='true']:hover {
     background: var(--accent-soft);
@@ -985,8 +989,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    /* Hauteur fixe : celle d'un en-tête avec son bouton « Déconnecter ». Le terminal ne saute pas
-       d'un onglet à l'autre. */
+    /* Fixed height: that of a header with its "Disconnect" button. The terminal does not jump from
+       one tab to the next. */
     height: 35px;
     padding: 5px 12px;
     border-bottom: 1px solid var(--line-soft);
@@ -1008,7 +1012,7 @@
   .journal {
     flex: none;
   }
-  /* L'en-tête parle en --muted ; ses boutons gardent le texte d'un bouton (9.1). */
+  /* The header speaks in --muted; its buttons keep the text of a button (9.1). */
   header .btn {
     color: var(--ink);
   }
@@ -1045,7 +1049,7 @@
     position: absolute;
     inset: 8px 4px 4px 10px;
   }
-  /* Terminal d'un dépôt : l'état du shell tient en une ligne, sous le terminal. */
+  /* Terminal of a repository: the state of the shell fits in one line, under the terminal. */
   .strip {
     flex: none;
     display: flex;
@@ -1069,8 +1073,8 @@
   .veil {
     position: absolute;
     inset: 0;
-    /* Dans un terminal bas (sous le graphe), le panneau défile plutôt que de déborder ; ses marges
-       automatiques le centrent sans rogner son haut quand il dépasse. */
+    /* In a low terminal (under the graph), the panel scrolls rather than overflowing; its automatic
+       margins center it without cutting its top when it is taller. */
     display: flex;
     padding: 24px;
     overflow: auto;
@@ -1080,7 +1084,7 @@
   }
   .card {
     margin: auto;
-    /* 560 px : les trois boutons de l’empreinte tiennent sur une ligne. */
+    /* 560 px: the three buttons of the fingerprint fit on one line. */
     width: min(560px, 100%);
     display: grid;
     gap: 10px;
@@ -1099,7 +1103,7 @@
     display: grid;
     gap: 10px;
   }
-  /* La case et son texte sont la cible : pas plus larges que ce texte. */
+  /* The checkbox and its text are the target: no wider than that text. */
   .keep {
     justify-self: start;
     display: flex;
@@ -1131,7 +1135,7 @@
   .err.small {
     font-size: var(--fs-small);
   }
-  /* Le champ d'un secret et, dessous, le message de son refus. */
+  /* The field of a secret and, under it, the message of its refusal. */
   .secret {
     display: grid;
     gap: 4px;
@@ -1157,7 +1161,7 @@
   .wait {
     justify-self: center;
   }
-  /* Hors de l'écran, mais lu : l'annonce d'une tentative de reconnexion. */
+  /* Off screen, but read: the announcement of a reconnection attempt. */
   .what {
     flex: none;
     display: inline-flex;

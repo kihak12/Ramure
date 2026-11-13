@@ -12,7 +12,7 @@
 
   const commands = $derived(palette.commands);
 
-  // Résultats dans l'ordre d'affichage : par rubrique, puis du plus pertinent au moins pertinent.
+  // Results in display order: by group, then from the most relevant to the least.
   const results = $derived.by(() => {
     if (!commands) return [];
     const words = fold(query).split(/\s+/).filter(Boolean);
@@ -37,7 +37,7 @@
     }
   });
 
-  // Une nouvelle recherche repart du premier résultat utilisable.
+  // A new search starts again from the first usable result.
   $effect(() => {
     void query;
     active = Math.max(0, results.findIndex((c) => !c.disabled));
@@ -76,7 +76,7 @@
 
 <dialog
   bind:this={element}
-  aria-label="Palette de commandes"
+  aria-label="Command palette"
   oncancel={(e) => {
     e.preventDefault();
     palette.hide();
@@ -90,7 +90,7 @@
         <!-- svelte-ignore a11y_autofocus -->
         <input
           type="text"
-          placeholder="Chercher une action, une branche, un dépôt…"
+          placeholder="Search actions, branches, repositories…"
           spellcheck="false"
           autocomplete="off"
           autofocus
@@ -101,7 +101,7 @@
           bind:value={query}
           onkeydown={onKey}
         />
-        <kbd>Échap</kbd>
+        <kbd>Escape</kbd>
       </label>
 
       <div class="results" id="palette-results" role="listbox" bind:this={list}>
@@ -129,14 +129,14 @@
             {#if command.shortcut}<span class="keys">{#each command.shortcut.split(' + ') as part, n (n)}<kbd>{part}</kbd>{/each}</span>{/if}
           </div>
         {:else}
-          <p class="none">Rien ne correspond à « {query} ».</p>
+          <p class="none">No results for “{query}”</p>
         {/each}
       </div>
 
       <footer>
-        <span><kbd>↑</kbd><kbd>↓</kbd> choisir</span>
-        <span><kbd>Entrée</kbd> lancer</span>
-        <span class="count">{results.length} résultat{results.length > 1 ? 's' : ''}</span>
+        <span><kbd>↑</kbd><kbd>↓</kbd> choose</span>
+        <span><kbd>Enter</kbd> run</span>
+        <span class="count">{results.length} result{results.length === 1 ? '' : 's'}</span>
       </footer>
     </div>
   {/if}
@@ -209,7 +209,7 @@
     border-radius: var(--radius);
     cursor: pointer;
   }
-  /* Les résultats sont des lignes (section 9.6) : la ligne active est sélectionnée, en --sel. */
+  /* The results are rows (section 9.6): the active row is selected, in --sel. */
   .item[aria-selected='true'] {
     background: var(--sel);
   }

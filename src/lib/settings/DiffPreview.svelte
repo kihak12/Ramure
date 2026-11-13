@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { DiffMode } from '../git/prefs.svelte';
 
-  /** Aperçu d'un affichage du diff : une colonne, ou l'ancien et le nouveau côte à côte. */
+  /** Preview of a diff layout: one column, or the old and the new side by side. */
   let { mode }: { mode: DiffMode } = $props();
 </script>
 
