@@ -1,9 +1,9 @@
-//! Écrire des hôtes du carnet dans `~/.ssh/config`, pour qu'ils s'ouvrent aussi avec `ssh <nom>`.
+//! Writing hosts of the book into `~/.ssh/config`, so that they open with `ssh <name>` too.
 //!
-//! Le fichier est modifié ligne à ligne : seules les lignes HostName, User, Port et IdentityFile du
-//! bloc `Host <nom>` d'un hôte exporté changent, ou un bloc s'ajoute. Le reste du fichier, ses
-//! commentaires, ses autres directives et ses fins de ligne, ne bouge pas. Ramure n'efface jamais
-//! une ligne. L'ancien fichier est copié dans `config.ramure.bak` avant l'écriture.
+//! The file is changed line by line: only the HostName, User, Port and IdentityFile lines of the
+//! `Host <name>` block of an exported host change, or a block is added. The rest of the file, its
+//! comments, its other directives and its line endings, does not move. Ramure never deletes a
+//! line. The old file is copied to `config.ramure.bak` before writing.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -14,19 +14,19 @@ use tauri::State;
 use super::config;
 use super::store::{Host, Store};
 
-/// Ce que l'export ferait d'un hôte.
+/// What the export would do with a host.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Row {
     pub id: String,
     pub alias: String,
-    /// `added`, `modified`, `current` ou `blocked`.
+    /// `added`, `modified`, `current` or `blocked`.
     pub status: &'static str,
-    /// Ajouté : ce qui sera écrit ; modifié : ce qui change ; non exporté : pourquoi.
+    /// Added: what will be written; changed: what changes; not exported: why.
     pub detail: String,
 }
 
-/// Ce qu'un hôte demande au fichier.
+/// What a host asks of the file.
 struct Wanted {
     alias: String,
     hostname: String,
@@ -50,7 +50,7 @@ impl Wanted {
         }
     }
 
-    /// Les directives écrites pour un hôte ajouté, dans l'ordre d'OpenSSH.
+    /// The directives written for an added host, in the order of OpenSSH.
     fn directives(&self) -> Vec<(&'static str, String)> {
         let mut out = vec![("HostName", self.hostname.clone())];
         if let Some(user) = &self.user {
@@ -65,7 +65,7 @@ impl Wanted {
         out
     }
 
-    /// Ce qui sera écrit, en une ligne : `deploy@10.0.0.9 · port 2222 · clé ~/.ssh/id_ed25519`.
+    /// What will be written, on one line: `deploy@10.0.0.9 · port 2222 · key ~/.ssh/id_ed25519`.
     fn summary(&self) -> String {
         let mut parts = vec![match &self.user {
             Some(user) => format!("{user}@{}", self.hostname),
@@ -75,24 +75,24 @@ impl Wanted {
             parts.push(format!("port {}", self.port));
         }
         match (&self.identity_file, self.password) {
-            (Some(key), _) => parts.push(format!("clé {key}")),
-            (None, true) => parts.push("sans clé\u{a0}: le mot de passe n’est jamais écrit".into()),
-            (None, false) => parts.push("agent SSH et clés par défaut".into()),
+            (Some(key), _) => parts.push(format!("key {key}")),
+            (None, true) => parts.push("no key: the password is never written".into()),
+            (None, false) => parts.push("SSH agent and default keys".into()),
         }
         parts.join(" · ")
     }
 }
 
-/// Un bloc `Host` ou `Match` du fichier : ses lignes, de l'en-tête à la ligne qui précède le bloc
-/// suivant.
+/// A `Host` or `Match` block of the file: its lines, from the header to the line before the next
+/// block.
 struct Block {
-    /// Les noms de l'en-tête `Host` ; vide pour un bloc `Match`.
+    /// The names of the `Host` header; empty for a `Match` block.
     patterns: Vec<String>,
     header: usize,
     end: usize,
 }
 
-/// Le mot-clé d'une ligne et sa valeur, sans guillemets : `Port 2222`, `Port=2222`.
+/// The keyword of a line and its value, without quotes: `Port 2222`, `Port=2222`.
 fn directive(line: &str) -> Option<(String, String)> {
     let line = line.trim();
     if line.is_empty() || line.starts_with('#') {
@@ -122,7 +122,7 @@ fn blocks(lines: &[String]) -> Vec<Block> {
     out
 }
 
-/// La première valeur d'une directive dans un bloc, et sa ligne.
+/// The first value of a directive in a block, and its line.
 fn value_in(lines: &[String], block: &Block, wanted: &str) -> Option<(usize, String)> {
     (block.header + 1..block.end).find_map(|i| match directive(&lines[i]) {
         Some((key, value)) if key == wanted => Some((i, value)),
@@ -130,11 +130,11 @@ fn value_in(lines: &[String], block: &Block, wanted: &str) -> Option<(usize, Str
     })
 }
 
-/// Ce qui changerait dans le bloc d'un hôte : (directive, valeur du fichier, valeur de Ramure).
+/// What would change in the block of a host: (directive, value in the file, value in Ramure).
 fn changes(lines: &[String], block: &Block, wanted: &Wanted) -> Vec<(&'static str, Option<String>, String)> {
     let mut out = Vec::new();
     let hostname = value_in(lines, block, "hostname").map(|(_, v)| v);
-    // Sans HostName, ssh se connecte au nom lui-même.
+    // Without HostName, ssh connects to the name itself.
     if hostname.as_deref().unwrap_or(&wanted.alias) != wanted.hostname {
         out.push(("HostName", hostname, wanted.hostname.clone()));
     }
@@ -157,36 +157,36 @@ fn changes(lines: &[String], block: &Block, wanted: &Wanted) -> Vec<(&'static st
     out
 }
 
-/// Pourquoi un hôte ne peut pas être écrit, s'il ne peut pas l'être.
+/// Why a host cannot be written, if it cannot be.
 fn blocked(host: &Host, wanted: &Wanted, lines: &[String], all: &[Block], taken: &[String]) -> Option<String> {
     if wanted.alias.chars().any(char::is_whitespace) {
-        return Some("Son nom contient une espace, que ssh lirait comme deux noms\u{a0}: renomme l’hôte.".into());
+        return Some("Its name has a space, which ssh would read as two names: rename the host.".into());
     }
     if wanted.alias.contains(['*', '?', '!', '"', '#']) {
-        return Some("Son nom contient un caractère que ssh lirait comme un motif\u{a0}: renomme l’hôte.".into());
+        return Some("Its name has a character that ssh would read as a pattern: rename the host.".into());
     }
     if host.proxy_jump {
-        return Some("Il passe par un bastion, dont Ramure ne garde pas l’adresse\u{a0}: écris son entrée à la main, avec ProxyJump.".into());
+        return Some("It goes through a bastion, whose address Ramure does not keep: write its entry by hand, with ProxyJump.".into());
     }
     if taken.contains(&wanted.alias) {
-        return Some("Un autre hôte du carnet porte ce nom\u{a0}: renomme l’un des deux.".into());
+        return Some("Another host has the same name: rename one of the two.".into());
     }
     let shared = all.iter().find(|b| b.patterns.len() > 1 && b.patterns.contains(&wanted.alias));
     if let Some(block) = shared {
         let header = lines[block.header].trim();
         return Some(format!(
-            "Son nom est dans le bloc «\u{a0}{header}\u{a0}» du fichier, avec d’autres\u{a0}: modifie ce bloc à la main."
+            "Its name is in the block “{header}” of the file, with others: edit that block by hand."
         ));
     }
     None
 }
 
-/// Le bloc propre à un nom : `Host <nom>`, seul sur sa ligne. Le premier, comme pour ssh.
+/// The block of a name of its own: `Host <name>`, alone on its line. The first one, as for ssh.
 fn own<'a>(all: &'a [Block], alias: &str) -> Option<&'a Block> {
     all.iter().find(|b| b.patterns.len() == 1 && b.patterns[0] == alias)
 }
 
-/// Le plan de l'export : une ligne par hôte, dans l'ordre du carnet.
+/// The plan of the export: one row per host, in the order of the book.
 pub fn plan(text: &str, hosts: &[Host]) -> Vec<Row> {
     let lines = split(text).0;
     let all = blocks(&lines);
@@ -209,7 +209,7 @@ pub fn plan(text: &str, hosts: &[Host]) -> Vec<Row> {
                     } else {
                         let said: Vec<String> = found
                             .iter()
-                            .map(|(key, from, to)| format!("{key} {} → {to}", from.as_deref().unwrap_or("(absent)")))
+                            .map(|(key, from, to)| format!("{key} {} → {to}", from.as_deref().unwrap_or("(none)")))
                             .collect();
                         row("modified", said.join(" · "))
                     }
@@ -219,7 +219,7 @@ pub fn plan(text: &str, hosts: &[Host]) -> Vec<Row> {
         .collect()
 }
 
-/// Les lignes du fichier, et sa fin de ligne : CRLF s'il en a, comme sous Windows.
+/// The lines of the file, and its line ending: CRLF if it has any, as on Windows.
 fn split(text: &str) -> (Vec<String>, &'static str) {
     let eol = if text.contains("\r\n") { "\r\n" } else { "\n" };
     let body = text.strip_suffix('\n').unwrap_or(text);
@@ -231,8 +231,8 @@ fn quoted(value: &str) -> String {
     if value.chars().any(char::is_whitespace) { format!("\"{value}\"") } else { value.to_string() }
 }
 
-/// Le texte du fichier une fois les hôtes `chosen` écrits. Ceux que le plan ne dit ni ajoutés ni
-/// modifiés sont laissés de côté.
+/// The text of the file once the `chosen` hosts are written. Those the plan says are neither
+/// added nor changed are left aside.
 pub fn apply(text: &str, hosts: &[Host], chosen: &[String]) -> (String, usize) {
     let rows = plan(text, hosts);
     let (mut lines, eol) = split(text);
@@ -242,7 +242,7 @@ pub fn apply(text: &str, hosts: &[Host], chosen: &[String]) -> (String, usize) {
         .filter(|h| rows.iter().any(|r| r.id == h.id && matches!(r.status, "added" | "modified")))
         .collect();
 
-    // Les blocs modifiés, du bas vers le haut : les numéros de ligne au-dessus ne bougent pas.
+    // The changed blocks, from the bottom up: the line numbers above them do not move.
     let all = blocks(&lines);
     let mut edits: Vec<(&Block, Wanted)> =
         picked.iter().filter_map(|h| own(&all, h.alias.trim()).map(|b| (b, Wanted::of(h)))).collect();
@@ -255,7 +255,7 @@ pub fn apply(text: &str, hosts: &[Host], chosen: &[String]) -> (String, usize) {
         for (key, _, value) in changes(&lines, block, wanted) {
             match value_in(&lines, block, &key.to_ascii_lowercase()) {
                 Some((i, _)) => {
-                    // La ligne garde son retrait et l'orthographe de son mot-clé.
+                    // The line keeps its indentation and the spelling of its keyword.
                     let line = &lines[i];
                     let lead = &line[..line.len() - line.trim_start().len()];
                     let word = line.trim_start().split(|c: char| c.is_whitespace() || c == '=').next().unwrap_or(key);
@@ -264,7 +264,7 @@ pub fn apply(text: &str, hosts: &[Host], chosen: &[String]) -> (String, usize) {
                 None => inserts.push(format!("{indent}{key} {}", quoted(&value))),
             }
         }
-        // Les directives manquantes, après la dernière ligne non vide du bloc.
+        // The missing directives, after the last line of the block that is not empty.
         let mut at = block.end;
         while at > block.header + 1 && lines[at - 1].trim().is_empty() {
             at -= 1;
@@ -274,7 +274,7 @@ pub fn apply(text: &str, hosts: &[Host], chosen: &[String]) -> (String, usize) {
         }
     }
 
-    // Les blocs ajoutés, avant `Host *` s'il y en a un : la première valeur trouvée l'emporte.
+    // The added blocks, before `Host *` if there is one: the first value found wins.
     let added: Vec<Wanted> = picked.iter().filter(|h| own(&blocks(&lines), h.alias.trim()).is_none()).map(|h| Wanted::of(h)).collect();
     if !added.is_empty() {
         let mut fresh: Vec<String> = Vec::new();
@@ -306,7 +306,7 @@ pub fn apply(text: &str, hosts: &[Host], chosen: &[String]) -> (String, usize) {
 }
 
 fn config_path() -> Result<PathBuf, String> {
-    config::home().map(|home| home.join(".ssh").join("config")).ok_or_else(|| "Dossier personnel introuvable\u{a0}: ni USERPROFILE (Windows) ni HOME (Linux) n’est défini. Définis-en un, puis relance Ramure.".to_string())
+    config::home().map(|home| home.join(".ssh").join("config")).ok_or_else(|| "Home folder not found: neither USERPROFILE (Windows) nor HOME (Linux) is set. Set one, then restart Ramure.".to_string())
 }
 
 fn backup_path(path: &Path) -> PathBuf {
@@ -316,18 +316,18 @@ fn backup_path(path: &Path) -> PathBuf {
 fn read(path: &Path) -> Result<String, String> {
     match fs::read(path) {
         Ok(bytes) => String::from_utf8(bytes).map_err(|_| {
-            "~/.ssh/config n’est pas en UTF-8\u{a0}: enregistre-le en UTF-8 dans un éditeur, puis recommence.".to_string()
+            "~/.ssh/config is not in UTF-8: save it as UTF-8 in an editor, then try again.".to_string()
         }),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
-        Err(e) => Err(format!("~/.ssh/config n’a pas pu être lu\u{a0}: vérifie que ton compte peut le lire, puis rouvre la boîte. ({e})")),
+        Err(e) => Err(format!("~/.ssh/config could not be read: check that your account can read it, then open the dialog again. ({e})")),
     }
 }
 
-/// Écrit `text` à la place de `path`, par un fichier voisin renommé : un fichier à moitié écrit
-/// n'est jamais lu par ssh.
+/// Writes `text` in place of `path`, through a file beside it that is renamed: ssh never reads a
+/// file written halfway.
 fn write(path: &Path, text: &str) -> Result<(), String> {
     let failed = |e: std::io::Error| {
-        format!("~/.ssh/config n’a pas pu être écrit\u{a0}: vérifie que ni le fichier ni ~/.ssh ne sont en lecture seule, puis recommence. ({e})")
+        format!("~/.ssh/config could not be written: check that neither the file nor ~/.ssh is read-only, then try again. ({e})")
     };
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir).map_err(failed)?;
@@ -337,7 +337,7 @@ fn write(path: &Path, text: &str) -> Result<(), String> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        // ssh refuse un fichier que d'autres peuvent écrire : celui d'avant garde ses droits.
+        // ssh refuses a file that others can write: the one from before keeps its permissions.
         let mode = fs::metadata(path).map(|m| m.permissions().mode() & 0o777).unwrap_or(0o600) & !0o022;
         let _ = fs::set_permissions(&temporary, fs::Permissions::from_mode(mode));
     }
@@ -351,9 +351,9 @@ fn write(path: &Path, text: &str) -> Result<(), String> {
 #[serde(rename_all = "camelCase")]
 pub struct Exported {
     pub count: usize,
-    /// La copie de l'ancien fichier, s'il y en avait un.
+    /// The copy of the old file, if there was one.
     pub backup: Option<String>,
-    /// Le texte écrit : l'annulation ne remet l'ancien fichier que s'il n'a pas changé depuis.
+    /// The text written: undoing puts the old file back only if this one has not changed since.
     pub written: String,
 }
 
@@ -361,11 +361,11 @@ pub fn export_to(path: &Path, hosts: &[Host], chosen: &[String]) -> Result<Expor
     let before = read(path)?;
     let (text, count) = apply(&before, hosts, chosen);
     if count == 0 {
-        return Err("Aucun des hôtes cochés n’est à écrire\u{a0}: le fichier a changé entre-temps. Ferme la boîte et rouvre-la.".into());
+        return Err("None of the checked hosts needs to be written: the file has changed in the meantime. Close the dialog and open it again.".into());
     }
     let backup = if path.exists() {
         let copy = backup_path(path);
-        fs::copy(path, &copy).map_err(|e| format!("L’ancien fichier n’a pas pu être copié, et rien n’a été écrit\u{a0}: vérifie que ~/.ssh n’est pas en lecture seule, puis recommence. ({e})"))?;
+        fs::copy(path, &copy).map_err(|e| format!("The old file could not be copied, and nothing was written: check that ~/.ssh is not read-only, then try again. ({e})"))?;
         Some(copy.display().to_string())
     } else {
         None
@@ -376,19 +376,19 @@ pub fn export_to(path: &Path, hosts: &[Host], chosen: &[String]) -> Result<Expor
 
 pub fn undo_at(path: &Path, written: &str, had_backup: bool) -> Result<(), String> {
     if read(path)? != written {
-        return Err("~/.ssh/config a changé depuis l’export\u{a0}: il est resté tel quel. L’ancien fichier est dans ~/.ssh/config.ramure.bak.".into());
+        return Err("~/.ssh/config has changed since the export: it was left as it is. The old file is in ~/.ssh/config.ramure.bak.".into());
     }
     if had_backup {
         let old = fs::read_to_string(backup_path(path)).map_err(|e| {
-            format!("~/.ssh/config.ramure.bak n’a pas pu être lu\u{a0}: remets-le à la place de ~/.ssh/config à la main. ({e})")
+            format!("~/.ssh/config.ramure.bak could not be read: put it back in place of ~/.ssh/config by hand. ({e})")
         })?;
         write(path, &old)
     } else {
-        fs::remove_file(path).map_err(|e| format!("~/.ssh/config n’a pas pu être retiré\u{a0}: supprime-le à la main. ({e})"))
+        fs::remove_file(path).map_err(|e| format!("~/.ssh/config could not be removed: delete it by hand. ({e})"))
     }
 }
 
-/// Les hôtes du carnet à considérer : tous, ou ceux de `ids`.
+/// The hosts of the book to consider: all of them, or those of `ids`.
 fn hosts_of(store: &Store, ids: &Option<Vec<String>>) -> Result<Vec<Host>, String> {
     let hosts = store.list()?;
     Ok(match ids {
@@ -405,7 +405,7 @@ pub fn ssh_config_preview(store: State<'_, Store>, ids: Option<Vec<String>>) -> 
 
 #[tauri::command]
 pub fn ssh_config_export(store: State<'_, Store>, ids: Vec<String>) -> Result<Exported, String> {
-    // Tout le carnet, pour que deux hôtes du même nom se voient l'un l'autre.
+    // The whole book, so that two hosts with the same name see each other.
     export_to(&config_path()?, &store.list()?, &ids)
 }
 
@@ -436,7 +436,7 @@ mod tests {
     }
 
     const FILE: &str = "\
-# Mes serveurs
+# My servers
 Include ~/.ssh/config.d/*
 
 Host vps
@@ -452,28 +452,28 @@ Host *
 ";
 
     #[test]
-    fn le_plan_dit_ajoute_modifie_a_jour_et_non_exporte() {
-        let mut key = host("4", "neuf", "10.0.0.9", "deploy", 2222);
+    fn the_plan_says_added_changed_up_to_date_and_not_exported() {
+        let mut key = host("4", "new", "10.0.0.9", "deploy", 2222);
         key.auth = "keyFile".into();
         key.key_path = "~/.ssh/id_ed25519".into();
-        let mut jump = host("5", "interne", "10.0.2.15", "", 22);
+        let mut jump = host("5", "internal", "10.0.2.15", "", 22);
         jump.proxy_jump = true;
         let hosts = vec![
             host("1", "vps", "vps.example.net", "deploy", 2222),
             host("2", "web", "web.example.net", "", 22),
-            host("3", "atelier (copie)", "a.example.net", "", 22),
+            host("3", "workshop (copy)", "a.example.net", "", 22),
             key,
             jump,
-            host("6", "vps", "autre.example.net", "", 22),
+            host("6", "vps", "other.example.net", "", 22),
         ];
         let rows = plan(FILE, &hosts);
-        assert_eq!(status(&rows, "vps"), ("modified", "User admin → deploy · Port (absent) → 2222".into()));
+        assert_eq!(status(&rows, "vps"), ("modified", "User admin → deploy · Port (none) → 2222".into()));
         assert_eq!(status(&rows, "web").0, "blocked");
         assert!(status(&rows, "web").1.contains("Host web prod"));
-        assert_eq!(status(&rows, "atelier (copie)").0, "blocked");
-        assert_eq!(status(&rows, "neuf"), ("added", "deploy@10.0.0.9 · port 2222 · clé ~/.ssh/id_ed25519".into()));
-        assert!(status(&rows, "interne").1.contains("bastion"));
-        // Le second « vps » du carnet : bloqué, le premier garde le nom.
+        assert_eq!(status(&rows, "workshop (copy)").0, "blocked");
+        assert_eq!(status(&rows, "new"), ("added", "deploy@10.0.0.9 · port 2222 · key ~/.ssh/id_ed25519".into()));
+        assert!(status(&rows, "internal").1.contains("bastion"));
+        // The second "vps" of the book: blocked, the first one keeps the name.
         assert_eq!(rows[5].status, "blocked");
 
         let same = vec![host("1", "vps", "vps.example.net", "admin", 22)];
@@ -481,14 +481,14 @@ Host *
     }
 
     #[test]
-    fn l_ecriture_ne_touche_que_les_lignes_de_ramure() {
-        let hosts = vec![host("1", "vps", "vps.example.net", "deploy", 2222), host("2", "neuf", "10.0.0.9", "", 22)];
+    fn writing_touches_only_the_lines_of_ramure() {
+        let hosts = vec![host("1", "vps", "vps.example.net", "deploy", 2222), host("2", "new", "10.0.0.9", "", 22)];
         let (text, count) = apply(FILE, &hosts, &["1".into(), "2".into()]);
         assert_eq!(count, 2);
         assert_eq!(
             text,
             "\
-# Mes serveurs
+# My servers
 Include ~/.ssh/config.d/*
 
 Host vps
@@ -500,69 +500,69 @@ Host vps
 Host web prod
     HostName web.example.net
 
-Host neuf
+Host new
     HostName 10.0.0.9
 
 Host *
     ServerAliveInterval 30
 "
         );
-        // Une seconde fois : tout est à jour, rien ne change.
+        // A second time: everything is up to date, nothing changes.
         assert!(plan(&text, &hosts).iter().all(|r| r.status == "current"));
         assert_eq!(apply(&text, &hosts, &["1".into(), "2".into()]).1, 0);
     }
 
     #[test]
-    fn garde_les_fins_de_ligne_les_retraits_et_les_mots_cles() {
+    fn keeps_line_endings_indentation_and_keywords() {
         let file = "Host vps\r\n\thostname=old.example.net\r\n\tuser admin\r\n";
         let hosts = vec![host("1", "vps", "new.example.net", "admin", 22)];
         let (text, _) = apply(file, &hosts, &["1".into()]);
         assert_eq!(text, "Host vps\r\n\thostname new.example.net\r\n\tuser admin\r\n");
-        // Un hôte non coché n'est pas écrit.
+        // A host that is not checked is not written.
         assert_eq!(apply(file, &hosts, &[]).0, file);
     }
 
     #[test]
-    fn ajoute_a_un_fichier_vide_ou_sans_bloc_general() {
-        let mut key = host("1", "neuf", "10.0.0.9", "moi", 22);
+    fn adds_to_an_empty_file_or_one_without_a_general_block() {
+        let mut key = host("1", "new", "10.0.0.9", "me", 22);
         key.auth = "keyFile".into();
-        key.key_path = "C:\\Users\\Jean Dupont\\.ssh\\id_ed25519".into();
+        key.key_path = "C:\\Users\\Jane Doe\\.ssh\\id_ed25519".into();
         let (text, _) = apply("", &[key.clone()], &["1".into()]);
         assert_eq!(
             text,
-            "Host neuf\n    HostName 10.0.0.9\n    User moi\n    IdentityFile \"C:\\Users\\Jean Dupont\\.ssh\\id_ed25519\"\n"
+            "Host new\n    HostName 10.0.0.9\n    User me\n    IdentityFile \"C:\\Users\\Jane Doe\\.ssh\\id_ed25519\"\n"
         );
         let (text, _) = apply("Host a\n    HostName a.net", &[key], &["1".into()]);
-        assert!(text.starts_with("Host a\n    HostName a.net\n\nHost neuf\n"));
+        assert!(text.starts_with("Host a\n    HostName a.net\n\nHost new\n"));
     }
 
     #[test]
-    fn exporte_copie_l_ancien_fichier_et_annule() {
+    fn exports_copies_the_old_file_and_undoes() {
         let dir = std::env::temp_dir().join(format!("ramure-export-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let path = dir.join(".ssh").join("config");
-        let hosts = vec![host("1", "neuf", "10.0.0.9", "", 22)];
+        let hosts = vec![host("1", "new", "10.0.0.9", "", 22)];
 
-        // Sans fichier : il est créé, et l'annulation le retire.
+        // Without a file: it is created, and undoing removes it.
         let done = export_to(&path, &hosts, &["1".into()]).unwrap();
         assert_eq!(done.count, 1);
         assert!(done.backup.is_none());
-        assert!(fs::read_to_string(&path).unwrap().contains("Host neuf"));
+        assert!(fs::read_to_string(&path).unwrap().contains("Host new"));
         undo_at(&path, &done.written, false).unwrap();
         assert!(!path.exists());
 
-        // Avec un fichier : la copie le garde, l'annulation le remet.
+        // With a file: the copy keeps it, undoing puts it back.
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, FILE).unwrap();
         let done = export_to(&path, &hosts, &["1".into()]).unwrap();
         assert_eq!(fs::read_to_string(backup_path(&path)).unwrap(), FILE);
-        // Un fichier retouché depuis l'export n'est pas remplacé.
-        fs::write(&path, format!("{}# retouche\n", done.written)).unwrap();
-        assert!(undo_at(&path, &done.written, true).unwrap_err().contains("a changé"));
+        // A file edited since the export is not replaced.
+        fs::write(&path, format!("{}# edited\n", done.written)).unwrap();
+        assert!(undo_at(&path, &done.written, true).unwrap_err().contains("has changed"));
         fs::write(&path, &done.written).unwrap();
         undo_at(&path, &done.written, true).unwrap();
         assert_eq!(fs::read_to_string(&path).unwrap(), FILE);
-        // Rien à écrire : refusé, rien ne bouge.
+        // Nothing to write: refused, nothing moves.
         let current = fs::read_to_string(&path).unwrap();
         assert!(export_to(&path, &hosts, &[]).is_err());
         assert_eq!(fs::read_to_string(&path).unwrap(), current);

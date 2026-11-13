@@ -1,9 +1,9 @@
-//! Terminaux locaux : le shell de l'utilisateur dans un pseudo-terminal, sur sa propre machine.
+//! Local terminals: the shell of the user in a pseudo-terminal, on their own machine.
 //!
-//! Même contrat que les sessions SSH : l'interface écrit et redimensionne par des commandes
-//! (`local_write`, `local_resize`, `local_close`), reçoit la sortie en octets bruts sur un canal
-//! Tauri, et apprend la fin du shell par l'évènement `local-closed`. Le pseudo-terminal est
-//! ConPTY sous Windows et openpty ailleurs (crate `portable-pty`).
+//! The same contract as SSH sessions: the interface writes and resizes through commands
+//! (`local_write`, `local_resize`, `local_close`), receives the output as raw bytes on a Tauri
+//! channel, and learns that the shell ended through the `local-closed` event. The pseudo-terminal
+//! is ConPTY on Windows and openpty elsewhere (crate `portable-pty`).
 
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -16,12 +16,12 @@ use serde::Serialize;
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Emitter, Manager, State};
 
-/// Ce que l'interface garde d'un terminal ouvert pour lui parler.
+/// What is kept of an open terminal to talk to it.
 struct Local {
     writer: Box<dyn Write + Send>,
     master: Box<dyn MasterPty + Send>,
     killer: Box<dyn ChildKiller + Send + Sync>,
-    /// Le processus du shell : sert à savoir si un programme a pris le premier plan.
+    /// The process of the shell: used to know whether a program has taken the foreground.
     shell_pid: Option<u32>,
 }
 
@@ -35,11 +35,11 @@ pub struct LocalState {
 #[serde(rename_all = "camelCase")]
 pub struct Opened {
     id: u32,
-    /// Le shell lancé, tel qu'on le montre : `bash`, `zsh`, `powershell`.
+    /// The shell started, as it is shown: `bash`, `zsh`, `powershell`.
     shell: String,
-    /// Le dossier de départ.
+    /// The starting folder.
     cwd: String,
-    /// Le journal demandé n'a pas pu être ouvert : pourquoi. Le terminal s'ouvre quand même.
+    /// The log asked for could not be opened: why. The terminal opens all the same.
     journal_failed: Option<String>,
 }
 
@@ -48,11 +48,11 @@ pub struct Opened {
 struct Closed {
     id: u32,
     exit_status: Option<u32>,
-    /// Le signal qui a arrêté le shell, s'il n'a pas fini de lui-même.
+    /// The signal that stopped the shell, if it did not end by itself.
     signal: Option<String>,
 }
 
-/// Le shell de l'utilisateur : PowerShell sous Windows, `$SHELL` ailleurs, `/bin/sh` faute de mieux.
+/// The shell of the user: PowerShell on Windows, `$SHELL` elsewhere, `/bin/sh` for want of anything better.
 fn default_shell() -> PathBuf {
     if cfg!(windows) {
         PathBuf::from("powershell.exe")
@@ -61,13 +61,13 @@ fn default_shell() -> PathBuf {
     }
 }
 
-/// Le dossier personnel de l'utilisateur.
+/// The home folder of the user.
 fn home_dir() -> Option<PathBuf> {
     let var = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
     std::env::var_os(var).map(PathBuf::from).filter(|p| p.is_dir())
 }
 
-/// Le dossier où ouvrir le terminal : `wanted` s'il existe, sinon le dossier personnel.
+/// The folder to open the terminal in: `wanted` if it exists, otherwise the home folder.
 fn start_dir(wanted: Option<&str>) -> PathBuf {
     wanted
         .map(PathBuf::from)
@@ -76,7 +76,7 @@ fn start_dir(wanted: Option<&str>) -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("."))
 }
 
-/// Un dossier tel qu'on le montre : le dossier personnel s'écrit `~`.
+/// A folder as it is shown: the home folder is written `~`.
 fn shown(dir: &std::path::Path) -> String {
     match home_dir().and_then(|home| dir.strip_prefix(&home).ok().map(|rest| rest.to_path_buf())) {
         Some(rest) if rest.as_os_str().is_empty() => "~".to_string(),
@@ -85,18 +85,18 @@ fn shown(dir: &std::path::Path) -> String {
     }
 }
 
-/// Le nom court d'un shell : `/usr/bin/zsh` donne `zsh`, `powershell.exe` donne `powershell`.
+/// The short name of a shell: `/usr/bin/zsh` gives `zsh`, `powershell.exe` gives `powershell`.
 fn shell_name(shell: &std::path::Path) -> String {
     shell.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| shell.display().to_string())
 }
 
 fn with_terminal<T>(state: &LocalState, id: u32, f: impl FnOnce(&mut Local) -> Result<T, String>) -> Result<T, String> {
-    let mut terminals = state.terminals.lock().map_err(|_| "état des terminaux indisponible".to_string())?;
-    let terminal = terminals.get_mut(&id).ok_or_else(|| "ce terminal est fermé".to_string())?;
+    let mut terminals = state.terminals.lock().map_err(|_| "The terminals are unavailable. Restart Ramure.".to_string())?;
+    let terminal = terminals.get_mut(&id).ok_or_else(|| "This terminal is closed.".to_string())?;
     f(terminal)
 }
 
-/// Ouvre un terminal local de `cols` × `rows`, dans `cwd` ou le dossier personnel.
+/// Opens a local terminal of `cols` × `rows`, in `cwd` or the home folder.
 #[tauri::command]
 pub fn local_open(
     app: AppHandle,
@@ -108,7 +108,7 @@ pub fn local_open(
     on_data: Channel,
 ) -> Result<Opened, String> {
     let size = PtySize { rows: rows.max(2), cols: cols.max(2), pixel_width: 0, pixel_height: 0 };
-    let pair = native_pty_system().openpty(size).map_err(|e| format!("Pseudo-terminal indisponible\u{a0}: {e}."))?;
+    let pair = native_pty_system().openpty(size).map_err(|e| format!("The pseudo-terminal could not be opened: {e}."))?;
 
     let shell = default_shell();
     let dir = start_dir(cwd.as_deref());
@@ -122,8 +122,8 @@ pub fn local_open(
     let mut child = pair
         .slave
         .spawn_command(command)
-        .map_err(|e| format!("{} n’a pas pu être lancé\u{a0}: {e}.", shell.display()))?;
-    // Le côté esclave appartient désormais au shell : le garder ouvert retarderait la fin de lecture.
+        .map_err(|e| format!("{} could not start: {e}.", shell.display()))?;
+    // The slave side now belongs to the shell: keeping it open would delay the end of reading.
     drop(pair.slave);
 
     let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
@@ -135,14 +135,14 @@ pub fn local_open(
     state
         .terminals
         .lock()
-        .map_err(|_| "état des terminaux indisponible".to_string())?
+        .map_err(|_| "The terminals are unavailable. Restart Ramure.".to_string())?
         .insert(id, Local { writer, master: pair.master, killer, shell_pid });
 
-    // Le journal de chaque session de l'hôte s'ouvre avant la première lecture.
+    // The log of every session of the host opens before the first read.
     let key = format!("local:{id}");
     let journal_failed = journal.as_ref().and_then(|open| crate::journal::start(&key, open).err());
 
-    // La lecture est bloquante : un fil à part relaie la sortie vers l'interface, et le journal.
+    // Reading blocks: a thread of its own passes the output on to the interface, and to the log.
     std::thread::spawn(move || {
         let mut buffer = [0u8; 16 * 1024];
         loop {
@@ -159,7 +159,7 @@ pub fn local_open(
         crate::journal::stop(&key);
     });
 
-    // Un second fil attend la fin du shell, range le terminal, et le dit à l'interface.
+    // A second thread waits for the shell to end, puts the terminal away, and tells the interface.
     std::thread::spawn(move || {
         let status = child.wait().ok();
         if let Ok(mut terminals) = app.state::<LocalState>().terminals.lock() {
@@ -192,17 +192,17 @@ pub fn local_resize(state: State<'_, LocalState>, id: u32, cols: u16, rows: u16)
     })
 }
 
-/// Ferme le terminal : le shell est arrêté, et `local-closed` suit.
+/// Closes the terminal: the shell is stopped, and `local-closed` follows.
 #[tauri::command]
 pub fn local_close(state: State<'_, LocalState>, id: u32) -> Result<(), String> {
     with_terminal(&state, id, |t| t.killer.kill().map_err(|e| e.to_string()))
 }
 
-/// Un programme tourne-t-il au premier plan du terminal, autre que le shell lui-même ?
+/// Is a program other than the shell itself running in the foreground of the terminal?
 ///
-/// Sous Unix, le pseudo-terminal dit quel groupe de processus est au premier plan : c'est celui du
-/// shell tant qu'il attend à son invite, celui du programme pendant qu'il tourne. `None` quand on
-/// ne peut pas le savoir : ConPTY, sous Windows, n'a pas d'équivalent.
+/// On Unix, the pseudo-terminal says which process group is in the foreground: that of the shell
+/// while it waits at its prompt, that of the program while it runs. `None` when there is no way
+/// to know: ConPTY, on Windows, has no equivalent.
 #[cfg(unix)]
 fn foreground_is_program(master: &dyn MasterPty, shell_pid: Option<u32>) -> Option<bool> {
     let leader = master.process_group_leader()?;
@@ -214,12 +214,12 @@ fn foreground_is_program(_master: &dyn MasterPty, _shell_pid: Option<u32>) -> Op
     None
 }
 
-/// Pour chaque terminal de `ids`, dans l'ordre : `true` si un programme y tourne, `false` si le
-/// shell attend à son invite ou si le terminal est fermé, `null` si on ne peut pas le savoir.
-/// L'interface s'en sert avant de fermer un onglet ou la fenêtre (charte, section 9.20).
+/// For each terminal of `ids`, in order: `true` if a program runs in it, `false` if the shell
+/// waits at its prompt or the terminal is closed, `null` if there is no way to know. The interface
+/// uses it before closing a tab or the window (guidelines, section 9.20).
 #[tauri::command]
 pub fn local_busy(state: State<'_, LocalState>, ids: Vec<u32>) -> Result<Vec<Option<bool>>, String> {
-    let terminals = state.terminals.lock().map_err(|_| "état des terminaux indisponible".to_string())?;
+    let terminals = state.terminals.lock().map_err(|_| "The terminals are unavailable. Restart Ramure.".to_string())?;
     Ok(ids
         .iter()
         .map(|id| match terminals.get(id) {
@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn a_missing_folder_falls_back_to_the_home_folder() {
         let home = home_dir().unwrap_or_else(|| PathBuf::from("."));
-        assert_eq!(start_dir(Some("/ce/dossier/n/existe/pas")), home);
+        assert_eq!(start_dir(Some("/this/folder/does/not/exist")), home);
         assert_eq!(start_dir(None), home);
     }
 
@@ -256,14 +256,14 @@ mod tests {
         command.args(["-c", "echo ramure-$((40 + 2))"]);
         let mut child = pair.slave.spawn_command(command).expect("shell");
         drop(pair.slave);
-        let mut reader = pair.master.try_clone_reader().expect("lecture");
+        let mut reader = pair.master.try_clone_reader().expect("reader");
         let mut output = String::new();
         let _ = reader.read_to_string(&mut output);
-        assert!(child.wait().expect("fin").success());
-        assert!(output.contains("ramure-42"), "sortie : {output:?}");
+        assert!(child.wait().expect("exit").success());
+        assert!(output.contains("ramure-42"), "output: {output:?}");
     }
 
-    /// Attend que `condition` devienne vraie, deux secondes au plus.
+    /// Waits for `condition` to become true, two seconds at most.
     #[cfg(unix)]
     fn eventually(mut condition: impl FnMut() -> bool) -> bool {
         for _ in 0..100 {
@@ -281,29 +281,29 @@ mod tests {
         let pair = native_pty_system()
             .openpty(PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })
             .expect("pseudo-terminal");
-        // Un shell interactif : c'est lui qui met chaque programme dans son propre groupe.
+        // An interactive shell: it is the one that puts each program in its own group.
         let mut command = CommandBuilder::new("/bin/sh");
         command.arg("-i");
         let mut child = pair.slave.spawn_command(command).expect("shell");
         drop(pair.slave);
         let shell_pid = child.process_id();
-        let mut reader = pair.master.try_clone_reader().expect("lecture");
-        // La sortie doit être lue, sinon le shell se bloque en écrivant son invite.
+        let mut reader = pair.master.try_clone_reader().expect("reader");
+        // The output must be read, otherwise the shell blocks while writing its prompt.
         std::thread::spawn(move || {
             let mut buffer = [0u8; 1024];
             while matches!(reader.read(&mut buffer), Ok(n) if n > 0) {}
         });
-        let mut writer = pair.master.take_writer().expect("écriture");
+        let mut writer = pair.master.take_writer().expect("writer");
         let master = pair.master.as_ref();
 
-        assert!(eventually(|| foreground_is_program(master, shell_pid) == Some(false)), "à l'invite, rien ne tourne");
-        writer.write_all(b"sleep 30\n").expect("commande");
-        assert!(eventually(|| foreground_is_program(master, shell_pid) == Some(true)), "sleep tourne au premier plan");
-        // Ctrl + C arrête le programme : le shell reprend le premier plan.
-        writer.write_all(&[3]).expect("interruption");
-        assert!(eventually(|| foreground_is_program(master, shell_pid) == Some(false)), "le shell a repris la main");
+        assert!(eventually(|| foreground_is_program(master, shell_pid) == Some(false)), "at the prompt, nothing runs");
+        writer.write_all(b"sleep 30\n").expect("command");
+        assert!(eventually(|| foreground_is_program(master, shell_pid) == Some(true)), "sleep runs in the foreground");
+        // Ctrl + C stops the program: the shell takes the foreground back.
+        writer.write_all(&[3]).expect("interrupt");
+        assert!(eventually(|| foreground_is_program(master, shell_pid) == Some(false)), "the shell has taken over again");
 
-        writer.write_all(b"exit\n").expect("fin");
+        writer.write_all(b"exit\n").expect("exit");
         let _ = child.wait();
     }
 }
