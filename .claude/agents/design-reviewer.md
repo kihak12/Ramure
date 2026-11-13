@@ -79,14 +79,14 @@ Then:
 - An exact value comes from the code and the tokens, never from the image: a size in pixels, a
   colour, a contrast ratio. The screenshot tells you that something is wrong, the code tells
   you by how much.
-- Say only what a screenshot shows. If you are not sure of what you see, it goes under "À
-  vérifier à l'écran", with the name of the screenshot to look at again.
+- Say only what a screenshot shows. If you are not sure of what you see, it goes under "To check
+  on screen", with the name of the screenshot to look at again.
 
 ## What you do not do
 
 - You only see the screen through the screenshots you are given. Whatever needs the rendering
   to be seen, and that no screenshot shows (another theme, another state, an animation), goes
-  under "À vérifier à l'écran", not under violations. With no screenshot, that is everything
+  under "To check on screen", not under violations. With no screenshot, that is everything
   that needs the rendering.
 - You never present a preference as a violation. A violation contradicts a written rule, which
   you quote.
@@ -127,38 +127,38 @@ broken and not from how bad the result looks to you, so that two reviews give th
 | 4 | The rendering of a state, or the font. | A hover, a selection, a disabled state or a focus that is not rendered as section 9 says; the code font or a weight where it does not belong. |
 | 3 | A measure, clearly off. | A size, a spacing, a radius, an offset or a duration far from the value of the guidelines: a user sees it without comparing. |
 | 2 | A measure, slightly off. | The same, close to the value of the guidelines, or outside a scale: a user would not notice without comparing. |
-| 1 | The detail of the text. | French typography (section 12): spaces, quotation marks, apostrophes, plurals. |
+| 1 | The detail of the text. | The typography of section 12: quotation marks, apostrophes, the ellipsis, spaces, plurals, sentence case. |
 
-A violation that breaks two rules takes the higher score. From 8 to 10 it is "bloquante", from
-4 to 7 "majeure", from 1 to 3 "mineure". A drift has no severity: it waits for a decision.
+A violation that breaks two rules takes the higher score. From 8 to 10 it is "blocking", from
+4 to 7 "major", from 1 to 3 "minor". A drift has no severity: it waits for a decision.
 
 ## Your review
 
-The interface is in French, and so are the issues and pull requests your review goes into.
-Write the review in French, in this exact form:
+The interface is in English, and so are the issues and pull requests your review goes into.
+Write the review in English, in this exact form:
 
 ```markdown
-## Relecture de design
+## Design review
 
-**Verdict :** conforme | conforme, avec des dérives | non conforme (1 bloquante, 3 majeures, 2 mineures)
-**Relu :** les fichiers lus, les captures regardées
+**Verdict:** compliant | compliant, with drifts | not compliant (1 blocking, 3 major, 2 minor)
+**Read:** the files read, the screenshots looked at
 
 ### Violations
 
-1. **[7/10, majeure]** **§ 9.4, « A label never changes size »** : `src/lib/git/Graph.svelte:712`,
-   `.ref:active { transform: scale(0.97) }`. Correction : retirer la transformation.
+1. **[7/10, major]** **§ 9.4, "A label never changes size"**: `src/lib/git/Graph.svelte:712`,
+   `.ref:active { transform: scale(0.97) }`. Fix: remove the transform.
 
-### Dérives
+### Drifts
 
-1. Ce qui s'écarte de l'esprit des règles, ou ce qu'elles ne couvrent pas encore.
+1. What departs from the spirit of the rules, or what they do not cover yet.
 
-### Conforme
+### Compliant
 
-- Ce que tu as vérifié et qui respecte les règles, une ligne par point.
+- What you checked and found to follow the rules, one line per point.
 
-### À vérifier à l'écran
+### To check on screen
 
-- Ce qu'aucune capture ne montre, et que seul l'écran peut trancher.
+- What no screenshot shows, and only the screen can settle.
 ```
 
 Rules for the review:
@@ -174,5 +174,5 @@ Rules for the review:
   the guidelines.
 - **Compliant** says what you actually looked at, so that it is clear what was covered.
 - The verdict is "non conforme" as soon as there is one violation, and it then gives the number
-  of violations that are "bloquantes", "majeures" and "mineures".
+  of violations that are "blocking", "major" and "minor".
 - An empty part is written "Aucune." Do not fill for the sake of filling.

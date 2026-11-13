@@ -34,6 +34,8 @@ Tauri 2, Rust, Svelte 5.
 
 ## Conventions
 
-- Documentation (every Markdown file) is written in English.
-- The interface, code comments, commits and pull requests are in French.
+- Everything is written in English: the interface, the documentation (every Markdown file), code
+  comments, commits, issues and pull requests.
+- The move from French to English is tracked in #147, one batch per pull request. Text still in
+  French belongs to one of its batches: translate it there, not in an unrelated change.
 - One simple issue, then a dedicated pull request.

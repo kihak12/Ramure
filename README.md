@@ -22,8 +22,9 @@ and the SSH terminal on Windows and Ubuntu. Everyday Git (J1) and advanced Git (
 From the SSH milestone (J3), the host book, tabbed terminals and keys are in; the rest is listed
 below.
 
-The interface is in French for now. Where it helps to find something on screen, this page gives
-the French label in quotes.
+The interface is in English. Where it helps to find something on screen, this page gives its
+label in quotes. It is moving from French to English (#147): until that work is done, some
+screens may still show the French text.
 
 ## What Ramure does today
 
@@ -38,21 +39,21 @@ the French label in quotes.
 - **Resizable cards**: the branch list on the left and the detail panel on the right are resized
   by dragging the handle between them and the graph, or from the keyboard. Widths are kept from
   one launch to the next; a double-click restores the default width.
-- **Cards to show**: the "Affichage" button at the right end of the toolbar opens a menu with
+- **Cards to show**: the "View" button at the right end of the toolbar opens a menu with
   one box per card: the branch list, the graph, the terminal and the detail panel. The side
   cards are also hidden and shown with Ctrl + Shift + B (branch list) and Ctrl + Shift + E
   (detail panel), or from the command palette, to read the graph on the whole width. A hidden
   detail panel only comes back when asked for: Enter or a double-click on a commit, a click on
-  the "WIP" row, or "Voir les modifications en cours".
+  the "WIP" row, or "Show working changes".
 
 ### Graph
 
 - **Graph**: `git log`, lanes computed in Rust, drawn on a canvas. Only the visible rows exist in
   the page; 50,000 commits scroll smoothly.
-- **Two styles**, chosen in the settings. "Ruban" (the default): a dot with the author's
+- **Two styles**, chosen in the settings. "Ribbon" (the default): a dot with the author's
   initials on each commit, soft curves, the message in a capsule of the branch colour, an
-  animated halo on the current commit. "Classique": points and curves, more compact.
-- **A "Branche / Tag" column** on the left of the graph, linked to its commit by a line. A
+  animated halo on the current commit. "Classic": points and curves, more compact.
+- **A "Branch / Tag" column** on the left of the graph, linked to its commit by a line. A
   computer icon marks the last local commit of a branch, a cloud the last remote one; on the same
   commit they share one label. Extra labels unfold on hover.
 - **Sidebar**: local branches with their ahead and behind counts, remote branches, tags, stashes,
@@ -68,7 +69,7 @@ the French label in quotes.
   discard after confirmation.
 - **Staging by hunk or by line**: in the diff of a changed file, click the lines to stage
   (Shift + click for a range), or stage a whole hunk.
-- **Commit**: message, Ctrl + Enter, and "Modifier le dernier commit" (amend).
+- **Commit**: message, Ctrl + Enter, and "Amend last commit".
 - **Stashes**: stash with untracked files, pop, apply, drop, view the content.
 
 ### Branches, tags and history
@@ -95,9 +96,9 @@ Everything goes through a right-click on a commit or on a label, and through the
 
 ### Synchronisation
 
-- **Fetch** ("Récupérer", `git fetch --all --prune`), **Pull** ("Tirer": fast-forward by
-  default; rebase or merge as a setting), **Push** ("Pousser": a branch without an upstream is
-  published automatically), and **force push** (`--force-with-lease`) after confirmation.
+- **Fetch** (`git fetch --all --prune`), **Pull** (fast-forward by default; rebase or merge as a
+  setting), **Push** (a branch without an upstream is published automatically), and **force push**
+  (`--force-with-lease`) after confirmation.
 - **Automatic fetch** every 5 minutes, adjustable from 1 to 60 or turned off.
 
 Authentication to remotes goes through what git already uses: a credential helper (Git Credential
@@ -114,7 +115,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   long build) asks first. On Windows, where Ramure cannot tell, closing a repository or the window
   asks as soon as a shell is open.
 - The height is set with the handle above the terminal and restored at the next launch.
-- Unchecking the graph in the "Affichage" menu gives the terminal the whole height. The graph
+- Unchecking the graph in the "View" menu gives the terminal the whole height. The graph
   comes back when the terminal is hidden, or when a diff is opened.
 - After a command, the graph, the counters and the changes are read again on their own.
 
@@ -125,7 +126,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   (`%APPDATA%\Ramure` or `~/.config/ramure`), with no secret in it.
 - **Import of `~/.ssh/config`**: Host, HostName, User, Port, IdentityFile. A host that goes
   through a bastion (ProxyJump) is imported, but cannot be connected to yet.
-- **Tabbed terminals**: a double-click on a host opens a terminal; "Reconnecter" restarts a
+- **Tabbed terminals**: a double-click on a host opens a terminal; "Reconnect" restarts a
   session that has ended, startup command included.
 - **Local terminal**: Ctrl + Shift + N, or the "+" after the tabs, opens the shell of this
   machine (PowerShell on Windows, your `SHELL` on Ubuntu) in your home folder.
@@ -138,27 +139,27 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
 - **Keys**: the list of keys in `~/.ssh`, generation of an ed25519 key with an optional
   passphrase, copy of the public key. Keys stay in `~/.ssh`.
-- **Testing a host**: "Tester la connexion", in its form, connects with the values typed so far,
+- **Testing a host**: "Test connection", in its form, connects with the values typed so far,
   authenticates and disconnects, without saving anything or opening a terminal. The result shows
   in the form; an unknown server, a passphrase or a password is asked for as when connecting.
-- **A host's key**: in its form, the key file is typed or picked with "Parcourir…", which opens
+- **A host's key**: in its form, the key file is typed or picked with "Browse…", which opens
   the system file dialog in `~/.ssh`.
-- **Passwords and passphrases** are asked for at connection time. Tick "Retenir dans le
-  trousseau du système" and Ramure keeps the secret in the keyring of the system, the Credential
+- **Passwords and passphrases** are asked for at connection time. Tick "Remember in the
+  system keyring" and Ramure keeps the secret in the keyring of the system, the Credential
   Manager on Windows or the Secret Service (GNOME Keyring, KWallet) on Ubuntu, and nowhere else.
   The next connection does not ask. A kept secret that the server refuses is forgotten and asked
-  for again. The form of a host and "Gérer les clés…" show what is kept, and forget it; deleting
+  for again. The form of a host and "Manage keys…" show what is kept, and forget it; deleting
   a host forgets its password. Without a keyring, nothing is offered, and Ramure says so.
 
 ### Settings, shortcuts and command log
 
 - **Settings page**: the button at the foot of the rail, or Ctrl + , . It opens on the section
   of the module you are in. Every setting applies at once; there is nothing to save.
-- **Light or dark**: "Système" follows the system, "Clair" and "Sombre" hold one.
-- **Colour themes**: Ardoise (the default), Encre, Sous-bois and Braise, each in light and dark.
+- **Light or dark**: "System" follows the system, "Light" and "Dark" hold one.
+- **Colour themes**: Slate (the default), Ink, Undergrowth and Ember, each in light and dark.
   A theme changes the colours only. `npm run check` verifies that every theme meets the contrasts
   and the colour distances of the design guidelines.
-- **Configurable keyboard shortcuts**: in the settings, under "Raccourcis clavier", with a
+- **Configurable keyboard shortcuts**: in the settings, under "Keyboard shortcuts", with a
   filter. In a terminal, only shortcuts with Shift, Alt or a function key are active.
 - **Command log**: every git command that was run, with its duration, from the status bar.
 
@@ -166,7 +167,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 - From milestone J3: a session log, export to `~/.ssh/config`, import of an existing key.
 - Milestone J4: SFTP, tunnels, installers and updates.
-- The interface exists in French only.
+- The interface exists in English only, once #147 is done: no other language is planned.
 
 ## Requirements
 
@@ -206,11 +207,11 @@ npm run check
 ```
 
 This command checks the types, then rejects any colour, text size, weight, radius or duration
-hard-coded in a component: those values come from the tokens in `src/app.css`. It then computes
-the contrasts and the colour distances of every colour theme, in light and in dark, against those
-of the design guidelines. Last, it rejects two files of `src/` whose names differ only by case, such as
-`Toasts.svelte` and `toasts.svelte.ts`: on Windows an import of one loads the other, and the
-window stays blank.
+hard-coded in a component: those values come from the tokens in `src/app.css`. It then computes the
+contrasts and the colour distances of every colour theme, in light and in dark, against those of the
+design guidelines. Last, it rejects two files of `src/` whose names differ only by case, such as
+`Toasts.svelte` and `toasts.svelte.ts`: on Windows an import of one loads the other, and the window
+stays blank.
 
 ```bash
 cd src-tauri && cargo test
