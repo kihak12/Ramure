@@ -1640,9 +1640,9 @@ here is what is read in the documentation of git and in a terminal.
 | checkout, switch | Switch, as `git switch` |
 | remote | Remote |
 | revert | "Revert this commit"; the operation in progress: "Revert in progress" |
-| an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort`. In the banner, "Abort…" opens its confirmation (9.1); a command that names the operation says it: "Abort revert". |
+| an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort`. In the banner, "Abort…" opens its confirmation (9.1); a command that names the operation says it: "Abort revert…". |
 | amend | "Amend last commit" |
-| discard | "Discard changes", for what is not committed |
+| discard | "Discard changes…", for what is not committed; it asks first (9.1) |
 | stash apply, stash drop | "Apply stash", "Drop stash" |
 | commit, tag, reset, HEAD | Kept as they are, in lower case except HEAD. |
 

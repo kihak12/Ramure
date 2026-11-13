@@ -129,7 +129,7 @@
             {#if command.shortcut}<span class="keys">{#each command.shortcut.split(' + ') as part, n (n)}<kbd>{part}</kbd>{/each}</span>{/if}
           </div>
         {:else}
-          <p class="none">Nothing matches “{query}.”</p>
+          <p class="none">No results for “{query}”</p>
         {/each}
       </div>
 

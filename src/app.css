@@ -9,7 +9,7 @@
 [data-palette='slate'] {
   color-scheme: light;
 
-  /* Couleurs (charte, section 2) */
+  /* Colors (guidelines, section 2) */
   --side: #eaecf1;
   --panel: #ffffff;
   --bg: #f6f7f9;
@@ -70,7 +70,7 @@
   --shadow-soft: 0 1px 2px rgb(18 22 30 / 0.06);
   --shadow-pop: 0 18px 44px -14px rgb(18 22 30 / 0.3), 0 2px 6px rgb(18 22 30 / 0.08);
 
-  /* Typographie (section 3) */
+  /* Typography (section 3) */
   --f-ui: 'DM Sans Variable', 'Segoe UI Variable Text', 'Segoe UI', Ubuntu, system-ui, sans-serif;
   --f-mono: 'DM Mono', 'Cascadia Mono', 'Ubuntu Mono', Consolas, 'DejaVu Sans Mono', monospace;
   --fs-micro: 10.5px;
@@ -84,7 +84,7 @@
   --fw-regular: 400;
   --fw-strong: 650;
 
-  /* Formes (section 5) */
+  /* Shapes (section 5) */
   --radius-xs: 4px;
   --radius-s: 6px;
   --radius: 8px;
@@ -864,7 +864,7 @@ dialog:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
-/* Champ en erreur : bordure et halo en --bad, son message dessous (charte, section 9.3). */
+/* A field in error: border and halo in --bad, its message below (guidelines, section 9.3). */
 .field.invalid,
 .field.invalid:focus-visible {
   border-color: var(--bad);
@@ -977,7 +977,7 @@ strong {
   white-space: nowrap;
 }
 
-/* Petite pastille : compteur, nombre de commits en avance ou en retard. */
+/* Small pill: a counter, the number of commits ahead or behind. */
 .chip {
   display: inline-flex;
   align-items: center;

@@ -49,7 +49,7 @@
 />
 
 <section class="group" aria-labelledby="group-look">
-  <h3 id="group-look">Apparence</h3>
+  <h3 id="group-look">Appearance</h3>
   <SettingRow id="set-theme" name="Theme" help="“System” follows the light or dark setting of your computer." group>
     <Choice name="set-theme" layout="tiles" labelledby="set-theme-name" describedby="set-theme-help" value={prefs.theme} options={THEMES} onchange={setTheme}>
       {#snippet preview(choice: ThemeChoice)}<ThemePreview {choice} palette={prefs.palette} />{/snippet}

@@ -97,7 +97,7 @@
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, false)}
           actions={[
-            { label: 'Discard changes', icon: 'undo', danger: true, run: (f: FileChange) => void discardFiles(repo, [f]) },
+            { label: 'Discard changes…', icon: 'undo', danger: true, run: (f: FileChange) => void discardFiles(repo, [f]) },
             { label: 'Stage', icon: 'plus', run: (f: FileChange) => void repo.stage([f]) },
           ]}
         />
