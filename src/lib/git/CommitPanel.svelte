@@ -2,6 +2,7 @@
   import Icon from '../ui/Icon.svelte';
   import { toasts } from '../ui/toasts.svelte';
   import FileList from './FileList.svelte';
+  import WipStrip from './WipStrip.svelte';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
 
@@ -23,16 +24,9 @@
   }
 </script>
 
-<header class="head">
-  <span class="label">Commit</span>
-  <!-- The working changes stay one click away, even while another commit is shown. -->
-  {#if repo.wipCount > 0}
-    <button class="btn small" type="button" onclick={() => repo.showWip()}>
-      <Icon name="pencil" size={14} />
-      {repo.wipText}
-    </button>
-  {/if}
-</header>
+<!-- The working changes stay one click away, even while another commit is shown. -->
+{#if repo.wipCount > 0}<WipStrip {repo} />{/if}
+<span class="label">Commit</span>
 <p class="title">{commit.subject}</p>
 {#if body}<p class="message">{body}</p>{/if}
 <dl>
@@ -81,16 +75,6 @@
 {/if}
 
 <style>
-  .head {
-    /* The whole width of the card: the button goes to the right edge. The height is that of a
-       small button, so that the title of the commit does not move when the button appears. */
-    align-self: stretch;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 24px;
-  }
   p {
     margin: 0;
   }

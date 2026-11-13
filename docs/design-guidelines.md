@@ -52,6 +52,7 @@ The two screenshots show the application as it is, on a demonstration repository
    - [9.19 Choice](#919-choice)
    - [9.20 Terminal of a repository](#920-terminal-of-a-repository)
    - [9.21 Host form](#921-host-form)
+   - [9.22 Uncommitted changes](#922-uncommitted-changes)
 10. [Commit graph](#10-commit-graph)
 11. [Accessibility](#11-accessibility)
 12. [Tone of the interface text](#12-tone-of-the-interface-text)
@@ -114,7 +115,7 @@ component that hard-codes one.
 | `--hover-side` | Background of a hovered element on the window background: rail, toolbar, tabs, status bar. | `#d8e2f2` | `#101a27` |
 | `--sel` | Background of a selected element. | `#cee5ff` | `#112f56` |
 | `--accent` | Main action, focus, active element, link. | `#126bed` | `#64a5ff` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded. | `#e3eefe` | `#102a4e` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded, the strip of uncommitted changes (9.22). | `#e3eefe` | `#102a4e` |
 | `--on-accent` | Text placed on the accent or on a branch color. | `#ffffff` | `#08131f` |
 | `--ok` / `--ok-soft` | Success, added line. | `#037c40` / `#def5e6` | `#42c887` / `#02321b` |
 | `--warn` / `--warn-soft` | Warning, pending operation. | `#905601` / `#fef0d4` | `#f9a52c` / `#3e2a06` |
@@ -147,7 +148,8 @@ Eight colors, reserved for the graph. A branch takes the color of its column: co
 - No color is hard-coded in a component. An intermediate shade is made with `color-mix()`
   between two tokens.
 - **The accent** stands for one thing at a time: the main button of a surface (9.1,
-  "Hierarchy"), the focus, the active element. Never two main buttons in one surface.
+  "Hierarchy"), the focus, the active element, and the changes not yet committed, which the
+  "WIP" row and the strip of the detail panel show (9.22). Never two main buttons in one surface.
 - **State colors** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
 - **`--faint`** never carries information that is needed: its contrast is too low for text that
   has to be read.
@@ -309,7 +311,7 @@ Two weights, no more.
 | Token | Weight | Use |
 |---|---|---|
 | `--fw-regular` | 400 | Body text. |
-| `--fw-strong` | 650 | Titles, labels, main button, current element (active tab, current branch), label of a local branch. |
+| `--fw-strong` | 650 | Titles, labels, main button, current element (active tab, current branch), label of a local branch, the sentence of the strip of uncommitted changes (9.22). |
 
 ### 3.4 Rules
 
@@ -375,7 +377,7 @@ From left to right and from top to bottom:
 |---|---|---|
 | `--radius-xs` | 4 px | Small markers: shortcut key, file status letter, highlight inside a diff line; the 15 px checkbox. |
 | `--radius-s` | 6 px | What can be clicked: buttons, fields, branch and tag labels, menu items. |
-| `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels. |
+| `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels; a tinted box inside a card or a dialog (a warning, the strip of uncommitted changes). |
 | `--radius-l` | 12 px | What floats: dialogs, menus, command palette; notifications and the unfolded labels of a commit excepted (8 px). |
 | `--radius-card` | 14 px | Cards. |
 | `--radius-pill` | 999 px | What informs: counters, the "+N" of the labels of a commit (9.4), the capsule of a commit message. |
@@ -405,8 +407,9 @@ The interface has four levels. Each is recognized by its background.
 | `--shadow-pop` | `0 18px 44px -14px rgb(18 22 30 / 0.3), 0 2px 6px rgb(18 22 30 / 0.08)` | `0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4)` |
 
 - A shadow says "this floats". A card never has one.
-- No card inside a card. Inside a card, things are separated by space or by a `--line-soft`
-  line; inside a dialog, by space or by a `--line` line, since `--line-soft` does not show on
+- No card inside a card. A tinted box inside a card or a dialog (a warning, the strip of
+  uncommitted changes, 9.22) is not one: it has no border and no shadow, only a `-soft`
+  background. Inside a card, things are separated by space or by a `--line-soft` line; inside a dialog, by space or by a `--line` line, since `--line-soft` does not show on
   `--raised` in dark (9.6).
 - Shadows are neutral: they do not take the tint of the theme.
 - A dialog sits on the `--scrim` veil, with a 2 px blur.
@@ -546,7 +549,8 @@ its own buttons.
 - **Ghost.** What comes second to something else: a toggle; a button that sits beside the
   sentence or the element it acts on ("Forget password", the cross of a tab); the
   actions that a row shows on hover; and the way out of a panel laid over a terminal or of a
-  strip ("Cancel", "Close tab", "Stop"), which have no veil to leave by.
+  strip ("Cancel", "Close tab", "Stop"), which have no veil to leave by. The only action of a
+  tinted strip is standard instead, so that it stands out from the tint (9.22).
 - **Danger** confirms a destructive action, in a dialog only. It takes the place of the
   primary, last on the line, and repeats the verb of the title: "Delete" under "Delete
   web-prod?". **Ghost danger** is the entry that opens that dialog:
@@ -1507,6 +1511,29 @@ need the room.
   `vps.example.net`: never an "@" on its own. In a sentence, the address alone is in the code
   font: "Connecting to `deploy@server`…".
 
+### 9.22 Uncommitted changes
+
+When the working directory has changes that are not committed, the detail panel says so at its
+top, whatever it shows: a commit, or nothing selected yet. The "WIP" row of the graph says it
+too, but it scrolls out of sight; the detail panel is where the eye goes after a click.
+
+- **A strip** across the width of the card, above its content: `--accent-soft` background, 8 px
+  corners, 8 px of inner margin, 10 px on the sides. It is a sign, not a banner: it asks nothing
+  and warns of nothing, so it has no `role="status"` and no transition of its own.
+- **First line**: the pencil icon, 16 px, in `--accent`, then the sentence in `--ink`, weight
+  650: "2 files with uncommitted changes", "1 file with uncommitted changes". The sentence wraps
+  under itself when the card is narrow.
+- **Second line**: "Show working changes", a small standard button, aligned with the sentence,
+  with the words of the palette command (9.17). It shows the work panel, as the "WIP" row does.
+  Two lines whatever the width: the detail panel is too narrow for one, and the button keeps its
+  place.
+- **No strip** while the work panel itself is shown, nor once the changes are committed or
+  discarded.
+- **It comes and goes with the changes**, and what is under it moves with it. This is the one
+  exception to "nothing moves without an action from the user" (1, "Calm"): the strip appears when the
+  repository is read again, after a change made in an editor, and the strip is the news itself.
+  Reserving its place would leave an empty band at the top of every commit.
+
 ## 10. Commit graph
 
 ### 10.1 Columns
@@ -1644,6 +1671,7 @@ here is what is read in the documentation of git and in a terminal.
 | an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort`. In the banner, "Abort…" opens its confirmation (9.1); a command that names the operation says it: "Abort revert…". |
 | amend | "Amend last commit" |
 | discard | "Discard changes…", for what is not committed; it asks first (9.1) |
+| the changes not yet committed | "uncommitted changes" in a sentence; "working changes" in a command: "Show working changes" |
 | stash apply, stash drop | "Apply stash", "Drop stash" |
 | commit, tag, reset, HEAD | Kept as they are, in lower case except HEAD. |
 
