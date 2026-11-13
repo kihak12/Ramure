@@ -14,26 +14,26 @@
   const conflicts = $derived(repo.conflicts);
   const unstaged = $derived(status.unstaged.filter((f) => f.kind !== 'conflict'));
   const message = $derived(repo.message);
-  // Un amend peut ne changer que le message : rien à indexer n'est alors requis.
+  // An amend may change only the message: nothing staged is needed then.
   const canCommit = $derived(
     (status.staged.length > 0 || repo.amend) && message.trim().length > 0 && !busy && conflicts.length === 0,
   );
   const subjectLength = $derived(message.split('\n')[0].length);
   const headPushed = $derived(repo.hasRemote && !!repo.head && !repo.head.localOnly);
-  const plural = (n: number) => (n > 1 ? 's' : '');
+  const plural = (n: number) => (n === 1 ? '' : 's');
 
-  // Un fichier présent dans les deux listes n'est indexé qu'en partie.
+  // A file in both lists is only partly staged.
   const partial = $derived(new Set(status.staged.filter((f) => unstaged.some((u) => u.path === f.path)).map((f) => f.path)));
 
-  // Ce qui manque pour commiter : dit à l'écran, plutôt que laissé à deviner devant un bouton grisé.
+  // What is missing to commit: said on screen, rather than left to guess in front of a grayed-out button.
   const blocker = $derived.by(() => {
     if (busy) return '';
-    if (conflicts.length) return 'Résous d’abord les conflits.';
-    if (!status.staged.length && !repo.amend) return 'Rien n’est indexé\u00a0: indexe un fichier ou des lignes.';
-    if (!message.trim()) return 'Écris un message de commit.';
+    if (conflicts.length) return 'Resolve the conflicts first.';
+    if (!status.staged.length && !repo.amend) return 'Nothing is staged: stage a file or some lines.';
+    if (!message.trim()) return 'Write a commit message.';
     return '';
   });
-  // Ctrl + Entrée sans pouvoir commiter : la raison est mise en avant, jusqu'à ce qu'elle change.
+  // Ctrl + Enter while committing is not possible: the reason is brought forward, until it changes.
   let nudged = $state(false);
   $effect(() => {
     void blocker;
@@ -43,11 +43,11 @@
   const active = $derived(repo.openFile?.key ?? null);
   const activeIn = (prefix: string) => (active?.startsWith(prefix) ? active.slice(2) : null);
 
-  // Pendant un rebase, git inverse les rôles : « ours » est la base, « theirs » le commit rejoué.
+  // During a rebase, git swaps the roles: “ours” is the base, “theirs” the commit being replayed.
   const sides = $derived(
     status.operation === 'rebase'
-      ? { ours: 'Garder la version de la base', theirs: 'Garder ma modification' }
-      : { ours: 'Garder ma version', theirs: 'Garder la version entrante' },
+      ? { ours: 'Keep the base version', theirs: 'Keep your change' }
+      : { ours: 'Keep your version', theirs: 'Keep the incoming version' },
   );
 
   function onKey(e: KeyboardEvent) {
@@ -62,7 +62,7 @@
   {#if conflicts.length}
     <section class="conflicts" transition:slide={{ duration: motion.med }}>
       <header>
-        <span class="label bad"><Icon name="warning" size={14} /> En conflit · {conflicts.length}</span>
+        <span class="label bad"><Icon name="warning" size={14} /> In conflict · {conflicts.length}</span>
       </header>
       <div class="list">
         <FileList
@@ -73,19 +73,19 @@
           actions={[
             { label: sides.ours, icon: 'laptop', run: (f: FileChange) => void repo.resolve(f, 'ours') },
             { label: sides.theirs, icon: 'cloud', run: (f: FileChange) => void repo.resolve(f, 'theirs') },
-            { label: 'Marquer comme résolu (après correction dans ton éditeur)', icon: 'check', run: (f: FileChange) => void repo.stage([f]) },
+            { label: 'Mark as resolved (after fixing it in your editor)', icon: 'check', run: (f: FileChange) => void repo.stage([f]) },
           ]}
         />
       </div>
-      <p class="muted small">Clique un fichier pour ouvrir l’éditeur de conflits, ou garde directement un côté avec les boutons de sa ligne.</p>
+      <p class="muted small">Click a file to open the conflict editor, or keep one side directly with the buttons of its row.</p>
     </section>
   {/if}
 
   <section>
     <header>
-      <span class="label">Non indexé · {unstaged.length}</span>
+      <span class="label">Unstaged · {unstaged.length}</span>
       <button class="btn small" type="button" disabled={busy || !unstaged.length} onclick={() => void repo.stage(unstaged)}>
-        Tout indexer
+        Stage all
       </button>
     </header>
     {#if unstaged.length}
@@ -97,21 +97,21 @@
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, false)}
           actions={[
-            { label: 'Abandonner les modifications', icon: 'undo', danger: true, run: (f: FileChange) => void discardFiles(repo, [f]) },
-            { label: 'Indexer', icon: 'plus', run: (f: FileChange) => void repo.stage([f]) },
+            { label: 'Discard changes', icon: 'undo', danger: true, run: (f: FileChange) => void discardFiles(repo, [f]) },
+            { label: 'Stage', icon: 'plus', run: (f: FileChange) => void repo.stage([f]) },
           ]}
         />
       </div>
     {:else}
-      <p class="muted">Rien à indexer.</p>
+      <p class="muted">Nothing to stage.</p>
     {/if}
   </section>
 
   <section>
     <header>
-      <span class="label">Indexé · {status.staged.length}</span>
+      <span class="label">Staged · {status.staged.length}</span>
       <button class="btn small" type="button" disabled={busy || !status.staged.length} onclick={() => void repo.unstage(status.staged)}>
-        Tout retirer
+        Unstage all
       </button>
     </header>
     {#if status.staged.length}
@@ -122,36 +122,36 @@
           active={activeIn('s:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, true)}
-          actions={[{ label: 'Retirer de l’index', icon: 'minus', run: (f: FileChange) => void repo.unstage([f]) }]}
+          actions={[{ label: 'Unstage', icon: 'minus', run: (f: FileChange) => void repo.unstage([f]) }]}
         />
       </div>
     {:else}
-      <p class="muted">Indexe les fichiers à inclure dans le commit. Ouvre un fichier modifié pour n’indexer que certaines lignes.</p>
+      <p class="muted">Stage the files to include in the commit. Open a modified file to stage only some of its lines.</p>
     {/if}
   </section>
 
   <section class="compose">
     <label class="amend">
       <input type="checkbox" checked={repo.amend} disabled={busy || !repo.head} onchange={(e) => void repo.toggleAmend(e.currentTarget.checked)} />
-      <span>Modifier le dernier commit</span>
+      <span>Amend last commit</span>
     </label>
     {#if repo.amend && headPushed}
       <p class="warn small" transition:slide={{ duration: motion.med }}>
-        Ce commit est déjà sur le dépôt distant : après modification, il faudra pousser en forçant.
+        This commit is already on the remote: after amending it, you will have to force push.
       </p>
     {/if}
-    <label class="label" for="commit-message">Message de commit</label>
+    <label class="label" for="commit-message">Commit message</label>
     <textarea
       id="commit-message"
       class="field"
       rows="4"
-      placeholder="Résumé sur la première ligne, détails ensuite"
+      placeholder="Summary on the first line, details after"
       bind:value={repo.message}
       onkeydown={onKey}
       disabled={busy}
     ></textarea>
     {#if blocker}
-      <!-- Ctrl + Entrée refusé : une icône s'ajoute à la couleur, et le texte, réinséré, est annoncé de nouveau. -->
+      <!-- Ctrl + Enter refused: an icon is added to the color, and the text, inserted again, is announced again. -->
       <p id="commit-blocker" class="why small" class:nudged aria-live="polite">
         {#key nudged}
           {#if nudged}<Icon name="warning" size={14} />{/if}
@@ -160,7 +160,7 @@
       </p>
     {/if}
     <div class="send">
-      <small class="muted" class:long={subjectLength > 72} title="Longueur de la première ligne ; au-delà de 72 caractères, elle est tronquée dans beaucoup d’outils.">
+      <small class="muted" class:long={subjectLength > 72} title="Length of the first line: past 72 characters, many tools cut it.">
         {subjectLength} / 72
       </small>
       <button
@@ -169,14 +169,14 @@
         disabled={!canCommit}
         aria-describedby={blocker ? 'commit-blocker' : undefined}
         onclick={() => void repo.commit()}
-        title={blocker || 'Ctrl + Entrée'}
+        title={blocker || 'Ctrl + Enter'}
       >
         {#if repo.amend}
-          Modifier le commit
+          Amend commit
         {:else if status.staged.length}
-          Commiter {status.staged.length} fichier{plural(status.staged.length)}
+          Commit {status.staged.length} file{plural(status.staged.length)}
         {:else}
-          Commiter
+          Commit
         {/if}
       </button>
     </div>

@@ -12,32 +12,32 @@
   import type { CommitRow } from './types';
 
   let { repo }: { repo: Repo } = $props();
-  // Les onglets masqués restent montés : les identifiants des lignes sont propres à chacun.
+  // Hidden tabs stay mounted: the ids of the rows belong to each one.
   const uid = $props.id();
 
-  // Deux rendus du graphe, au choix dans les réglages (charte graphique, section 10).
-  // « Ruban » : pastilles d'auteur sur le graphe, courbes souples, message dans une capsule de
-  // la couleur de la branche. « Classique » : points et courbes, plus compact.
+  // Two renderings of the graph, chosen in the settings (guidelines, section 10).
+  // “Ribbon”: author dots on the graph, soft curves, the message in a capsule of the color of the
+  // branch. “Classic”: points and curves, more compact.
   const STYLES = {
     ribbon: { row: 34, lane: 24, pad: 20, node: 10, merge: 5, line: 3, max: 420 },
     classic: { row: 28, lane: 16, pad: 14, node: 5, merge: 4, line: 2, max: 340 },
   } as const;
 
-  const LABELS = { max: 220, min: 164 }; // colonne « Branche / Tag »
-  const MESSAGE = { wanted: 200, min: 120 }; // colonne du message
-  const GRAPH_MIN = 72; // le graphe n'est jamais plus étroit que son en-tête
-  const ROW_END = 10; // marge droite d'une ligne
-  const BUFFER = 24; // lignes rendues au-dessus et au-dessous de la zone visible
-  const STEP = 12; // la fenêtre de rendu ne se déplace que par paliers de 12 lignes
-  const BAND = 24; // hauteur de la bande qui relie un commit à la capsule de son message
-  const BAND_ALPHA = 0.15; // même opacité que la capsule CSS qui la prolonge dans la colonne du message
+  const LABELS = { max: 220, min: 164 }; // “Branch / tag” column
+  const MESSAGE = { wanted: 200, min: 120 }; // message column
+  const GRAPH_MIN = 72; // the graph is never narrower than its header
+  const ROW_END = 10; // right margin of a row
+  const BUFFER = 24; // rows rendered above and below the visible area
+  const STEP = 12; // the render window only moves in steps of 12 rows
+  const BAND = 24; // height of the band that links a commit to the capsule of its message
+  const BAND_ALPHA = 0.15; // same opacity as the CSS capsule that extends it in the message column
 
   let scrollTop = $state(0);
   let viewH = $state(600);
-  // Le canvas lit ses couleurs dans les jetons : il se redessine quand le thème change.
+  // The canvas reads its colors from the tokens: it is drawn again when the theme changes.
   const dark = $derived(theme.key);
-  let fontsReady = $state(false); // le canevas doit se redessiner quand la police embarquée est chargée
-  // Vrai juste après une ouverture : les lignes entrent en cascade.
+  let fontsReady = $state(false); // the canvas must be drawn again once the embedded font is loaded
+  // True just after an opening: the rows come in one after the other.
   let fresh = $state(false);
 
   let scroller = $state<HTMLDivElement>();
@@ -48,20 +48,20 @@
   const ROW = $derived(metrics.row);
 
   const commits = $derived(repo.commits);
-  // Largeur que demanderaient toutes les voies, jamais moins que l'en-tête de colonne.
+  // Width that all the lanes would ask for, never less than the column header.
   const lanesW = $derived(
     Math.max(GRAPH_MIN, Math.min(metrics.max, metrics.pad * 2 + Math.max(0, (repo.result?.maxLanes ?? 1) - 1) * metrics.lane + 6)),
   );
 
-  // --- Colonnes (charte, section 10.1) ------------------------------------------------------
-  // Le message passe d'abord. Quand il aurait moins de 200 px, les autres colonnes cèdent, dans
-  // l'ordre : le SHA, le nom de l'auteur, la date, puis « Branche / Tag » jusqu'à 164 px, puis le
-  // graphe, dont les voies de droite sont coupées, jusqu'à ce que le message ait 120 px. Le calcul
-  // part de la place qui reste après le graphe : un dépôt à nombreuses voies montre moins de colonnes.
+  // --- Columns (guidelines, section 10.1) ---------------------------------------------------
+  // The message comes first. When it would get less than 200 px, the other columns give way, in
+  // order: the SHA, the name of the author, the date, then “Branch / tag” down to 164 px, then the
+  // graph, whose lanes on the right are cut, until the message has 120 px. The computation starts
+  // from the room left after the graph: a repository with many lanes shows fewer columns.
   let cardW = $state(0);
   const columns = $derived.by(() => {
-    // Colonnes à droite du message, de la plus complète à la plus réduite. `who` : le nom de
-    // l'auteur est écrit ; le rendu « Classique » garde la place de ses initiales.
+    // Columns to the right of the message, from the fullest to the most reduced. `who`: the name
+    // of the author is written; the “Classic” rendering keeps the room of its initials.
     const initials = ribbon ? 0 : 34;
     const levels = [
       { author: 150, who: true, date: 92, sha: 66 },
@@ -76,8 +76,8 @@
     const left = room - rest(level);
     const labels = Math.max(LABELS.min, Math.min(LABELS.max, left - lanesW - MESSAGE.wanted));
     let graph = Math.max(GRAPH_MIN, Math.min(lanesW, left - labels - MESSAGE.min));
-    // Graphe coupé : il s'arrête juste après la dernière voie entière, pour ne pas montrer une voie
-    // sans ses points. La place gagnée revient au message.
+    // Cut graph: it stops just after the last whole lane, so as not to show a lane without its
+    // points. The room gained goes to the message.
     if (graph < lanesW) {
       const { pad, node, lane } = metrics;
       const whole = Math.max(1, Math.floor((graph - pad - node - 4) / lane) + 1);
@@ -86,17 +86,17 @@
     return { ...level, labels, graph };
   });
   const graphW = $derived(columns.graph);
-  // Voies qui tiennent dans la colonne, point et anneau du commit courant compris. Au-delà, elles
-  // sont coupées : leurs commits n'ont pas de point, et leur bande part du bord de la colonne.
+  // Lanes that fit in the column, the point and the ring of the current commit included. Beyond,
+  // they are cut: their commits have no point, and their band starts at the edge of the column.
   const shownLanes = $derived(Math.max(1, Math.floor((graphW - metrics.pad - metrics.node - 4) / metrics.lane) + 1));
-  // Fenêtre de rendu : seules ces lignes existent dans le DOM et sur le canvas.
+  // Render window: only these rows exist in the DOM and on the canvas.
   const winStart = $derived(Math.max(0, Math.floor((scrollTop / ROW - BUFFER) / STEP) * STEP));
   const winEnd = $derived(Math.min(commits.length, winStart + Math.ceil(viewH / ROW) + 2 * BUFFER + STEP));
   const rows = $derived(commits.slice(winStart, winEnd));
-  // Ligne du commit courant, pour l'halo animé posé sur son nœud.
+  // Row of the current commit, for the animated halo laid on its node.
   const headIndex = $derived(repo.head ? commits.indexOf(repo.head) : -1);
 
-  // Répartition des modifications en cours, pour la ligne WIP.
+  // Breakdown of the working changes, for the WIP row.
   const wip = $derived.by(() => {
     const status = repo.status;
     if (!status) return null;
@@ -120,16 +120,16 @@
       .slice(0, 2)
       .map((word) => word[0]!.toUpperCase())
       .join('');
-  /** Couleur d'un auteur dans le rendu classique : toujours la même, prise dans la palette des lanes. */
+  /** Color of an author in the classic rendering: always the same, taken from the palette of the lanes. */
   const hue = (author: string) => [...author].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 8;
 
-  // --- Dessin du graphe -------------------------------------------------------------------
+  // --- Drawing the graph ------------------------------------------------------------------
 
   function draw() {
     if (!canvas) return;
     const css = getComputedStyle(document.documentElement);
     const palette = Array.from({ length: 8 }, (_, i) => css.getPropertyValue(`--l${i}`).trim());
-    const background = css.getPropertyValue('--panel').trim(); // le graphe est posé sur une carte
+    const background = css.getPropertyValue('--panel').trim(); // the graph sits on a card
     const onColor = css.getPropertyValue('--on-accent').trim();
     const family = getComputedStyle(document.body).fontFamily;
     const initialSize = parseFloat(css.getPropertyValue('--fs-micro'));
@@ -152,7 +152,7 @@
     const x = (lane: number) => pad + lane * laneW;
     const y = (index: number) => (index - winStart) * row + row / 2;
 
-    // Ruban : une bande de la couleur de la branche part du commit et file vers son message.
+    // Ribbon: a band of the color of the branch leaves the commit and runs to its message.
     if (ribbon) {
       ctx.globalAlpha = BAND_ALPHA;
       for (let i = winStart; i < winEnd; i++) {
@@ -164,7 +164,7 @@
       ctx.globalAlpha = 1;
     }
 
-    // Trait qui relie une étiquette, dans la colonne de gauche, au commit qu'elle désigne.
+    // Line that links a label, in the left column, to the commit it points to.
     ctx.lineWidth = ribbon ? 2 : 1.5;
     ctx.globalAlpha = ribbon ? 0.6 : 0.45;
     for (let i = winStart; i < winEnd; i++) {
@@ -178,8 +178,8 @@
     }
     ctx.globalAlpha = 1;
 
-    // Segments : de la ligne i vers la ligne i + 1. On part d'une ligne plus haut pour
-    // tracer aussi ce qui entre dans la fenêtre par le dessus.
+    // Segments: from row i to row i + 1. Start one row higher to draw what enters the window
+    // from the top too.
     ctx.lineWidth = line;
     for (let i = Math.max(0, winStart - 1); i < winEnd; i++) {
       const commit = commits[i];
@@ -194,7 +194,7 @@
         if (from === to) {
           ctx.lineTo(x2, y2);
         } else {
-          // Changement de colonne : une courbe souple, sans angle.
+          // Change of column: a soft curve, with no corner.
           ctx.bezierCurveTo(x1, y1 + row * 0.6, x2, y2 - row * 0.6, x2, y2);
         }
         ctx.stroke();
@@ -202,7 +202,7 @@
     }
     ctx.setLineDash([]);
 
-    // Nœuds, par-dessus les segments.
+    // Nodes, over the segments.
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (let i = winStart; i < winEnd; i++) {
@@ -240,12 +240,12 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Initiales de l'auteur dans la pastille.
+      // Initials of the author in the dot.
       if (ribbon && !commit.wip && !isMerge) {
         const letters = initials(commit.author);
         ctx.fillStyle = onColor;
         ctx.font = `${initialWeight} ${initialSize}px ${family}`;
-        // Deux initiales trop larges pour la pastille : on ne garde que la première, sans réduire le texte.
+        // Two initials too wide for the dot: keep only the first, without shrinking the text.
         const room = 2 * Math.sqrt(Math.max(0, node * node - (initialSize * 0.36) ** 2)) - 3;
         ctx.fillText(ctx.measureText(letters).width > room ? letters.slice(0, 1) : letters, cx, cy + 0.5);
       }
@@ -253,13 +253,13 @@
   }
 
   $effect(() => {
-    // Redessine quand la fenêtre, les données, la largeur, le style ou le thème changent.
+    // Draws again when the window, the data, the width, the style or the theme change.
     void dark;
     void fontsReady;
     draw();
   });
 
-  // Apparition en cascade après une ouverture ou un rechargement complet.
+  // Staggered entrance after an opening or a full reload.
   $effect(() => {
     if (repo.loadCount === 0) return;
     fresh = true;
@@ -267,7 +267,7 @@
     return () => window.clearTimeout(timer);
   });
 
-  // --- Défilement et mesure de fluidité ---------------------------------------------------
+  // --- Scrolling and smoothness measurement ----------------------------------------------
 
   let raf = 0;
   let lastFrame = 0;
@@ -282,7 +282,7 @@
       return;
     }
     raf = 0;
-    // La dernière mesure couvre la pause de fin de défilement : on l'écarte.
+    // The last measurement covers the pause at the end of the scroll: drop it.
     samples.pop();
     if (samples.length >= 10) {
       const sorted = [...samples].sort((a, b) => a - b);
@@ -311,16 +311,16 @@
     else if (top + ROW > scroller.scrollTop + viewH) scroller.scrollTop = top + ROW - viewH;
   }
 
-  /** Clic sur une ligne : elle est sélectionnée, et le focus reste sur la liste, qui gère le clavier.
-   *  Une ligne qui garderait le focus le perdrait en sortant de la fenêtre de rendu. */
+  /** Click on a row: it is selected, and the focus stays on the list, which handles the keyboard.
+   *  A row that kept the focus would lose it on leaving the render window. */
   function select(index: number) {
     repo.selected = index;
     scroller?.focus({ preventScroll: true });
-    // La ligne des modifications en cours : on y vient pour indexer ou commiter, le détail revient.
+    // The row of the working changes: one comes to it to stage or commit, so the detail comes back.
     if (commits[index]?.wip) revealDetail();
   }
 
-  /** Focus au clavier : la liste a toujours un commit sélectionné et visible, c'est lui qui porte le repère. */
+  /** Keyboard focus: the list always has a selected and visible commit, which carries the marker. */
   function onFocus() {
     if (!commits.length || !scroller?.matches(':focus-visible')) return;
     if (repo.selected < 0) repo.selected = 0;
@@ -329,8 +329,8 @@
 
   function onKey(e: KeyboardEvent) {
     if (!commits.length) return;
-    // Entrée demande le détail du commit sélectionné : il revient s'il était masqué. Les flèches,
-    // elles, ne font que déplacer la sélection (charte, section 9.17).
+    // Enter asks for the detail of the selected commit: it comes back if it was hidden. The arrows
+    // only move the selection (guidelines, section 9.17).
     if (e.key === 'Enter' && repo.selected >= 0) {
       e.preventDefault();
       revealDetail();
@@ -351,20 +351,20 @@
     reveal(repo.selected);
   }
 
-  // --- Étiquettes ---------------------------------------------------------------------------
+  // --- Labels -------------------------------------------------------------------------------
 
-  /** Double-clic sur une étiquette : on bascule sur la branche. */
+  /** Double-click on a label: switch to the branch. */
   function switchTo(label: Label) {
     if (repo.locked) return;
     if (label.local) {
       void switchBranch(repo, label.local);
     } else if (label.remotes[0]) {
-      // Branche distante seule sur son commit : on bascule sur la branche locale et on la met à jour.
+      // A remote branch alone on its commit: switch to the local branch and update it.
       void switchToRemote(repo, label.remotes[0]);
     }
   }
 
-  // Étiquette survolée pendant un glissement, pour la mettre en évidence.
+  // Label hovered during a drag, to highlight it.
   let dropOn = $state('');
   const labelKey = (label: Label, commit: CommitRow) => `${commit.sha}:${label.kind}:${label.name}`;
 
@@ -411,7 +411,7 @@
     class:local={label.local !== null}
     class:drop={dropOn === labelKey(label, commit)}
     style:--c="var(--l{commit.lane % 8})"
-    title="{label.title} — double-clic pour basculer, clic droit pour les actions, glisser sur une autre branche pour fusionner ou rebaser"
+    title="{label.title} — double-click to switch, right-click for actions, drag onto another branch to merge or rebase"
     draggable={isBranch(label) ? 'true' : undefined}
     ondragstart={(e) => {
       drag.label = label;
@@ -437,7 +437,7 @@
   >
     {#if label.kind === 'head'}<Icon name="check" size={14} />{/if}
     <span class="ref-name">{label.name}</span>
-    <!-- Pendant le basculement, l'anneau prend la place d'une icône : l'étiquette garde sa taille. -->
+    <!-- During the switch, the ring takes the place of an icon: the label keeps its size. -->
     {#if label.local}{#if waiting}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="laptop" size={14} />{/if}{/if}
     {#if label.remotes.length}{#if waiting && !label.local}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="cloud" size={14} />{/if}{/if}
     {#if label.tag}<Icon name="tag" size={14} />{/if}
@@ -459,13 +459,13 @@
   style:--band="{BAND}px"
 >
   <div class="head">
-    <span>Branche / Tag</span><span>Graphe</span><span>Message</span><span>Auteur</span><span>Date</span><span>SHA</span>
+    <span>Branch / tag</span><span>Graph</span><span>Message</span><span>Author</span><span>Date</span><span>SHA</span>
   </div>
 
   {#if repo.result && commits.length === 0}
     <div class="empty">
       <span class="art"><Icon name="commit" size={28} /></span>
-      <p>Ce dépôt ne contient encore aucun commit.</p>
+      <p>This repository has no commits yet.</p>
     </div>
   {/if}
 
@@ -480,7 +480,7 @@
     onfocus={onFocus}
     tabindex="0"
     role="listbox"
-    aria-label="Historique des commits"
+    aria-label="Commit history"
     aria-activedescendant={repo.current ? `${uid}-commit-${repo.selected}` : undefined}
   >
     <div class="spacer" class:fresh style:height="{commits.length * ROW}px">
@@ -493,7 +493,7 @@
         aria-hidden="true"
       ></canvas>
       {#if ribbon && headIndex >= winStart && headIndex < winEnd && repo.head && repo.head.lane < shownLanes - 1}
-        <!-- Halo animé sur le commit courant : un élément CSS, pour ne pas redessiner le canvas à chaque image. -->
+        <!-- Animated halo on the current commit: a CSS element, so as not to draw the canvas again at every frame. -->
         <span
           class="pulse"
           aria-hidden="true"
@@ -534,9 +534,9 @@
           </span>
           <span>
             {#if ribbon && !commit.wip && commit.lane < shownLanes}
-              <!-- Le point est dessiné sur le canevas, qui ne reçoit pas le pointeur : cette pastille
-                   transparente, posée dessus, porte le nom de l'auteur, celui d'une fusion compris
-                   (charte, 10.2). -->
+              <!-- The point is drawn on the canvas, which does not receive the pointer: this
+                   transparent dot, laid over it, carries the name of the author, that of a merge
+                   included (guidelines, 10.2). -->
               <span
                 class="dot"
                 style:--x="{metrics.pad + commit.lane * metrics.lane}px"
@@ -549,15 +549,15 @@
             {#if commit.wip}
               <span class="wip-tag mono">// WIP</span>
               {#if wip}
-                {#if wip.conflicts}<span class="stat bad" title="Fichiers en conflit"><Icon name="warning" size={14} />{wip.conflicts}</span>{/if}
-                {#if wip.modified}<span class="stat warn" title="Fichiers modifiés"><Icon name="pencil" size={14} />{wip.modified}</span>{/if}
-                {#if wip.added}<span class="stat ok" title="Nouveaux fichiers"><Icon name="plus" size={14} />{wip.added}</span>{/if}
-                {#if wip.deleted}<span class="stat bad" title="Fichiers supprimés"><Icon name="minus" size={14} />{wip.deleted}</span>{/if}
+                {#if wip.conflicts}<span class="stat bad" title="Files in conflict"><Icon name="warning" size={14} />{wip.conflicts}</span>{/if}
+                {#if wip.modified}<span class="stat warn" title="Modified files"><Icon name="pencil" size={14} />{wip.modified}</span>{/if}
+                {#if wip.added}<span class="stat ok" title="New files"><Icon name="plus" size={14} />{wip.added}</span>{/if}
+                {#if wip.deleted}<span class="stat bad" title="Deleted files"><Icon name="minus" size={14} />{wip.deleted}</span>{/if}
               {:else}
-                <span class="subject muted">{repo.wipCount} fichier{repo.wipCount > 1 ? 's' : ''} modifié{repo.wipCount > 1 ? 's' : ''}</span>
+                <span class="subject muted">{repo.wipCount} changed file{repo.wipCount === 1 ? '' : 's'}</span>
               {/if}
             {:else}
-              <!-- Voie coupée : le point et les initiales manquent, l'auteur est dans l'infobulle. -->
+              <!-- Cut lane: the point and the initials are missing, the author is in the tooltip. -->
               <span class="subject" title={commit.lane < shownLanes ? commit.subject : `${commit.subject} — ${commit.author}`}>{commit.subject}</span>
             {/if}
           </span>
@@ -566,7 +566,7 @@
               {#if !ribbon}
                 <span class="avatar" style:--c="var(--l{hue(commit.author)})" title={commit.author} aria-hidden="true">{initials(commit.author)}</span>
               {/if}
-              <!-- Colonne qui a cédé : le nom ne se voit plus, mais la ligne l'annonce encore (charte, 11). -->
+              <!-- A column that gave way: the name is no longer seen, but the row still says it (guidelines, 11). -->
               <span class="who" class:spoken={!columns.who} title={commit.author}>{commit.author}</span>
             {/if}
           </span>
@@ -587,9 +587,9 @@
     min-height: 0;
     position: relative;
   }
-  /* Largeurs calculées dans le script (charte, section 10.1). Une colonne qui cède garde sa
-     place dans la grille, à 0 px, et son contenu ne se voit plus : le nom de l'auteur et la date
-     restent lus par un lecteur d'écran (voir plus bas). */
+  /* Widths computed in the script (guidelines, section 10.1). A column that gives way keeps its
+     place in the grid, at 0 px, and its content is no longer seen: the name of the author and the
+     date are still read by a screen reader (see below). */
   .head,
   .row {
     display: grid;
@@ -600,7 +600,7 @@
     overflow: hidden;
     white-space: nowrap;
   }
-  /* `visibility`, et non `display` : une cellule retirée décalerait les suivantes d'une colonne. */
+  /* `visibility`, not `display`: a removed cell would shift the next ones by one column. */
   .no-who .head span:nth-child(4),
   .no-date .head span:nth-child(5),
   .no-sha .head span:nth-child(6),
@@ -631,21 +631,21 @@
     scrollbar-gutter: stable;
     min-height: 0;
   }
-  /* Au clavier, le focus se lit sur le commit sélectionné, pas par un cadre autour de la liste. */
+  /* From the keyboard, the focus shows on the selected commit, not as a frame around the list. */
   .scroller:focus-visible,
   .scroller:global(.focus-ring):focus,
   .row:focus-visible {
     outline: none;
   }
-  /* `.focus-ring` : le focus rendu à la liste par le script, à la fermeture d'un menu demandé au
-     clavier (lib/ui/focus.ts). Il se montre comme celui de Tab, sur la ligne sélectionnée. */
+  /* `.focus-ring`: the focus given back to the list by the script, when a menu asked for from the
+     keyboard closes (lib/ui/focus.ts). It shows like that of Tab, on the selected row. */
   .scroller:focus-visible .row.sel::before,
   .scroller:global(.focus-ring):focus .row.sel::before,
   .scroller.asked .row.sel::before,
   .scroller:has(.row:focus-visible) .row.sel::before {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
-  /* Les lignes, le canevas et le halo s'empilent entre eux, à part du reste de la carte. */
+  /* The rows, the canvas and the halo stack among themselves, apart from the rest of the card. */
   .spacer {
     position: relative;
     isolation: isolate;
@@ -664,12 +664,12 @@
     padding-right: 10px;
     cursor: pointer;
     white-space: nowrap;
-    /* Un double-clic bascule de branche : il ne doit pas sélectionner du texte au passage. */
+    /* A double-click switches branches: it must not select text on the way. */
     user-select: none;
-    /* Le fond de survol et de sélection passe sous le contenu de la ligne. */
+    /* The hover and selection background goes under the content of the row. */
     isolation: isolate;
   }
-  /* Survol et sélection : un fond arrondi, en retrait des bords de la carte. Pas de trait sur le bord. */
+  /* Hover and selection: a rounded background, inset from the edges of the card. No bar on the edge. */
   .row::before {
     content: '';
     position: absolute;
@@ -701,7 +701,7 @@
     }
   }
 
-  /* Posée sur le point d'un commit, en « Ruban » : elle ne montre rien, elle porte l'infobulle. */
+  /* Laid on the point of a commit, in “Ribbon”: it shows nothing, it carries the tooltip. */
   .dot {
     position: absolute;
     top: 50%;
@@ -712,7 +712,7 @@
     border-radius: 50%;
   }
 
-  /* Halo du commit courant */
+  /* Halo of the current commit */
   .pulse {
     position: absolute;
     left: calc(var(--labels) + var(--x));
@@ -737,7 +737,7 @@
     }
   }
 
-  /* Colonne des branches et des tags */
+  /* Column of the branches and tags */
   .labels {
     position: relative;
     display: flex;
@@ -758,7 +758,7 @@
     height: 2px;
     opacity: 0.6;
   }
-  /* L'anneau de 12 px est centré dans la boîte de 14 px de l'icône qu'il remplace. */
+  /* The 12 px ring is centered in the 14 px box of the icon it replaces. */
   .ref .wait {
     flex: none;
     display: inline-grid;
@@ -782,7 +782,7 @@
     border: 1px solid var(--c, var(--line));
     background: color-mix(in srgb, var(--c, var(--line)) 16%, var(--panel));
     font-weight: var(--fw-regular);
-    /* Une étiquette ne change jamais de taille : ni au clic, ni au survol, ni au dépôt. */
+    /* A label never changes size: not on click, not on hover, not on drop. */
     transition:
       background var(--t-fast) var(--ease),
       border-color var(--t-fast) var(--ease);
@@ -793,7 +793,7 @@
   .ref[draggable='true'] {
     cursor: grab;
   }
-  /* Branche sur laquelle on s'apprête à déposer celle qu'on glisse. */
+  /* Branch onto which the dragged one is about to be dropped. */
   .ref.drop,
   .ribbon .ref.drop {
     outline: 2px solid var(--accent);
@@ -803,7 +803,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  /* Préfixe `k-` : la branche courante a le type `head`, qui ne doit pas hériter de l'en-tête `.head`. */
+  /* `k-` prefix: the current branch has the type `head`, which must not inherit from the `.head` header. */
   .ref.k-head,
   .ref.k-detached {
     font-weight: var(--fw-strong);
@@ -819,13 +819,13 @@
   .ref.local {
     font-weight: var(--fw-strong);
   }
-  /* Rendu « Ruban » : toutes les étiquettes ont le même fond, teinté de la couleur de leur ligne.
-     L'icône, la bordure et la graisse disent si c'est une branche locale, distante ou un tag.
-     La branche courante est pleine. */
+  /* “Ribbon” rendering: every label has the same background, tinted with the color of its row.
+     The icon, the border and the weight say whether it is a local branch, a remote one or a tag.
+     The current branch is solid. */
   .ribbon .ref:not(.k-detached) {
     background: color-mix(in srgb, var(--c, var(--line)) 24%, var(--panel));
   }
-  /* Pas plus de 28 % : au-delà, le texte passe sous 7:1 dans certains thèmes sombres (charte, section 2.4). */
+  /* No more than 28%: beyond, the text falls under 7:1 in some dark themes (guidelines, section 2.4). */
   .ribbon .ref:not(.k-detached):hover {
     background: color-mix(in srgb, var(--c, var(--line)) 28%, var(--panel));
   }
@@ -839,8 +839,8 @@
     color: var(--on-accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent);
   }
-  /* Au survol, le fond va vers la couleur du texte courant : plus sombre en clair, plus clair en
-     sombre. Le texte de la branche courante y gagne du contraste dans les deux thèmes. */
+  /* On hover, the background moves toward the color of the body text: darker in light, lighter in
+     dark. The text of the current branch gains contrast there in both themes. */
   .ribbon .ref.k-head:hover {
     background: color-mix(in srgb, var(--c) 90%, var(--ink));
     border-color: color-mix(in srgb, var(--c) 90%, var(--ink));
@@ -856,7 +856,7 @@
     color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
-  /* Toutes les étiquettes d'un commit, dépliées au survol de la colonne. */
+  /* All the labels of a commit, unfolded on hover of the column. */
   .all {
     position: absolute;
     left: 6px;
@@ -871,9 +871,9 @@
     border-radius: var(--radius);
     background: var(--raised);
     box-shadow: var(--shadow-pop);
-    /* Elle reste dans sa colonne, 6 px de chaque côté : le canevas, posé au-dessus des lignes,
-       couvrirait sinon la part qui déborde sur le graphe. Un nom long y est coupé, entier dans
-       l'infobulle de son étiquette (charte, 9.4). */
+    /* It stays within its column, 6 px from each side: the canvas, laid over the rows, would
+       otherwise cover the part that overflows onto the graph. A long name is cut there, whole in
+       the tooltip of its label (guidelines, 9.4). */
     max-width: calc(100% - 12px);
   }
   .all .ref {
@@ -883,9 +883,9 @@
     display: flex;
     animation: pop-in var(--t-fast) var(--ease);
   }
-  /* La ligne dont on survole les étiquettes passe devant les suivantes : sans cela, la liste
-     dépliée resterait sous elles, visible mais hors d'atteinte du pointeur, et se fermerait dès
-     qu'il descend dessus. Elle reste sous le canevas, qui garde ses traits par-dessus son fond. */
+  /* The row whose labels are hovered goes in front of the next ones: otherwise the unfolded list
+     would stay under them, visible but out of reach of the pointer, and would close as soon as it
+     moves down onto it. It stays under the canvas, which keeps its lines over its background. */
   .row:has(.labels:hover) {
     z-index: 1;
   }
@@ -898,7 +898,7 @@
     overflow: hidden;
     padding-left: 10px;
   }
-  /* La bande dessinée sur le canvas se prolonge ici en capsule : large comme le texte, arrondie à droite. */
+  /* The band drawn on the canvas goes on here as a capsule: as wide as the text, rounded on the right. */
   .ribbon .msg {
     width: fit-content;
     max-width: 100%;
@@ -927,7 +927,7 @@
     font-variant-numeric: tabular-nums;
     color: var(--c);
   }
-  /* Deux compteurs sont plus écartés que l'icône ne l'est de son chiffre. */
+  /* Two counters are further apart than the icon is from its number. */
   .stat + .stat {
     margin-left: 4px;
   }

@@ -18,11 +18,11 @@
   }
 
   const ACTIONS: { value: TodoAction; label: string; hint: string }[] = [
-    { value: 'pick', label: 'Garder', hint: 'Le commit est rejoué tel quel' },
-    { value: 'reword', label: 'Reformuler', hint: 'Le commit est rejoué avec un nouveau message' },
-    { value: 'squash', label: 'Fusionner (messages réunis)', hint: 'Fusionné dans le commit au-dessus ; les deux messages sont réunis' },
-    { value: 'fixup', label: 'Fusionner (message ignoré)', hint: 'Fusionné dans le commit au-dessus ; seul le message de celui-ci est gardé' },
-    { value: 'drop', label: 'Supprimer', hint: 'Le commit disparaît de la branche' },
+    { value: 'pick', label: 'Pick', hint: 'The commit is replayed as it is' },
+    { value: 'reword', label: 'Reword', hint: 'The commit is replayed with a new message' },
+    { value: 'squash', label: 'Squash', hint: 'Melded into the commit above; the two messages are combined' },
+    { value: 'fixup', label: 'Fixup', hint: 'Melded into the commit above, whose message alone is kept' },
+    { value: 'drop', label: 'Drop', hint: 'The commit is removed from the branch' },
   ];
 
   let element = $state<HTMLDialogElement>();
@@ -32,11 +32,11 @@
   const plan = $derived(repo.rebasePlan);
   const firstKept = $derived(items.find((i) => i.action !== 'drop'));
   const problem = $derived.by(() => {
-    if (!firstKept) return 'Tous les commits seraient supprimés : utilise plutôt un reset.';
+    if (!firstKept) return 'Every commit would be dropped: use a reset instead.';
     if (firstKept.action === 'squash' || firstKept.action === 'fixup') {
-      return 'Le premier commit conservé ne peut pas être fusionné : il n’a pas de commit au-dessus de lui.';
+      return 'The first commit kept cannot be squashed or fixed up: there is no commit above it.';
     }
-    if (items.some((i) => i.action === 'reword' && !i.message.trim())) return 'Un commit à reformuler a un message vide.';
+    if (items.some((i) => i.action === 'reword' && !i.message.trim())) return 'A commit to reword has an empty message.';
     return '';
   });
   const changed = $derived(
@@ -48,7 +48,7 @@
     if (plan && !element.open) {
       items = plan.commits.map((c) => ({ sha: c.sha, subject: c.subject, action: 'pick', message: c.message }));
       element.showModal();
-      // Les lignes paraissent après l'ouverture : le focus va ensuite à la première liste (charte, 9.10).
+      // The rows appear after the opening: the focus then goes to the first list (guidelines, 9.10).
       void tick().then(() => element?.querySelector<HTMLElement>('select')?.focus());
     } else if (!plan && element.open) {
       element.close();
@@ -87,7 +87,7 @@
   use:veil={cancel}
 >
   {#if plan}
-    <!-- Un formulaire : Entrée lance le rebase (charte, 9.10), sauf dans un message à reformuler. -->
+    <!-- A form: Enter starts the rebase (guidelines, 9.10), except in a message to reword. -->
     <form
       class="box"
       onsubmit={(e) => {
@@ -96,15 +96,15 @@
       }}
     >
       <header>
-        <h2>Rebase interactif</h2>
+        <h2>Interactive rebase</h2>
         <p>
-          {items.length} commit{items.length > 1 ? 's' : ''} de <b class="mono">{repo.branch ?? 'HEAD'}</b>, du plus ancien (en haut) au plus récent (en bas).
-          Glisse une ligne ou utilise les flèches pour changer l’ordre.
+          {items.length} commit{items.length === 1 ? '' : 's'} of <b class="mono">{repo.branch ?? 'HEAD'}</b>, from the oldest (at the top) to the newest (at the bottom).
+          Drag a row or use the arrows to change the order.
         </p>
         {#if plan.pushed}
           <p class="warning">
             <Icon name="warning" />
-            <span>Certains de ces commits sont déjà sur le dépôt distant : après le rebase, il faudra pousser en forçant.</span>
+            <span>Some of these commits are already on the remote: after the rebase, you will have to force push.</span>
           </p>
         {/if}
       </header>
@@ -129,11 +129,11 @@
             }}
             ondragend={() => (dragged = -1)}
           >
-            <span class="grip" title="Glisser pour déplacer"><Icon name="grip" /></span>
+            <span class="grip" title="Drag to move"><Icon name="grip" /></span>
             <div class="main">
               <div class="line">
                 <span class="action">
-                  <Select bind:value={item.action} title={ACTIONS.find((a) => a.value === item.action)?.hint} aria-label="Action pour {item.subject}">
+                  <Select bind:value={item.action} title={ACTIONS.find((a) => a.value === item.action)?.hint} aria-label="Action for {item.subject}">
                     {#each ACTIONS as action (action.value)}
                       <option value={action.value}>{action.label}</option>
                     {/each}
@@ -143,27 +143,27 @@
                 <span class="subject">{item.subject}</span>
               </div>
               {#if item.action === 'reword'}
-                <textarea class="field mono" rows="3" aria-label="Nouveau message pour {item.subject}" bind:value={item.message}></textarea>
+                <textarea class="field mono" rows="3" aria-label="New message for {item.subject}" bind:value={item.message}></textarea>
               {/if}
             </div>
             <span class="moves">
-              <button type="button" aria-label="Monter" title="Monter" disabled={n === 0} onclick={() => move(n, n - 1)}><Icon name="up" size={14} /></button>
-              <button type="button" aria-label="Descendre" title="Descendre" disabled={n === items.length - 1} onclick={() => move(n, n + 1)}><Icon name="down" size={14} /></button>
+              <button type="button" aria-label="Move up" title="Move up" disabled={n === 0} onclick={() => move(n, n - 1)}><Icon name="up" size={14} /></button>
+              <button type="button" aria-label="Move down" title="Move down" disabled={n === items.length - 1} onclick={() => move(n, n + 1)}><Icon name="down" size={14} /></button>
             </span>
           </li>
         {/each}
       </ol>
 
       <footer>
-        <!-- La raison d'un « Lancer le rebase » désactivé, sinon la sauvegarde (charte, 9.1). -->
+        <!-- The reason for a disabled “Start rebase”, or else the backup (guidelines, 9.1). -->
         <small class:bad={!!problem}>
           {problem ||
             (changed
-              ? 'La position actuelle de la branche est sauvegardée dans refs/ramure/backup avant le rebase.'
-              : 'Change l’ordre ou l’action d’un commit pour lancer le rebase.')}
+              ? 'The current position of the branch is saved in refs/ramure/backup before the rebase.'
+              : 'Change the order or the action of a commit to start the rebase.')}
         </small>
-        <button class="btn" type="button" onclick={cancel}>Annuler</button>
-        <button class="btn primary" type="submit" disabled={!!problem || !changed}>Lancer le rebase</button>
+        <button class="btn" type="button" onclick={cancel}>Cancel</button>
+        <button class="btn primary" type="submit" disabled={!!problem || !changed}>Start rebase</button>
       </footer>
     </form>
   {/if}
@@ -219,8 +219,8 @@
   .warning span {
     color: var(--ink);
   }
-  /* Des lignes simples, séparées par un filet --line (--line-soft ne se voit pas sur --raised) :
-     une ligne encadrée dans une boîte serait une carte dans une carte (charte, sections 6 et 9.6). */
+  /* Plain rows, separated by a --line line (--line-soft does not show on --raised): a row framed
+     in a box would be a card in a card (guidelines, sections 6 and 9.6). */
   ol {
     list-style: none;
     margin: 0;
@@ -239,17 +239,17 @@
   li + li {
     border-top: 1px solid var(--line);
   }
-  /* La ligne glissée garde sa place à demi effacée ; le système la dessine sous le pointeur. */
+  /* The dragged row keeps its place at half opacity; the system draws it under the pointer. */
   li.dragging {
     opacity: 0.5;
   }
-  /* Un commit supprimé reste lisible : barré, en --muted (--faint ne porte rien d'utile, 2.3). */
+  /* A dropped commit stays readable: struck through, in --muted (--faint carries nothing needed, 2.3). */
   li.a-drop .subject {
     text-decoration: line-through;
     color: var(--muted);
   }
-  /* Un commit fondu dans le précédent est en retrait sous lui, de la poignée et de son écart :
-     sa poignée tombe sous la liste du commit qui le reçoit (charte, 9.6). */
+  /* A commit melded into the previous one is indented under it, by the grip and its gap: its grip
+     falls under the list of the commit that receives it (guidelines, 9.6). */
   li.a-squash,
   li.a-fixup {
     margin-left: 24px;
@@ -272,7 +272,7 @@
     gap: 10px;
     min-width: 0;
   }
-  /* Assez large pour le plus long des cinq libellés, « Fusionner (messages réunis) ». */
+  /* A fixed width: the SHAs and the subjects of the rows line up. */
   .action {
     width: 240px;
     flex: none;

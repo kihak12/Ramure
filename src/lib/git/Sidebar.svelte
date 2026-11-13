@@ -14,7 +14,7 @@
 
   type Section = 'local' | 'remote' | 'tags' | 'stashes';
   const STORAGE_KEY = 'ramure.sidebar';
-  // Au-delà, une section n'affiche que le début de sa liste : le filtre sert à trouver le reste.
+  // Beyond this, a section shows only the start of its list: the filter finds the rest.
   const MAX_ITEMS = 200;
 
   function readClosed(): Section[] {
@@ -33,7 +33,7 @@
   const match = (name: string) => !needle || name.toLowerCase().includes(needle);
   const branches = $derived((refs?.branches ?? []).filter((b) => match(b.name)));
   const remotes = $derived((refs?.remotes ?? []).filter((r) => match(r.name)));
-  // Les tags les plus récents d'abord : l'ordre inverse du tri par nom s'en approche.
+  // The most recent tags first: the reverse of the sort by name comes close.
   const tags = $derived((refs?.tags ?? []).filter((t) => match(t.name)).reverse());
   const stashes = $derived((refs?.stashes ?? []).filter((s) => match(s.message)));
 
@@ -42,10 +42,10 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(closed));
     } catch {
-      /* stockage indisponible */
+      /* storage unavailable */
     }
   }
-  // Pendant une recherche, toutes les sections sont dépliées.
+  // During a search, every section is unfolded.
   const isOpen = (section: Section) => needle !== '' || !closed.includes(section);
 
   const localLabel = (name: string, current: boolean): Label => ({
@@ -59,10 +59,10 @@
   const remoteLabel = (name: string): Label => ({ name, kind: 'remote', local: null, remotes: [name], tag: null, title: name });
   const tagLabel = (name: string): Label => ({ name, kind: 'tag', local: null, remotes: [], tag: name, title: name });
 
-  // Branche de la barre latérale survolée pendant un glissement.
+  // Branch of the sidebar hovered during a drag.
   let dropOn = $state('');
 
-  /** Gestionnaires de glisser-déposer d'une entrée de branche. */
+  /** Drag-and-drop handlers of a branch entry. */
   function dnd(label: Label) {
     return {
       draggable: true,
@@ -91,10 +91,10 @@
     };
   }
 
-  // --- Clavier : une liste à sections, un arbre (charte, 9.6) ---------------------------------
-  // Le focus reste sur la liste, qui désigne sa ligne courante (`aria-activedescendant`) : les
-  // flèches la déplacent, titres de section compris, et elle n'est qu'un arrêt de tabulation.
-  // Les onglets masqués restent montés : les identifiants sont propres à chaque liste.
+  // --- Keyboard: a list in sections, a tree (guidelines, 9.6) --------------------------------
+  // The focus stays on the list, which points to its current row (`aria-activedescendant`): the
+  // arrows move it, section titles included, and the list is a single tab stop.
+  // Hidden tabs stay mounted: the ids belong to each list.
   const uid = $props.id();
   type Node = { id: string; section: Section; key: string; heading: boolean };
   let tree = $state<HTMLDivElement>();
@@ -118,12 +118,12 @@
   const cursorIndex = $derived(cursor ? nodes.findIndex((n) => n.section === cursor?.section && n.key === cursor?.key) : -1);
   const cursorNode = $derived(cursorIndex >= 0 ? nodes[cursorIndex] : undefined);
 
-  // La ligne courante disparaît (branche supprimée, renommée, filtrée, section repliée) : sa
-  // voisine prend sa place, et le focus reste sur la liste.
+  // The current row goes away (branch deleted, renamed, filtered out, section folded): its
+  // neighbor takes its place, and the focus stays on the list.
   $effect(() => {
     if (cursorIndex >= 0) lastIndex = cursorIndex;
     else if (cursor && nodes.length) {
-      // La suivante de sa section, sinon celle d'avant, sinon le titre de la section.
+      // The next one of its section, or else the one before, or else the title of the section.
       const old = cursor.section;
       const at = Math.min(lastIndex, nodes.length - 1);
       const mine = (n: Node | undefined) => (n && n.section === old ? n : undefined);
@@ -136,17 +136,17 @@
     }
   });
 
-  // Un menu demandé au clavier depuis la liste est ouvert : sa ligne garde l'anneau (charte, 9.9).
+  // A menu asked for from the keyboard on the list is open: its row keeps the ring (guidelines, 9.9).
   const asked = $derived(!!tree && menu.current?.origin === tree);
 
-  /** Fait de `node` la ligne courante, et la montre si la liste a défilé. */
+  /** Makes `node` the current row, and shows it if the list has scrolled. */
   function point(node: Node | undefined) {
     if (!node) return;
     cursor = { section: node.section, key: node.key };
     void tick().then(() => document.getElementById(node.id)?.scrollIntoView({ block: 'nearest' }));
   }
 
-  /** Un clic sur une ligne ou un titre : il devient la ligne courante, et la liste garde le focus. */
+  /** A click on a row or a title: it becomes the current row, and the list keeps the focus. */
   function pick(section: Section, key: string) {
     cursor = { section, key };
     tree?.focus({ preventScroll: true });
@@ -169,18 +169,18 @@
         point(nodes[nodes.length - 1]);
         break;
       case 'ArrowRight':
-        // Un titre replié se déplie ; déplié, on descend à sa première ligne.
+        // A folded title unfolds; unfolded, go down to its first row.
         if (node?.heading && !isOpen(node.section)) toggle(node.section);
         else if (node?.heading && nodes[i + 1] && !nodes[i + 1].heading) point(nodes[i + 1]);
         break;
       case 'ArrowLeft':
-        // Une ligne remonte à son titre ; un titre déplié se replie (pas pendant une recherche).
+        // A row goes back up to its title; an unfolded title folds (not during a search).
         if (node && !node.heading) point(nodes.find((n) => n.heading && n.section === node.section));
         else if (node && isOpen(node.section) && !needle) toggle(node.section);
         break;
       case 'Enter':
       case ' ':
-        // Comme un clic : un titre se replie ou se déplie, une ligne montre son commit.
+        // Like a click: a title folds or unfolds, a row shows its commit.
         if (node) document.getElementById(node.id)?.click();
         break;
       default:
@@ -189,7 +189,7 @@
     event.preventDefault();
   }
 
-  // La liste reçoit le focus sans ligne courante : la première le devient (charte, 9.6).
+  // The list receives the focus with no current row: the first one becomes it (guidelines, 9.6).
   function onFocus() {
     if (!cursorNode && nodes.length) point(nodes[0]);
   }
@@ -215,7 +215,7 @@
     tabindex="-1"
     onclick={() => {
       pick(section, '');
-      // Pendant une recherche, toutes les sections restent dépliées : un pli ne s'enregistre pas.
+      // During a search, every section stays unfolded: a fold is not recorded.
       if (!needle) toggle(section);
     }}
     oncontextmenu={(e) => e.preventDefault()}
@@ -229,19 +229,19 @@
 
 {#snippet rest(total: number)}
   {#if total > MAX_ITEMS}
-    <li class="none" role="none">… et {total - MAX_ITEMS} autres : utilise le filtre</li>
+    <li class="none" role="none">… and {total - MAX_ITEMS} more: use the filter</li>
   {/if}
 {/snippet}
 
-<aside class="sidebar" aria-label="Branches, tags et remises">
+<aside class="sidebar" aria-label="Branches, tags and stashes">
   <label class="search">
     <Icon name="search" size={14} />
-    <!-- ↓ passe du filtre à la liste ; pendant une recherche, à la première ligne trouvée. Le focus
-         donné par le script montre l'anneau, comme celui de Tab. -->
+    <!-- ↓ goes from the filter to the list; during a search, to the first row found. The focus
+         given by the script shows the ring, like that of Tab. -->
     <input
       type="search"
-      placeholder="Filtrer"
-      aria-label="Filtrer les branches, les tags et les remises"
+      placeholder="Filter"
+      aria-label="Filter branches, tags and stashes"
       bind:value={filter}
       onkeydown={(e) => {
         if (e.key !== 'ArrowDown') return;
@@ -256,7 +256,7 @@
     class="scroll"
     role="tree"
     tabindex="0"
-    aria-label="Branches, tags et remises"
+    aria-label="Branches, tags and stashes"
     aria-activedescendant={cursorNode?.id}
     class:asked
     bind:this={tree}
@@ -281,7 +281,7 @@
               aria-selected={cursorNode?.id === rowId('local', i)}
               tabindex="-1"
               {...dnd(localLabel(branch.name, branch.current))}
-              title="{branch.name}{branch.upstream ? ` → ${branch.upstream}` : ' (jamais publiée)'} — double-clic pour basculer, glisser sur une autre branche pour fusionner ou rebaser"
+              title="{branch.name}{branch.upstream ? ` → ${branch.upstream}` : ' (never published)'} — double-click to switch, drag onto another branch to merge or rebase"
               onclick={() => {
                 pick('local', branch.name);
                 repo.selectSha(branch.sha);
@@ -294,19 +294,19 @@
             >
               <span class="mark">{#if repo.switching === branch.name}<span class="spinner" aria-hidden="true"></span>{:else if branch.current}<Icon name="check" size={14} />{/if}</span>
               <span class="name">{branch.name}</span>
-              {#if branch.gone}<span class="chip gone" title="La branche distante suivie n’existe plus">orpheline</span>{/if}
-              {#if branch.ahead}<span class="chip" title="{branch.ahead} commit(s) à pousser"><Icon name="up" size={10} />{branch.ahead}</span>{/if}
-              {#if branch.behind}<span class="chip" title="{branch.behind} commit(s) à tirer"><Icon name="down" size={10} />{branch.behind}</span>{/if}
+              {#if branch.gone}<span class="chip gone" title="The tracked remote branch no longer exists">gone</span>{/if}
+              {#if branch.ahead}<span class="chip" title="{branch.ahead} commit{branch.ahead === 1 ? '' : 's'} to push"><Icon name="up" size={10} />{branch.ahead}</span>{/if}
+              {#if branch.behind}<span class="chip" title="{branch.behind} commit{branch.behind === 1 ? '' : 's'} to pull"><Icon name="down" size={10} />{branch.behind}</span>{/if}
             </button>
           </li>
         {:else}
-          <li class="none" role="none">Aucune branche</li>
+          <li class="none" role="none">No branches</li>
         {/each}
         {@render rest(branches.length)}
       </ul>
     {/if}
 
-    {@render heading('remote', 'cloud', 'Distant', remotes.length)}
+    {@render heading('remote', 'cloud', 'Remote', remotes.length)}
     {#if isOpen('remote')}
       <ul role="group" transition:slide={{ duration: motion.med }}>
         {#each remotes.slice(0, MAX_ITEMS) as remote, i (remote.name)}
@@ -322,7 +322,7 @@
               aria-selected={cursorNode?.id === rowId('remote', i)}
               tabindex="-1"
               {...dnd(remoteLabel(remote.name))}
-              title="{remote.name} — double-clic pour basculer sur la branche locale correspondante"
+              title="{remote.name} — double-click to switch to the matching local branch"
               onclick={() => {
                 pick('remote', remote.name);
                 repo.selectSha(remote.sha);
@@ -338,7 +338,7 @@
             </button>
           </li>
         {:else}
-          <li class="none" role="none">{refs?.remoteNames.length ? 'Aucune branche distante' : 'Aucun dépôt distant'}</li>
+          <li class="none" role="none">{refs?.remoteNames.length ? 'No remote branches' : 'No remotes'}</li>
         {/each}
         {@render rest(remotes.length)}
       </ul>
@@ -373,13 +373,13 @@
             </button>
           </li>
         {:else}
-          <li class="none" role="none">Aucun tag</li>
+          <li class="none" role="none">No tags</li>
         {/each}
         {@render rest(tags.length)}
       </ul>
     {/if}
 
-    {@render heading('stashes', 'stash', 'Remises', stashes.length)}
+    {@render heading('stashes', 'stash', 'Stashes', stashes.length)}
     {#if isOpen('stashes')}
       <ul role="group" transition:slide={{ duration: motion.med }}>
         {#each stashes as stash, i (stash.sha)}
@@ -394,7 +394,7 @@
               aria-level={2}
               aria-selected={cursorNode?.id === rowId('stashes', i)}
               tabindex="-1"
-              title="{stash.message} — clic pour voir le contenu, clic droit pour l’appliquer"
+              title="{stash.message} — click to see its content, right-click to apply it"
               onclick={() => {
                 pick('stashes', stash.sha);
                 repo.openStashDiff(stash.index, stash.message);
@@ -409,7 +409,7 @@
             </button>
           </li>
         {:else}
-          <li class="none" role="none">Aucune remise</li>
+          <li class="none" role="none">No stashes</li>
         {/each}
       </ul>
     {/if}
@@ -463,9 +463,9 @@
     min-height: 0;
     padding-bottom: 8px;
   }
-  /* Le focus reste sur la liste : c'est la ligne courante qui le montre, d'un anneau intérieur,
-     jamais un cadre autour de la liste (charte, 9.6). `.focus-ring` : le focus rendu par le script
-     à la fermeture d'un menu demandé au clavier (lib/ui/focus.ts). */
+  /* The focus stays on the list: the current row shows it, with an inner ring, never a frame
+     around the list (guidelines, 9.6). `.focus-ring`: the focus given back by the script when a
+     menu asked for from the keyboard closes (lib/ui/focus.ts). */
   .scroll:focus-visible,
   .scroll:global(.focus-ring):focus {
     outline: none;
@@ -479,8 +479,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    /* En retrait de 6 px des bords de la carte, comme les lignes : l'anneau et le survol ne les
-       touchent pas (charte, 9.6). Le titre garde sa place, 12 px du bord. */
+    /* Inset 6 px from the edges of the card, like the rows: the ring and the hover do not touch
+       them (guidelines, 9.6). The title keeps its place, 12 px from the edge. */
     width: calc(100% - 12px);
     margin: 0 6px;
     padding: 8px 6px 6px;
@@ -565,7 +565,7 @@
   .gone {
     color: var(--warn);
   }
-  /* 28 px, une valeur dérivée : le début du nom d'une ligne (6 de marge, 16 de marque, 6 d'écart). */
+  /* 28 px, a derived value: where the name of a row starts (6 of margin, 16 of mark, 6 of gap). */
   .none {
     padding: 4px 8px 4px 28px;
     color: var(--muted);

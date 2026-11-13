@@ -20,30 +20,30 @@
   import { motion } from '../ui/motion';
   import Splitter from '../ui/Splitter.svelte';
 
-  /** `active` : cet onglet est celui qu'on regarde. */
+  /** `active`: this tab is the one being looked at. */
   let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
 
   const current = $derived(repo.current);
-  // Onglet neuf, ou dossier qui n'a pas pu être ouvert : la page d'accueil remplace le graphe.
+  // A new tab, or a folder that could not be opened: the start page replaces the graph.
   const empty = $derived(!repo.result && !repo.loading);
   const pick = () => void workspace.pick();
 
-  // Largeurs des cartes latérales : celles qu'on a choisies, ramenées à ce que la fenêtre permet.
+  // Widths of the side cards: those chosen, brought down to what the window allows.
   let bodyWidth = $state(0);
   const sides = $derived(fit(bodyWidth));
-  // Une carte masquée n'a plus de colonne, ni sa poignée : le centre va jusqu'au bord de la vue.
+  // A hidden card has no column left, nor its handle: the center goes to the edge of the view.
   const columns = $derived(
     [layout.sidebarHidden ? '' : 'var(--sidebar) 8px', 'minmax(0, 1fr)', layout.detailHidden ? '' : '8px var(--detail)'].join(' ').trim(),
   );
 
-  // Terminal du dépôt, sous le graphe : sa hauteur, celle qu'on a choisie ramenée à la place qu'il y a.
+  // Terminal of the repository, under the graph: its height, the one chosen brought down to the room there is.
   const terminals = $derived(repo.terminals);
   let middleHeight = $state(0);
   const terminalSize = $derived(fitTerminal(middleHeight));
-  // Le graphe masqué : le terminal tient le centre à lui seul. Jamais sans terminal à montrer.
+  // The graph hidden: the terminal holds the center alone. Never without a terminal to show.
   const graphHidden = $derived(terminals.alone && terminals.shown && !!repo.result);
 
-  // Si le focus était dans la carte qu'on masque, il passe au graphe : il ne doit pas se perdre.
+  // If the focus was in the card being hidden, it moves to the graph: it must not be lost.
   let sidebarEl = $state<HTMLElement>();
   let detailEl = $state<HTMLElement>();
   let centerEl = $state<HTMLElement>();
@@ -58,7 +58,7 @@
     untrack(() => {
       const focused = document.activeElement;
       if (!active || !leaving.some((card) => card?.contains(focused))) return;
-      // Sans graphe, c'est le terminal qui reste au centre : il prend le clavier.
+      // Without the graph, the terminal stays in the center: it takes the keyboard.
       void tick().then(() => {
         if (graphHidden) terminals.focusAsk++;
         else centerEl?.querySelector<HTMLElement>('[role="listbox"]')?.focus();
@@ -66,7 +66,7 @@
     });
   });
 
-  // Le détail suit la sélection.
+  // The detail follows the selection.
   $effect(() => {
     void repo.currentKey;
     untrack(() => repo.loadDetail());
@@ -81,7 +81,7 @@
 
   onMount(() => {
     const stopAutoFetch = repo.startAutoFetch();
-    // Retour dans la fenêtre : les fichiers ont pu changer dans l'éditeur ou le terminal.
+    // Back in the window: the files may have changed in the editor or the terminal.
     const onFocus = () => {
       if (active && repo.result && !repo.locked) {
         void repo.refreshStatus();
@@ -114,13 +114,13 @@
       style:--columns={columns}
     >
       {#if repo.result}
-        <!-- Une carte masquée reste montée : son filtre, sa position et le message en cours sont gardés. -->
+        <!-- A hidden card stays mounted: its filter, its position and the message being written are kept. -->
         <div class="side" bind:this={sidebarEl} hidden={layout.sidebarHidden} inert={layout.sidebarHidden}>
           <Sidebar {repo} />
         </div>
         {#if !layout.sidebarHidden}
           <Splitter
-            label="Largeur de la liste des branches"
+            label="Width of the branch list"
             value={sides.sidebar}
             min={SIDES.sidebar.min}
             max={sides.maxSidebar}
@@ -131,9 +131,9 @@
         {/if}
       {/if}
 
-      <!-- Le graphe, et sous lui le terminal du dépôt, aussi large que lui (charte, section 9.20). -->
+      <!-- The graph, and under it the terminal of the repository, as wide as it (guidelines, section 9.20). -->
       <div class="middle" bind:clientHeight={middleHeight} style:--terminal="{terminalSize.value}px">
-        <!-- Masqué, le graphe reste monté : sa position et sa sélection sont gardées. -->
+        <!-- Hidden, the graph stays mounted: its position and its selection are kept. -->
         <div class="center" bind:this={centerEl} hidden={graphHidden} inert={graphHidden}>
           <Graph {repo} />
           {#if repo.openFile}
@@ -154,7 +154,7 @@
           {#if terminals.shown && !graphHidden}
             <Splitter
               orientation="horizontal"
-              label="Hauteur du terminal"
+              label="Height of the terminal"
               value={terminalSize.value}
               min={TERMINAL.min}
               max={terminalSize.max}
@@ -164,7 +164,7 @@
               oncommit={saveLayout}
             />
           {/if}
-          <!-- Masqué, il reste monté : ses shells continuent de tourner. -->
+          <!-- Hidden, it stays mounted: its shells keep running. -->
           <div class="terminal" class:alone={graphHidden} bind:this={terminalEl} hidden={!terminals.shown} inert={!terminals.shown}>
             <TerminalPanel {repo} active={active && terminals.shown} />
           </div>
@@ -174,7 +174,7 @@
       {#if repo.result}
         {#if !layout.detailHidden}
           <Splitter
-            label="Largeur du panneau de détail"
+            label="Width of the detail panel"
             value={sides.detail}
             min={SIDES.detail.min}
             max={sides.maxDetail}
@@ -191,13 +191,13 @@
                 {#if repo.status}
                   <WorkPanel {repo} />
                 {:else}
-                  <p class="muted">Lecture de l’état du dépôt…</p>
+                  <p class="muted">Reading the state of the repository…</p>
                 {/if}
               {:else if current}
                 <CommitPanel {repo} commit={current} />
               {:else}
-                <span class="label">Détail</span>
-                <p class="muted">Clique un commit, ou utilise les flèches du clavier dans la liste. Un clic droit ouvre ses actions.</p>
+                <span class="label">Detail</span>
+                <p class="muted">Click a commit, or use the arrow keys in the list. A right-click opens its actions.</p>
                 {#if repo.wipCount > 0}
                   <button class="btn" type="button" onclick={() => repo.showWip()}>
                     <Icon name="pencil" size={14} />
@@ -226,7 +226,7 @@
     flex-direction: column;
     height: 100%;
   }
-  /* Filet d'activité sous la barre d'outils, visible tant que git travaille. */
+  /* Activity line under the toolbar, visible while git works. */
   .progress {
     flex: none;
     height: 2px;
@@ -254,12 +254,12 @@
       transform: translateX(290%);
     }
   }
-  /* Barre latérale, centre et détail : trois cartes, séparées par le fond de la fenêtre. */
+  /* Sidebar, center and detail: three cards, separated by the window background. */
   .body {
     position: relative;
     flex: 1;
     display: grid;
-    /* Entre les cartes, deux poignées de 8 px : elles tiennent lieu d'écart. */
+    /* Between the cards, two 8 px handles: they stand for the gap. */
     grid-template-columns: var(--columns);
     padding: 0 8px 8px;
     min-height: 0;
@@ -272,7 +272,7 @@
     min-width: 0;
     min-height: 0;
   }
-  /* Une carte masquée ne prend plus de place ; `hidden` seul céderait à `display` ci-dessus. */
+  /* A hidden card takes no room; `hidden` alone would yield to `display` above. */
   .side[hidden],
   .detail[hidden],
   .center[hidden],
@@ -306,7 +306,7 @@
     height: var(--terminal);
     min-height: 0;
   }
-  /* Sans le graphe, le terminal tient toute la colonne. */
+  /* Without the graph, the terminal holds the whole column. */
   .terminal.alone {
     flex: 1;
     height: auto;
