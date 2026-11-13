@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, tick, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
-  import Icon from '../ui/Icon.svelte';
   import CommitPanel from './CommitPanel.svelte';
   import ConflictEditor from './ConflictEditor.svelte';
   import DiffView from './DiffView.svelte';
@@ -15,6 +14,7 @@
   import StatusBar from './StatusBar.svelte';
   import TerminalPanel from './TerminalPanel.svelte';
   import Toolbar from './Toolbar.svelte';
+  import WipStrip from './WipStrip.svelte';
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
   import { motion } from '../ui/motion';
@@ -196,14 +196,9 @@
               {:else if current}
                 <CommitPanel {repo} commit={current} />
               {:else}
+                {#if repo.wipCount > 0}<WipStrip {repo} />{/if}
                 <span class="label">Detail</span>
                 <p class="muted">Click a commit, or use the arrow keys in the list. A right-click opens its actions.</p>
-                {#if repo.wipCount > 0}
-                  <button class="btn" type="button" onclick={() => repo.showWip()}>
-                    <Icon name="pencil" size={14} />
-                    {repo.wipText}
-                  </button>
-                {/if}
               {/if}
             </div>
           {/key}

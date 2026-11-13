@@ -52,6 +52,7 @@ The two screenshots show the application as it is, on a demonstration repository
    - [9.19 Choice](#919-choice)
    - [9.20 Terminal of a repository](#920-terminal-of-a-repository)
    - [9.21 Host form](#921-host-form)
+   - [9.22 Uncommitted changes](#922-uncommitted-changes)
 10. [Commit graph](#10-commit-graph)
 11. [Accessibility](#11-accessibility)
 12. [Tone of the interface text](#12-tone-of-the-interface-text)
@@ -1506,6 +1507,23 @@ need the room.
   host, or the user of the system when the host has none; without any user, the address alone,
   `vps.example.net`: never an "@" on its own. In a sentence, the address alone is in the code
   font: "Connecting to `deploy@server`…".
+
+### 9.22 Uncommitted changes
+
+When the working directory has changes that are not committed, the detail panel says so at its
+top, whatever it shows: a commit, or nothing selected yet. The "WIP" row of the graph says it
+too, but it scrolls out of sight; the detail panel is where the eye goes after a click.
+
+- **A strip** across the width of the card, above its content: `--accent-soft` background, 8 px
+  corners, 6 px of inner margin, 10 px on the left. It is a sign, not a banner: it asks nothing
+  and warns of nothing, so it has no `role="status"` and no transition of its own.
+- **On the left**, the pencil icon, 16 px, in `--accent`, then the sentence in `--ink`, weight
+  650: "2 files with uncommitted changes", "1 file with uncommitted changes".
+- **On the right**, "Show working changes", a small standard button, with the words of the
+  palette command (9.17). It shows the work panel, as the "WIP" row does.
+- **When the card is narrow**, the button goes under the sentence, on the left.
+- **No strip** while the work panel itself is shown, nor once the changes are committed or
+  discarded: it comes and goes with them, and what is under it moves with it.
 
 ## 10. Commit graph
 
