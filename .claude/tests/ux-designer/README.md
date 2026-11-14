@@ -15,15 +15,16 @@ with two modified files. Four steps of one task, each in light and in dark:
 
 | Screenshot | What it shows |
 | --- | --- |
-| `01-graphe-*` | The repository open, nothing selected. |
-| `02-modifications-*` | After a click on the "// WIP" row of the graph. |
-| `03-diff-*` | After a click on `src/main.rs` in the "Non indexé" list. |
-| `04-ligne-choisie-*` | After a click on the added line of the diff, then the commit message typed. |
+| `01-graph-*` | The repository open, nothing selected. |
+| `02-changes-*` | After a click on the "// WIP" row of the graph. |
+| `03-diff-*` | After a click on `src/main.rs` in the "Unstaged" list. |
+| `04-line-picked-*` | After a click on the added line of the diff, then the commit message typed. |
 
-They were taken on 10 November 2026 with [`scripts/screen.sh`](../../../scripts/screen.sh), which
-runs the application on a virtual display, and `xdotool` for the clicks. The repository that was
-open is not kept: any repository with two modified files gives the same screens. If the
-screenshots are taken again, bring the request below in step with what they show.
+They were taken on November 14, 2026, on the English interface, with
+[`scripts/screen.sh`](../../../scripts/screen.sh), which runs the application on a virtual
+display, and `xdotool` for the clicks. The repository is the one that
+[`scripts/demo-repo.sh`](../../../scripts/demo-repo.sh) builds. If the screenshots are taken
+again, bring the request and the reference below in step with what they show.
 
 ## Running it
 
@@ -38,22 +39,22 @@ screenshots are taken again, bring the request below in step with what they show
    give the model and the effort level in the call.
 
    ```text
-   Regarde cet écran et propose ce qui le rendrait meilleur.
+   Look at this screen and propose what would make it better.
 
-   Écran : le module Git, quand l'utilisateur prépare un commit.
-   Tâche : committer seulement une partie de ses modifications, ici une seule ligne de
-   `src/main.rs`, en laissant le reste de côté.
+   Screen: the Git module, while the user prepares a commit.
+   Task: commit only part of the changes, here a single line of `src/main.rs`, and leave the
+   rest aside.
 
-   Captures d'écran de l'application, chacune en thème clair et en thème sombre, dans une
-   fenêtre de 1440 × 880 px :
-   - captures/01-graphe-clair.png, captures/01-graphe-sombre.png : le dépôt ouvert, avec deux
-     fichiers modifiés et rien de sélectionné.
-   - captures/02-modifications-clair.png, captures/02-modifications-sombre.png : après un clic
-     sur la ligne « // WIP » du graphe.
-   - captures/03-diff-clair.png, captures/03-diff-sombre.png : après un clic sur `src/main.rs`
-     dans la liste « Non indexé ».
-   - captures/04-ligne-choisie-clair.png, captures/04-ligne-choisie-sombre.png : après un clic
-     sur la ligne ajoutée du diff, puis la saisie du message de commit.
+   Screenshots of the application, each in the light and the dark theme, in a window of
+   1440 × 880 px:
+   - captures/01-graph-light.png, captures/01-graph-dark.png: the repository open, with two
+     modified files and nothing selected.
+   - captures/02-changes-light.png, captures/02-changes-dark.png: after a click on the
+     "// WIP" row of the graph.
+   - captures/03-diff-light.png, captures/03-diff-dark.png: after a click on `src/main.rs` in
+     the "Unstaged" list.
+   - captures/04-line-picked-light.png, captures/04-line-picked-dark.png: after a click on the
+     added line of the diff, then the commit message typed.
    ```
 
 3. Read the answer with the grid below.
@@ -65,7 +66,7 @@ screenshots are taken again, bring the request below in step with what they show
    sed -i '\#^captures/$#d' .git/info/exclude
    ```
 
-A run is void if the answer read anything under `.claude/tests/`: its "Regardé" line lists what
+A run is void if the answer read anything under `.claude/tests/`: its "Looked at" line lists what
 it read.
 
 ## The grid
@@ -73,9 +74,9 @@ it read.
 | Measure | How |
 | --- | --- |
 | Main friction | Whether the proposals include the main friction of the reference below, and at which rank. |
-| False observations | What a "Constat" says of a screenshot or of the code that is not true. Check each against the screenshot or the file. The target is 0. |
+| False observations | What a "Finding" says of a screenshot or of the code that is not true. Check each against the screenshot or the file. The target is 0. |
 | Already there | Proposals for something the application already does. The target is 0. |
-| Outside the frame | Proposals presented as a rule that is broken, and proposals that go against the guidelines without saying "touche la charte". The target is 0. |
+| Outside the frame | Proposals presented as a rule that is broken, and proposals that go against the guidelines without saying "touches the guidelines". The target is 0. |
 | Form | Six proposals at most, each with its tag and its four parts, one change per proposal. |
 | Cost | The duration and the tokens of the run. |
 
@@ -83,12 +84,13 @@ it read.
 
 Written before the first runs, from the screenshots.
 
-**The main friction.** On `04-ligne-choisie-*`, a line is chosen and a message is typed, but
-"Commiter" stays disabled and nothing says why. The step that is missing, "Indexer 1 ligne", is
-at the top of the centre card, far from the commit box at the bottom right.
+**The main friction.** On `04-line-picked-*`, a line is picked and a message is typed, but
+"Commit" stays disabled. Its hint says "Nothing is staged: stage a file or some lines." without
+saying that the picked line is not staged yet. The step that is missing, "Stage 1 line", is at
+the top of the center card, far from the commit box at the bottom right.
 
 **Already there**, so not to be proposed as new: Ctrl + Enter to commit, Shift + click for a
-range of lines, "Indexer ce bloc", staging and discarding a file from its row on hover, amending
+range of lines, "Stage hunk", staging and discarding a file from its row on hover, amending
 the last commit, the unified and side-by-side views.
 
 **Settled by the guidelines**, so not to be proposed against without saying so: the git commands
@@ -97,7 +99,8 @@ a card (sections 1 and 6), one primary button per view (section 9.1).
 
 ## Runs so far
 
-All on 10 November 2026, one run per row, with the definition as it was first written.
+All on November 10, 2026, on the French screenshots of then, one run per row, with the
+definition as it was first written. The labels below are given in English.
 
 | Model, effort | Proposals | Main friction | False observations | Already there | Outside the frame | Duration | Tokens |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -105,7 +108,7 @@ All on 10 November 2026, one run per row, with the definition as it was first wr
 | Opus, `high` | 4 | first, 8/10 | 0 | 0 | 0 | 2 min 58 | 92,635 |
 | Haiku 5.5, `xhigh` | 5 | second, 6/10 | 0 | 0 | 0 | 5 min 22 | 159,815 |
 
-- **What all three proposed:** saying why "Commiter" is disabled, and marking a file that is
+- **What all three proposed:** saying why "Commit" is disabled, and marking a file that is
   only partly staged. All three also noticed that a chosen line shows "✓" in place of its sign,
   which can be read as "already staged".
 - **What one alone proposed.** Opus: a warning when only one half of a replaced line is chosen,
@@ -118,7 +121,7 @@ All on 10 November 2026, one run per row, with the definition as it was first wr
   what it saw of the hint of the commit field in the dark theme; a crop of the screenshot shows
   it was right.
 - **Role.** No run presented a proposal as a broken rule. Departures from the guidelines went
-  under "Vu en passant": four lines for Sonnet, seven for Opus, nine for Haiku.
+  under "Seen in passing": four lines for Sonnet, seven for Opus, nine for Haiku.
 - **The choice.** The grid does not separate Sonnet from Opus. Opus kept fewer proposals and
   went further into what the commit would contain; Sonnet was twice as fast. The definition
   names Sonnet at `high`, and the call can name another model for a screen that deserves it.
@@ -134,7 +137,7 @@ content in the screen, since screenshots are often taken on tidy data.
 | Screenshots | What the answer said of long branch names |
 | --- | --- |
 | The repository of the trial, with short names | Nothing was cut on screen. The fixed width of the label column, 164 px, came up only as a caution inside another proposal. |
-| A repository with names like `fonctionnalite/PROJ-1482-…`, and the notification of a switch | A proposal on the names cut in the sidebar, in the labels and in the toolbar, and one on the notification, whose title runs over two lines and whose body repeats the name. It also measured that the toolbar shifts by 150 px when the name of the branch changes. |
+| A repository with names like `feature/PROJ-1482-…`, and the notification of a switch | A proposal on the names cut in the sidebar, in the labels and in the toolbar, and one on the notification, whose title runs over two lines and whose body repeats the name. It also measured that the toolbar shifts by 150 px when the name of the branch changes. |
 
 The added step is not enough on its own: the subagent reports what it is shown. Give it
 screenshots taken on real data, with long names, many rows and the states that go wrong.
