@@ -11,6 +11,8 @@
     key: '<circle cx="5.5" cy="10.5" r="3"/><path d="m7.6 8.4 5.9-5.9M11.5 4.5l1.8 1.8M9.6 6.4l1.5 1.5"/>',
     import: '<path d="M5.5 5.5v-2a1 1 0 0 1 1-1h4l3 3v7a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2M2 8h7M7 5.8 9.2 8 7 10.2"/>',
     log: '<rect x="3.5" y="2.5" width="9" height="11" rx="1"/><path d="M6 6h4M6 8.5h4M6 11h2.5"/>',
+    // The mouth of a tunnel in the ground: an SSH tunnel (guidelines, section 7).
+    tunnel: '<path d="M2.5 13.5V8a5.5 5.5 0 0 1 11 0v5.5M5.5 13.5V9.5a2.5 2.5 0 0 1 5 0v4M1.5 13.5h13"/>',
     export: '<path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-4l-3 3v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2M7 8h7M11.8 5.8 14 8l-2.2 2.2"/>',
     stash:
       '<path d="M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M2.5 9.5h3l1 1.5h3l1-1.5h3M8 2.5v5M5.8 5.5 8 7.7l2.2-2.2"/>',

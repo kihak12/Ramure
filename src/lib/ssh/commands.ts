@@ -34,6 +34,26 @@ export function sshCommands(): Command[] {
       },
     },
     {
+      // The strip of the tunnels, even for a session that has none yet: "Add tunnel…" is there
+      // (guidelines, 9.15, "Tunnels").
+      id: 'terminal-tunnels',
+      group: 'Terminal',
+      icon: 'tunnel',
+      title: 'Show or hide tunnels',
+      keywords: 'tunnel forward port socks proxy',
+      disabled: !session?.tunnels?.live,
+      hint: !session
+        ? 'no terminal open'
+        : !session.tunnels
+          ? 'a local terminal has no tunnels'
+          : !session.tunnels.live
+            ? 'the terminal is not connected'
+            : undefined,
+      run: () => {
+        if (session?.tunnels) session.tunnels.shown = !session.tunnels.shown;
+      },
+    },
+    {
       id: 'ssh-export',
       group: 'SSH',
       icon: 'export',

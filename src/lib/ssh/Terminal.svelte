@@ -10,13 +10,14 @@
   import { onMount } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { prefs } from '../git/prefs.svelte';
-  import { STATUS, type Session } from './ssh.svelte';
+  import { ssh, STATUS, type Session } from './ssh.svelte';
+  import TunnelStrip from './TunnelStrip.svelte';
   import { focusWithRing } from '../ui/focus';
   import { toasts } from '../ui/toasts.svelte';
   import { keyringAvailable, NO_KEYRING } from './secrets';
   import { explain } from './reasons';
   import { newJournal, resumed, shown, type JournalOpen } from './journal';
-  import { addressOf, type Closed, type Connected, type SshError } from './types';
+  import { addressOf, tunnelLabel, type Closed, type Connected, type SshError } from './types';
 
   let {
     session,
@@ -132,6 +133,7 @@
     if (attempt > RETRIES.length) {
       retry = 0;
       journalEnded(true);
+      ssh.tunnelsClose(session, true);
       session.status = 'closed';
       phase = { step: 'closed', lost: true, message: `All ${RETRIES.length} reconnection attempts failed${reason ? `: ${explain(reason)}` : '.'}` };
       return;
@@ -156,6 +158,7 @@
     window.clearTimeout(retryTimer);
     retry = 0;
     journalEnded(true);
+    ssh.tunnelsClose(session, true);
     session.status = 'closed';
     phase = { step: 'closed', lost: true, message: 'Automatic reconnection stopped.' };
   }
@@ -380,6 +383,18 @@
     }
   }
 
+  // --- Tunnels (guidelines, 9.15, "Tunnels"): the session's state is in `ssh`, the strip in TunnelStrip.
+  const tunnels = $derived(local ? [] : ssh.tunnelsOf(session));
+  /** The toggle is there while the group of the session holds its tunnels, connected or waiting. */
+  const tunnelsLive = $derived(!!session.tunnels?.live);
+  const tunnelsFailed = $derived(tunnels.filter((row) => row.state.state === 'failed'));
+  // With a failure, the tooltip of the toggle says why.
+  const tunnelsTitle = $derived(
+    tunnelsFailed.length
+      ? tunnelsFailed.map((row) => `${tunnelsFailed.length > 1 ? `${tunnelLabel(row.tunnel)}: ` : ''}${row.state.error ?? 'Failed'}`).join('\n')
+      : 'Show or hide tunnels',
+  );
+
   // Toggle asked for by the palette or a shortcut.
   $effect(() => {
     if (!session.journalAsk) return;
@@ -492,6 +507,8 @@
           startupCommand: host.startupCommand.trim() || null,
           rememberSecret: attempt.keep ?? false,
           journal,
+          // The tunnels belong to the group of the tab, which outlives a connection.
+          group: session.tunnels?.group ?? '',
         },
         onData,
       });
@@ -505,6 +522,8 @@
       if (connected.learnFailed) toasts.warn('The fingerprint could not be remembered', connected.learnFailed);
       if (connected.keepFailed) toasts.warn('The secret could not be kept', `The system keyring refused it: ${connected.keepFailed}`);
       retry = 0;
+      // A first connection starts the tunnels; a lost one that comes back finds them in the core.
+      ssh.tunnelsStart(session);
       term.focus();
     } catch (e) {
       const problem = normalize(e);
@@ -540,6 +559,8 @@
       } else {
         // The reason the system gives, said in plain words when it is known (guidelines, section 9.15).
         phase = { step: 'error', message: explain(problem.message) };
+        // Nothing is retried any more: the ports of the tunnels are freed.
+        ssh.tunnelsClose(session, true);
       }
     }
   }
@@ -662,6 +683,7 @@
         return;
       }
       journalEnded(ending === 'lost');
+      ssh.tunnelsClose(session, ending === 'lost');
       session.status = 'closed';
       phase =
         ending === 'lost'
@@ -685,6 +707,7 @@
       void unlisten.then((stop) => stop());
       window.clearTimeout(retryTimer);
       if (sessionId !== null) void invoke(API.close, { id: sessionId }).catch(() => {});
+      if (!local) ssh.tunnelsClose(session);
       terminal.dispose();
     };
   });
@@ -724,6 +747,13 @@
     {#if session.journal}
       <span class="journal" title={session.journal.path}>{recording ? 'recording log' : 'log saved'}</span>
     {/if}
+    {#if tunnelsLive && tunnels.length && session.tunnels}
+      {@const group = session.tunnels}
+      <!-- "Tunnels · 2" shows and hides the strip; a failure gives it the warning icon. -->
+      <button class="btn ghost small toggle" type="button" aria-pressed={group.shown} title={tunnelsTitle} onclick={() => (group.shown = !group.shown)}>
+        {#if tunnelsFailed.length}<span class="failed"><Icon name="warning" size={14} /></span>{/if}Tunnels · {tunnels.length}
+      </button>
+    {/if}
     {#if phase.step === 'connected' && (local || info)}
       <button
         class="btn ghost small toggle"
@@ -739,6 +769,10 @@
       <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke(API.close, { id: sessionId })}>Disconnect</button>
     {/if}
   </header>
+  {/if}
+
+  {#if tunnelsLive && session.tunnels?.shown}
+    <TunnelStrip {session} />
   {/if}
 
   {#if session.searching}
@@ -865,7 +899,8 @@
             <p class="spoken" role="status">{announce}</p>
             <!-- The line of the reason keeps its place: the buttons do not move from one attempt to the
                  next. Empty, it holds a non-breaking space, which keeps its height. -->
-            <p class="muted reason">{phase.reason || '\u00a0'}</p>
+            <!-- With tunnels, the first attempt says so in this line instead (guidelines, 9.15). -->
+            <p class="muted reason">{(phase.attempt === 1 && ssh.tunnelsPaused(session)) || phase.reason || '\u00a0'}</p>
             <div class="row">
               <button class="btn primary" type="button" bind:this={retryButton} onclick={retryNow}><Icon name="refresh" size={14} /> Reconnect now</button>
               <button class="btn ghost" type="button" onclick={stopRetrying}>Stop</button>
@@ -983,6 +1018,10 @@
   }
   .close {
     margin-left: auto;
+  }
+  .failed {
+    display: grid;
+    color: var(--bad);
   }
   header {
     display: flex;

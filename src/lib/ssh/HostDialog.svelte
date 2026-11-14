@@ -10,7 +10,8 @@
   import { veil } from '../ui/veil';
   import { explain } from './reasons';
   import { forgetSecret, keyringAvailable, NO_KEYRING, secretsHeld, type SecretRef } from './secrets';
-  import type { Host, SshError } from './types';
+  import TunnelForm from './TunnelForm.svelte';
+  import { TUNNEL_KIND_SHORT, tunnelLabel, tunnelSummary, tunnelWords, type Host, type SshError, type Tunnel } from './types';
 
   let element = $state<HTMLDialogElement>();
   let form = $state<Host | null>(null);
@@ -41,7 +42,9 @@
   $effect(() => {
     if (!element) return;
     if (editing && !element.open) {
-      form = { ...editing, tags: [...editing.tags] };
+      // A copy gets tunnels of its own: two hosts never share one.
+      form = { ...editing, tags: [...editing.tags], tunnels: (editing.tunnels ?? []).map((t) => ({ ...t, id: editing.id ? t.id : crypto.randomUUID() })) };
+      tunnelDraft = null;
       tags = editing.tags.join(', ');
       keyNote = '';
       keyError = '';
@@ -85,8 +88,12 @@
   }
 
   async function save(connect: boolean) {
+    if (!form || !valid) return;
+    // A tunnel being added or edited is part of what is saved: it is applied first, or its fields
+    // say what is missing and nothing is saved.
+    if (tunnelDraft && tunnelForm && !tunnelForm.submit()) return;
     const host = current();
-    if (!host || !valid) return;
+    if (!host) return;
     failure = '';
     const saved = await ssh.save(host);
     if (typeof saved === 'string') {
@@ -126,6 +133,43 @@
     // In the home folder, the path is written `~/…`, like the keys the field suggests.
     if (home && picked.startsWith(home) && /^[\\/]/.test(picked.slice(home.length))) picked = `~${picked.slice(home.length)}`;
     form.keyPath = picked;
+  }
+
+  // --- Tunnels (guidelines, section 9.21) --------------------------------------------------------
+  /** The tunnel form, open in place under the list: for a new tunnel (`id` null) or one of the list. */
+  let tunnelDraft = $state<{ id: string | null } | null>(null);
+  let tunnelForm = $state<ReturnType<typeof TunnelForm>>();
+  let tunnelsEl = $state<HTMLElement>();
+
+  /** The focus after the tunnel form closes: back to what opened it, or to "Add tunnel". */
+  async function focusTunnels(id: string | null) {
+    await tick();
+    const row = id ? tunnelsEl?.querySelector<HTMLElement>(`[data-tunnel="${CSS.escape(id)}"] .edit`) : null;
+    focusWithRing(row ?? tunnelsEl?.querySelector<HTMLElement>('.add-tunnel'));
+  }
+
+  function applyTunnel(tunnel: Tunnel) {
+    if (!form) return;
+    const editingId = tunnelDraft?.id ?? null;
+    form.tunnels = editingId ? form.tunnels.map((t) => (t.id === tunnel.id ? tunnel : t)) : [...form.tunnels, tunnel];
+    tunnelDraft = null;
+    void focusTunnels(editingId);
+  }
+
+  function cancelTunnel() {
+    const editingId = tunnelDraft?.id ?? null;
+    tunnelDraft = null;
+    void focusTunnels(editingId);
+  }
+
+  function removeTunnel(id: string) {
+    if (!form) return;
+    const at = form.tunnels.findIndex((t) => t.id === id);
+    form.tunnels = form.tunnels.filter((t) => t.id !== id);
+    if (tunnelDraft?.id === id) tunnelDraft = null;
+    // The row is gone: the focus goes to the next one, or the one before, or to "Add tunnel".
+    const next = form.tunnels[Math.min(at, form.tunnels.length - 1)];
+    void focusTunnels(next?.id ?? null);
   }
 
   // --- Secrets kept in the system keyring (guidelines, section 9.21) -----------------------------
@@ -450,6 +494,51 @@
             <span>Record a log of every session</span>
           </label>
           <small>One text file per session, in the log folder of the settings. It holds everything the terminal shows, sensitive data included.</small>
+        </div>
+
+        <!-- The tunnels of the host, which start with each of its sessions: a list inside the dialog,
+             and the form of a tunnel in place under it (guidelines, 9.6 and 9.21). -->
+        <div class="full tunnels" role="group" aria-labelledby="host-tunnels" bind:this={tunnelsEl}>
+          <span class="label" id="host-tunnels">Tunnels</span>
+          {#if form.tunnels.length}
+            <ul>
+              {#each form.tunnels as tunnel (tunnel.id)}
+                {@const label = tunnelLabel(tunnel)}
+                <li data-tunnel={tunnel.id} title={tunnelWords(tunnel)}>
+                  <span class="text">
+                    <b class:mono={!tunnel.name}>{label}</b>
+                    <small>{TUNNEL_KIND_SHORT[tunnel.kind]} · <span class="mono">{tunnelSummary(tunnel)}</span></small>
+                  </span>
+                  <!-- Two rows can carry these buttons: their accessible name says which. -->
+                  <button class="btn ghost small icon edit" type="button" title="Edit tunnel" aria-label="Edit tunnel {label}" onclick={() => (tunnelDraft = { id: tunnel.id })}>
+                    <Icon name="pencil" size={14} />
+                  </button>
+                  <button class="btn ghost small icon" type="button" title="Remove tunnel" aria-label="Remove tunnel {label}" onclick={() => removeTunnel(tunnel.id)}>
+                    <Icon name="trash" size={14} />
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {:else if !tunnelDraft}
+            <small>No tunnels. Reach a port of the server from this machine, or the reverse.</small>
+          {/if}
+          {#if tunnelDraft}
+            {@const draftId = tunnelDraft.id}
+            {#key draftId}
+              <div class="tunnel-draft" class:below={form.tunnels.length > 0}>
+                <TunnelForm
+                  bind:this={tunnelForm}
+                  tunnel={form.tunnels.find((t) => t.id === draftId) ?? null}
+                  others={form.tunnels}
+                  applyLabel={draftId ? 'Apply' : 'Add tunnel'}
+                  onapply={applyTunnel}
+                  oncancel={cancelTunnel}
+                />
+              </div>
+            {/key}
+          {:else}
+            <button class="btn small add-tunnel" type="button" onclick={() => (tunnelDraft = { id: null })}><Icon name="plus" size={14} /> Add tunnel</button>
+          {/if}
         </div>
 
         <label class="half">
@@ -857,5 +946,57 @@
   }
   .row .field {
     flex: 1;
+  }
+  /* The tunnels: plain rows separated by a --line rule (--line-soft does not show on --raised), and
+     the form in place separated from them the same way (guidelines, 9.6). */
+  .tunnels {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .tunnels ul {
+    align-self: stretch;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tunnels li {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 0;
+  }
+  .tunnels li + li {
+    border-top: 1px solid var(--line);
+  }
+  .tunnels .text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.35;
+  }
+  .tunnels .text b,
+  .tunnels .text small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* A button made of an icon alone: 24 × 24 px at least (guidelines, 9.1). */
+  .btn.icon {
+    width: 24px;
+    padding: 0;
+    color: var(--muted);
+  }
+  .btn.icon:hover:not(:disabled) {
+    color: var(--ink);
+  }
+  .tunnel-draft {
+    align-self: stretch;
+  }
+  .tunnel-draft.below {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
   }
 </style>

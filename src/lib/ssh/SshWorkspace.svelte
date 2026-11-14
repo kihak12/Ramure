@@ -12,7 +12,7 @@
   import { mayCloseTerminal } from './guard';
   import { ssh, STATUS, type Session } from './ssh.svelte';
   import Terminal from './Terminal.svelte';
-  import { addressOf, emptyHost, type Host } from './types';
+  import { addressOf, count, emptyHost, type Host } from './types';
   import { motion } from '../ui/motion';
 
   /** True when the SSH module is on screen. */
@@ -60,6 +60,11 @@
 
   const address = (host: Host) => addressOf(host.user || ssh.defaultUser, host.hostname, host.port);
 
+  /** "2 tunnels listening", for the tab of a session whose tunnels listen; empty otherwise (9.15). */
+  const listening = (session: Session) => {
+    const n = ssh.tunnelsOf(session).filter((row) => row.state.state === 'listening').length;
+    return n ? `${count(n, 'tunnel')} listening` : '';
+  };
 
   // The "+" of the tabs: a local terminal, in one click. The tooltip says the shortcut.
   const newLocal = $derived(`New local terminal${keys.binding('terminal-new') ? ` (${display(keys.binding('terminal-new'))})` : ''}`);
@@ -171,6 +176,7 @@
       <div class="tabs" role="tablist" aria-label="Open terminals" bind:this={tabsEl}>
         {#each ssh.sessions as session (session.key)}
           {@const current = session.key === ssh.activeKey}
+          {@const tunnels = listening(session)}
           <div class="tab" class:current animate:flip={{ duration: motion.med }} in:fade={{ duration: motion.med }}>
             <button
               class="open"
@@ -212,6 +218,12 @@
                 <!-- The log being recorded: an icon, said in words, with no color nor animation (9.7). -->
                 <span class="journal" role="img" aria-label="Recording log" title="Recording log">
                   <Icon name="log" size={14} />
+                </span>
+              {/if}
+              {#if tunnels}
+                <!-- Tunnels that listen: the same, as the log does (9.15, "Tunnels"). -->
+                <span class="journal" role="img" aria-label={tunnels} title={tunnels}>
+                  <Icon name="tunnel" size={14} />
                 </span>
               {/if}
             </button>

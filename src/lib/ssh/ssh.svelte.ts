@@ -1,11 +1,47 @@
 // State of the SSH module: host book, keys, and open terminals, remote or local.
 
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { tick } from 'svelte';
 import { dialogs } from '../ui/dialogs.svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { secretsHeld } from './secrets';
-import { addressOf, type Host, type KeyInfo } from './types';
+import { addressOf, count, listenOf, type Host, type KeyInfo, type Tunnel, type TunnelState } from './types';
+
+/** What the core last said of a tunnel of the session. */
+export type TunnelRuntime = Omit<TunnelState, 'group' | 'id'>;
+
+/** The tunnels of a session (guidelines, 9.15, "Tunnels"). They belong to a group of the core,
+ *  which outlives a connection: a lost connection keeps their ports, and they start again when it
+ *  comes back. */
+export interface SessionTunnels {
+  /** The key of the group in the core: the same across the reconnections of a lost connection. */
+  group: string;
+  /** The group holds tunnels in the core: from the first connection until the session is over. */
+  live: boolean;
+  /** Tunnels added during the session and not kept on the host: they live as long as it does. */
+  own: Tunnel[];
+  /** Ids of the tunnels the user stopped: when the session comes back, they stay stopped. */
+  stopped: string[];
+  /** What the core says of each tunnel, by id (event `tunnel-state`). */
+  states: Record<string, TunnelRuntime>;
+  /** The definition each tunnel was started with, by id: a change of the host restarts it. */
+  running: Record<string, Tunnel>;
+  /** The strip of the tunnels is shown. */
+  shown: boolean;
+}
+
+/** A tunnel of a session, as the strip lists it: `own` for one added during the session. */
+export interface SessionTunnel {
+  tunnel: Tunnel;
+  own: boolean;
+  state: TunnelRuntime;
+}
+
+const IDLE: TunnelRuntime = { state: 'stopped', connections: 0, error: null, lastFailure: null };
+
+/** What a change of the host must touch to start a tunnel again: not its name, nor its start with the session. */
+const shape = (t: Tunnel) => JSON.stringify([t.kind, t.listenPort, t.targetHost, t.targetPort, t.bindAny]);
 
 export interface Session {
   /** Id of the tab (not the same as that of the connection on the Rust side). */
@@ -35,6 +71,8 @@ export interface Session {
   opened?: { shell: string; cwd: string };
   /** The id of the local terminal on the core side, while its shell runs. */
   localId?: number;
+  /** The tunnels of an SSH session; a local terminal has none. */
+  tunnels?: SessionTunnels;
 }
 
 /** The state of a session in words: the dot of a tab or of a header never says it by its color alone. */
@@ -60,6 +98,7 @@ const LOCAL_HOST: Host = {
   startupCommand: '',
   proxyJump: false,
   logSessions: false,
+  tunnels: [],
   updatedAt: 0,
 };
 
@@ -108,6 +147,7 @@ class Ssh {
   groups = $derived([...new Set(this.hosts.map((h) => h.group).filter(Boolean))]);
 
   async load() {
+    this.#listenTunnels();
     try {
       this.hosts = await invoke<Host[]>('hosts_list');
     } catch (e) {
@@ -136,6 +176,7 @@ class Ssh {
     try {
       const saved = await invoke<Host>('host_save', { host });
       this.hosts = await invoke<Host[]>('hosts_list');
+      this.#followHost(saved);
       return saved;
     } catch (e) {
       return `The host could not be saved: ${message(e)}`;
@@ -219,6 +260,7 @@ class Ssh {
       status: 'connecting',
       searching: false,
       searchAsk: 0,
+      tunnels: { group: crypto.randomUUID(), live: false, own: [], stopped: [], states: {}, running: {}, shown: false },
     };
     this.sessions.push(session);
     this.activeKey = session.key;
@@ -236,6 +278,173 @@ class Ssh {
     if (at < 0) return;
     this.sessions.splice(at, 1);
     if (this.activeKey === key) this.activeKey = this.sessions[Math.min(at, this.sessions.length - 1)]?.key ?? 0;
+  }
+
+  // --- Tunnels (guidelines, 9.15, "Tunnels") ---------------------------------------------------
+
+  /** The host of a session as the book has it now: its tunnels follow what the form saves. */
+  hostOf(session: Session): Host | null {
+    return this.hosts.find((h) => h.id === session.host.id) ?? null;
+  }
+
+  /** The tunnels of a session: those of its host, then its own, each with its state. */
+  tunnelsOf(session: Session): SessionTunnel[] {
+    const t = session.tunnels;
+    if (!t) return [];
+    const kept = (this.hostOf(session) ?? session.host).tunnels ?? [];
+    const ids = new Set(kept.map((tunnel) => tunnel.id));
+    return [
+      ...kept.map((tunnel) => ({ tunnel, own: false })),
+      ...t.own.filter((tunnel) => !ids.has(tunnel.id)).map((tunnel) => ({ tunnel, own: true })),
+    ].map((row) => ({ ...row, state: t.states[row.tunnel.id] ?? IDLE }));
+  }
+
+  /** "2 tunnels are paused. Connections in progress are cut.", for the panel of a lost connection;
+   *  empty when no tunnel was running. */
+  tunnelsPaused(session: Session): string {
+    const paused = this.tunnelsOf(session).filter((row) => ['starting', 'listening', 'waiting'].includes(row.state.state)).length;
+    if (!paused) return '';
+    return `${count(paused, 'tunnel')} ${paused === 1 ? 'is' : 'are'} paused. Connections in progress are cut.`;
+  }
+
+  /** The first connection of a session has opened: its tunnels start, those of the host that start
+   *  with the session and its own, except those the user stopped. */
+  tunnelsStart(session: Session) {
+    const t = session.tunnels;
+    if (!t || t.live) return;
+    t.live = true;
+    for (const row of this.tunnelsOf(session)) {
+      if ((row.own || row.tunnel.autostart) && !t.stopped.includes(row.tunnel.id)) void this.tunnelStart(session, row.tunnel);
+    }
+  }
+
+  /** The session is over for good: its tunnels stop and their ports are freed. `resumable`: the
+   *  connection was lost, and "Reconnect" brings the same session back, with its own tunnels and
+   *  those the user stopped; otherwise the next one starts afresh. */
+  tunnelsClose(session: Session, resumable = false) {
+    const t = session.tunnels;
+    if (!t) return;
+    if (t.live) void invoke('tunnels_close', { group: t.group }).catch(() => {});
+    // A new key: what the core still says of the old group no longer reaches this session.
+    t.group = crypto.randomUUID();
+    t.live = false;
+    t.states = {};
+    t.running = {};
+    if (!resumable) {
+      t.own = [];
+      t.stopped = [];
+    }
+  }
+
+  /** Starts a tunnel, or starts it again ("Start", "Retry", a change of the host). */
+  async tunnelStart(session: Session, tunnel: Tunnel) {
+    const t = session.tunnels;
+    if (!t) return;
+    t.stopped = t.stopped.filter((id) => id !== tunnel.id);
+    t.running[tunnel.id] = { ...tunnel };
+    // "Starting…" at once; a failure that follows is then a new one, and is said again.
+    t.states[tunnel.id] = { ...IDLE, state: 'starting', lastFailure: t.states[tunnel.id]?.lastFailure ?? null };
+    const group = t.group;
+    try {
+      await invoke('tunnel_start', { group, owner: session.host.alias || session.host.hostname, tunnel: { ...tunnel } });
+    } catch (e) {
+      if (t.group !== group) return;
+      this.#tunnelState(session, { group, id: tunnel.id, state: 'failed', connections: 0, error: message(e), lastFailure: null });
+    }
+  }
+
+  /** "Stop": the tunnel frees its port, and stays stopped when the session comes back. */
+  async tunnelStop(session: Session, id: string) {
+    const t = session.tunnels;
+    if (!t) return;
+    if (!t.stopped.includes(id)) t.stopped = [...t.stopped, id];
+    delete t.running[id];
+    if (t.states[id]) t.states[id] = { ...t.states[id], state: 'stopped', connections: 0, error: null };
+    if (!t.live) return;
+    try {
+      await invoke('tunnel_stop', { group: t.group, id });
+    } catch (e) {
+      toasts.err('The tunnel could not be stopped', message(e));
+    }
+  }
+
+  /** "Remove": a tunnel of the session stops and leaves it. */
+  async tunnelRemove(session: Session, id: string) {
+    const t = session.tunnels;
+    if (!t) return;
+    // The row goes at once; the core frees the port meanwhile.
+    const stopping = this.tunnelStop(session, id);
+    t.own = t.own.filter((tunnel) => tunnel.id !== id);
+    t.stopped = t.stopped.filter((other) => other !== id);
+    delete t.states[id];
+    await stopping;
+  }
+
+  /** "Add tunnel" in the strip: the tunnel starts at once. `keep`: it is saved on the host too,
+   *  through the save of the host form. What kept it from being saved, or null. */
+  async tunnelAdd(session: Session, tunnel: Tunnel, keep: boolean): Promise<string | null> {
+    const t = session.tunnels;
+    if (!t) return null;
+    const host = keep ? this.hostOf(session) : null;
+    if (host) {
+      const saved = await this.save({ ...host, tunnels: [...(host.tunnels ?? []), tunnel] });
+      if (typeof saved === 'string') return saved;
+    } else {
+      t.own = [...t.own, tunnel];
+    }
+    // Saving may have started it already, if the session is connected.
+    if (t.live && !t.running[tunnel.id]) void this.tunnelStart(session, tunnel);
+    return null;
+  }
+
+  /** A host was saved: its open sessions follow it. A tunnel removed from it stops, a changed one
+   *  starts again, a new one that starts with the session starts. */
+  #followHost(host: Host) {
+    for (const session of this.sessions) {
+      const t = session.tunnels;
+      if (!t?.live || session.host.id !== host.id) continue;
+      const kept = host.tunnels ?? [];
+      const ids = new Set([...kept, ...t.own].map((tunnel) => tunnel.id));
+      for (const id of Object.keys(t.running)) {
+        if (ids.has(id)) continue;
+        void this.tunnelStop(session, id);
+        t.stopped = t.stopped.filter((other) => other !== id);
+        delete t.states[id];
+      }
+      // A tunnel kept on the host leaves the session's own.
+      t.own = t.own.filter((tunnel) => !kept.some((k) => k.id === tunnel.id));
+      for (const tunnel of kept) {
+        const before = t.running[tunnel.id];
+        if (before ? shape(before) !== shape(tunnel) : tunnel.autostart && !t.stopped.includes(tunnel.id) && !t.states[tunnel.id]) {
+          void this.tunnelStart(session, tunnel);
+        }
+      }
+    }
+  }
+
+  #listening = false;
+  #listenTunnels() {
+    if (this.#listening) return;
+    this.#listening = true;
+    void listen<TunnelState>('tunnel-state', (event) => {
+      const session = this.sessions.find((s) => s.tunnels?.group === event.payload.group);
+      if (session) this.#tunnelState(session, event.payload);
+    });
+  }
+
+  /** What the core says of a tunnel. A start that fails is said in a notification too, since the
+   *  user may be looking at the terminal (guidelines, 9.15). */
+  #tunnelState(session: Session, said: TunnelState) {
+    const t = session.tunnels;
+    if (!t || said.group !== t.group) return;
+    const before = t.states[said.id];
+    // A tunnel that was stopped or removed meanwhile: the core is late, the interface is right.
+    if (!t.running[said.id] && (said.state !== 'stopped' || !before)) return;
+    t.states[said.id] = { state: said.state, connections: said.connections, error: said.error, lastFailure: said.lastFailure };
+    if (said.state === 'failed' && before?.state !== 'failed') {
+      const tunnel = t.running[said.id];
+      toasts.err(`Tunnel ${listenOf(tunnel)} could not start`, said.error ?? '');
+    }
   }
 }
 
