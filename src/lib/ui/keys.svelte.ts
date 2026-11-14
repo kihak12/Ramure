@@ -38,6 +38,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'terminal-repo', group: 'View', title: 'New terminal in this repository', keys: '', scope: 'git' },
   { id: 'terminal-search', group: 'Terminal', title: 'Search the terminal', keys: 'Ctrl+Shift+F', scope: 'ssh' },
   { id: 'terminal-journal', group: 'Terminal', title: 'Record or stop terminal log', keys: '', scope: 'ssh' },
+  { id: 'terminal-tunnels', group: 'Terminal', title: 'Show or hide tunnels', keys: '', scope: 'ssh' },
   { id: 'tab-new', group: 'Tabs', title: 'New tab', keys: 'Ctrl+T', scope: 'git' },
   { id: 'tab-close', group: 'Tabs', title: 'Close tab', keys: 'Ctrl+W', scope: 'git' },
   { id: 'tab-next', group: 'Tabs', title: 'Next tab', keys: 'Ctrl+Tab', scope: 'git' },

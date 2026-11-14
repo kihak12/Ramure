@@ -9,7 +9,9 @@ pub mod export;
 pub mod keyfiles;
 pub mod known_hosts;
 pub mod secrets;
+pub mod socks;
 pub mod store;
+pub mod tunnels;
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -19,13 +21,14 @@ use std::time::{Duration, Instant};
 
 use russh::client::{self, Handle};
 use russh::keys::{self, HashAlg, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
-use russh::{ChannelMsg, Disconnect};
+use russh::{ChannelMsg, ChannelOpenFailure, Disconnect};
 use serde::{Deserialize, Serialize};
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::mpsc;
 
 use known_hosts::Known;
+use tunnels::Tunnels;
 
 /// Keys tried in automatic mode, in the order of OpenSSH.
 const DEFAULT_KEYS: [&str; 3] = ["id_ed25519", "id_ecdsa", "id_rsa"];
@@ -74,6 +77,9 @@ pub struct ConnectParams {
     /// The log to open before the output arrives: the option of the host, or a resumed log.
     #[serde(default)]
     journal: Option<crate::journal::JournalOpen>,
+    /// The stable key of the tab: its tunnels outlive a connection. Empty: no tunnels.
+    #[serde(default)]
+    group: String,
 }
 
 /// What testing a host needs: connecting and authenticating, without opening a terminal.
@@ -188,6 +194,9 @@ struct ClientHandler {
     accepted: Option<String>,
     remember: bool,
     verdict: Arc<Mutex<Option<HostVerdict>>>,
+    /// The tunnels, and the group of the session, where the server's connections to a remote
+    /// forward go. None for a test, which starts no tunnel.
+    forwards: Option<(Tunnels, String)>,
 }
 
 impl client::Handler for ClientHandler {
@@ -220,6 +229,24 @@ impl client::Handler for ClientHandler {
             *slot = Some(verdict);
         }
         Ok(trusted)
+    }
+
+    /// A connection to a port the server listens on for a remote forward.
+    async fn server_channel_open_forwarded_tcpip(
+        &mut self,
+        channel: russh::Channel<client::Msg>,
+        _connected_address: &str,
+        connected_port: u32,
+        _originator_address: &str,
+        _originator_port: u32,
+        reply: client::ChannelOpenHandle,
+        _session: &mut client::Session,
+    ) -> Result<(), Self::Error> {
+        match &self.forwards {
+            Some((tunnels, group)) => tunnels.forwarded(group, connected_port, channel, reply),
+            None => reply.reject(ChannelOpenFailure::AdministrativelyProhibited).await,
+        }
+        Ok(())
     }
 }
 
@@ -517,7 +544,8 @@ struct Opened {
 }
 
 /// Connects to `host:port`, checks the fingerprint of the server and authenticates `user`. Shared
-/// by a session and the test of a host.
+/// by a session and the test of a host. `forwards`: where the connections of the remote forwards
+/// of a session go; none for a test.
 async fn open_authenticated(
     host: &str,
     port: u16,
@@ -525,6 +553,7 @@ async fn open_authenticated(
     auth: &Auth,
     accept_fingerprint: Option<String>,
     remember_host: bool,
+    forwards: Option<(Tunnels, String)>,
 ) -> Result<Opened, SshError> {
     let host = host.trim();
     // The password is found before connecting: without it, there is no point bothering the server.
@@ -553,6 +582,7 @@ async fn open_authenticated(
         accepted: accept_fingerprint,
         remember: remember_host,
         verdict: verdict.clone(),
+        forwards,
     };
 
     let connecting = client::connect(config, (host, port), handler);
@@ -603,6 +633,7 @@ pub async fn ssh_test(params: TestParams) -> Result<Tested, SshError> {
         &params.auth,
         params.accept_fingerprint,
         params.remember_host,
+        None,
     )
     .await?;
     let _ = opened.handle.disconnect(Disconnect::ByApplication, "", "en").await;
@@ -618,10 +649,13 @@ pub async fn ssh_test(params: TestParams) -> Result<Tested, SshError> {
 pub async fn ssh_connect(
     app: AppHandle,
     state: State<'_, SshState>,
+    tunnels: State<'_, Tunnels>,
     params: ConnectParams,
     on_data: Channel,
 ) -> Result<Connected, SshError> {
     let started = Instant::now();
+    let group = params.group.clone();
+    let forwards = (!group.is_empty()).then(|| (tunnels.inner().clone(), group.clone()));
     let Opened { handle, fingerprint, known_host, learn_failed, auth_method, typed } = open_authenticated(
         &params.host,
         params.port,
@@ -629,6 +663,7 @@ pub async fn ssh_connect(
         &params.auth,
         params.accept_fingerprint.clone(),
         params.remember_host,
+        forwards,
     )
     .await?;
 
@@ -661,9 +696,19 @@ pub async fn ssh_connect(
     let journal_failed = params.journal.as_ref().and_then(|open| crate::journal::start(&key, open).err());
 
     let startup = params.startup_command.filter(|command| !command.trim().is_empty());
+    // The session is ready: its tunnels go through this connection until its pump ends.
+    let handle = Arc::new(handle);
+    let tunnels = tunnels.inner().clone();
+    if !group.is_empty() {
+        tunnels.attach(&group, &handle);
+    }
     tauri::async_runtime::spawn(async move {
         let (exit_status, reason, ending) = pump(channel, rx, on_data, startup, &key).await;
         crate::journal::stop(&key);
+        // Before the interface hears of the end: its tunnels wait for the next connection.
+        if !group.is_empty() {
+            tunnels.detach(&group, &handle);
+        }
         let _ = handle.disconnect(Disconnect::ByApplication, "", "en").await;
         if let Ok(mut sessions) = app.state::<SshState>().sessions.lock() {
             sessions.remove(&id);

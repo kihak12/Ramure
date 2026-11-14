@@ -17,9 +17,9 @@ Free software (MIT), local, no account.
   </picture>
 </p>
 
-**Status: milestones J1, J2 and J3 are done; J4 is next.** The J0 prototype validated the graph
+**Status: milestones J1, J2 and J3 are done; J4 is under way.** The J0 prototype validated the graph
 and the SSH terminal on Windows and Ubuntu. Everyday Git (J1), advanced Git (J2) and SSH (J3) are
-complete. J4 brings SFTP, tunnels, installers and updates.
+complete. J4 brings SFTP, tunnels, installers and updates; the tunnels are there.
 
 The interface is in English. Where it helps to find something on screen, this page gives its
 label in quotes.
@@ -148,6 +148,13 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   text file, and goes on after a reconnection; a host can record every session. Only what is
   shown is written, never what is typed on its own, so a password typed without echo is not in
   it. The files go to `Documents/Ramure/Logs`, or to the folder chosen in the settings.
+- **Tunnels**: local forwards (-L), remote forwards (-R) and SOCKS proxies (-D). The tunnels of
+  a host are defined in its form and start with each of its sessions; "Tunnels", in the header of
+  a session, shows them, their state and their open connections, and adds one for the time of the
+  session. On this machine a tunnel listens on `localhost` only, unless its form says otherwise.
+  A tunnel that cannot start says why and offers "Retry". While a lost connection is retried,
+  the ports stay taken and refuse connections at once; the tunnels start again when the session
+  comes back.
 - **Testing a host**: "Test connection", in its form, connects with the values typed so far,
   authenticates and disconnects, without saving anything or opening a terminal. The result shows
   in the form; an unknown server, a passphrase or a password is asked for as when connecting.
@@ -174,7 +181,9 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Not there yet
 
-- Milestone J4: SFTP, tunnels, installers and updates.
+- Milestone J4: SFTP, installers and updates.
+- Tunnels are not read from `~/.ssh/config` (LocalForward, RemoteForward, DynamicForward), nor
+  written to it, yet (#163).
 - The interface exists in English only: no other language is planned.
 
 ## Requirements
