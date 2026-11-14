@@ -1761,7 +1761,9 @@ the curves of the graph (10).
   a component.
 - Every pull request that touches the interface is reviewed against these guidelines.
 - The two screenshots at the top of this file show the view of a repository. A pull request that
-  changes that view takes them again, in light and in dark, with `scripts/screen.sh`.
+  changes that view takes them again, in light and in dark, with `scripts/screen.sh`, on the
+  repository that `scripts/demo-repo.sh` builds, the commit "Fix the log path on Windows"
+  selected.
 
 ## 15. History
 
