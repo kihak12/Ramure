@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 
-// Tauri attend le serveur de développement sur un port fixe (voir src-tauri/tauri.conf.json).
+// Tauri expects the development server on a fixed port (see src-tauri/tauri.conf.json).
 export default defineConfig({
   plugins: [svelte()],
   clearScreen: false,

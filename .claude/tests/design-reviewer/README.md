@@ -12,10 +12,10 @@ the guidelines change a rule the answer key relies on.
 
 | File | Content |
 | --- | --- |
-| [`change/CleanupPanel.svelte`](change/CleanupPanel.svelte), [`change/cleanup.ts`](change/cleanup.ts) | The change to review: a "Nettoyer les branches" panel and its interface text. It holds 25 planted violations and 12 decoys, which are compliant code that looks like a violation. |
-| [`screens/`](screens) | Eight screenshots of the panel, mounted on its own with sample branches: four states, each in light and in dark. `mesures.json` holds the measures taken in the page for each screenshot. |
+| [`change/CleanupPanel.svelte`](change/CleanupPanel.svelte), [`change/cleanup.ts`](change/cleanup.ts) | The change to review: a "Clean up branches" panel and its interface text. It holds 25 planted violations and 12 decoys, which are compliant code that looks like a violation. |
+| [`screens/`](screens) | Eight screenshots of the panel, mounted on its own with sample branches: four states, each in light and in dark. `measures.json` holds the measures taken in the page for each screenshot. |
 | [`capture/`](capture) | The page and the script that take the screenshots. |
-| [`answer-key.md`](answer-key.md) | The planted violations with their severity, the decoys, what the screenshots show, and the cases left to judgment. |
+| [`answer-key.md`](answer-key.md) | The planted violations with the rule each one breaks and its severity, the decoys, what the screenshots show, and the cases left to judgment. |
 
 The change hard-codes no value, so `npm run check` passes on it, with a single warning from
 Svelte about a positive `tabindex`: the test is about what the automatic check cannot see. The
@@ -37,25 +37,25 @@ two files are kept out of `src/`, so nothing builds or checks them where they ar
    of the code alone, leave out the last paragraph.
 
    ```text
-   Relis ce changement contre la charte graphique.
+   Review this change against the design guidelines.
 
-   Le changement ajoute un panneau « Nettoyer les branches » au module Git : il liste les
-   branches locales déjà fusionnées et propose de les supprimer.
+   The change adds a "Clean up branches" panel to the Git module: it lists the local branches
+   that are already merged and offers to delete them.
 
-   Fichiers modifiés (nouveaux tous les deux) :
+   Changed files (both new):
    - src/lib/git/CleanupPanel.svelte
    - src/lib/git/cleanup.ts
 
-   Captures d'écran du panneau, monté seul avec des branches d'exemple, chacune en thème clair
-   et en thème sombre :
-   - captures/01-repos-clair.png, captures/01-repos-sombre.png : fenêtre de 760 px de large.
-     Deux lignes cochées au clavier, le focus dans la liste, la souris sur la cinquième ligne.
-   - captures/02-confirmation-clair.png, captures/02-confirmation-sombre.png : le même état,
-     après Entrée sur « Supprimer la sélection ».
-   - captures/03-erreur-clair.png, captures/03-erreur-sombre.png : après une suppression qui
-     échoue, puis un clic sur « Fetch », qui reste en cours.
-   - captures/04-etroit-clair.png, captures/04-etroit-sombre.png : le premier état, dans une
-     fenêtre de 440 px de large.
+   Screenshots of the panel, mounted on its own with sample branches, each in the light and in
+   the dark theme:
+   - captures/01-rest-light.png, captures/01-rest-dark.png: a window 760 px wide. Two rows
+     checked from the keyboard, the focus in the list, the pointer on the fifth row.
+   - captures/02-confirmation-light.png, captures/02-confirmation-dark.png: the same state,
+     after Enter on "Delete Selection…".
+   - captures/03-error-light.png, captures/03-error-dark.png: after a deletion that fails, then
+     a click on "Retrieve", which stays in progress.
+   - captures/04-narrow-light.png, captures/04-narrow-dark.png: the first state, in a window
+     440 px wide.
    ```
 
 3. Score the review against the answer key, as described below.
@@ -75,18 +75,18 @@ Three things to know:
   every run below was made, except the first two.
 - To compare two models, give the model and the effort level in the call. A result does not say
   which model produced it.
-- A run is void if the review read anything under `.claude/tests/`. Its "Relu" line lists what
+- A run is void if the review read anything under `.claude/tests/`. Its "Read" line lists what
   it read.
 
 ## Scoring
 
 | Measure | How |
 | --- | --- |
-| Found | Planted violations listed under "Violations", out of 25. One that is listed under "Dérives" counts as missed. |
+| Found | Planted violations listed under "Violations", out of 25. One that is listed under "Drifts" counts as missed. |
 | Decoys reported | Decoys listed under "Violations", out of 12. The target is 0. |
 | Severity | Planted violations that carry the score of the answer key, out of 25. With two runs, the number that have the same score in both, and the number that are within one point: the second measure does not depend on the key. |
 | Screen | Facts of "What the screenshots show" that the review reports, under whichever part, out of 6. And what it says of the screen that the measures contradict: the target is nothing. |
-| Quotations | Check a few: the section, the text of the rule, the file and the line. |
+| Quotations | Check a few against the "Rule" column of the key: the section, the text of the rule, the file and the line. |
 | Sorting | A violation is in the change and rests on a rule that applies without doubt. A departure in a file that was not changed is a drift. A finding appears once. |
 | Cost | The duration and the tokens of the run. |
 
@@ -95,7 +95,13 @@ guidelines. The cases the key leaves to judgment are not scored.
 
 ## Runs so far
 
-All on 10 November 2026, one run per row.
+All on November 10, 2026, one run per row, on the French version of the test: the change, its
+interface text and the reviews were in French, and the screenshots were taken with the
+`src/app.css` of that day. #151 moved the test to English: T3, T5 and T6, which rested on the
+French rules of section 12, became violations of the English rules, with the same severities;
+S4 and S5 were brought in line with the current `src/app.css` and guidelines, and E5 replaced a
+fact that `src/app.css` has since fixed (small buttons are now 24 px high). The labels quoted
+below are given in English. No run has been made on the English version yet.
 
 ### The code alone
 
@@ -112,7 +118,7 @@ All on 10 November 2026, one run per row.
 - With the first version, the Haiku run listed as a violation a departure in `src/app.css`,
   which the change had not touched, and listed one finding both as a violation and as a drift.
   With the "Violation or drift" section, neither happened again: what lies outside the change
-  came back as a drift that starts with "Hors du changement :".
+  came back as a drift that starts with "Outside the change:".
 
 ### With the screenshots and the severity
 
@@ -137,19 +143,21 @@ a scale with each other.
   run had 23 of 25.
 - **Screen.** Every run opened the eight screenshots. All four reported the crushed list at
   440 px, the hover that cannot be told from the selection, the summary that is a card in dark
-  only, the missing veil, the focus that stays outside the confirmation, and the small buttons.
-  One also saw that "Fetch" grows by 20 px when its icon appears, which the measures confirm.
+  only, the missing veil, the focus that stays outside the confirmation, and the small buttons,
+  then under 24 px. One also saw that the fetch button grows by 20 px when its icon appears,
+  which the measures confirmed.
 - No run said that the disabled buttons still read as active (E6): all kept to the opacity
   written in the code.
 - The runs made small mistakes about a screenshot, none of which changes a violation: the row
   cut at the bottom of the list counted as the ninth when it is the tenth, the SHA said to
   wrap at 440 px when only the commit counts do, the confirmation said to cover rows 6 to 8
-  when it covers rows 6 to 9.
-- The focus in the confirmation: the screenshot shows it on "Supprimer la sélection", the code
-  asks for it on "Supprimer". Three runs put that under "À vérifier à l'écran"; the last one
-  explained it, rightly, by an `autofocus` that is not applied to an element inserted later.
-- One run listed the close button, 20 px high, as a violation, and its cause, `.btn.small` in
-  `src/app.css`, as a drift: the same finding in two parts.
+  when it covered rows 6 to 9.
+- The focus in the confirmation: the screenshot showed it on the button of the footer that
+  opens it, the code asks for it on "Delete". Three runs put that under "To check on screen";
+  the last one explained it, rightly, by an `autofocus` that is not applied to an element
+  inserted later.
+- One run listed the close button, then 20 px high, as a violation, and its cause, `.btn.small`
+  in `src/app.css`, as a drift: the same finding in two parts.
 
 In every run, the quotations that were checked were right. One run per row: a difference of a
 few points between two rows is noise.
@@ -165,13 +173,14 @@ node .claude/tests/design-reviewer/capture/capture.cjs .claude/tests/design-revi
 
 The script starts the development server, mounts the panel in a page of its own and takes the
 eight screenshots with their measures. It needs Playwright and its Chromium, which are not
-dependencies of the project. Then update "What the screenshots show" in the answer key from
-`screens/mesures.json`.
+dependencies of the project; when they are installed globally, give Node their folder:
+`NODE_PATH=$(npm root -g) node …`. Then remove the copies (step 4): they never stay in `src/`.
+Last, update "What the screenshots show" in the answer key from `screens/measures.json`.
 
 ## Keeping it up to date
 
 - The answer key quotes sections of the guidelines. When one of those rules changes, update the
-  key. If a planted violation becomes compliant, replace it with another.
+  key. If a planted violation becomes compliant, replace it with another of the same severity.
 - The line numbers in the key are those of the files in `change/`: keep them in step when a file
   changes.
 - Do not add the planted cases to the search leads of the definition, and do not use one as the

@@ -1,5 +1,5 @@
 {
-  "01-repos-clair.png": {
+  "01-rest-light.png": {
     "viewport": {
       "w": 760,
       "h": 600
@@ -9,47 +9,47 @@
       "x": 8,
       "y": 8,
       "w": 744,
-      "h": 436.1
+      "h": 438
     },
     "fetchButton": {
-      "x": 649,
+      "x": 634,
       "y": 20,
-      "w": 50.9,
-      "h": 22.2
+      "w": 65.9,
+      "h": 24
     },
     "closeButton": {
       "x": 708,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 78,
+      "y": 80,
       "w": 720,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 120,
+      "y": 122,
       "w": 495,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 128,
+      "y": 130,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 467,
-      "y": 402,
-      "w": 70.3,
+      "x": 507,
+      "y": 404,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 540,
-      "y": 120,
+      "y": 122,
       "w": 200,
       "h": 260
     },
@@ -60,11 +60,11 @@
     "confirmationOverFooter": null,
     "confirmationOverList": null,
     "confirmationOverSummary": null,
-    "selectedBackground": "rgb(225, 236, 251)",
-    "hoveredBackground": "rgb(225, 236, 251)",
-    "focused": "correctif/focus-du-graphe 9f3c"
+    "selectedBackground": "rgb(206, 229, 255)",
+    "hoveredBackground": "rgb(206, 229, 255)",
+    "focused": "fix/graph-focus 9f3c2ab 3 comm"
   },
-  "02-confirmation-clair.png": {
+  "02-confirmation-light.png": {
     "viewport": {
       "w": 760,
       "h": 600
@@ -74,47 +74,47 @@
       "x": 8,
       "y": 8,
       "w": 744,
-      "h": 436.1
+      "h": 438
     },
     "fetchButton": {
-      "x": 649,
+      "x": 634,
       "y": 20,
-      "w": 50.9,
-      "h": 22.2
+      "w": 65.9,
+      "h": 24
     },
     "closeButton": {
       "x": 708,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 78,
+      "y": 80,
       "w": 720,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 120,
+      "y": 122,
       "w": 495,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 128,
+      "y": 130,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 467,
-      "y": 402,
-      "w": 70.3,
+      "x": 507,
+      "y": 404,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 540,
-      "y": 120,
+      "y": 122,
       "w": 200,
       "h": 260
     },
@@ -123,18 +123,18 @@
     "listScrolls": true,
     "confirmation": {
       "x": 380,
-      "y": 265,
+      "y": 295,
       "w": 360,
-      "h": 122.7
+      "h": 94.5
     },
     "confirmationOverFooter": false,
     "confirmationOverList": true,
     "confirmationOverSummary": true,
-    "selectedBackground": "rgb(225, 236, 251)",
+    "selectedBackground": "rgb(206, 229, 255)",
     "hoveredBackground": null,
-    "focused": "Supprimer la sélection"
+    "focused": "Delete Selection…"
   },
-  "03-erreur-clair.png": {
+  "03-error-light.png": {
     "viewport": {
       "w": 760,
       "h": 600
@@ -144,47 +144,47 @@
       "x": 8,
       "y": 8,
       "w": 744,
-      "h": 480.4
+      "h": 482.2
     },
     "fetchButton": {
-      "x": 629,
+      "x": 595,
       "y": 20,
-      "w": 70.9,
-      "h": 22.2
+      "w": 104.7,
+      "h": 24
     },
     "closeButton": {
       "x": 708,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 78,
+      "y": 80,
       "w": 720,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 120,
+      "y": 122,
       "w": 495,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 128,
+      "y": 130,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 467,
-      "y": 446,
-      "w": 70.3,
+      "x": 507,
+      "y": 448,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 540,
-      "y": 120,
+      "y": 122,
       "w": 200,
       "h": 260
     },
@@ -197,9 +197,9 @@
     "confirmationOverSummary": null,
     "selectedBackground": null,
     "hoveredBackground": null,
-    "focused": "Branches fusionnées 11  Fetch "
+    "focused": "Merged branches 11  Retrieving"
   },
-  "04-etroit-clair.png": {
+  "04-narrow-light.png": {
     "viewport": {
       "w": 440,
       "h": 600
@@ -209,47 +209,47 @@
       "x": 8,
       "y": 8,
       "w": 424,
-      "h": 451.7
+      "h": 453.5
     },
     "fetchButton": {
-      "x": 329,
+      "x": 314,
       "y": 20,
-      "w": 50.9,
-      "h": 22.2
+      "w": 65.9,
+      "h": 24
     },
     "closeButton": {
       "x": 388,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 93,
+      "y": 95,
       "w": 400,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 135,
+      "y": 137,
       "w": 175,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 143,
+      "y": 145,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 147,
-      "y": 417,
-      "w": 70.3,
+      "x": 187,
+      "y": 419,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 220,
-      "y": 135,
+      "y": 137,
       "w": 200,
       "h": 260
     },
@@ -260,11 +260,11 @@
     "confirmationOverFooter": null,
     "confirmationOverList": null,
     "confirmationOverSummary": null,
-    "selectedBackground": "rgb(225, 236, 251)",
-    "hoveredBackground": "rgb(225, 236, 251)",
-    "focused": "correctif/focus-du-graphe 9f3c"
+    "selectedBackground": "rgb(206, 229, 255)",
+    "hoveredBackground": "rgb(206, 229, 255)",
+    "focused": "fix/graph-focus 9f3c2ab 3 comm"
   },
-  "01-repos-sombre.png": {
+  "01-rest-dark.png": {
     "viewport": {
       "w": 760,
       "h": 600
@@ -274,47 +274,47 @@
       "x": 8,
       "y": 8,
       "w": 744,
-      "h": 436.1
+      "h": 438
     },
     "fetchButton": {
-      "x": 649,
+      "x": 634,
       "y": 20,
-      "w": 50.9,
-      "h": 22.2
+      "w": 65.9,
+      "h": 24
     },
     "closeButton": {
       "x": 708,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 78,
+      "y": 80,
       "w": 720,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 120,
+      "y": 122,
       "w": 495,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 128,
+      "y": 130,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 467,
-      "y": 402,
-      "w": 70.3,
+      "x": 507,
+      "y": 404,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 540,
-      "y": 120,
+      "y": 122,
       "w": 200,
       "h": 260
     },
@@ -325,11 +325,11 @@
     "confirmationOverFooter": null,
     "confirmationOverList": null,
     "confirmationOverSummary": null,
-    "selectedBackground": "rgb(29, 50, 82)",
-    "hoveredBackground": "rgb(29, 50, 82)",
-    "focused": "correctif/focus-du-graphe 9f3c"
+    "selectedBackground": "rgb(17, 47, 86)",
+    "hoveredBackground": "rgb(17, 47, 86)",
+    "focused": "fix/graph-focus 9f3c2ab 3 comm"
   },
-  "02-confirmation-sombre.png": {
+  "02-confirmation-dark.png": {
     "viewport": {
       "w": 760,
       "h": 600
@@ -339,47 +339,47 @@
       "x": 8,
       "y": 8,
       "w": 744,
-      "h": 436.1
+      "h": 438
     },
     "fetchButton": {
-      "x": 649,
+      "x": 634,
       "y": 20,
-      "w": 50.9,
-      "h": 22.2
+      "w": 65.9,
+      "h": 24
     },
     "closeButton": {
       "x": 708,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 78,
+      "y": 80,
       "w": 720,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 120,
+      "y": 122,
       "w": 495,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 128,
+      "y": 130,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 467,
-      "y": 402,
-      "w": 70.3,
+      "x": 507,
+      "y": 404,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 540,
-      "y": 120,
+      "y": 122,
       "w": 200,
       "h": 260
     },
@@ -388,18 +388,18 @@
     "listScrolls": true,
     "confirmation": {
       "x": 380,
-      "y": 265,
+      "y": 295,
       "w": 360,
-      "h": 122.7
+      "h": 94.5
     },
     "confirmationOverFooter": false,
     "confirmationOverList": true,
     "confirmationOverSummary": true,
-    "selectedBackground": "rgb(29, 50, 82)",
+    "selectedBackground": "rgb(17, 47, 86)",
     "hoveredBackground": null,
-    "focused": "Supprimer la sélection"
+    "focused": "Delete Selection…"
   },
-  "03-erreur-sombre.png": {
+  "03-error-dark.png": {
     "viewport": {
       "w": 760,
       "h": 600
@@ -409,47 +409,47 @@
       "x": 8,
       "y": 8,
       "w": 744,
-      "h": 480.4
+      "h": 482.2
     },
     "fetchButton": {
-      "x": 629,
+      "x": 595,
       "y": 20,
-      "w": 70.9,
-      "h": 22.2
+      "w": 104.7,
+      "h": 24
     },
     "closeButton": {
       "x": 708,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 78,
+      "y": 80,
       "w": 720,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 120,
+      "y": 122,
       "w": 495,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 128,
+      "y": 130,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 467,
-      "y": 446,
-      "w": 70.3,
+      "x": 507,
+      "y": 448,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 540,
-      "y": 120,
+      "y": 122,
       "w": 200,
       "h": 260
     },
@@ -462,9 +462,9 @@
     "confirmationOverSummary": null,
     "selectedBackground": null,
     "hoveredBackground": null,
-    "focused": "Branches fusionnées 11  Fetch "
+    "focused": "Merged branches 11  Retrieving"
   },
-  "04-etroit-sombre.png": {
+  "04-narrow-dark.png": {
     "viewport": {
       "w": 440,
       "h": 600
@@ -474,47 +474,47 @@
       "x": 8,
       "y": 8,
       "w": 424,
-      "h": 451.7
+      "h": 453.5
     },
     "fetchButton": {
-      "x": 329,
+      "x": 314,
       "y": 20,
-      "w": 50.9,
-      "h": 22.2
+      "w": 65.9,
+      "h": 24
     },
     "closeButton": {
       "x": 388,
-      "y": 21,
+      "y": 20,
       "w": 32,
-      "h": 20
+      "h": 24
     },
     "filter": {
       "x": 20,
-      "y": 93,
+      "y": 95,
       "w": 400,
       "h": 32.2
     },
     "row": {
       "x": 20,
-      "y": 135,
+      "y": 137,
       "w": 175,
       "h": 28
     },
     "checkbox": {
       "x": 28,
-      "y": 143,
+      "y": 145,
       "w": 12,
       "h": 12
     },
     "footerButton": {
-      "x": 147,
-      "y": 417,
-      "w": 70.3,
+      "x": 187,
+      "y": 419,
+      "w": 61.1,
       "h": 30.2
     },
     "summary": {
       "x": 220,
-      "y": 135,
+      "y": 137,
       "w": 200,
       "h": 260
     },
@@ -525,8 +525,8 @@
     "confirmationOverFooter": null,
     "confirmationOverList": null,
     "confirmationOverSummary": null,
-    "selectedBackground": "rgb(29, 50, 82)",
-    "hoveredBackground": "rgb(29, 50, 82)",
-    "focused": "correctif/focus-du-graphe 9f3c"
+    "selectedBackground": "rgb(17, 47, 86)",
+    "hoveredBackground": "rgb(17, 47, 86)",
+    "focused": "fix/graph-focus 9f3c2ab 3 comm"
   }
 }

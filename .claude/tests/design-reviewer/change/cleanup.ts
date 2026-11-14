@@ -1,17 +1,17 @@
-// Textes du panneau « Nettoyer les branches ».
+// Text of the "Clean up branches" panel.
 
-/** Résumé de la sélection, à côté de la liste. */
+/** Summary of the selection, beside the list. */
 export function summary(count: number): string {
-  if (count === 0) return 'Aucune branche sélectionnée.';
-  return `${count} branches sélectionnées.`;
+  if (count === 0) return 'No branches selected.';
+  return `${count} branches selected.`;
 }
 
-/** Texte de la confirmation, avant la suppression. */
-export function confirmBody(count: number): string {
-  return `Supprimer ${count} branche${count > 1 ? 's' : ''} ?`;
+/** Title of the confirmation, before the deletion. */
+export function confirmTitle(count: number): string {
+  return `Delete ${count} branch${count === 1 ? '' : 'es'}?`;
 }
 
-/** Message affiché quand une suppression échoue. */
+/** Message shown when a deletion fails. */
 export function failure(): string {
-  return 'Oups, la suppression a échoué !';
+  return 'Oops, the deletion failed!';
 }
