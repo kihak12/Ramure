@@ -238,15 +238,20 @@
     {#if built}{#each tunnelSentence(built) as word, i (i)}<span class:mono={word.code}>{word.text}</span>{/each}{:else}{'\u00a0'}{/if}
   </p>
 
+  <!-- Both labels hold the place, the hidden one invisible to screen readers too: the button keeps
+       the width of the longer, and "Cancel" does not move after it (guidelines, 9.1). -->
+  {#snippet label()}
+    <span class="labels"><span class:off={busy}>{applyLabel}</span><span class:off={!busy}>{busyLabel}</span></span>
+  {/snippet}
   <div class="buttons">
     {#if strip}
-      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{busy ? busyLabel : applyLabel}</button>
+      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{@render label()}</button>
       <button class="btn ghost small" type="button" onclick={oncancel}>Cancel</button>
       <!-- What kept the tunnel from being added, after the buttons, which do not move (guidelines, 9.1). -->
       {#if failure}<p class="failure" role="alert"><Icon name="warning" size={14} /><span>{failure}</span></p>{/if}
     {:else}
       <button class="btn ghost small" type="button" onclick={oncancel}>Cancel</button>
-      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{busy ? busyLabel : applyLabel}</button>
+      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{@render label()}</button>
     {/if}
   </div>
 </div>
@@ -293,8 +298,9 @@
   .strip .port {
     grid-column: span 2;
   }
+  /* The whole shorthand: setting only its start would bring the span back to 1. */
   .strip .kind + .port {
-    grid-column-start: auto;
+    grid-column: span 2;
   }
   .strip .host {
     grid-column: span 3;
@@ -367,6 +373,15 @@
   .failure :global(svg) {
     flex: none;
     margin-top: 1px;
+  }
+  .labels {
+    display: grid;
+  }
+  .labels > span {
+    grid-area: 1 / 1;
+  }
+  .labels .off {
+    visibility: hidden;
   }
   .buttons {
     display: flex;

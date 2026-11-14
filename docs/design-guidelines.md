@@ -340,6 +340,10 @@ Margins and gaps take their values from this scale: **2, 4, 6, 8, 10, 12, 16, 20
 | Between a label and its field | 6 px |
 | Between two fields of a form | 12 px |
 
+A 1 px margin is a derived value, not a gap of the scale: the one that centers the 12 px ring
+(8) in the 14 px box of an icon it stands in for, or a 14 px icon on the first line of
+11.5 px text.
+
 ### 4.2 Screen structure
 
 From left to right and from top to bottom:
@@ -523,7 +527,8 @@ States are the same everywhere:
   alone is at least 24 × 24 px.
 - Press: shrinks to 97%.
 - The label is a verb in the imperative, with its object when the context does not give it:
-  "Create branch", not "OK".
+  "Create branch", not "OK". A toggle that shows or hides something is named by what it shows
+  ("Tunnels · 2"), and a toggle of a search by what it changes ("Aa", ".*").
 - A disabled button whose reason is not plain to see says why: a sentence in `--muted` at
   11.5 px next to it, repeated in its tooltip. If the user tries the action all the same, the
   sentence turns to `--warn` and takes the warning icon.
@@ -587,7 +592,8 @@ its own buttons.
   the top of that line (9.15, "Keys"), or in a place kept for it beforehand and as high as its
   usual size, and pushes down only what is under it; nothing above the button moves. On a line
   aligned to the right, the primary keeps its right edge: a label that changes while it works
-  ("Cloning…") may shift what stands to its left. A dialog is anchored at the top of the
+  ("Cloning…") may shift what stands to its left. On a line aligned to the left, as in a strip,
+  the button keeps the width of its longer label, so that what follows it does not move. A dialog is anchored at the top of the
   window for that reason (9.10). A form that opens in a dialog, as a new step, may push the last
   line down as it opens.
 - **Toolbar.** No primary: every action has the same weight, icon above label (9.2), and the
