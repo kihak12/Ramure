@@ -10,9 +10,7 @@ tone of the interface text and the logo.
 - **In the code:** the tokens are in `src/app.css`, and `npm run check` rejects a component that
   writes a value of its own.
 
-The interface is in English, and so are the labels quoted in this document. The interface is
-moving from French to English (#147): until that work is done, the code may still show the French
-text that a label quoted here replaces.
+The interface is in English, and so are the labels quoted in this document.
 
 | Dark | Light |
 |---|---|
@@ -1876,7 +1874,7 @@ the curves of the graph (10).
   the colors of the other three became the themes Undergrowth, Ink and Ember (Sous-bois, Encre
   and Braise) (2.5).
 - **The logo** was chosen the same day, among three drawings on the theme of a deer's antlers.
-- **The language** of the interface moves from French to English from November 2026 (#147): the
+- **The language** of the interface moved from French to English in November 2026 (#147): the
   labels, the messages, the code and its comments, and the conventions of the repository. The
   names of the proposals above are kept as they were.
 - The record of both choices, with the screenshots and the sketches of every proposal, was in
