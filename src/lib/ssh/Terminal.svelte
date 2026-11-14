@@ -751,8 +751,9 @@
       {@const group = session.tunnels}
       <!-- "Tunnels · 2" shows and hides the strip; a failure gives it the warning icon. With no
            tunnel yet it reads "Tunnels", so that a first one can be added with the mouse. -->
-      <button class="btn ghost small toggle" type="button" aria-pressed={group.shown} title={tunnelsTitle} onclick={() => (group.shown = !group.shown)}>
-        {#if tunnelsFailed.length}<span class="failed"><Icon name="warning" size={14} /></span>{/if}Tunnels{#if tunnels.length}<span class="tally"> · {tunnels.length}</span>{/if}
+      <!-- One text node: a span would be a flex item of the button, and lose its spaces. -->
+      <button class="btn ghost small toggle tally" type="button" aria-pressed={group.shown} title={tunnelsTitle} onclick={() => (group.shown = !group.shown)}>
+        {#if tunnelsFailed.length}<span class="failed"><Icon name="warning" size={14} /></span>{/if}{tunnels.length ? `Tunnels · ${tunnels.length}` : 'Tunnels'}
       </button>
     {/if}
     {#if phase.step === 'connected' && (local || info)}
@@ -1021,6 +1022,7 @@
   .close {
     margin-left: auto;
   }
+  /* The count of the tunnels toggle, in tabular figures. */
   .tally {
     font-variant-numeric: tabular-nums;
   }
