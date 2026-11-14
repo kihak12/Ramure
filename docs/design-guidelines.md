@@ -1178,9 +1178,12 @@ service that only one side can see. Three kinds, named with the words and the fl
   has a tunnel. When a tunnel has failed, it takes the warning icon, and its tooltip says why.
 - **The strip** sits under the header, on `--panel`, with a `--line-soft` separator: it pushes
   the terminal down and never covers its text, as the search bar does. One 28 px row per tunnel,
-  then a small standard button "Add tunnel…"; past five rows, the strip scrolls.
-- **A row**, from left to right: the state, an icon and words, never a color alone ("Listening",
-  "Starting…" with the 12 px ring, "Waiting for the connection", "Stopped", "Failed"); the name
+  then a small standard button "Add tunnel", whose form opens in place, as in the host form
+  (9.21); past five rows, the strip scrolls.
+- **A row**, from left to right: the state, an icon and words, never a color alone: "Listening"
+  (check), "Starting…" (the 12 px ring), "Waiting for the connection" (refresh), "Stopped" (stop),
+  "Failed" (warning). Only the icon takes the state color, `--ok`, `--warn` or `--bad`: the row may
+  be hovered, and the words stay in `--ink`; the name
   of the tunnel, or its summary, in the code font; the number of open connections in `--muted`,
   tabular figures ("3 connections"); then, on hover and keyboard focus (9.6), ghost buttons:
   "Copy address" (the address to give a program: `localhost:5433`), "Stop" or "Start", and
@@ -1191,6 +1194,8 @@ service that only one side can see. Three kinds, named with the words and the fl
   the log does (9.7).
 - **The palette** has "Show or hide tunnels"; a shortcut can be given to it in "Keyboard
   shortcuts" (9.18), none by default.
+- **Saving a host** applies its tunnels to its open sessions: a tunnel removed stops, a tunnel
+  changed starts again, a new one that starts with the session starts.
 - **A tunnel that cannot start** does not stop the session. Its row says "Failed" and, under it,
   in `--bad` at 11.5 px, why and what to do: "Port 5433 is already in use on this machine. Change
   the local port, or stop the program that uses it.", "…by the tunnel of web-staging." when it is
@@ -1486,10 +1491,12 @@ need the room.
     go out through this server."
   - The local port follows the server port until the user types one. A port is 1 to 65535, and
     two tunnels of a host never listen on the same port: a field that breaks it is in its error
-    state (9.3).
+    state (9.3). The message goes on one line under the row of fields, kept for it beforehand,
+    since a port field is too narrow for one under it, and so that the buttons do not move.
   - The form in place ends with "Cancel", a small ghost button, and "Add tunnel" or "Apply", a
     small standard one. Enter in its fields applies the tunnel, not the host: the host is saved by
-    its own main button, as before.
+    its own main button, as before. Saving the host while the form in place is open applies the
+    tunnel first; a tunnel that is not valid shows its errors, and the host is not saved.
 - **Buttons.** "Test connection", a secondary button, alone on its line under the fields,
   with its result right under it. Below, 24 px apart, the last line follows the common order
   (9.1, "Hierarchy"): "Delete host…" alone on the left for a host already in the book

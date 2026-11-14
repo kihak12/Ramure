@@ -1,6 +1,6 @@
 <script lang="ts">
   // The strip of the tunnels of a session, under its header (guidelines, 9.15, "Tunnels"): one row
-  // per tunnel, its state in words, and "Add tunnel…", whose form opens in place.
+  // per tunnel, its state in words, and "Add tunnel", whose form opens in place.
   import { tick } from 'svelte';
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import { focusWithRing } from '../ui/focus';
@@ -66,7 +66,7 @@
     }
   }
 
-  /** "Remove": the row is gone, the focus goes to the next one, or to "Add tunnel…". */
+  /** "Remove": the row is gone, the focus goes to the next one, or to "Add tunnel". */
   async function remove(id: string) {
     const at = rows.findIndex((row) => row.tunnel.id === id);
     await ssh.tunnelRemove(session, id);
@@ -84,7 +84,7 @@
 
 <div class="strip" role="region" aria-label="Tunnels" bind:this={rootEl}>
   {#if rows.length}
-    <!-- Past five rows, the list scrolls; "Add tunnel…" stays under it. -->
+    <!-- Past five rows, the list scrolls; "Add tunnel" stays under it. -->
     <div class="rows" bind:this={rowsEl} style:max-height={limit === null ? null : `${limit}px`}>
       {#each rows as row (row.tunnel.id)}
         {@const { tunnel, state } = row}
@@ -139,7 +139,7 @@
   {:else}
     <div class="foot">
       {#if !rows.length}<span class="none">No tunnels. Reach a port of the server from this machine, or the reverse.</span>{/if}
-      <button class="btn small" type="button" bind:this={addEl} onclick={() => (adding = true)}><Icon name="plus" size={14} /> Add tunnel…</button>
+      <button class="btn small" type="button" bind:this={addEl} onclick={() => (adding = true)}><Icon name="plus" size={14} /> Add tunnel</button>
     </div>
   {/if}
 </div>
