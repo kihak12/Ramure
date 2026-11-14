@@ -33,6 +33,7 @@ class Toasts {
     const text = kind === 'ok' ? lines.slice(-MAX_LINES).join('\n') : lines.join('\n');
     this.items = [...this.items, { id, kind, title, body: text, action }].slice(-5);
     this.#arm(id);
+    return id;
   }
 
   /** A success goes away on its own; a warning more slowly; an error stays until it is clicked.
@@ -59,13 +60,13 @@ class Toasts {
   }
 
   ok(title: string, body = '', action?: ToastAction) {
-    this.push('ok', title, body, action);
+    return this.push('ok', title, body, action);
   }
   warn(title: string, body = '') {
-    this.push('warn', title, body);
+    return this.push('warn', title, body);
   }
   err(title: string, body = '') {
-    this.push('err', title, body);
+    return this.push('err', title, body);
   }
 
   dismiss(id: number) {

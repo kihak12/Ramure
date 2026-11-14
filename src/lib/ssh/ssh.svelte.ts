@@ -8,6 +8,16 @@ import { toasts } from '../ui/toasts.svelte';
 import { secretsHeld } from './secrets';
 import { addressOf, count, listenOf, type Host, type KeyInfo, type Tunnel, type TunnelState } from './types';
 
+/** The error notification of each tunnel that could not start, by group and tunnel: it goes away
+ *  once the tunnel starts or stops (guidelines, 9.15). */
+const failures = new Map<string, number>();
+function dismissFailure(group: string, id: string) {
+  const toast = failures.get(`${group}:${id}`);
+  if (toast === undefined) return;
+  failures.delete(`${group}:${id}`);
+  toasts.dismiss(toast);
+}
+
 /** What the core last said of a tunnel of the session. */
 export type TunnelRuntime = Omit<TunnelState, 'group' | 'id'>;
 
@@ -340,6 +350,7 @@ class Ssh {
   async tunnelStart(session: Session, tunnel: Tunnel) {
     const t = session.tunnels;
     if (!t) return;
+    dismissFailure(t.group, tunnel.id);
     t.stopped = t.stopped.filter((id) => id !== tunnel.id);
     t.running[tunnel.id] = { ...tunnel };
     // "Starting…" at once; a failure that follows is then a new one, and is said again.
@@ -358,6 +369,7 @@ class Ssh {
     const t = session.tunnels;
     if (!t) return;
     if (!t.stopped.includes(id)) t.stopped = [...t.stopped, id];
+    dismissFailure(t.group, id);
     delete t.running[id];
     if (t.states[id]) t.states[id] = { ...t.states[id], state: 'stopped', connections: 0, error: null };
     if (!t.live) return;
@@ -443,7 +455,10 @@ class Ssh {
     t.states[said.id] = { state: said.state, connections: said.connections, error: said.error, lastFailure: said.lastFailure };
     if (said.state === 'failed' && before?.state !== 'failed') {
       const tunnel = t.running[said.id];
-      toasts.err(`Tunnel ${listenOf(tunnel)} could not start`, said.error ?? '');
+      failures.set(`${said.group}:${said.id}`, toasts.err(`Tunnel ${listenOf(tunnel)} could not start`, said.error ?? ''));
+    } else if (said.state !== 'failed') {
+      // The tunnel has started since, or stopped: its notification no longer says what is true.
+      dismissFailure(said.group, said.id);
     }
   }
 }

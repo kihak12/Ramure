@@ -1202,7 +1202,8 @@ service that only one side can see. Three kinds, named with the words and the fl
   one of Ramure's, "Ports under 1024 need administrator rights on this machine.", "The server
   refused to listen on port 8080. It may be in use, or its SSH settings may not allow it." The
   row offers "Retry". An error notification (9.11) says it too, "Tunnel localhost:5433 could not
-  start", since the user may be looking at the terminal.
+  start", since the user may be looking at the terminal; it goes away once the tunnel starts or
+  stops.
 - **A connection that the server cannot carry through** leaves the tunnel listening: the next one
   may work. Under the row, in `--warn` at 11.5 px, the last such failure only, with its time in
   `--muted`: "Last connection refused: nothing answers at localhost:5432 on the server." No
@@ -1238,8 +1239,9 @@ reconnection" is on in the settings.
 - A try that needs the user stops the series: a password or a passphrase that is not kept, a
   server fingerprint. The card asks for it once and waits. A kept secret needs no one: the
   series goes on.
-- When the session has tunnels, the panel says once, in the place of the reason line, so that
-  the buttons do not move: "2 tunnels are paused. Connections in progress are cut."
+- When the session has tunnels, the panel says so on a line of its own, under the reason line,
+  from the first try on, so that the buttons do not move from one try to the next: "2 tunnels
+  are paused. Connections in progress are cut."
 - After five failed tries, the card says so, with "Reconnect" and "Close tab", and the tunnels
   stop.
 - When the session comes back, the terminal keeps the text it had, and the startup command of

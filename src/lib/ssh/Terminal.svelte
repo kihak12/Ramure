@@ -899,8 +899,9 @@
             <p class="spoken" role="status">{announce}</p>
             <!-- The line of the reason keeps its place: the buttons do not move from one attempt to the
                  next. Empty, it holds a non-breaking space, which keeps its height. -->
-            <!-- With tunnels, the first attempt says so in this line instead (guidelines, 9.15). -->
-            <p class="muted reason">{(phase.attempt === 1 && ssh.tunnelsPaused(session)) || phase.reason || '\u00a0'}</p>
+            <p class="muted reason">{phase.reason || '\u00a0'}</p>
+            <!-- With tunnels, a line of its own says so, from the first attempt on (guidelines, 9.15). -->
+            {#if ssh.tunnelsPaused(session)}<p class="muted">{ssh.tunnelsPaused(session)}</p>{/if}
             <div class="row">
               <button class="btn primary" type="button" bind:this={retryButton} onclick={retryNow}><Icon name="refresh" size={14} /> Reconnect now</button>
               <button class="btn ghost" type="button" onclick={stopRetrying}>Stop</button>

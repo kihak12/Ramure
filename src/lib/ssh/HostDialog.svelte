@@ -695,6 +695,8 @@
   dialog[open] {
     display: flex;
     flex-direction: column;
+    /* Only the fields scroll: the dialog itself never does, which would give two scrollbars. */
+    overflow: hidden;
   }
   form {
     display: flex;
