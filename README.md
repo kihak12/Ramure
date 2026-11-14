@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/ramure-logo-sombre.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/ramure-logo-dark.svg">
     <img src="docs/logo/ramure-logo.svg" alt="Ramure" height="72">
   </picture>
 </p>
@@ -12,8 +12,8 @@ Free software (MIT), local, no account.
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/depot-sombre.png">
-    <img src="docs/screenshots/depot-clair.png" alt="Ramure on a repository: the branch list, the commit graph and the detail of a commit" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/repository-dark.png">
+    <img src="docs/screenshots/repository-light.png" alt="Ramure on a repository: the branch list, the commit graph and the detail of a commit" width="900">
   </picture>
 </p>
 

@@ -4,8 +4,8 @@
    * The drawing comes from `docs/logo`, its only source. It takes the color of the text, and
    * switches to the simplified drawing below 40 px.
    */
-  import full from '../../../docs/logo/ramure-symbole.svg?raw';
-  import small from '../../../docs/logo/ramure-symbole-petit.svg?raw';
+  import full from '../../../docs/logo/ramure-symbol.svg?raw';
+  import small from '../../../docs/logo/ramure-symbol-small.svg?raw';
 
   /** `label`: name read by a screen reader; without it, the symbol is decorative. */
   let { size = 32, label = '' }: { size?: number; label?: string } = $props();
