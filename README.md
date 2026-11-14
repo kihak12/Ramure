@@ -17,14 +17,12 @@ Free software (MIT), local, no account.
   </picture>
 </p>
 
-**Status: milestones J1 and J2 are done, J3 has started.** The J0 prototype validated the graph
-and the SSH terminal on Windows and Ubuntu. Everyday Git (J1) and advanced Git (J2) are complete.
-From the SSH milestone (J3), the host book, tabbed terminals and keys are in; the rest is listed
-below.
+**Status: milestones J1, J2 and J3 are done; J4 is next.** The J0 prototype validated the graph
+and the SSH terminal on Windows and Ubuntu. Everyday Git (J1), advanced Git (J2) and SSH (J3) are
+complete. J4 brings SFTP, tunnels, installers and updates.
 
 The interface is in English. Where it helps to find something on screen, this page gives its
-label in quotes. It is moving from French to English (#147): until that work is done, some
-screens may still show the French text.
+label in quotes.
 
 ## What Ramure does today
 
@@ -139,6 +137,17 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   writes it to `known_hosts`. A fingerprint that has changed blocks the connection.
 - **Keys**: the list of keys in `~/.ssh`, generation of an ed25519 key with an optional
   passphrase, copy of the public key. Keys stay in `~/.ssh`.
+- **Importing a key**: "Import key…" in "Manage keys…" copies an existing private key into
+  `~/.ssh`, with its public key: OpenSSH and PEM keys, and PuTTY keys (`.ppk`) without a
+  passphrase, which are converted to the OpenSSH format. Nothing is ever overwritten.
+- **Export to `~/.ssh/config`**: "Export to ~/.ssh/config…" shows, host by host, what will be
+  added or changed, then writes HostName, User, Port and IdentityFile, so that `ssh <name>`
+  works in any terminal. The rest of the file is left as it is, the old file is kept in
+  `~/.ssh/config.ramure.bak`, and the notification offers to undo.
+- **Session log**: "Record log", in the header of a session, writes what the terminal shows to a
+  text file, and goes on after a reconnection; a host can record every session. Only what is
+  shown is written, never what is typed on its own, so a password typed without echo is not in
+  it. The files go to `Documents/Ramure/Logs`, or to the folder chosen in the settings.
 - **Testing a host**: "Test connection", in its form, connects with the values typed so far,
   authenticates and disconnects, without saving anything or opening a terminal. The result shows
   in the form; an unknown server, a passphrase or a password is asked for as when connecting.
@@ -165,9 +174,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Not there yet
 
-- From milestone J3: a session log, export to `~/.ssh/config`, import of an existing key.
 - Milestone J4: SFTP, tunnels, installers and updates.
-- The interface exists in English only, once #147 is done: no other language is planned.
+- The interface exists in English only: no other language is planned.
 
 ## Requirements
 
