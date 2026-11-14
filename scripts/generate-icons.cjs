@@ -1,7 +1,7 @@
 // Régénère les icônes de l'application (src-tauri/icons) à partir du logo (docs/logo).
 //
 // À relancer seulement quand le dessin du logo change :
-//   node scripts/generer-icones.cjs
+//   node scripts/generate-icons.cjs
 //
 // Outil ponctuel, hors des dépendances du projet. Il lui faut Playwright et son Chromium
 // (`npm install --no-save playwright && npx playwright install chromium`), qui dessinent
@@ -17,8 +17,8 @@ const { chromium } = require('playwright');
 
 const root = resolve(__dirname, '..');
 const icons = join(root, 'src-tauri', 'icons');
-const full = readFileSync(join(root, 'docs', 'logo', 'ramure-icone.svg'), 'utf8');
-const small = readFileSync(join(root, 'docs', 'logo', 'ramure-icone-petit.svg'), 'utf8');
+const full = readFileSync(join(root, 'docs', 'logo', 'ramure-icon.svg'), 'utf8');
+const small = readFileSync(join(root, 'docs', 'logo', 'ramure-icon-small.svg'), 'utf8');
 const SMALL_BELOW = 40;
 
 /** Fichiers PNG attendus par Tauri, avec leur taille en pixels. */

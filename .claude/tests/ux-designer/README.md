@@ -20,7 +20,7 @@ with two modified files. Four steps of one task, each in light and in dark:
 | `03-diff-*` | After a click on `src/main.rs` in the "Non indexé" list. |
 | `04-ligne-choisie-*` | After a click on the added line of the diff, then the commit message typed. |
 
-They were taken on 10 November 2026 with [`scripts/ecran.sh`](../../../scripts/ecran.sh), which
+They were taken on 10 November 2026 with [`scripts/screen.sh`](../../../scripts/screen.sh), which
 runs the application on a virtual display, and `xdotool` for the clicks. The repository that was
 open is not kept: any repository with two modified files gives the same screens. If the
 screenshots are taken again, bring the request below in step with what they show.

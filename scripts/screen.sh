@@ -2,12 +2,12 @@
 # Lance Ramure sur un écran virtuel et en prend des captures, sous Linux, sans écran réel.
 # Sert à donner des captures aux subagents design-reviewer et ux-designer.
 #
-#   scripts/ecran.sh ouvrir <clair|sombre> [dépôt…]   lance l'application sur ces dépôts
-#   scripts/ecran.sh capturer <fichier.png>            capture la fenêtre
-#   scripts/ecran.sh fermer                            arrête l'application et l'écran virtuel
+#   scripts/screen.sh ouvrir <clair|sombre> [dépôt…]   lance l'application sur ces dépôts
+#   scripts/screen.sh capturer <fichier.png>            capture la fenêtre
+#   scripts/screen.sh fermer                            arrête l'application et l'écran virtuel
 #
-#   ECRAN_TROUSSEAU=1 scripts/ecran.sh ouvrir …        avec un trousseau du système, vide et déverrouillé
-#   ECRAN_TROUSSEAU=0 scripts/ecran.sh ouvrir …        sans aucun trousseau
+#   ECRAN_TROUSSEAU=1 scripts/screen.sh ouvrir …        avec un trousseau du système, vide et déverrouillé
+#   ECRAN_TROUSSEAU=0 scripts/screen.sh ouvrir …        sans aucun trousseau
 #
 # Entre « ouvrir » et « capturer », l'application se pilote avec xdotool, sur l'écran :99 :
 #   DISPLAY=:99 xdotool mousemove 760 138 click 1

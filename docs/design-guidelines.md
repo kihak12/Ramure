@@ -16,7 +16,7 @@ text that a label quoted here replaces.
 
 | Dark | Light |
 |---|---|
-| ![Ramure on a repository, dark theme](screenshots/depot-sombre.png) | ![Ramure on a repository, light theme](screenshots/depot-clair.png) |
+| ![Ramure on a repository, dark theme](screenshots/repository-dark.png) | ![Ramure on a repository, light theme](screenshots/repository-light.png) |
 
 The two screenshots show the application as it is, on a demonstration repository.
 
@@ -203,7 +203,7 @@ closer to the hover: there, a hover at 7 was seen, discreet but visible.
 | `--sel` from `--hover` (the selection next to a hovered row) | 9 | 15 |
 
 `npm run check` checks the contrasts and the distances of every theme, in light and in dark
-(`scripts/verifier-contrastes.mjs`).
+(`scripts/check-contrasts.mjs`).
 
 ### 2.5 Color themes
 
@@ -1695,16 +1695,16 @@ from which two branches start. In French, "ramure" means both the antlers of a d
 branches of a tree: the logo draws the first as the second, with the stroke of the icons (7) and
 the curves of the graph (10).
 
-![The logo, the icon, the symbol and their sizes](logo/planche.png)
+![The logo, the icon, the symbol and their sizes](logo/overview.png)
 
 ### 13.1 Versions
 
 | Version | File | Use |
 |---|---|---|
-| Icon | [`logo/ramure-icone.svg`](logo/ramure-icone.svg) | The application: taskbar, window, start page. The symbol in white on a blue tile. |
-| Icon, small sizes | [`logo/ramure-icone-petit.svg`](logo/ramure-icone-petit.svg) | The same, under 40 px. The drawing is simplified: one tine per side, a thicker stroke. |
-| Logo | [`logo/ramure-logo.svg`](logo/ramure-logo.svg), [`logo/ramure-logo-sombre.svg`](logo/ramure-logo-sombre.svg) | The icon followed by the name. The "sombre" version has the name in a light color, for a dark background. |
-| Symbol | [`logo/ramure-symbole.svg`](logo/ramure-symbole.svg), [`logo/ramure-symbole-petit.svg`](logo/ramure-symbole-petit.svg) | The drawing alone, in a single color, when the tile does not fit. |
+| Icon | [`logo/ramure-icon.svg`](logo/ramure-icon.svg) | The application: taskbar, window, start page. The symbol in white on a blue tile. |
+| Icon, small sizes | [`logo/ramure-icon-small.svg`](logo/ramure-icon-small.svg) | The same, under 40 px. The drawing is simplified: one tine per side, a thicker stroke. |
+| Logo | [`logo/ramure-logo.svg`](logo/ramure-logo.svg), [`logo/ramure-logo-dark.svg`](logo/ramure-logo-dark.svg) | The icon followed by the name. The "sombre" version has the name in a light color, for a dark background. |
+| Symbol | [`logo/ramure-symbol.svg`](logo/ramure-symbol.svg), [`logo/ramure-symbol-small.svg`](logo/ramure-symbol-small.svg) | The drawing alone, in a single color, when the tile does not fit. |
 
 ### 13.2 Colors
 
@@ -1747,7 +1747,7 @@ the curves of the graph (10).
 - `src/lib/ui/Logo.svelte` displays the symbol. It reads the files in `docs/logo`, which are the
   only source of the drawing.
 - The icons in `src-tauri/icons` are derived from the same files by
-  `scripts/generer-icones.cjs`. That script only needs to be run again if the drawing changes.
+  `scripts/generate-icons.cjs`. That script only needs to be run again if the drawing changes.
 
 ## 14. Changing the guidelines
 
@@ -1761,7 +1761,7 @@ the curves of the graph (10).
   a component.
 - Every pull request that touches the interface is reviewed against these guidelines.
 - The two screenshots at the top of this file show the view of a repository. A pull request that
-  changes that view takes them again, in light and in dark, with `scripts/ecran.sh`.
+  changes that view takes them again, in light and in dark, with `scripts/screen.sh`.
 
 ## 15. History
 

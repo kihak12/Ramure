@@ -169,7 +169,7 @@
   let search: SearchAddon | undefined;
 
   // --- Search in the terminal (guidelines, section 9.15) -------------------------------------
-  const MATCH = 0.3; // share of the accent in the background of a result, as in verifier-contrastes.mjs
+  const MATCH = 0.3; // share of the accent in the background of a result, as in check-contrasts.mjs
   let query = $state('');
   let caseSensitive = $state(false);
   let regex = $state(false);

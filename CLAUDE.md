@@ -24,10 +24,10 @@ Tauri 2, Rust, Svelte 5.
   `ux-designer` subagent for proposals. Give it screenshots of the screen in light and in dark,
   and the task the user does there. It proposes, and whoever asked decides: build only what
   was kept, then have it reviewed by `design-reviewer`.
-- `scripts/ecran.sh` takes screenshots of the application on Linux without a display: it runs
+- `scripts/screen.sh` takes screenshots of the application on Linux without a display: it runs
   the release build on a virtual screen, in light or in dark, and `xdotool` drives it.
 - To reproduce a bug, to check a change in the running application, or to take the screenshots
-  for the two subagents above, brief the `ecran-tester` subagent rather than driving the screen
+  for the two subagents above, brief the `screen-tester` subagent rather than driving the screen
   yourself: the screenshots then stay out of your context. Give it the scenarios, the gesture,
   the number of tries and what to look at, not the result you expect. It returns what it saw,
   with counts and the paths of its screenshots; open one of them yourself before relying on it.
