@@ -431,7 +431,7 @@ The interface has four levels. Each is recognized by its background.
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
   leaves it, the same sheet turned over, for an export, the sheet with lines for the log of a
-  session. An icon that stands for a git command (pull, push, stash) is never borrowed for
+  session, the tunnel for an SSH tunnel. An icon that stands for a git command (pull, push, stash) is never borrowed for
   something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
@@ -1159,6 +1159,55 @@ password typed without echo is not in it.
   in `--muted`; its buttons keep the text of a button, in `--ink`.
 - The terminals of a repository (9.20) have no header: they do not record a log yet.
 
+**Tunnels.** A tunnel carries connections through the SSH connection of a session, to reach a
+service that only one side can see. Three kinds, named with the words and the flag of `ssh`:
+
+| Kind | What it does | Its summary |
+|---|---|---|
+| "Local forward (-L)" | A port of this machine reaches a host and a port as the server sees them. | `localhost:5433 → localhost:5432` |
+| "Remote forward (-R)" | A port of the server reaches a host and a port as this machine sees them. | `server:8080 → localhost:3000` |
+| "SOCKS proxy (-D)" | A port of this machine is a SOCKS5 proxy that goes out through the server. | `localhost:1080 (SOCKS)` |
+
+- **Where they come from.** The tunnels of a host are defined in its form (9.21) and start with
+  each of its sessions, unless "Start with the session" is unchecked. A tunnel added during a
+  session lives for the time of the session, unless "Keep on this host" is checked.
+- **On this machine**, a tunnel listens on `localhost` only, in IPv4 and in IPv6, unless "Let
+  other machines connect" is checked in its form.
+- **The toggle.** In the header of the session, before "Record log": "Tunnels · 2", a small ghost
+  toggle (9.1) that shows and hides the strip of the tunnels. It is there only when the session
+  has a tunnel. When a tunnel has failed, it takes the warning icon, and its tooltip says why.
+- **The strip** sits under the header, on `--panel`, with a `--line-soft` separator: it pushes
+  the terminal down and never covers its text, as the search bar does. One 28 px row per tunnel,
+  then a small standard button "Add tunnel…"; past five rows, the strip scrolls.
+- **A row**, from left to right: the state, an icon and words, never a color alone ("Listening",
+  "Starting…" with the 12 px ring, "Waiting for the connection", "Stopped", "Failed"); the name
+  of the tunnel, or its summary, in the code font; the number of open connections in `--muted`,
+  tabular figures ("3 connections"); then, on hover and keyboard focus (9.6), ghost buttons:
+  "Copy address" (the address to give a program: `localhost:5433`), "Stop" or "Start", and
+  "Remove" for a tunnel of the session, "Edit host…" for a tunnel of the host. Its tooltip says
+  the tunnel in words (9.21).
+- **The tab** of a session whose tunnels listen carries the "tunnel" icon, 14 px in `--muted`,
+  between its name and its cross, with "2 tunnels listening" as tooltip and accessible name, as
+  the log does (9.7).
+- **The palette** has "Show or hide tunnels"; a shortcut can be given to it in "Keyboard
+  shortcuts" (9.18), none by default.
+- **A tunnel that cannot start** does not stop the session. Its row says "Failed" and, under it,
+  in `--bad` at 11.5 px, why and what to do: "Port 5433 is already in use on this machine. Change
+  the local port, or stop the program that uses it.", "…by the tunnel of web-staging." when it is
+  one of Ramure's, "Ports under 1024 need administrator rights on this machine.", "The server
+  refused to listen on port 8080. It may be in use, or its SSH settings may not allow it." The
+  row offers "Retry". An error notification (9.11) says it too, "Tunnel localhost:5433 could not
+  start", since the user may be looking at the terminal.
+- **A connection that the server cannot carry through** leaves the tunnel listening: the next one
+  may work. Under the row, in `--warn` at 11.5 px, the last such failure only, with its time in
+  `--muted`: "Last connection refused: nothing answers at localhost:5432 on the server." No
+  notification: a program that retries would raise one every second.
+- **A session that ends** stops its tunnels and frees their ports. **A lost connection** does not:
+  while it is retried, the ports stay taken, so that no other program takes them; a new
+  connection to them is refused at once, the open ones are cut, and the rows say "Waiting for the
+  connection". When the session comes back, the tunnels start again, except a tunnel the user
+  stopped, which stays stopped.
+
 **A lost connection.** A session can end three ways: closed by the user ("Disconnect", closing
 the tab), ended by the server (`exit`, end of the shell), or lost (network cut, sleep, the server
 no longer answering). Only a lost connection comes back on its own, and only if "Automatic
@@ -1184,7 +1233,10 @@ reconnection" is on in the settings.
 - A try that needs the user stops the series: a password or a passphrase that is not kept, a
   server fingerprint. The card asks for it once and waits. A kept secret needs no one: the
   series goes on.
-- After five failed tries, the card says so, with "Reconnect" and "Close tab".
+- When the session has tunnels, the panel says once, in the place of the reason line, so that
+  the buttons do not move: "2 tunnels are paused. Connections in progress are cut."
+- After five failed tries, the card says so, with "Reconnect" and "Close tab", and the tunnels
+  stop.
 - When the session comes back, the terminal keeps the text it had, and the startup command of
   the host runs again.
 
@@ -1412,6 +1464,32 @@ need the room.
   help under it, in 11.5 px, `--muted`: "One text file per session, in the log folder of the
   settings. It holds everything the terminal shows, sensitive data included." No folder in the form:
   a setting has one place (9.18).
+- **Tunnels**, a group under the log and above the group, the tags and the color, which are
+  edited less often (9.15 for what a tunnel is):
+  - With none: one sentence in `--muted`, "No tunnels. Reach a port of the server from this
+    machine, or the reverse.", and "Add tunnel", a small standard button.
+  - The tunnels are a list inside a dialog (9.6): one plain row each, its name in weight 650, or
+    its summary when it has no name, and under it the kind and the summary in the code font and
+    `--muted` ("Local forward · `localhost:5433 → localhost:5432`"); on the right, two ghost
+    buttons made of an icon alone, "Edit tunnel" and "Remove tunnel". Its tooltip says the tunnel
+    in words.
+  - Adding or editing opens a form in place, under the list, not a dialog: "Kind", a list (9.3)
+    of the three kinds; then the fields of the kind, "Local port", "Server host" and "Server
+    port" for a local forward, "Server port", "Local host" and "Local port" for a remote forward,
+    "Local port" alone for a SOCKS proxy (1080 at first); "Name", optional; the checkboxes "Start
+    with the session" (checked at first) and "Let other machines connect", which shows a warning
+    box (9.10) when checked: "Anyone on your network can reach this port."
+  - Under the fields, a sentence says the tunnel in words, since `localhost` is the server's in
+    a local forward and this machine's in a remote one: "Connections to localhost:5433 on this
+    machine reach localhost:5432 as the server sees it.", "Connections to port 8080 on the server
+    reach localhost:3000 on this machine.", "Programs set to use the SOCKS5 proxy localhost:1080
+    go out through this server."
+  - The local port follows the server port until the user types one. A port is 1 to 65535, and
+    two tunnels of a host never listen on the same port: a field that breaks it is in its error
+    state (9.3).
+  - The form in place ends with "Cancel", a small ghost button, and "Add tunnel" or "Apply", a
+    small standard one. Enter in its fields applies the tunnel, not the host: the host is saved by
+    its own main button, as before.
 - **Buttons.** "Test connection", a secondary button, alone on its line under the fields,
   with its result right under it. Below, 24 px apart, the last line follows the common order
   (9.1, "Hierarchy"): "Delete host…" alone on the left for a host already in the book
