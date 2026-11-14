@@ -6,7 +6,7 @@ mod journal;
 mod local;
 mod ssh;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -41,6 +41,11 @@ pub fn run() {
                     ssh::store::Store::in_memory()
                 })?;
             app.manage(store);
+            // Every change of a tunnel goes to the interface.
+            let events = app.handle().clone();
+            app.manage(ssh::tunnels::Tunnels::new(move |state| {
+                let _ = events.emit("tunnel-state", state);
+            }));
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
@@ -87,6 +92,9 @@ pub fn run() {
             ssh::ssh_write,
             ssh::ssh_resize,
             ssh::ssh_close,
+            ssh::tunnels::tunnel_start,
+            ssh::tunnels::tunnel_stop,
+            ssh::tunnels::tunnels_close,
             local::local_open,
             journal::journal_start,
             journal::journal_stop,

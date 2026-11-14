@@ -12,12 +12,13 @@ use tauri::State;
 use super::config::{self, HostEntry};
 use super::secrets;
 
-/// Version of the schema, kept in `PRAGMA user_version`.
-const SCHEMA_VERSION: i32 = 1;
+/// Version of the schema, kept in `PRAGMA user_version`. 2: the tunnels of each host.
+const SCHEMA_VERSION: i32 = 2;
 
 /// Every row carries a unique identifier, a modification date and a deletion marker: a future
 /// synchronization between machines will rely on them without changing the schema. The SFTP and
-/// log columns are for the next milestones.
+/// log columns are for the next milestones. A book written by an earlier version is brought up to
+/// date by `migrate`.
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS hosts (
     id              TEXT PRIMARY KEY,
@@ -35,10 +36,63 @@ CREATE TABLE IF NOT EXISTS hosts (
     sftp_local_dir  TEXT NOT NULL DEFAULT '',
     log_sessions    INTEGER NOT NULL DEFAULT 0,
     proxy_jump      INTEGER NOT NULL DEFAULT 0,
+    tunnels         TEXT NOT NULL DEFAULT '[]',
     updated_at      INTEGER NOT NULL,
     deleted         INTEGER NOT NULL DEFAULT 0
 );
 ";
+
+/// The kind of a tunnel, named after the flags of `ssh`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TunnelKind {
+    /// `-L`: a port of this machine reaches a host and a port as the server sees them.
+    #[default]
+    Local,
+    /// `-R`: a port of the server reaches a host and a port as this machine sees them.
+    Remote,
+    /// `-D`: a port of this machine is a SOCKS5 proxy that goes out through the server.
+    Socks,
+}
+
+/// A tunnel of a host, kept in the book with it (guidelines, 9.15 and 9.21).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Tunnel {
+    /// Made by the interface.
+    pub id: String,
+    /// Empty for none: the interface shows the summary instead.
+    pub name: String,
+    pub kind: TunnelKind,
+    /// Where it listens: this machine for a local forward and a SOCKS proxy, the server for a
+    /// remote forward.
+    pub listen_port: u16,
+    /// As seen from the other side: the server for a local forward, this machine for a remote
+    /// one. Empty for a SOCKS proxy.
+    pub target_host: String,
+    /// 0 for a SOCKS proxy.
+    pub target_port: u16,
+    /// “Let other machines connect”: listen on every interface, not on localhost only.
+    pub bind_any: bool,
+    /// “Start with the session”.
+    pub autostart: bool,
+}
+
+impl Default for Tunnel {
+    fn default() -> Self {
+        Tunnel {
+            id: String::new(),
+            name: String::new(),
+            kind: TunnelKind::Local,
+            listen_port: 0,
+            target_host: String::new(),
+            target_port: 0,
+            bind_any: false,
+            // Checked at first in the form.
+            autostart: true,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -62,6 +116,8 @@ pub struct Host {
     /// Every session of this host records its log.
     #[serde(default)]
     pub log_sessions: bool,
+    /// The tunnels that start with its sessions, unless “Start with the session” is unchecked.
+    pub tunnels: Vec<Tunnel>,
     /// Last modification, in Unix milliseconds.
     pub updated_at: i64,
 }
@@ -74,12 +130,39 @@ fn db(e: rusqlite::Error) -> String {
     format!("host book: {e}")
 }
 
+/// The tunnels of a row. A value that cannot be read gives none, rather than a host book that
+/// cannot be opened: only Ramure writes it.
+fn read_tunnels(json: &str) -> Vec<Tunnel> {
+    serde_json::from_str(json).unwrap_or_else(|e| {
+        log::warn!("host book: tunnels not read: {e}");
+        Vec::new()
+    })
+}
+
+/// Brings a host book written by an earlier version of Ramure up to `SCHEMA_VERSION`, keeping its
+/// rows. A book written by a later version is left as it is.
+fn migrate(conn: &Connection) -> Result<(), String> {
+    let version: i32 = conn.pragma_query_value(None, "user_version", |row| row.get(0)).map_err(db)?;
+    if version >= SCHEMA_VERSION {
+        return Ok(());
+    }
+    // 1 to 2: the tunnels of each host. A book created just now already has the column.
+    let has_tunnels: bool = conn
+        .query_row("SELECT count(*) > 0 FROM pragma_table_info('hosts') WHERE name = 'tunnels'", [], |row| {
+            row.get(0)
+        })
+        .map_err(db)?;
+    let add_tunnels = if has_tunnels { "" } else { "ALTER TABLE hosts ADD COLUMN tunnels TEXT NOT NULL DEFAULT '[]';" };
+    conn.execute_batch(&format!("BEGIN; {add_tunnels} PRAGMA user_version = {SCHEMA_VERSION}; COMMIT;"))
+        .map_err(db)
+}
+
 pub struct Store(Mutex<Connection>);
 
 impl Store {
     fn init(conn: Connection) -> Result<Self, String> {
         conn.execute_batch(SCHEMA).map_err(db)?;
-        conn.pragma_update(None, "user_version", SCHEMA_VERSION).map_err(db)?;
+        migrate(&conn)?;
         Ok(Store(Mutex::new(conn)))
     }
 
@@ -102,7 +185,7 @@ impl Store {
         let mut statement = conn
             .prepare(
                 "SELECT id, alias, hostname, port, user, auth, key_path, grp, tags, color,
-                        startup_command, proxy_jump, updated_at, log_sessions
+                        startup_command, proxy_jump, updated_at, log_sessions, tunnels
                  FROM hosts WHERE deleted = 0
                  ORDER BY grp COLLATE NOCASE, alias COLLATE NOCASE",
             )
@@ -110,6 +193,7 @@ impl Store {
         let rows = statement
             .query_map([], |row| {
                 let tags: String = row.get(8)?;
+                let tunnels: String = row.get(14)?;
                 Ok(Host {
                     id: row.get(0)?,
                     alias: row.get(1)?,
@@ -125,6 +209,7 @@ impl Store {
                     proxy_jump: row.get(11)?,
                     updated_at: row.get(12)?,
                     log_sessions: row.get(13)?,
+                    tunnels: read_tunnels(&tunnels),
                 })
             })
             .map_err(db)?;
@@ -150,19 +235,24 @@ impl Store {
         if !["auto", "keyFile", "password"].contains(&host.auth.as_str()) {
             host.auth = "auto".into();
         }
+        for tunnel in &mut host.tunnels {
+            tunnel.name = tunnel.name.trim().to_string();
+            tunnel.target_host = tunnel.target_host.trim().to_string();
+        }
         if host.id.is_empty() {
             host.id = uuid::Uuid::new_v4().to_string();
         }
         host.updated_at = now();
+        let tunnels = serde_json::to_string(&host.tunnels).map_err(|e| format!("host book: {e}"))?;
         self.conn()?
             .execute(
                 "INSERT INTO hosts (id, alias, hostname, port, user, auth, key_path, grp, tags, color,
-                                    startup_command, proxy_jump, updated_at, log_sessions, deleted)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 0)
+                                    startup_command, proxy_jump, updated_at, log_sessions, tunnels, deleted)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, 0)
                  ON CONFLICT(id) DO UPDATE SET
                     alias = ?2, hostname = ?3, port = ?4, user = ?5, auth = ?6, key_path = ?7, grp = ?8,
                     tags = ?9, color = ?10, startup_command = ?11, proxy_jump = ?12, updated_at = ?13,
-                    log_sessions = ?14, deleted = 0",
+                    log_sessions = ?14, tunnels = ?15, deleted = 0",
                 params![
                     host.id,
                     host.alias,
@@ -178,6 +268,7 @@ impl Store {
                     host.proxy_jump,
                     host.updated_at,
                     host.log_sessions,
+                    tunnels,
                 ],
             )
             .map_err(db)?;
@@ -366,6 +457,139 @@ mod tests {
         // The host already there is not overwritten.
         assert_eq!(hosts.iter().find(|h| h.alias == "vps").unwrap().hostname, "vps.example.net");
         assert_eq!(store.import(&entries).unwrap(), (0, 2));
+    }
+
+    /// The table of version 1, before the tunnels.
+    const SCHEMA_V1: &str = "
+    CREATE TABLE hosts (
+        id              TEXT PRIMARY KEY,
+        alias           TEXT NOT NULL,
+        hostname        TEXT NOT NULL,
+        port            INTEGER NOT NULL DEFAULT 22,
+        user            TEXT NOT NULL DEFAULT '',
+        auth            TEXT NOT NULL DEFAULT 'auto',
+        key_path        TEXT NOT NULL DEFAULT '',
+        grp             TEXT NOT NULL DEFAULT '',
+        tags            TEXT NOT NULL DEFAULT '',
+        color           TEXT NOT NULL DEFAULT '',
+        startup_command TEXT NOT NULL DEFAULT '',
+        sftp_remote_dir TEXT NOT NULL DEFAULT '',
+        sftp_local_dir  TEXT NOT NULL DEFAULT '',
+        log_sessions    INTEGER NOT NULL DEFAULT 0,
+        proxy_jump      INTEGER NOT NULL DEFAULT 0,
+        updated_at      INTEGER NOT NULL,
+        deleted         INTEGER NOT NULL DEFAULT 0
+    );
+    PRAGMA user_version = 1;
+    ";
+
+    fn version(store: &Store) -> i32 {
+        store.conn().unwrap().pragma_query_value(None, "user_version", |row| row.get(0)).unwrap()
+    }
+
+    fn tunnels() -> Vec<Tunnel> {
+        vec![
+            Tunnel {
+                id: "t1".into(),
+                name: " database ".into(),
+                kind: TunnelKind::Local,
+                listen_port: 5433,
+                target_host: " localhost ".into(),
+                target_port: 5432,
+                bind_any: false,
+                autostart: true,
+            },
+            Tunnel {
+                id: "t2".into(),
+                kind: TunnelKind::Remote,
+                listen_port: 8080,
+                target_host: "localhost".into(),
+                target_port: 3000,
+                bind_any: true,
+                autostart: false,
+                ..Tunnel::default()
+            },
+            Tunnel { id: "t3".into(), kind: TunnelKind::Socks, listen_port: 1080, ..Tunnel::default() },
+        ]
+    }
+
+    #[test]
+    fn a_version_1_book_gains_the_tunnels_and_keeps_its_rows() {
+        let dir = std::env::temp_dir().join(format!("ramure-migrate-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("ramure.db");
+        {
+            let conn = Connection::open(&file).unwrap();
+            conn.execute_batch(SCHEMA_V1).unwrap();
+            conn.execute(
+                "INSERT INTO hosts (id, alias, hostname, port, user, tags, updated_at)
+                 VALUES ('h1', 'vps', 'vps.example.net', 2222, 'deploy', 'prod,web', 1)",
+                [],
+            )
+            .unwrap();
+        }
+
+        let store = Store::open(&file).unwrap();
+        assert_eq!(version(&store), 2);
+        let hosts = store.list().unwrap();
+        assert_eq!(hosts.len(), 1);
+        let vps = &hosts[0];
+        assert_eq!((vps.id.as_str(), vps.alias.as_str(), vps.port, vps.user.as_str()), ("h1", "vps", 2222, "deploy"));
+        assert_eq!(vps.tags, vec!["prod", "web"]);
+        assert_eq!(vps.tunnels, vec![]);
+
+        // The migrated book takes tunnels, and opening it again changes nothing.
+        store.save(Host { tunnels: tunnels(), ..vps.clone() }).unwrap();
+        drop(store);
+        let store = Store::open(&file).unwrap();
+        assert_eq!(version(&store), 2);
+        assert_eq!(store.list().unwrap()[0].tunnels.len(), 3);
+        drop(store);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_new_book_is_at_the_current_version() {
+        let store = Store::in_memory().unwrap();
+        assert_eq!(version(&store), SCHEMA_VERSION);
+        assert!(store.save(host("vps", "")).unwrap().tunnels.is_empty());
+    }
+
+    #[test]
+    fn tunnels_round_trip_with_their_host() {
+        let store = Store::in_memory().unwrap();
+        let saved = store.save(Host { tunnels: tunnels(), ..host("vps", "") }).unwrap();
+        assert_eq!((saved.tunnels[0].name.as_str(), saved.tunnels[0].target_host.as_str()), ("database", "localhost"));
+        assert_eq!(store.list().unwrap(), vec![saved.clone()]);
+
+        // An update replaces them.
+        let fewer = store.save(Host { tunnels: saved.tunnels[1..2].to_vec(), ..saved.clone() }).unwrap();
+        assert_eq!(store.list().unwrap()[0].tunnels, fewer.tunnels);
+
+        // The shape the interface sends and reads.
+        let json = serde_json::to_value(&saved.tunnels[1]).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "id": "t2", "name": "", "kind": "remote", "listenPort": 8080, "targetHost": "localhost",
+                "targetPort": 3000, "bindAny": true, "autostart": false,
+            })
+        );
+        let back: Host = serde_json::from_value(serde_json::to_value(&saved).unwrap()).unwrap();
+        assert_eq!(back, saved);
+
+        // Every field has a default: a host sent without tunnels has none, a tunnel without its
+        // options starts with the session.
+        let bare: Host = serde_json::from_str(r#"{"alias": "x", "hostname": "y"}"#).unwrap();
+        assert!(bare.tunnels.is_empty());
+        let socks: Tunnel = serde_json::from_str(r#"{"id": "s", "kind": "socks", "listenPort": 1080}"#).unwrap();
+        assert_eq!(socks, Tunnel { id: "s".into(), kind: TunnelKind::Socks, listen_port: 1080, ..Tunnel::default() });
+        assert!(socks.autostart && !socks.bind_any);
+
+        // A value that cannot be read gives no tunnels rather than a book that cannot be opened.
+        store.conn().unwrap().execute("UPDATE hosts SET tunnels = 'not json'", []).unwrap();
+        assert!(store.list().unwrap()[0].tunnels.is_empty());
     }
 
     #[test]
