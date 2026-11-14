@@ -1703,7 +1703,7 @@ the curves of the graph (10).
 |---|---|---|
 | Icon | [`logo/ramure-icon.svg`](logo/ramure-icon.svg) | The application: taskbar, window, start page. The symbol in white on a blue tile. |
 | Icon, small sizes | [`logo/ramure-icon-small.svg`](logo/ramure-icon-small.svg) | The same, under 40 px. The drawing is simplified: one tine per side, a thicker stroke. |
-| Logo | [`logo/ramure-logo.svg`](logo/ramure-logo.svg), [`logo/ramure-logo-dark.svg`](logo/ramure-logo-dark.svg) | The icon followed by the name. The "sombre" version has the name in a light color, for a dark background. |
+| Logo | [`logo/ramure-logo.svg`](logo/ramure-logo.svg), [`logo/ramure-logo-dark.svg`](logo/ramure-logo-dark.svg) | The icon followed by the name. The dark version has the name in a light color, for a dark background. |
 | Symbol | [`logo/ramure-symbol.svg`](logo/ramure-symbol.svg), [`logo/ramure-symbol-small.svg`](logo/ramure-symbol-small.svg) | The drawing alone, in a single color, when the tile does not fit. |
 
 ### 13.2 Colors

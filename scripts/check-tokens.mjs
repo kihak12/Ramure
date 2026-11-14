@@ -1,25 +1,25 @@
-// Vérifie qu'aucun composant n'écrit en dur une valeur qui a un jeton dans src/app.css :
-// couleur, taille ou graisse de texte, rayon, durée (docs/design-guidelines.md).
-// Lancé par `npm run check`. Sort avec le code 1 et la liste des écarts s'il en trouve.
+// Checks that no component hard-codes a value that has a token in src/app.css: a color, a text
+// size or weight, a radius, a duration (docs/design-guidelines.md).
+// Run by `npm run check`. Exits with code 1 and the list of the values it finds, if any.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const source = join(root, 'src');
-const tokens = join(source, 'app.css'); // le seul fichier qui a le droit d'écrire ces valeurs
+const tokens = join(source, 'app.css'); // the only file allowed to write these values
 
 const TIME = /(?<![\w.-])\d*\.?\d+m?s\b/;
 
-/** Chaque règle : ce qu'on cherche sur une ligne, et le jeton à employer à la place. */
+/** Each rule: what is looked for on a line, and the token to use instead. */
 const RULES = [
-  { test: (l) => /(?<![&\w])#[0-9a-fA-F]{3,8}\b(?!['"]?\))/.test(l) && /(color|background|border|fill|stroke|shadow|outline)/i.test(l), why: 'couleur en dur : employer un jeton de couleur' },
-  { test: (l) => /\b(rgba?|hsla?|oklch|oklab)\(/.test(l), why: 'couleur en dur : employer un jeton, ou color-mix() entre jetons' },
-  { test: (l) => /font-size:\s*\d/.test(l) || /\bfont:\s*\d/.test(l) || /fontSize:\s*['"]?\d/.test(l), why: 'taille de texte en dur : employer --fs-*' },
-  { test: (l) => /font-weight:\s*\d/.test(l) || /fontWeight:\s*['"]?\d/.test(l), why: 'graisse en dur : employer --fw-regular ou --fw-strong' },
-  { test: (l) => /border-radius:[^;]*\d+(\.\d+)?px/.test(l) || /borderRadius:\s*['"]?\d/.test(l), why: 'rayon en dur : employer --radius-*' },
-  { test: (l) => /\b(transition|animation)(-duration|-delay)?:/.test(l) && TIME.test(l.replace(/var\([^)]*\)/g, '')), why: 'durée en dur : employer --t-*' },
-  { test: (l) => /\bduration:\s*\d/.test(l), why: 'durée en dur : employer motion.fast, motion.med ou motion.slow' },
+  { test: (l) => /(?<![&\w])#[0-9a-fA-F]{3,8}\b(?!['"]?\))/.test(l) && /(color|background|border|fill|stroke|shadow|outline)/i.test(l), why: 'hard-coded color: use a color token' },
+  { test: (l) => /\b(rgba?|hsla?|oklch|oklab)\(/.test(l), why: 'hard-coded color: use a token, or color-mix() between tokens' },
+  { test: (l) => /font-size:\s*\d/.test(l) || /\bfont:\s*\d/.test(l) || /fontSize:\s*['"]?\d/.test(l), why: 'hard-coded text size: use --fs-*' },
+  { test: (l) => /font-weight:\s*\d/.test(l) || /fontWeight:\s*['"]?\d/.test(l), why: 'hard-coded weight: use --fw-regular or --fw-strong' },
+  { test: (l) => /border-radius:[^;]*\d+(\.\d+)?px/.test(l) || /borderRadius:\s*['"]?\d/.test(l), why: 'hard-coded radius: use --radius-*' },
+  { test: (l) => /\b(transition|animation)(-duration|-delay)?:/.test(l) && TIME.test(l.replace(/var\([^)]*\)/g, '')), why: 'hard-coded duration: use --t-*' },
+  { test: (l) => /\bduration:\s*\d/.test(l), why: 'hard-coded duration: use motion.fast, motion.med or motion.slow' },
 ];
 
 function* walk(dir) {
@@ -44,8 +44,8 @@ for (const file of walk(source)) {
 }
 
 if (findings.length > 0) {
-  console.error(`Jetons : ${findings.length} valeur(s) écrite(s) en dur.\n`);
+  console.error(`Tokens: ${findings.length} hard-coded value(s).\n`);
   console.error(findings.join('\n'));
   process.exit(1);
 }
-console.log('Jetons : aucune valeur écrite en dur dans les composants.');
+console.log('Tokens: no value hard-coded in the components.');

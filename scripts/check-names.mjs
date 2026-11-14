@@ -1,7 +1,7 @@
-// Vérifie que deux fichiers de src/ ne se confondent jamais sur un disque qui ignore la casse
-// (Windows, macOS). Un import s'écrit sans `.ts` : `./toasts.svelte` désigne `toasts.svelte.ts`
-// sous Linux, mais `Toasts.svelte` sous Windows s'il existe, et la page reste blanche.
-// Lancé par `npm run check`. Sort avec le code 1 et la liste des paires s'il en trouve.
+// Checks that no two files of src/ are mistaken for each other on a disk that ignores case
+// (Windows, macOS). An import is written without `.ts`: `./toasts.svelte` means `toasts.svelte.ts`
+// on Linux, but `Toasts.svelte` on Windows if it exists, and the page stays blank.
+// Run by `npm run check`. Exits with code 1 and the list of the pairs it finds, if any.
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +17,7 @@ function* walk(dir) {
   }
 }
 
-/** Le nom sous lequel un import peut désigner le fichier : sans `.ts` ni `.js`, sans casse. */
+/** The name under which an import can point to the file: without `.ts` or `.js`, without case. */
 const key = (path) => path.replace(/\.(ts|js)$/, '').toLowerCase();
 
 const seen = new Map();
@@ -30,9 +30,9 @@ for (const file of walk(source)) {
 }
 
 if (clashes.length > 0) {
-  console.error('Fichiers qui se confondent sur un disque qui ignore la casse :');
+  console.error('Files mistaken for each other on a disk that ignores case:');
   for (const [a, b] of clashes) console.error(`  ${a}\n  ${b}\n`);
-  console.error('Renomme l’un des deux : sous Windows, un import de l’un charge l’autre.');
+  console.error('Rename one of the two: on Windows, an import of one loads the other.');
   process.exit(1);
 }
-console.log(`Noms de fichiers : ${seen.size} fichiers, aucun ne se confond avec un autre.`);
+console.log(`File names: ${seen.size} files, none mistaken for another.`);

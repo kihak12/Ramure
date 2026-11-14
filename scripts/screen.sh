@@ -1,31 +1,30 @@
 #!/usr/bin/env bash
-# Lance Ramure sur un écran virtuel et en prend des captures, sous Linux, sans écran réel.
-# Sert à donner des captures aux subagents design-reviewer et ux-designer.
+# Runs Ramure on a virtual screen and takes screenshots of it, on Linux, without a real display.
+# It provides the screenshots for the design-reviewer and ux-designer subagents.
 #
-#   scripts/screen.sh ouvrir <clair|sombre> [dépôt…]   lance l'application sur ces dépôts
-#   scripts/screen.sh capturer <fichier.png>            capture la fenêtre
-#   scripts/screen.sh fermer                            arrête l'application et l'écran virtuel
+#   scripts/screen.sh open <light|dark> [repository…]  runs the application on these repositories
+#   scripts/screen.sh capture <file.png>                captures the window
+#   scripts/screen.sh close                             stops the application and the virtual screen
 #
-#   ECRAN_TROUSSEAU=1 scripts/screen.sh ouvrir …        avec un trousseau du système, vide et déverrouillé
-#   ECRAN_TROUSSEAU=0 scripts/screen.sh ouvrir …        sans aucun trousseau
+#   SCREEN_KEYRING=1 scripts/screen.sh open …           with a system keyring, empty and unlocked
+#   SCREEN_KEYRING=0 scripts/screen.sh open …           with no keyring at all
 #
-# Entre « ouvrir » et « capturer », l'application se pilote avec xdotool, sur l'écran :99 :
+# Between "open" and "capture", xdotool drives the application, on display :99:
 #   DISPLAY=:99 xdotool mousemove 760 138 click 1
 #
-# Il faut Xvfb, xdotool, ImageMagick, python3, et l'application compilée
-# (npm run tauri build -- --no-bundle). L'application tourne avec un dossier personnel à part :
-# ni les réglages ni le carnet d'hôtes de l'utilisateur ne sont touchés.
+# It needs Xvfb, xdotool, ImageMagick, python3, and the application built
+# (npm run tauri build -- --no-bundle). The application runs with a home of its own: neither the
+# user's settings nor their host book are touched.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 bin=$root/src-tauri/target/release/ramure
-home=${TMPDIR:-/tmp}/ramure-ecran
-size=1440x880 # la taille de la fenêtre, dans src-tauri/tauri.conf.json
+home=${TMPDIR:-/tmp}/ramure-screen
+size=1440x880 # the size of the window, in src-tauri/tauri.conf.json
 export DISPLAY=:99
 
-# Attend qu'aucun processus de ce nom ne reste, 5 secondes au plus, puis l'arrête de force : un
-# « fermer » suivi d'un « ouvrir » ne doit pas trouver l'écran ou l'application d'avant en train de
-# s'éteindre.
+# Waits until no process of this name is left, 5 seconds at most, then kills it: a "close"
+# followed by an "open" must not find the previous screen or application still shutting down.
 wait_gone() {
   for _ in $(seq 50); do
     pgrep -x "$1" >/dev/null || return 0
@@ -40,21 +39,21 @@ stop() {
 }
 
 case ${1:-} in
-  ouvrir)
-    theme=${2:?clair ou sombre}
+  open)
+    theme=${2:?light or dark}
     shift 2
-    [ -x "$bin" ] || { echo "Application non compilée : npm run tauri build -- --no-bundle" >&2; exit 1; }
+    [ -x "$bin" ] || { echo "Application not built: npm run tauri build -- --no-bundle" >&2; exit 1; }
     stop
     if ! pgrep -x Xvfb >/dev/null; then
       Xvfb :99 -screen 0 1500x920x24 >/dev/null 2>&1 &
-      # L'écran répond quand xdotool peut en lire la taille.
+      # The screen answers once xdotool can read its size.
       for _ in $(seq 50); do
         xdotool getdisplaygeometry >/dev/null 2>&1 && break
         sleep 0.1
       done
     fi
-    # Les onglets à rouvrir sont lus dans le stockage local de la page : on y écrit les dépôts.
-    # On ne vide que les données de l'application : le reste du dossier peut être tenu par le système.
+    # The tabs to reopen are read from the local storage of the page: the repositories go there.
+    # Only the data of the application is cleared: the system may hold the rest of the folder.
     rm -rf "$home/.local/share/dev.ramure.app"
     mkdir -p "$home/.local/share/dev.ramure.app/localstorage"
     python3 - "$home/.local/share/dev.ramure.app/localstorage/tauri_localhost_0.localstorage" "$@" <<'P'
@@ -67,22 +66,22 @@ if paths:
     db.execute("INSERT INTO ItemTable VALUES (?, ?)", ("ramure.tabs", tabs.encode("utf-16-le")))
 db.commit()
 P
-    [ "$theme" = sombre ] && gtk=Adwaita:dark || gtk=Adwaita
-    # Le trousseau du système, pour les écrans qui retiennent un secret :
-    #   ECRAN_TROUSSEAU=1  un trousseau (GNOME Keyring) déverrouillé, vide à chaque lancement ;
-    #   ECRAN_TROUSSEAU=0  aucun trousseau : le bus de la session ne démarre aucun service ;
-    #   sans la variable   ce que la machine a, comme avant.
+    [ "$theme" = dark ] && gtk=Adwaita:dark || gtk=Adwaita
+    # The system keyring, for the screens that keep a secret:
+    #   SCREEN_KEYRING=1      an unlocked keyring (GNOME Keyring), empty at each launch;
+    #   SCREEN_KEYRING=0      no keyring: the session bus starts no service;
+    #   without the variable  whatever the machine has, as before.
     start='exec "$0"'
     bus=()
-    case ${ECRAN_TROUSSEAU:-} in
+    case ${SCREEN_KEYRING:-} in
       1)
-        command -v gnome-keyring-daemon >/dev/null || { echo "Il manque gnome-keyring (apt install gnome-keyring)" >&2; exit 1; }
+        command -v gnome-keyring-daemon >/dev/null || { echo "gnome-keyring is missing (apt install gnome-keyring)" >&2; exit 1; }
         rm -rf "$home/.local/share/keyrings"
         start='printf ramure | gnome-keyring-daemon --unlock --components=secrets >/dev/null 2>&1; exec "$0"'
         ;;
       0)
-        # Un bus sans dossier de services : rien n'y est lancé à la demande, pas même un trousseau.
-        cat >"$home/bus-sans-services.conf" <<'CONF'
+        # A bus with no service directory: nothing is started on demand there, not even a keyring.
+        cat >"$home/bus-without-services.conf" <<'CONF'
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
@@ -97,21 +96,21 @@ P
   </policy>
 </busconfig>
 CONF
-        bus=(--config-file="$home/bus-sans-services.conf")
+        bus=(--config-file="$home/bus-without-services.conf")
         ;;
     esac
     HOME=$home XDG_CONFIG_HOME=$home/.config XDG_DATA_HOME=$home/.local/share \
       GTK_THEME=$gtk WEBKIT_DISABLE_DMABUF_RENDERER=1 \
       dbus-run-session "${bus[@]}" -- sh -c "$start" "$bin" >"$home/ramure.log" 2>&1 &
     timeout 30 xdotool search --sync --onlyvisible --name '^Ramure$' >/dev/null
-    sleep 9 # le temps que la page charge les dépôts : un premier chargement est plus long
+    sleep 9 # time for the page to load the repositories: a first load takes longer
     ;;
-  capturer)
-    out=${2:?fichier de sortie}
+  capture)
+    out=${2:?output file}
     mkdir -p "$(dirname "$out")"
     import -window root -crop "$size+0+0" +repage "$out"
     ;;
-  fermer)
+  close)
     stop
     pkill -x Xvfb 2>/dev/null || true
     wait_gone Xvfb

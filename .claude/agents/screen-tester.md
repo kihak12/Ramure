@@ -12,10 +12,10 @@ under `src/`, `src-tauri/`, `docs/` or `scripts/`, no commit, no branch, no chec
 
 ## Your tools
 
-- `scripts/screen.sh`, whose header says how to use it: `ouvrir <clair|sombre> [repository…]`
-  runs the release build on the virtual screen, `capturer <file.png>` captures the window,
-  `fermer` stops the application and the screen. With `ECRAN_TROUSSEAU=1`, the application
-  gets an empty, unlocked keyring; with `ECRAN_TROUSSEAU=0`, no keyring at all.
+- `scripts/screen.sh`, whose header says how to use it: `open <light|dark> [repository…]` runs
+  the release build on the virtual screen, `capture <file.png>` captures the window, `close`
+  stops the application and the screen. With `SCREEN_KEYRING=1`, the application gets an empty,
+  unlocked keyring; with `SCREEN_KEYRING=0`, no keyring at all.
 - `xdotool` on display `:99`, ImageMagick (`convert`, `import`), `python3` with `sqlite3`.
 - Read opens a PNG: you see it.
 
@@ -28,14 +28,14 @@ There is one virtual screen and one release binary. Never play two scenarios at 
    lists what changed since it was built. If the list is not empty, build:
    `npm run tauri build -- --no-bundle > <log> 2>&1`, which takes two to three minutes, and
    read only the end of the log. Follow the brief when it says not to build.
-2. **The data.** The application runs with a home of its own, `/tmp/ramure-ecran`: the user's
-   settings and host book are never touched. Each `ouvrir` forgets the open tabs and opens the
+2. **The data.** The application runs with a home of its own, `/tmp/ramure-screen`: the user's
+   settings and host book are never touched. Each `open` forgets the open tabs and opens the
    repositories given on its command line. The host book stays from one run to the next, in
-   `/tmp/ramure-ecran/.config/ramure/ramure.db`, table `hosts` (`updated_at` is required, in
+   `/tmp/ramure-screen/.config/ramure/ramure.db`, table `hosts` (`updated_at` is required, in
    milliseconds). Add test hosts with `python3` and `sqlite3` while the application is closed,
    note what you added, and remove it at the end.
 3. **The system user.** The application takes the default user of a host from `USERNAME` or
-   `USER`. `env -u USER -u USERNAME scripts/screen.sh ouvrir …` runs it with none.
+   `USER`. `env -u USER -u USERNAME scripts/screen.sh open …` runs it with none.
 4. **A repository.** Any Git repository will do, the checkout of the project included. A
    scenario that changes the repository (commit, branch, rebase, stash) plays on a copy in a
    temporary directory, never on the checkout of the project.
@@ -54,7 +54,7 @@ There is one virtual screen and one release binary. Never play two scenarios at 
   image has other coordinates: convert them back before clicking.
 - Find a target in a capture before clicking it; never guess. In the window of 1440 × 880 px,
   the rail on the left holds the Git module at (24, 26) and the SSH module at (24, 66).
-- `ouvrir` waits for the window, then 9 seconds more. After an action that changes the view,
+- `open` waits for the window, then 9 seconds more. After an action that changes the view,
   wait about one second before capturing.
 - To change the size of the window:
   `for w in $(xdotool search --name Ramure); do xdotool windowsize $w 1000 880; done`.
@@ -126,7 +126,7 @@ English, in this form:
 
 ## Before you answer
 
-- Close the application: `scripts/screen.sh fermer`.
+- Close the application: `scripts/screen.sh close`.
 - Remove the test data you added (hosts, files, copies of repositories) and stop every process
   you started, such as an SSH server.
 - Keep the captures your report names, and remove the others.
