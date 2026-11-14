@@ -747,11 +747,12 @@
     {#if session.journal}
       <span class="journal" title={session.journal.path}>{recording ? 'recording log' : 'log saved'}</span>
     {/if}
-    {#if tunnelsLive && tunnels.length && session.tunnels}
+    {#if tunnelsLive && session.tunnels}
       {@const group = session.tunnels}
-      <!-- "Tunnels · 2" shows and hides the strip; a failure gives it the warning icon. -->
+      <!-- "Tunnels · 2" shows and hides the strip; a failure gives it the warning icon. With no
+           tunnel yet it reads "Tunnels", so that a first one can be added with the mouse. -->
       <button class="btn ghost small toggle" type="button" aria-pressed={group.shown} title={tunnelsTitle} onclick={() => (group.shown = !group.shown)}>
-        {#if tunnelsFailed.length}<span class="failed"><Icon name="warning" size={14} /></span>{/if}Tunnels · {tunnels.length}
+        {#if tunnelsFailed.length}<span class="failed"><Icon name="warning" size={14} /></span>{/if}Tunnels{#if tunnels.length}<span class="tally"> · {tunnels.length}</span>{/if}
       </button>
     {/if}
     {#if phase.step === 'connected' && (local || info)}
@@ -1019,6 +1020,9 @@
   }
   .close {
     margin-left: auto;
+  }
+  .tally {
+    font-variant-numeric: tabular-nums;
   }
   .failed {
     display: grid;

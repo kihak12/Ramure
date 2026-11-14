@@ -110,6 +110,9 @@ export function tunnelSentence(t: Tunnel): Words[] {
 /** The same sentence as plain text, for a tooltip. */
 export const tunnelWords = (t: Tunnel) => tunnelSentence(t).map((w) => w.text).join('');
 
+/** The tooltip of a tunnel row: its name, if it has one, then the sentence (guidelines, section 9.15). */
+export const tunnelTitle = (t: Tunnel) => (t.name ? `${t.name}: ` : '') + tunnelWords(t);
+
 /** The machine a tunnel listens on: two tunnels on the same machine cannot share a port. */
 export const listensHere = (t: Pick<Tunnel, 'kind'>) => t.kind !== 'remote';
 

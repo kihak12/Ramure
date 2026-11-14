@@ -53,6 +53,8 @@
   /** "Add tunnel" was tried: an empty field is then said to be missing. */
   let tried = $state(false);
   let busy = $state(false);
+  /** While it works, the button says so (guidelines, 9.1, "Work in progress"). */
+  const busyLabel = $derived(applyLabel === 'Apply' ? 'Applying…' : 'Adding…');
   /** What kept the tunnel from being added, such as the host that could not be saved. */
   let failure = $state('');
 
@@ -210,7 +212,7 @@
     {/if}
     <!-- What is wrong with these fields, under them. The line keeps its place: "Add tunnel" does not
          move when it shows (guidelines, 9.1). A port field is too narrow for its own message. -->
-    <p class="errors" id="{fieldId}-error">{fieldErrors || '\u00a0'}</p>
+    <p class="errors" id="{fieldId}-error" role="alert">{fieldErrors || '\u00a0'}</p>
     <label class="name">
       <span class="label">Name</span>
       <input class="field" type="text" placeholder="postgres" spellcheck="false" autocomplete="off" bind:value={name} />
@@ -238,13 +240,13 @@
 
   <div class="buttons">
     {#if strip}
-      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{applyLabel}</button>
+      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{busy ? busyLabel : applyLabel}</button>
       <button class="btn ghost small" type="button" onclick={oncancel}>Cancel</button>
       <!-- What kept the tunnel from being added, after the buttons, which do not move (guidelines, 9.1). -->
       {#if failure}<p class="failure" role="alert"><Icon name="warning" size={14} /><span>{failure}</span></p>{/if}
     {:else}
       <button class="btn ghost small" type="button" onclick={oncancel}>Cancel</button>
-      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{applyLabel}</button>
+      <button class="btn small" type="button" disabled={busy} onclick={() => submit()}>{busy ? busyLabel : applyLabel}</button>
     {/if}
   </div>
 </div>

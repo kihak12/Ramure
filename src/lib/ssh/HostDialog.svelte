@@ -11,7 +11,7 @@
   import { explain } from './reasons';
   import { forgetSecret, keyringAvailable, NO_KEYRING, secretsHeld, type SecretRef } from './secrets';
   import TunnelForm from './TunnelForm.svelte';
-  import { TUNNEL_KIND_SHORT, tunnelLabel, tunnelSummary, tunnelWords, type Host, type SshError, type Tunnel } from './types';
+  import { TUNNEL_KIND_SHORT, tunnelLabel, tunnelSummary, tunnelTitle, type Host, type SshError, type Tunnel } from './types';
 
   let element = $state<HTMLDialogElement>();
   let form = $state<Host | null>(null);
@@ -504,7 +504,7 @@
             <ul>
               {#each form.tunnels as tunnel (tunnel.id)}
                 {@const label = tunnelLabel(tunnel)}
-                <li data-tunnel={tunnel.id} title={tunnelWords(tunnel)}>
+                <li data-tunnel={tunnel.id} title={tunnelTitle(tunnel)}>
                   <span class="text">
                     <b class:mono={!tunnel.name}>{label}</b>
                     <small>{TUNNEL_KIND_SHORT[tunnel.kind]} · <span class="mono">{tunnelSummary(tunnel)}</span></small>
@@ -724,7 +724,7 @@
     gap: 6px;
     margin: 0;
     padding: 8px 10px;
-    border-radius: var(--radius-s);
+    border-radius: var(--radius);
     background: var(--warn-soft);
     color: var(--warn);
   }

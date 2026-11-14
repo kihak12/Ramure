@@ -34,7 +34,7 @@ export function sshCommands(): Command[] {
       },
     },
     {
-      // The strip of the tunnels, even for a session that has none yet: "Add tunnel…" is there
+      // The strip of the tunnels, even for a session that has none yet: "Add tunnel" is there
       // (guidelines, 9.15, "Tunnels").
       id: 'terminal-tunnels',
       group: 'Terminal',

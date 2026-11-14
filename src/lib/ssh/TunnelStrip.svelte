@@ -7,7 +7,7 @@
   import { toasts } from '../ui/toasts.svelte';
   import { ssh, type Session, type TunnelRuntime } from './ssh.svelte';
   import TunnelForm from './TunnelForm.svelte';
-  import { count, tunnelAddress, tunnelLabel, tunnelWords, type Tunnel } from './types';
+  import { count, tunnelAddress, tunnelLabel, tunnelTitle, type Tunnel } from './types';
 
   let { session }: { session: Session } = $props();
 
@@ -91,7 +91,7 @@
         {@const label = tunnelLabel(tunnel)}
         {@const said = STATES[state.state]}
         {@const verb = state.state === 'failed' ? 'Retry' : state.state === 'stopped' ? 'Start' : 'Stop'}
-        <div class="row" title={tunnelWords(tunnel)}>
+        <div class="row" title={tunnelTitle(tunnel)}>
           <span class="state s-{state.state}">
             {#if said.icon}<Icon name={said.icon} size={14} />{:else}<span class="spinner" aria-hidden="true"></span>{/if}
             <span>{said.words}</span>

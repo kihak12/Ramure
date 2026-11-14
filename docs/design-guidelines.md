@@ -338,6 +338,7 @@ Margins and gaps take their values from this scale: **2, 4, 6, 8, 10, 12, 16, 20
 | Inner margin of a card | 12 px |
 | Between an icon and its text | 6 px |
 | Between two buttons | 8 px |
+| Between the ghost buttons of a row's actions (9.6) | 2 px |
 | Between a label and its field | 6 px |
 | Between two fields of a form | 12 px |
 
@@ -431,8 +432,10 @@ The interface has four levels. Each is recognized by its background.
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
   leaves it, the same sheet turned over, for an export, the sheet with lines for the log of a
-  session, the tunnel for an SSH tunnel. An icon that stands for a git command (pull, push, stash) is never borrowed for
-  something else.
+  session, the tunnel for an SSH tunnel, the pencil for an edit or a change, the trash for a
+  deletion, the square for stopping or aborting, the circling arrows for doing again or waiting
+  to: reload, reconnect, a tunnel waiting for its connection. An icon that stands for a git
+  command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
 - An icon never carries a state on its own: it is backed by text or by a tooltip.
@@ -476,7 +479,7 @@ graph: a ring that widens and fades, in 2.4 s.
 The waiting ring is 12 px, in `--accent` or in the color of the text around it, and it appears
 where the user asked for the operation: on the tab of the repository, on the label or the row of
 the branch being switched to, in the status bar, on the row and the tab of a host being connected
-to. It is the shared class `.spinner` of
+to, on the row of a tunnel that starts (9.15). It is the shared class `.spinner` of
 `src/app.css`, whose `--spinner` property gives it another color. Words always say the state
 beside it, so the ring itself is hidden from screen readers. One exception: on the tab of a host
 being connected to, the ring stands alone in the place of the dot, and carries the name of the
@@ -765,7 +768,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - 30 px high, at least 90 px wide. The name is cut with an ellipsis.
 - A terminal that records its log carries the "log" icon, 14 px in `--muted`, between its
   name and its cross, with "Recording log" as tooltip and accessible name
-  (9.15).
+  (9.15). A session whose tunnels listen carries the "tunnel" icon the same way, with
+  "2 tunnels listening" (9.15).
 - The close cross is visible on the active tab, and on hover on the others. On hover it takes
   a veil of `--ink` at 12%, not a hover token: it sits on a tab that is hovered (`--hover-side`)
   or active (`--panel`), and the veil shows on both, in light and in dark.
@@ -1174,8 +1178,11 @@ service that only one side can see. Three kinds, named with the words and the fl
 - **On this machine**, a tunnel listens on `localhost` only, in IPv4 and in IPv6, unless "Let
   other machines connect" is checked in its form.
 - **The toggle.** In the header of the session, before "Record log": "Tunnels · 2", a small ghost
-  toggle (9.1) that shows and hides the strip of the tunnels. It is there only when the session
-  has a tunnel. When a tunnel has failed, it takes the warning icon, and its tooltip says why.
+  toggle (9.1) that shows and hides the strip of the tunnels, the count in tabular figures. It is
+  there in every SSH session from its first connection on, so that a first tunnel can be added
+  with the mouse: with no tunnel, it says "Tunnels". It stays while the connection is retried:
+  "Add tunnel", "Start" and "Retry" still work then, and the tunnel waits for the connection.
+  When a tunnel has failed, the toggle takes the warning icon, and its tooltip says why.
 - **The strip** sits under the header, on `--panel`, with a `--line-soft` separator: it pushes
   the terminal down and never covers its text, as the search bar does. One 28 px row per tunnel,
   then a small standard button "Add tunnel", whose form opens in place, as in the host form
@@ -1183,12 +1190,17 @@ service that only one side can see. Three kinds, named with the words and the fl
 - **A row**, from left to right: the state, an icon and words, never a color alone: "Listening"
   (check), "Starting…" (the 12 px ring), "Waiting for the connection" (refresh), "Stopped" (stop),
   "Failed" (warning). Only the icon takes the state color, `--ok`, `--warn` or `--bad`: the row may
-  be hovered, and the words stay in `--ink`; the name
-  of the tunnel, or its summary, in the code font; the number of open connections in `--muted`,
-  tabular figures ("3 connections"); then, on hover and keyboard focus (9.6), ghost buttons:
-  "Copy address" (the address to give a program: `localhost:5433`), "Stop" or "Start", and
-  "Remove" for a tunnel of the session, "Edit host…" for a tunnel of the host. Its tooltip says
-  the tunnel in words (9.21).
+  be hovered, and the words stay in `--ink`. The state stands in a column of its own, with its
+  icon, and keeps its capital, as a tooltip does (12). Then the name of the tunnel in the
+  interface font, or, when it has none, its summary in the code font; the number of open
+  connections in `--muted`, tabular figures ("3 connections"); then, on hover and keyboard
+  focus (9.6), ghost buttons 2 px apart: "Copy address" (the address to give a program:
+  `localhost:5433`), "Stop" or "Start", and "Remove" for a tunnel of the session, "Edit host…"
+  for a tunnel of the host. Its tooltip gives the name, if there is one, then the tunnel in
+  words (9.21): "Database: Connections to localhost:5433 on this machine reach localhost:5432 as the server
+  sees it."
+- **"Stop" and "Remove" act at once**, with no confirmation: nothing is lost that cannot be
+  started or added again in a click, and a program that was using the tunnel sees a refusal.
 - **The tab** of a session whose tunnels listen carries the "tunnel" icon, 14 px in `--muted`,
   between its name and its cross, with "2 tunnels listening" as tooltip and accessible name, as
   the log does (9.7).
@@ -1199,15 +1211,16 @@ service that only one side can see. Three kinds, named with the words and the fl
 - **A tunnel that cannot start** does not stop the session. Its row says "Failed" and, under it,
   in `--bad` at 11.5 px, why and what to do: "Port 5433 is already in use on this machine. Change
   the local port, or stop the program that uses it.", "…by the tunnel of web-staging." when it is
-  one of Ramure's, "Ports under 1024 need administrator rights on this machine.", "The server
-  refused to listen on port 8080. It may be in use, or its SSH settings may not allow it." The
-  row offers "Retry". An error notification (9.11) says it too, "Tunnel localhost:5433 could not
+  one of Ramure's ("…by the tunnel of another session." when that session's host has no name to
+  give), "Ports under 1024 need administrator rights on this machine.", "The server refused to
+  listen on port 8080. It may be in use, or its SSH settings may not allow it." Any other reason
+  the system gives follows "Port 5433 could not be opened: ", as it is. The row offers "Retry". An error notification (9.11) says it too, "Tunnel localhost:5433 could not
   start", since the user may be looking at the terminal; it goes away once the tunnel starts or
   stops.
 - **A connection that the server cannot carry through** leaves the tunnel listening: the next one
   may work. Under the row, in `--warn` at 11.5 px, the last such failure only, with its time in
-  `--muted`: "Last connection refused: nothing answers at localhost:5432 on the server." No
-  notification: a program that retries would raise one every second.
+  `--muted`: "Last connection refused: nothing answers at localhost:5432 on the server.", or, for
+  a remote forward, "…at localhost:3000 on this machine." No notification: a program that retries would raise one every second.
 - **A session that ends** stops its tunnels and frees their ports. **A lost connection** does not:
   while it is retried, the ports stay taken, so that no other program takes them; a new
   connection to them is refused at once, the open ones are cut, and the rows say "Waiting for the
@@ -1725,7 +1738,9 @@ apply to that text.
   "Create Branch"; "Branch / tag", not "Branch / Tag".
 - **A state said beside a name**, in a header, a row or after a file name, is a lower-case
   fragment, not a sentence: "connecting…", "recording log", "log saved", "partly", "opened in".
-  Said alone, as a tooltip or an accessible name, it takes its capital: "Recording log".
+  Said alone, as a tooltip or an accessible name, it takes its capital: "Recording log". So does
+  a state that stands in a column of its own with its icon, as in the rows of the tunnels:
+  "Listening", "Failed" (9.15).
 - **Titles** name the action: "New branch". A confirmation asks a question: "Delete web-prod?",
   "Quit Ramure?". A panel over a terminal names a state: "Unknown server", "Connection lost",
   "Shell stopped".
