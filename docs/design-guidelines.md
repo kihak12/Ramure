@@ -1686,8 +1686,12 @@ section of the module (9.18): the dot on "General" leads the rest of the way.
   - the warning icon in `--bad` and "Ramure could not reach GitHub. Check your connection, then
     try again.", announced, then the reason the system gave, as it is, in the code font. After a
     check that failed on its own: "The last automatic check failed 3 h ago. Check your
-    connection, then try again."; when a release is published before all its installers, after
-    a click or not: "The new version has no installer for this system yet. Try again later.";
+    connection, then try again.";
+  - when GitHub answers but gives no version to read, after a click or not, with no reason under
+    it: "No published version was found on GitHub. Try again later." The connection is not at
+    fault, and the sentence does not send the user to it. The same goes for a release published
+    before all its installers: "The new version has no installer for this system yet. Try again
+    later.";
   - nothing when a version was found: the box says it.
 - **"Automatic update check"**, a choice (9.19), with the help "Ramure asks GitHub whether a
   newer version exists.":

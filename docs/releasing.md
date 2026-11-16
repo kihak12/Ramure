@@ -56,14 +56,21 @@ A tag is refused while the public key is missing.
    git push origin v0.2.0
    ```
 
+   Do not create the release on GitHub by hand, before or after the tag: the workflow makes it.
+
 4. The "Release" workflow starts. It checks that the tag is the version of the application, runs
    `npm run check` and `cargo test` on both systems, builds the installers, signs them, and
    uploads them to a draft release named "Ramure 0.2.0", with notes generated from the pull
    requests merged since the last version.
 
-5. Open the draft on the [releases page](https://github.com/kihak12/Ramure/releases). Install one
-   of its files and start the application. Edit the notes, then choose "Publish release".
-   From then on, the installed copies find the new version at their next check.
+5. Open the draft the workflow made, "Ramure 0.2.0", on the
+   [releases page](https://github.com/kihak12/Ramure/releases): its pencil, not "Draft a new
+   release". It holds seven files. Install one of them and start the application. Edit the
+   notes, then choose "Publish release". From then on, the installed copies find the new version
+   at their next check.
+
+   Until it is published, a copy of that version that checks for updates says "No published
+   version was found on GitHub.": the files of a draft are not public.
 
 ## What a release holds
 
@@ -90,8 +97,14 @@ The Linux files are built on Ubuntu 22.04, the oldest supported: what is built t
   draft is kept and the files are replaced.
 - **A version that was published is wrong.** Do not replace its files: publish the next patch
   version. Installed copies only move to a higher version.
-- **The signing fails** ("A public key has been found, but no private key"): one of the two
-  secrets is missing or misspelled.
+- **The signing fails.** "A public key has been found, but no private key": one of the two
+  secrets is missing or misspelled. "Missing comment in secret key": the secret
+  `TAURI_SIGNING_PRIVATE_KEY` does not hold the whole content of the key file. Fix the secret,
+  then "Re-run failed jobs".
+- **Installed copies say "No published version was found on GitHub."** The last published
+  release has no `latest.json`. Either the draft of the workflow is not published yet, or a
+  second release was created by hand for the same tag and published in its place, empty. Delete
+  the empty release, keeping its tag, then publish the draft of the workflow.
 
 ## Try the build without releasing
 
