@@ -19,7 +19,8 @@ Free software (MIT), local, no account.
 
 **Status: milestones J1, J2 and J3 are done; J4 is under way.** The J0 prototype validated the graph
 and the SSH terminal on Windows and Ubuntu. Everyday Git (J1), advanced Git (J2) and SSH (J3) are
-complete. J4 brings SFTP, tunnels, installers and updates; the tunnels are there.
+complete. J4 brings SFTP, tunnels, installers and updates; the tunnels and the installers are
+there.
 
 The interface is in English. Where it helps to find something on screen, this page gives its
 label in quotes.
@@ -181,12 +182,28 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Not there yet
 
-- Milestone J4: SFTP, installers and updates.
+- Milestone J4: SFTP and in-app updates.
 - Tunnels are not read from `~/.ssh/config` (LocalForward, RemoteForward, DynamicForward), nor
   written to it, yet (#163).
 - The interface exists in English only: no other language is planned.
 
-## Requirements
+## Install
+
+Each version is published on the [releases page](https://github.com/kihak12/Ramure/releases).
+Ramure needs Git 2.23 or later.
+
+- **Windows 10 and 11**: download `Ramure_…_x64-setup.exe` and run it. It installs for the
+  current user, without administrator rights. The installer is not signed yet: on the first run,
+  Windows shows "Windows protected your PC". Choose "More info", then "Run anyway".
+- **Ubuntu 22.04 and 24.04**: download `Ramure_…_amd64.deb`, then
+  `sudo apt install ./Ramure_…_amd64.deb`. Or download the `.AppImage`, make it executable
+  (`chmod +x`), and run it.
+
+Ramure does not update itself yet: a new version is installed the same way, over the old one.
+
+## Build from the sources
+
+### Requirements
 
 - Git 2.23 or later
 - Node.js 20 or later
@@ -201,7 +218,7 @@ Ubuntu 22.04 and 24.04:
 sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
-## Run
+### Run
 
 ```bash
 npm install
@@ -217,6 +234,12 @@ Optimized build, without an installer (binary in `src-tauri/target/release/`):
 npm run tauri build -- --no-bundle
 ```
 
+With the installers of the system it runs on (in `src-tauri/target/release/bundle/`):
+
+```bash
+npm run tauri build
+```
+
 ## Check
 
 ```bash
@@ -226,9 +249,10 @@ npm run check
 This command checks the types, then rejects any color, text size, weight, radius or duration
 hard-coded in a component: those values come from the tokens in `src/app.css`. It then computes the
 contrasts and the color distances of every color theme, in light and in dark, against those of the
-design guidelines. Last, it rejects two files of `src/` whose names differ only by case, such as
+design guidelines. It rejects two files of `src/` whose names differ only by case, such as
 `Toasts.svelte` and `toasts.svelte.ts`: on Windows an import of one loads the other, and the window
-stays blank.
+stays blank. Last, it checks that the version of the application is the same in every file that
+states it.
 
 ```bash
 cd src-tauri && cargo test
@@ -245,8 +269,9 @@ cd src-tauri && RAMURE_TEST_REPO=/path/to/repository cargo test real_repo -- --n
 | Folder | Content |
 | --- | --- |
 | `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/settings/`, `lib/ui/`; the design tokens are in `app.css` |
-| `docs/` | The [design guidelines](docs/design-guidelines.md), the logo in `logo/`, and screenshots of the application in `screenshots/` |
-| `scripts/` | Checks run by `npm run check`, the tool that derives the application icons from the logo, and the one that takes screenshots of the application on Linux |
+| `docs/` | The [design guidelines](docs/design-guidelines.md), [how to release](docs/releasing.md), the logo in `logo/`, and screenshots of the application in `screenshots/` |
+| `scripts/` | Checks run by `npm run check`, the script that sets the version, the tool that derives the application icons from the logo, and the one that takes screenshots of the application on Linux |
+| `.github/workflows/` | The release workflow, which builds the installers on Windows and Ubuntu |
 | `src-tauri/src/git/` | Running git, the log parser, lane computation |
 | `src-tauri/src/ssh/` | russh sessions, reading `~/.ssh/config`, the host book and keys |
 | `.claude/` | For Claude Code: the `design-reviewer` subagent, which reviews interface changes against the design guidelines, the `ux-designer` subagent, which proposes improvements to a screen, and the trials that measure them |

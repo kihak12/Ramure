@@ -28,13 +28,30 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "deb", "appimage"],
+    "publisher": "Ramure contributors",
+    "homepage": "https://github.com/kihak12/Ramure",
+    "license": "MIT",
+    "category": "DeveloperTool",
+    "shortDescription": "Graphical Git client and SSH client",
+    "longDescription": "A graphical Git client and an SSH client in one window: commit graph, staging by line, interactive rebase, a host book, terminals and tunnels. Local, no account.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["git"],
+        "section": "devel"
+      }
+    }
   }
 }
