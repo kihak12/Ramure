@@ -183,10 +183,10 @@
 </section>
 
 <style>
-  /* A small button, 24 px, centered where a field, 32 px, would be: level with the name. */
+  /* A small button, 24 px: 2 px lower, it is level with the name. */
   .check {
     justify-self: start;
-    margin-top: 4px;
+    margin-top: 2px;
   }
   p {
     margin: 0;

@@ -1664,7 +1664,8 @@ section of the module (9.18): the dot on "General" leads the rest of the way.
 **The group "Updates"**, in "General", under "Appearance".
 
 - **"Version 0.3.0"**, the version that runs. Its control is "Check for updates", a small
-  standard button, disabled while it runs. Under it, as for the test of a host (9.15):
+  standard button, disabled while it runs, and while a version downloads, is ready or installs:
+  that version is not looked for again. Under it, as for the test of a host (9.15):
   - while it runs, the waiting ring and "Checking for updates…";
   - the check icon in `--ok` and "Ramure is up to date.", then when, in `--muted`: "Checked just
     now.", "Checked 5 min ago.";
