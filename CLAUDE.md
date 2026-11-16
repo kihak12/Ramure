@@ -7,7 +7,8 @@ Tauri 2, Rust, Svelte 5.
 
 - `npm run check`: types, then design tokens (no hard-coded style value in a component), then
   the contrasts and color distances of every color theme, then file names (no two files of
-  `src/` that differ only by case: Windows would confuse them).
+  `src/` that differ only by case: Windows would confuse them), then the version (the same in
+  every file that states it; `npm run version:set -- 0.2.0` writes it, `docs/releasing.md`).
 - `cd src-tauri && cargo test`.
 
 ## Design
