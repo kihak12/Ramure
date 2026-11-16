@@ -179,7 +179,9 @@ mod tests {
     #[test]
     fn a_passphrase_belongs_to_a_key_file() {
         let secret = Secret::Passphrase { path: "/home/camille/.ssh/id_ed25519".into() };
-        assert_eq!(secret.account(), "ssh-passphrase:/home/camille/.ssh/id_ed25519");
+        // On Windows the path takes the separators of the system, and lower case.
+        let expected = if cfg!(windows) { r"ssh-passphrase:\home\camille\.ssh\id_ed25519" } else { "ssh-passphrase:/home/camille/.ssh/id_ed25519" };
+        assert_eq!(secret.account(), expected);
     }
 
     #[cfg(unix)]

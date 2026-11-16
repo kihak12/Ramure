@@ -4,6 +4,7 @@
 
 use std::io;
 use std::net::{Ipv4Addr, Ipv6Addr};
+use std::time::Duration;
 
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
@@ -112,15 +113,30 @@ pub async fn handshake<S: AsyncRead + AsyncWrite + Unpin>(s: &mut S) -> Result<T
     }
     .await;
     match &result {
-        Err(Refusal::NoMethod) => {
-            let _ = s.write_all(&[VERSION, NO_ACCEPTABLE_METHOD]).await;
-        }
-        Err(Refusal::Reply(code)) => {
-            let _ = s.write_all(&reply(*code)).await;
-        }
+        Err(Refusal::NoMethod) => refuse(s, &[VERSION, NO_ACCEPTABLE_METHOD]).await,
+        Err(Refusal::Reply(code)) => refuse(s, &reply(*code)).await,
         _ => {}
     }
     result
+}
+
+/// How long a refused client is given to end its side, once it has its answer.
+const LINGER: Duration = Duration::from_millis(500);
+
+/// Answers a client that is not carried, then ends the exchange without a reset. A refusal
+/// comes before the whole request is read: closing with bytes unread resets the connection, and
+/// on Windows the client then loses the answer it was sent. So the answer goes, then the end of
+/// the stream, then what the client had still sent is read and dropped, until it ends its side.
+async fn refuse<S: AsyncRead + AsyncWrite + Unpin>(s: &mut S, answer: &[u8]) {
+    if s.write_all(answer).await.is_err() {
+        return;
+    }
+    let _ = s.shutdown().await;
+    let mut rest = [0; 512];
+    let _ = tokio::time::timeout(LINGER, async {
+        while matches!(s.read(&mut rest).await, Ok(n) if n > 0) {}
+    })
+    .await;
 }
 
 #[cfg(test)]
@@ -200,5 +216,22 @@ mod tests {
         let mut answer = [0; 2];
         client.read_exact(&mut answer).await.unwrap();
         assert_eq!(answer, [5, 0xff]);
+    }
+
+    #[tokio::test]
+    async fn a_refused_request_is_read_to_its_end() {
+        // BIND is refused after the first four bytes of the request. The six that follow are read
+        // too: a stream closed with bytes unread is reset, and the client loses its answer.
+        let (mut client, mut proxy) = tokio::io::duplex(64);
+        client.write_all(&[5, 1, 0, 5, 2, 0, 1, 10, 0, 0, 7, 0, 22]).await.unwrap();
+        client.shutdown().await.unwrap();
+        assert!(matches!(handshake(&mut proxy).await, Err(Refusal::Reply(COMMAND_NOT_SUPPORTED))));
+        let mut rest = [0; 16];
+        assert_eq!(proxy.read(&mut rest).await.unwrap(), 0, "bytes of the request were left unread");
+        // The client has its answer, then the end of the stream.
+        drop(proxy);
+        let mut answer = Vec::new();
+        client.read_to_end(&mut answer).await.unwrap();
+        assert_eq!(answer, [5, 0, 5, 7, 0, 1, 0, 0, 0, 0, 0, 0]);
     }
 }
