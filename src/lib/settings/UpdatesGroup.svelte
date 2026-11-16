@@ -154,7 +154,7 @@
             <p class="wait"><span class="spinner" aria-hidden="true"></span>Ramure restarts when it is done.</p>
           {:else}
             <p class="head">Version {found.version} is available</p>
-            <p>{#if found.published}Published {day.format(found.published)}. {/if}What changed is on {RELEASES}.</p>
+            <p>{found.published ? `Published ${day.format(found.published)}. ` : ''}What changed is on {RELEASES}.</p>
           {/if}
         </div>
         {#if phase === 'available'}
