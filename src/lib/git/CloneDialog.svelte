@@ -3,6 +3,7 @@
   import { Channel, invoke } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
+  import ProgressBar from '../ui/ProgressBar.svelte';
   import { toasts } from '../ui/toasts.svelte';
   import type { CommandLog, Done } from './types';
   import { workspace } from './workspace.svelte';
@@ -141,7 +142,7 @@
     <div class="status">
       {#if running}
         <div class="progress" role="status">
-          <div class="bar" class:known={!Number.isNaN(percent)}><span style:width="{Number.isNaN(percent) ? 35 : percent}%"></span></div>
+          <ProgressBar percent={Number.isNaN(percent) ? null : percent} />
           <small class="mono">{progress}</small>
         </div>
       {:else if error}
@@ -230,33 +231,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .bar {
-    position: relative;
-    height: 6px;
-    border-radius: var(--radius-pill);
-    background: var(--line);
-    overflow: hidden;
-  }
-  .bar span {
-    position: absolute;
-    inset: 0 auto 0 0;
-    border-radius: var(--radius-pill);
-    background: var(--accent);
-    animation: sweep var(--t-wait) var(--ease) infinite;
-  }
-  /* Known percentage: the bar moves forward instead of sweeping. */
-  .bar.known span {
-    animation: none;
-    transition: width var(--t-med) var(--ease);
-  }
-  @keyframes sweep {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(290%);
-    }
   }
   .error {
     display: flex;

@@ -17,6 +17,7 @@
   import Notifications from './lib/ui/Notifications.svelte';
   import SettingsPage from './lib/settings/SettingsPage.svelte';
   import { settingsPage } from './lib/settings/settings.svelte';
+  import { updates } from './lib/ui/updates.svelte';
 
   // Closing the window stops every local terminal: if a program runs in one, ask first.
   // An error must never prevent quitting: when in doubt, the window closes.
@@ -30,6 +31,12 @@
       }
     });
     return () => void stop.then((off) => off());
+  });
+
+  // Updates (guidelines, 9.23): what this copy is, then the automatic check.
+  onMount(() => {
+    void updates.start();
+    return () => updates.stop();
   });
 
   type View = 'git' | 'ssh';
@@ -127,11 +134,13 @@
       bind:this={settingsButton}
       type="button"
       aria-pressed={settingsPage.open}
-      title="Settings{keys.binding('settings') ? ` (${display(keys.binding('settings'))})` : ''}"
-      aria-label="Settings"
+      title="Settings{keys.binding('settings') ? ` (${display(keys.binding('settings'))})` : ''}{updates.waiting ? ' · Update available' : ''}"
+      aria-label={updates.waiting ? 'Settings, update available' : 'Settings'}
       onclick={toggleSettings}
     >
       <Icon name="settings" size={18} />
+      <!-- A version waits: said by the tooltip and the name of the button too (guidelines, 9.23). -->
+      {#if updates.waiting}<span class="dot" aria-hidden="true"></span>{/if}
     </button>
   </nav>
 
@@ -208,6 +217,16 @@
   }
   .rail button[aria-pressed='true']::before {
     transform: scaleY(1);
+  }
+  /* At the top right of the icon, as the badge of a toolbar button (guidelines, 9.2 and 9.23). */
+  .dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
   }
   main {
     position: relative;

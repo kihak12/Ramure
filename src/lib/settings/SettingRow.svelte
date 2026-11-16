@@ -8,6 +8,7 @@
    * `busy`: the setting is being applied, and what that is doing.
    * `group`: the control is a choice (section 9.19). It sits under the name, on the whole width,
    * and `{id}-name` is what names it.
+   * `fact`: the name states something and labels no field: its control, a button, names itself.
    */
   let {
     id,
@@ -16,13 +17,14 @@
     error = '',
     busy = '',
     group = false,
+    fact = false,
     children,
-  }: { id: string; name: string; help?: string; error?: string; busy?: string; group?: boolean; children: Snippet } = $props();
+  }: { id: string; name: string; help?: string; error?: string; busy?: string; group?: boolean; fact?: boolean; children?: Snippet } = $props();
 </script>
 
 <div class="setting" class:group>
   <div class="text">
-    {#if group}
+    {#if group || fact}
       <span class="name" id="{id}-name">{name}</span>
     {:else}
       <label class="name" for={id}>{name}</label>
@@ -30,7 +32,7 @@
     {#if help}<p id="{id}-help">{help}</p>{/if}
   </div>
   <div class="control">
-    {@render children()}
+    {@render children?.()}
     {#if error}
       <p class="error" id="{id}-error" role="alert">{error}</p>
     {:else if busy}

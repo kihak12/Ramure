@@ -5,6 +5,7 @@
   import SettingRow from './SettingRow.svelte';
   import { theme } from './theme.svelte';
   import ThemePreview from './ThemePreview.svelte';
+  import UpdatesGroup from './UpdatesGroup.svelte';
 
   const THEMES = [
     { value: 'system', label: 'System' },
@@ -21,7 +22,7 @@
     { value: 'ember', label: 'Ember', help: 'Charcoal or cream, amber accent, close to the warning color.' },
   ] as const satisfies readonly { value: Palette; label: string; help: string }[];
 
-  const changed = $derived(prefs.theme !== DEFAULTS.theme || prefs.palette !== DEFAULTS.palette);
+  const changed = $derived(prefs.theme !== DEFAULTS.theme || prefs.palette !== DEFAULTS.palette || prefs.updateCheck !== DEFAULTS.updateCheck);
 
   function setTheme(choice: ThemeChoice) {
     savePrefs({ theme: choice });
@@ -38,12 +39,14 @@
   title="General"
   {changed}
   onreset={() => {
-    const before = { theme: prefs.theme, palette: prefs.palette };
+    const before = { theme: prefs.theme, palette: prefs.palette, updateCheck: prefs.updateCheck };
     setTheme(DEFAULTS.theme);
     setPalette(DEFAULTS.palette);
+    savePrefs({ updateCheck: DEFAULTS.updateCheck });
     return () => {
       setTheme(before.theme);
       setPalette(before.palette);
+      savePrefs({ updateCheck: before.updateCheck });
     };
   }}
 />
@@ -61,3 +64,5 @@
     </Choice>
   </SettingRow>
 </section>
+
+<UpdatesGroup />

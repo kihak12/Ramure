@@ -72,3 +72,60 @@ export async function mayQuit(sessions: Session[]): Promise<boolean> {
       : `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`;
   return dialogs.confirm({ title: 'Quit Ramure?', body, confirmLabel: 'Quit', danger: true });
 }
+
+/** What a restart would close in one repository tab. */
+export interface OpenRepo {
+  name: string;
+  /** A commit message is typed and not committed. */
+  message: boolean;
+  /** Git is working: a fetch, a commit, a rebase. */
+  busy: boolean;
+}
+
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
+
+/**
+ * What installing an update would lose, one line each (guidelines, 9.23): the restart closes SSH
+ * sessions and their tunnels, local terminals, and what a repository tab does not keep.
+ */
+export async function restartLosses(sessions: Session[], tunnels: number, repos: OpenRepo[]): Promise<string[]> {
+  const lines: string[] = [];
+  const remote = sessions.filter((s) => s.kind === 'ssh' && s.status !== 'closed').length;
+  if (remote) {
+    const closed = remote === 1 ? '1 SSH session will be closed' : `${remote} SSH sessions will be closed`;
+    lines.push(tunnels ? `${closed}, and ${plural(tunnels, 'tunnel')} with ${remote === 1 ? 'it' : 'them'}.` : `${closed}.`);
+  }
+  const { programs, unknown } = await running(sessions);
+  if (programs) {
+    lines.push(
+      programs === 1
+        ? `A program is running in a terminal. It will be stopped ${LOST}.`
+        : `Programs are running in ${programs} terminals. They will be stopped and their output lost.`,
+    );
+  } else if (unknown) {
+    lines.push(
+      unknown === 1
+        ? `A terminal is open. Whatever runs in it will be stopped ${LOST}.`
+        : `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`,
+    );
+  }
+  for (const repo of repos) {
+    if (repo.busy) lines.push(`Git is working in ${repo.name}. Restarting now would stop it.`);
+    if (repo.message) lines.push(`The commit message in ${repo.name} will be lost.`);
+  }
+  return lines;
+}
+
+/** "Restart and install…": always asks, and says what the restart would lose. */
+export async function mayRestart(version: string, installer: string | null, losses: string[]): Promise<boolean> {
+  const system =
+    installer === 'deb' ? 'Ubuntu will ask for your administrator password.' : installer === 'nsis' ? 'The installer opens, then Ramure starts again.' : '';
+  return dialogs.confirm({
+    title: `Restart and install ${version}?`,
+    body: 'Ramure closes, installs the update and opens again. Your repository tabs come back.',
+    warning: losses.join('\n') || undefined,
+    note: system || undefined,
+    confirmLabel: 'Restart and install',
+    danger: losses.length > 0,
+  });
+}

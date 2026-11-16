@@ -55,6 +55,7 @@
       {#if spec.warning}
         <p class="warning"><Icon name="warning" /> <span>{spec.warning}</span></p>
       {/if}
+      {#if spec.note}<p class="body">{spec.note}</p>{/if}
 
       {#each fields as field, i (field.name)}
         {#if field.type === 'checkbox'}
@@ -178,8 +179,10 @@
     background: var(--warn-soft);
     color: var(--warn);
   }
+  /* One line per thing to warn of. */
   .warning span {
     color: var(--ink);
+    white-space: pre-line;
   }
   .row {
     display: flex;

@@ -8,6 +8,7 @@
 #
 #   SCREEN_KEYRING=1 scripts/screen.sh open …           with a system keyring, empty and unlocked
 #   SCREEN_KEYRING=0 scripts/screen.sh open …           with no keyring at all
+#   SCREEN_BIN=/usr/bin/ramure scripts/screen.sh open … an installed copy, not the build
 #
 # Between "open" and "capture", xdotool drives the application, on display :99:
 #   DISPLAY=:99 xdotool mousemove 760 138 click 1
@@ -18,7 +19,8 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
-bin=$root/src-tauri/target/release/ramure
+# SCREEN_BIN: another copy to run, an installed one for instance (/usr/bin/ramure).
+bin=${SCREEN_BIN:-$root/src-tauri/target/release/ramure}
 home=${TMPDIR:-/tmp}/ramure-screen
 size=1440x880 # the size of the window, in src-tauri/tauri.conf.json
 export DISPLAY=:99
