@@ -29,7 +29,7 @@
   "plugins": {
     "updater": {
       "endpoints": ["https://github.com/kihak12/Ramure/releases/latest/download/latest.json"],
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFCOEUwOTQyMzBGREI3RjgKUldUNHQvMHdRZ21PcTdiRHYrWEZrTmtKQll3WjhycDNZdStsNlZ2Rm1CdlVBNWFlQmYzUlhGNUoK",
       "requireSignedVersion": true,
       "windows": {
         "installMode": "passive"
