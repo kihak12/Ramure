@@ -19,8 +19,7 @@ Free software (MIT), local, no account.
 
 **Status: milestones J1, J2 and J3 are done; J4 is under way.** The J0 prototype validated the graph
 and the SSH terminal on Windows and Ubuntu. Everyday Git (J1), advanced Git (J2) and SSH (J3) are
-complete. J4 brings SFTP, tunnels, installers and updates; the tunnels and the installers are
-there.
+complete. J4 brings SFTP, tunnels, installers and updates; all but SFTP are there.
 
 The interface is in English. Where it helps to find something on screen, this page gives its
 label in quotes.
@@ -179,10 +178,14 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - **Configurable keyboard shortcuts**: in the settings, under "Keyboard shortcuts", with a
   filter. In a terminal, only shortcuts with Shift, Alt or a function key are active.
 - **Command log**: every git command that was run, with its duration, from the status bar.
+- **Updates**: "General" shows the version that runs and checks for a newer one. The download
+  is verified against the signature of the release before anything is installed. Before the
+  restart, Ramure lists what it would close: SSH sessions and their tunnels, terminals where
+  programs run, a commit message being typed.
 
 ### Not there yet
 
-- Milestone J4: SFTP and in-app updates.
+- Milestone J4: SFTP.
 - Tunnels are not read from `~/.ssh/config` (LocalForward, RemoteForward, DynamicForward), nor
   written to it, yet (#163).
 - The interface exists in English only: no other language is planned.
@@ -199,7 +202,11 @@ Ramure needs Git 2.23 or later.
   `sudo apt install ./Ramure_…_amd64.deb`. Or download the `.AppImage`, make it executable
   (`chmod +x`), and run it.
 
-Ramure does not update itself yet: a new version is installed the same way, over the old one.
+An installed copy says when a newer version exists, with a dot on the "Settings" button, and
+installs it from "Settings", "General", "Updates": "Download update", then "Restart and
+install…". It asks GitHub at startup, then once a day, and never downloads or installs anything
+on its own; "Automatic update check" turns the check off. A copy built from the sources does not
+update itself.
 
 ## Build from the sources
 

@@ -4,6 +4,7 @@
   import GitSection from './GitSection.svelte';
   import KeysSection from './KeysSection.svelte';
   import SshSection from './SshSection.svelte';
+  import { updates } from '../ui/updates.svelte';
   import { SECTIONS, settingsPage } from './settings.svelte';
 
   // The settings page (guidelines, section 9.18): the navigation on the left, the section on the right.
@@ -43,6 +44,8 @@
         onclick={() => (settingsPage.section = section.id)}
       >
         {section.title}
+        <!-- An update waits: the dot leads to the group "Updates" (guidelines, 9.23). -->
+        {#if section.id === 'general' && updates.waiting}<span class="dot" aria-hidden="true"></span><span class="spoken">Update available</span>{/if}
       </button>
     {/each}
   </nav>
@@ -99,6 +102,17 @@
   }
   .nav button:hover {
     background: var(--hover);
+  }
+  .nav button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
   }
   .nav button[aria-selected='true'] {
     background: var(--sel);

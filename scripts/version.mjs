@@ -4,7 +4,8 @@
 //
 //   node scripts/version.mjs               checks that they agree
 //   node scripts/version.mjs 0.2.0         writes 0.2.0 in all of them
-//   node scripts/version.mjs --tag v0.2.0  checks that they agree and match the tag of a release
+//   node scripts/version.mjs --tag v0.2.0  checks that they agree and match the tag of a release,
+//                                          and that the releases can be verified by the updater
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -58,6 +59,13 @@ if (!arg) {
     process.exit(1);
   }
   check(value.slice(1));
+  // A release without the public key of the updater would install copies that can never update.
+  const updater = JSON.parse(read('src-tauri/tauri.conf.json')).plugins?.updater;
+  if (!updater?.pubkey?.trim()) {
+    console.error('src-tauri/tauri.conf.json: plugins.updater.pubkey is empty. See "Once: the key of the updates" in docs/releasing.md.');
+    process.exit(1);
+  }
+  console.log('Updates: the public key is set.');
 } else if (SEMVER.test(arg)) {
   for (const file of files) {
     let text = read(file.name);

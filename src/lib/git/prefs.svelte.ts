@@ -30,9 +30,11 @@ export interface Settings {
   sshReconnect: boolean;
   /** The folder of session logs; empty for the default one (guidelines, 9.15, 9.18). */
   journalDir: string;
+  /** Ramure asks GitHub at startup, then once a day, whether a newer version exists (guidelines, 9.23). */
+  updateCheck: boolean;
 }
 
-export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'slate', sshReconnect: true, journalDir: '' };
+export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'slate', sshReconnect: true, journalDir: '', updateCheck: true };
 
 /** Bounds of the automatic fetch, in minutes. */
 export const AUTO_FETCH = { min: 0, max: 60 } as const;

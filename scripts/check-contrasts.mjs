@@ -86,6 +86,9 @@ function check(name, t, dark) {
   // line), and the --accent icon of an active module or of a pressed action shows on them.
   for (const bg of ['--accent-soft', '--ok-soft', '--warn-soft', '--bad-soft']) need(`--ink on ${bg}`, contrast(t['--ink'], t[bg]), 7);
   need('--accent on --accent-soft', contrast(t['--accent'], t['--accent-soft']), 3);
+  // The dot that says an update waits: on the rail, at rest and hovered, and on the entry
+  // "General" of the settings, current or hovered (9.23).
+  for (const bg of ['--side', '--hover-side', '--sel', '--hover']) need(`--accent on ${bg}`, contrast(t['--accent'], t[bg]), 3);
   // States: in a card, in a field, and in a dialog (the result of a test).
   for (const state of ['--ok', '--warn', '--bad']) {
     for (const bg of ['--panel', '--bg', '--raised']) need(`${state} on ${bg}`, contrast(t[state], t[bg]), 4.5);

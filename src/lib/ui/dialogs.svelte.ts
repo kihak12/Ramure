@@ -21,8 +21,10 @@ export interface DialogSpec {
   title: string;
   /** Explanatory text, under the title. */
   body?: string;
-  /** Warning, shown in a box. */
+  /** Warning, shown in a box; one line per thing to warn of. */
   warning?: string;
+  /** A last word under the warning, in muted text: what happens next. */
+  note?: string;
   fields?: Field[];
   /** The label of the button that confirms: a verb and its object, never "OK" (guidelines, 9.1). */
   confirmLabel: string;

@@ -53,8 +53,13 @@
       <h2>{spec.title}</h2>
       {#if spec.body}<p class="body">{spec.body}</p>{/if}
       {#if spec.warning}
-        <p class="warning"><Icon name="warning" /> <span>{spec.warning}</span></p>
+        <!-- One line per thing to warn of, apart from the next: a line that wraps is not read as two. -->
+        <div class="warning">
+          <Icon name="warning" />
+          <div class="lines">{#each spec.warning.split('\n') as line (line)}<p>{line}</p>{/each}</div>
+        </div>
       {/if}
+      {#if spec.note}<p class="body">{spec.note}</p>{/if}
 
       {#each fields as field, i (field.name)}
         {#if field.type === 'checkbox'}
@@ -174,12 +179,17 @@
     gap: 8px;
     margin: 0;
     padding: 8px 10px;
-    border-radius: var(--radius-s);
+    border-radius: var(--radius);
     background: var(--warn-soft);
     color: var(--warn);
   }
-  .warning span {
+  .lines {
+    display: grid;
+    gap: 4px;
     color: var(--ink);
+  }
+  .lines p {
+    margin: 0;
   }
   .row {
     display: flex;

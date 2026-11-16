@@ -5,6 +5,7 @@ mod git;
 mod journal;
 mod local;
 mod ssh;
+mod update;
 
 use tauri::{Emitter, Manager};
 
@@ -20,9 +21,11 @@ pub fn run() {
     }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ssh::SshState::default())
         .manage(local::LocalState::default())
         .manage(git::clone::CloneState::default())
+        .manage(update::Updates::default())
         .setup(|app| {
             // Host book: %APPDATA%\Ramure on Windows, ~/.config/ramure elsewhere.
             let folder = if cfg!(windows) { "Ramure" } else { "ramure" };
@@ -56,6 +59,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            update::update_info,
+            update::update_check,
+            update::update_download,
+            update::update_cancel,
+            update::update_install,
             git::git_log,
             git::work::git_status,
             git::work::git_diff_file,
