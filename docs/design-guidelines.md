@@ -3,7 +3,7 @@
 The reference for Ramure's design: colors, type, spacing, shapes, motion, every component, the
 tone of the interface text and the logo.
 
-- **Scope:** the whole interface, Git and SSH modules.
+- **Scope:** the whole interface: the Git, SSH and Files modules.
 - **Ground rule:** when the code and the guidelines disagree, the guidelines are right. A rule
   changes in the guidelines first, through a pull request, and in the code second
   ([section 14](#14-changing-the-guidelines)).
@@ -52,6 +52,7 @@ The two screenshots show the application as it is, on a demonstration repository
    - [9.21 Host form](#921-host-form)
    - [9.22 Uncommitted changes](#922-uncommitted-changes)
    - [9.23 Updates](#923-updates)
+   - [9.24 Files](#924-files)
 10. [Commit graph](#10-commit-graph)
 11. [Accessibility](#11-accessibility)
 12. [Tone of the interface text](#12-tone-of-the-interface-text)
@@ -353,7 +354,7 @@ From left to right and from top to bottom:
 
 | Area | Dimension | Background |
 |---|---|---|
-| Module rail (Git, SSH); at its foot, the search and the settings | 48 px wide | `--side` |
+| Module rail (Git, SSH, Files); at its foot, the search and the settings | 48 px wide | `--side` |
 | Tab bar | tabs 30 px high | `--side` |
 | Toolbar | full width | `--side` |
 | The cards of a repository: the branch list, the center, the detail panel. The center holds the graph and, under it, the terminal of the repository when it is shown (9.20) | 8 px apart; the two side cards can be resized (9.16); each card can be hidden (9.17) | `--panel` |
@@ -367,6 +368,8 @@ From left to right and from top to bottom:
 - When a side card is hidden, the gap of its handle goes with it: the center card sits 8 px from
   the edge of the window.
 - The settings page takes the place of the module, to the right of the rail (9.18).
+- The SSH module has the host book on its left and the terminals on its right (9.15); the Files
+  module, a row of panes and, under them, the transfers (9.24).
 
 ### 4.3 Heights
 
@@ -441,9 +444,11 @@ The interface has four levels. Each is recognized by its background.
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
   leaves it, the same sheet turned over, for an export, the sheet with lines for the log of a
-  session, the tunnel for an SSH tunnel, the pencil for an edit or a change, the trash for a
-  deletion, the square for stopping or aborting, the circling arrows for doing again or waiting
-  to: reload, reconnect, a tunnel waiting for its connection. An icon that stands for a git
+  session, the tunnel for an SSH tunnel, the folder for a folder and for the Files module, the
+  sheet with a folded corner for a file, the folder with a plus for a new folder, the pencil for
+  an edit or a change, the trash for a deletion, the square for stopping or aborting, the
+  circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
+  connection. An icon that stands for a git
   command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
@@ -1763,6 +1768,152 @@ next start does not bring back.
 - Once confirmed, the dialog closes and the box says "Installing version 0.4.0…". Ramure does
   not ask "Quit Ramure?" again.
 
+### 9.24 Files
+
+The third module of the rail: the files of this machine and of the hosts of the book, side by
+side, to copy from one to another by dragging them. A host is reached over SFTP, through the
+same connection, fingerprint check and secrets as a terminal (9.15).
+
+**The module.** "Files" in the rail, after "SSH terminal", with the folder icon. Ctrl + Shift + L,
+or "Show files" in the palette, shows it from anywhere. It sits on `--side`, with 8 px around
+its cards, like the other modules.
+
+**Panes.** The module is a row of panes, each one a card (9.8) that shows one folder of one
+place: "This machine", or a host of the book.
+
+- The panes share the width equally, 300 px at the least, and four at the most: three fit in a
+  window 1000 px wide, four at 1440 px. When they do not fit, the row scrolls sideways with the
+  thin scrollbar (9.6), and each keeps its 300 px.
+- The first time, the module opens on two panes: "This machine" in the home folder, and an empty
+  pane to choose a location. It then comes back as it was left: the same panes, on the same
+  folders. A host is never connected at launch: its pane says "Not connected" and offers
+  "Connect", so that three panes never ask three passwords at once.
+- **An empty pane** chooses its location: the title "Choose a location", the filter field of the
+  host book (9.3) when the book has hosts, then a list (9.6): "This machine" with the computer
+  icon and the home folder under it, then the hosts as the book shows them, in their groups,
+  with their color bar, their name and their address (9.21). A click or Enter opens one: nothing
+  else can be done with a row. With no host, a sentence says where they come from, "Add hosts in
+  the SSH module to browse their files.", and "Show SSH terminal", a small standard button, goes
+  there.
+- **The header** of a pane, 35 px, says where it is. Its location is a ghost button, which opens
+  the menu of the locations under it (9.9): "This machine", then the hosts. For a host: the 8 px
+  dot of its tab (9.15), in its color or `--ok`, then its name in weight 650 and its address in
+  the code font and `--muted`, cut first. For this machine: the computer icon and "This
+  machine". A state follows as a fragment (12): "connecting…". On the right, two ghost buttons
+  made of an icon alone, 24 × 24 px: "Add pane", which adds an empty pane to the right of this
+  one and is disabled at four, its tooltip saying why ("Four panes at most. Close one first."),
+  and "Close pane". The last pane is never closed: it becomes empty.
+- "Browse files", in the menu of a host in the book, shows the module with that host: in the
+  empty pane if there is one, otherwise in a new pane, or in place of the last pane at four.
+
+**The path bar**, 36 px, under the header: "Up" (an icon alone, Backspace or Alt + ↑ from the
+list), then the folder as a path of segments in the interface font, each a ghost button 24 px
+high that opens its folder, "/" between them in `--faint`. A path too long for the pane gives
+way on the left: its last segments stay. A click on the bar, past the segments, turns it into a
+field (9.3) with the path selected: Enter opens what is typed, `~` being the home folder, and
+Escape gives the segments back; a folder that cannot be opened turns the field to its error
+state, with the reason under it. Then four ghost buttons made of an icon alone: "Type a path",
+the pencil, which does the same from the keyboard, "Refresh" (F5 from the list), "Show hidden
+files", a toggle (9.1) with the eye icon, pressed while the files whose name starts with a dot,
+and those Windows hides, are listed, and "New folder…".
+
+**The list.** A header of columns, 26 px, "Name", "Modified" and "Size", separated from the rows
+by a `--line-soft` line: a click sorts by the column, a second click reverses the order, and a
+chevron in `--muted` says which column sorts and which way. Folders always come first. Then rows
+of 24 px (4.3, 9.6):
+
+- the folder icon or the file icon, 16 px in `--muted`, never colored; the name, cut with an
+  ellipsis and whole in its tooltip; for a link, the word "link" after it, in `--muted` at
+  11.5 px, as "partly" (9.6). A link to a folder opens as a folder.
+- "Modified", the short date in 12 px and `--muted` ("Nov 9, 2026"), the full date and the time
+  in its tooltip; it gives way under 420 px of pane, as the columns of the graph do (10.1).
+- "Size", aligned on the right, in tabular figures, in kB, MB and GB of 1,000 bytes ("12.4 MB");
+  empty for a folder.
+- **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
+  selects up to it, Ctrl + A selects them all. The arrows move the current row, with the inner
+  ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
+  folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
+- **The menu of a row**: "Open" for a folder, "Copy to …" for each other pane on another place
+  and "Move to …" for each other pane on the same place, naming the pane and its folder ("Copy to
+  staging · /var/www"): the keyboard way to do what dragging does. Then "Rename…", "New
+  folder…", "Copy path", and after a separator "Delete…".
+- **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12
+  selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
+- **While it lists**, the waiting ring and "Loading…" take the place of the count, and the rows
+  of the folder it leaves stay at 45% until the new ones come. A folder that cannot be listed
+  says why in place of the rows, the warning icon in `--bad` before the sentence ("Access denied
+  to /root. Check its permissions."), with "Go up", a small standard button.
+- "Rename…", "New folder…" and "Delete…" open a dialog (9.10). The rename has one field, its
+  name selected up to the extension; a name that is taken is refused under the field. The
+  deletion says what is lost: "Delete 3 items from staging?", "They are deleted from the server
+  for good, with what the folders hold: they cannot be recovered.", or "from this machine",
+  "… they do not go to the trash", with "Cancel", which has the focus, and "Delete", a danger
+  button.
+- Nothing lists again on its own, except after an action of the pane or a transfer into it:
+  "Refresh" does it.
+
+**Dragging.** The selection is dragged from one pane to another, or onto a folder of the same
+pane. A row dragged outside the selection becomes the selection. The rows dragged stay in place
+at half opacity (9.6).
+
+- **What receives it.** A folder row receives the drop into that folder: it takes the 2 px
+  outline in `--accent`, inside the row, as a branch label does (9.4). Anywhere else in the list
+  of a pane, the drop goes into the folder the pane shows: the list takes an `--accent-soft`
+  tint. Nothing else changes size or place.
+- **What it does.** Between two places, a drop copies. On one place, the same pane or two panes
+  on the same host, it moves: a rename, nothing is copied. Ctrl, held at the drop, copies there
+  too. While the pointer is over a pane, its foot says it in `--ink`: "Copy 3 items here", "Move
+  2 items into releases". A drop that cannot be made is refused, with the "not allowed" cursor and
+  the reason in the foot: "Already in this folder.", "A folder cannot go into itself.", "Not
+  connected."
+- **A name already there.** A copy that would replace something first asks (9.10): "Replace 2
+  items in releases?", the names, "A replaced file cannot be recovered. A folder is merged: only
+  the files of the same name inside it are replaced.", then "Cancel", which has the focus, "Skip
+  them", and "Replace", a danger button. A move never replaces: what is taken stays where it is,
+  and a warning notification says so ("2 items were not moved", the names in its detail).
+- A file is written under a name of its own, then takes its name once whole: a file already
+  there is only replaced by a whole one, and a transfer that stops leaves no half file.
+
+**Transfers.** A copy runs in the background. While there is one, or a result to read, a card
+"Transfers" sits under the panes, as wide as the row, 8 px below it; it goes when it is empty.
+
+- Its header: "Transfers · 2" in 12 px, weight 650, `--muted`, and "Clear finished", a small
+  ghost button, disabled while every transfer runs.
+- One row each, 28 px; past three rows the card scrolls. From left to right: the state, its icon
+  and its word in a column of their own (12), only the icon taking the state color: "Counting…"
+  and "Copying…" (the 12 px ring), "Copied" (check, `--ok`), "Incomplete" (warning, `--warn`),
+  "Failed" (warning, `--bad`), "Canceled" (stop); what is copied, "dist" or "3 items", then the
+  way it goes in `--muted`, "This machine → staging"; between two hosts, its tooltip says that
+  the files go through this machine. Then a bar of 120 px (9.23), and "18.4 of 60 MB · 12 of 40
+  files" in 11.5 px and tabular figures. Last, a ghost button made of an icon alone: "Cancel
+  transfer" (stop) while it runs, "Retry" (refresh) after a failure, "Remove" (cross) once it is
+  over.
+- Under a row that ended badly, in 11.5 px, what happened and what to do: in `--bad` the reason
+  of a failure, "The connection to staging was lost. Connect again, then retry."; for an
+  incomplete one, in `--muted`, what was not copied and why, the first one named ("2 items could
+  not be copied. app.log: Access denied to /var/log/app.log."), what was left out because it was
+  already there, and the links to a folder, which are not followed.
+- A copy that ends lists the folder it went to again, in the pane that shows it, and its items
+  become the selection there: that is the answer, with no notification.
+- "Cancel transfer" stops at once: the file being written goes, the files already copied stay.
+  Closing a pane that a transfer uses asks first (9.10): "Close this pane?", "A transfer to
+  staging is running. It will be stopped; the files already copied stay.", with "Cancel" and
+  "Close pane", a danger button. Closing the window asks the same in "Quit Ramure?" (9.15).
+
+**Connecting.** The pane of a host connects when it is opened or when "Connect" is clicked. What
+the connection says or asks shows in a panel over the list of the pane, under its header, on a
+veil, with the words, the buttons and the focus of the panels of a terminal (9.15):
+"Connecting to `deploy@server`…" with the ring; "Unknown server", its fingerprint, "Trust and
+remember", "Trust this time" and "Cancel"; a password or a passphrase, with "Remember in the
+system keyring"; a fingerprint that has changed. The panel is as wide as the pane allows, 360 px
+at the most, and its text wraps. "Cancel" gives the pane back to the choice of a location.
+
+- A connection that fails, or is lost, says why in plain words (9.15), "Connection failed" or
+  "Connection lost", with "Connect" (main button) and "Choose another location". The rows of a
+  lost connection stay under the veil, dimmed. A pane does not reconnect on its own: a click is
+  enough, and a transfer that was cut says so in its row.
+- Each pane opens its own connection, a secret kept in the keyring makes the second one silent.
+
 ## 10. Commit graph
 
 ### 10.1 Columns
@@ -1837,7 +1988,7 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element. The labels of the graph are reached through
   the branch list (9.4).
-- **Shortcuts.** A shortcut belongs to the whole application or to one module, Git or SSH. A
+- **Shortcuts.** A shortcut belongs to the whole application or to one module, Git, SSH or Files. A
   combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
   searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
   function key are active: the others belong to the shell.
