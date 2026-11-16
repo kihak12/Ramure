@@ -75,6 +75,7 @@ pub struct Updates {
 }
 
 const NO_NETWORK: &str = "Ramure could not reach GitHub. Check your connection, then try again.";
+const NO_RELEASE: &str = "No published version was found on GitHub. Try again later.";
 const NO_INSTALLER: &str = "The new version has no installer for this system yet. Try again later.";
 const DOWNLOAD_FAILED: &str = "The download failed. Check your connection, then try again.";
 const NOT_VERIFIED: &str = "The download did not pass verification and was discarded. Try again.";
@@ -117,6 +118,9 @@ fn check_failure(error: &Error) -> Failure {
     match error {
         // The release exists, but not for this system: its installers are still being built.
         Error::TargetNotFound(_) | Error::TargetsNotFound(_) => Failure::new(NO_INSTALLER, None),
+        // GitHub answered, with an error status: no release is published, or its `latest.json` is
+        // missing. The connection is not at fault, and the reason of the library adds nothing.
+        Error::ReleaseNotFound => Failure::new(NO_RELEASE, None),
         other => Failure::new(NO_NETWORK, Some(other.to_string())),
     }
 }
@@ -272,7 +276,9 @@ mod tests {
         let offline = check_failure(&Error::Network("dns error".into()));
         assert_eq!(offline.message, "Ramure could not reach GitHub. Check your connection, then try again.");
         assert_eq!(offline.reason.as_deref(), Some("`dns error`"));
-        assert_eq!(check_failure(&Error::ReleaseNotFound).message, NO_NETWORK);
+        // GitHub answered, but gave no version to read: the connection is not at fault.
+        let unpublished = check_failure(&Error::ReleaseNotFound);
+        assert_eq!(unpublished, Failure::new("No published version was found on GitHub. Try again later.", None));
         // The release is there, its installer for this system is not: nothing is wrong with the network.
         let missing = check_failure(&Error::TargetsNotFound(vec!["linux-x86_64-deb".into(), "linux-x86_64".into()]));
         assert_eq!(missing, Failure::new("The new version has no installer for this system yet. Try again later.", None));
