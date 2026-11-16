@@ -3,6 +3,7 @@
   import Choice from '../ui/Choice.svelte';
   import SectionHeader from './SectionHeader.svelte';
   import SettingRow from './SettingRow.svelte';
+  import { updates } from '../ui/updates.svelte';
   import { theme } from './theme.svelte';
   import ThemePreview from './ThemePreview.svelte';
   import UpdatesGroup from './UpdatesGroup.svelte';
@@ -22,7 +23,9 @@
     { value: 'ember', label: 'Ember', help: 'Charcoal or cream, amber accent, close to the warning color.' },
   ] as const satisfies readonly { value: Palette; label: string; help: string }[];
 
-  const changed = $derived(prefs.theme !== DEFAULTS.theme || prefs.palette !== DEFAULTS.palette || prefs.updateCheck !== DEFAULTS.updateCheck);
+  // The automatic check is a setting only on a copy that can update itself: elsewhere it is not shown.
+  const checkShown = $derived(updates.info?.canUpdate ?? false);
+  const changed = $derived(prefs.theme !== DEFAULTS.theme || prefs.palette !== DEFAULTS.palette || (checkShown && prefs.updateCheck !== DEFAULTS.updateCheck));
 
   function setTheme(choice: ThemeChoice) {
     savePrefs({ theme: choice });
@@ -42,7 +45,7 @@
     const before = { theme: prefs.theme, palette: prefs.palette, updateCheck: prefs.updateCheck };
     setTheme(DEFAULTS.theme);
     setPalette(DEFAULTS.palette);
-    savePrefs({ updateCheck: DEFAULTS.updateCheck });
+    if (checkShown) savePrefs({ updateCheck: DEFAULTS.updateCheck });
     return () => {
       setTheme(before.theme);
       setPalette(before.palette);

@@ -24,6 +24,8 @@ export interface Available {
 export interface Failure {
   message: string;
   reason: string | null;
+  /** The download is gone: the version is available again, not ready. */
+  discarded?: boolean;
 }
 
 /** The last check: when, whether it was asked for, and why it failed. */
@@ -124,7 +126,7 @@ class Updates {
     }
   }
 
-  /** "Cancel": the download stops; the version is still available. */
+  /** "Stop downloading": the download stops; the version is still available. */
   async cancel() {
     if (this.phase !== 'downloading') return;
     await invoke('update_cancel').catch(() => {});
@@ -139,7 +141,7 @@ class Updates {
       await invoke('update_install');
     } catch (e) {
       this.failed = failure(e, 'The update was not installed. Ramure is unchanged.');
-      this.phase = 'ready';
+      this.phase = this.failed.discarded ? 'available' : 'ready';
     }
   }
 }

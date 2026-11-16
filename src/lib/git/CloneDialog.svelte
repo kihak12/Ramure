@@ -237,7 +237,7 @@
     gap: 8px;
     margin: 0;
     padding: 8px 10px;
-    border-radius: var(--radius-s);
+    border-radius: var(--radius);
     background: var(--bad-soft);
     color: var(--bad);
     white-space: pre-wrap;

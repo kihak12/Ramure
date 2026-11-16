@@ -147,8 +147,9 @@ Eight colors, reserved for the graph. A branch takes the color of its column: co
 - No color is hard-coded in a component. An intermediate shade is made with `color-mix()`
   between two tokens.
 - **The accent** stands for one thing at a time: the main button of a surface (9.1,
-  "Hierarchy"), the focus, the active element, and the changes not yet committed, which the
-  "WIP" row and the strip of the detail panel show (9.22). Never two main buttons in one surface.
+  "Hierarchy"), the focus, the active element, the changes not yet committed, which the
+  "WIP" row and the strip of the detail panel show (9.22), and a newer version that waits, which
+  a dot and the box of the settings show (9.23). Never two main buttons in one surface.
 - **State colors** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
 - **`--faint`** never carries information that is needed: its contrast is too low for text that
   has to be read.
@@ -176,6 +177,7 @@ Every theme must meet them, in light and in dark.
 | `--bad` on `--bad-soft` and `--warn-soft` (ghost danger button, destructive menu item, the banner of an operation) | 4.5:1 |
 | `--accent` and each branch color on `--panel` | 3:1 |
 | `--accent` on `--accent-soft` (the icon of an active module or of a pressed action) | 3:1 |
+| `--accent` on `--side`, `--hover-side`, `--sel` and `--hover` (the dot that says an update waits, 9.23) | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | Each terminal color (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
@@ -310,7 +312,7 @@ Two weights, no more.
 | Token | Weight | Use |
 |---|---|---|
 | `--fw-regular` | 400 | Body text. |
-| `--fw-strong` | 650 | Titles, labels, main button, current element (active tab, current branch), label of a local branch, the sentence of the strip of uncommitted changes (9.22). |
+| `--fw-strong` | 650 | Titles, labels, main button, current element (active tab, current branch), label of a local branch, the sentence of the strip of uncommitted changes (9.22), the first line of the box of an update (9.23). |
 
 ### 3.4 Rules
 
@@ -381,7 +383,7 @@ From left to right and from top to bottom:
 |---|---|---|
 | `--radius-xs` | 4 px | Small markers: shortcut key, file status letter, highlight inside a diff line; the 15 px checkbox. |
 | `--radius-s` | 6 px | What can be clicked: buttons, fields, branch and tag labels, menu items. |
-| `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels; a tinted box inside a card or a dialog (a warning, the strip of uncommitted changes). |
+| `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels; a tinted box inside a card or a dialog (a warning, the strip of uncommitted changes, the box of an update). |
 | `--radius-l` | 12 px | What floats: dialogs, menus, command palette; notifications and the unfolded labels of a commit excepted (8 px). |
 | `--radius-card` | 14 px | Cards. |
 | `--radius-pill` | 999 px | What informs: counters, the "+N" of the labels of a commit (9.4), the capsule of a commit message. |
@@ -413,7 +415,7 @@ The interface has four levels. Each is recognized by its background.
 
 - A shadow says "this floats". A card never has one.
 - No card inside a card. A tinted box inside a card or a dialog (a warning, the strip of
-  uncommitted changes, 9.22) is not one: it has no border and no shadow, only a `-soft`
+  uncommitted changes, 9.22, the box of an update, 9.23) is not one: it has no border and no shadow, only a `-soft`
   background. Inside a card, things are separated by space or by a `--line-soft` line; inside a dialog, by space or by a `--line` line, since `--line-soft` does not show on
   `--raised` in dark (9.6).
 - Shadows are neutral: they do not take the tint of the theme.
@@ -460,7 +462,8 @@ The interface has four levels. Each is recognized by its background.
 Transitions written in script read the same tokens, through `src/lib/ui/motion.ts`.
 
 **What is animated.** Opacity, position (`transform`) and colors. An appearance comes from
-close by: an offset of 6 to 10 px at most. One scale besides the press effect: a color swatch
+close by: an offset of 6 to 10 px at most. One width: the fill of a progress bar, which follows
+what it measures, in `--t-med`. One scale besides the press effect: a color swatch
 grows to 112% on hover, in `--t-fast` (9.21).
 
 **The press effect.** A button shrinks to 97% while it is clicked. This applies to buttons,
@@ -840,8 +843,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 ### 9.10 Dialogs
 
-- To confirm a destructive action, to enter a few values, or to offer a way through when an
-  action would be refused ("Stash and switch"). Never for plain information: that is the role
+- To confirm a destructive action, to enter a few values, to offer a way through when an
+  action would be refused ("Stash and switch"), or to confirm a restart of the application, even
+  when nothing is lost (9.23). Never for plain information: that is the role
   of a notification. Never for a setting: settings have their page (9.18).
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
@@ -853,7 +857,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   it, its content scrolls, and its last line of buttons stays in view.
 - A 15 px title, weight 650: the name of the action ("New branch").
   Explanatory text in `--muted`.
-- A warning is a box on a `--warn-soft` background, with an icon.
+- A warning is a box on a `--warn-soft` background, with an icon. When it warns of several
+  things, each is a line of its own, 4 px from the next, so that a line that wraps is not read
+  as two.
 - The buttons are on the last line, in the order of 9.1 ("Hierarchy"): "Cancel", then
   the action, at the right.
 - Enter triggers the main button; for a destructive action the focus is on "Cancel", and Enter
@@ -1357,6 +1363,10 @@ its tooltip then says so. Under the title, groups, each with a 12 px title, weig
 noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice sits
 under the name of its setting, on the whole width of the column.
 
+**A row that states a fact** is not a setting: its name says something ("Version 0.3.0") and
+labels no field, and its control, when it has one, is a small standard button that names itself
+("Check for updates"). It takes the place and the look of a setting (9.23).
+
 **A setting applies at once.** A list, as soon as the choice changes; a number, when the field
 is left or on Enter.
 
@@ -1646,7 +1656,9 @@ too, but it scrolls out of sight; the detail panel is where the eye goes after a
 
 Ramure says that a newer version exists, and the user installs it when it suits them. Nothing
 interrupts: no notification, no dialog and no sound announce a version, and nothing is ever
-downloaded or installed without a click.
+downloaded or installed without a click. The dot and the box appear on their own, after a check:
+this is an exception to "nothing moves without an action from the user" (1, "Calm"), as the strip
+of uncommitted changes is (9.22), since they are the news itself.
 
 **The check.** One request to GitHub asks whether a newer version exists. It runs at startup,
 then once a day, unless "Automatic update check" is off; and on demand, with "Check for
@@ -1663,30 +1675,34 @@ section of the module (9.18): the dot on "General" leads the rest of the way.
 
 **The group "Updates"**, in "General", under "Appearance".
 
-- **"Version 0.3.0"**, the version that runs. Its control is "Check for updates", a small
-  standard button, disabled while it runs, and while a version downloads, is ready or installs:
-  that version is not looked for again. Under it, as for the test of a host (9.15):
-  - while it runs, the waiting ring and "Checking for updates…";
+- **"Version 0.3.0"**, the version that runs, a row that states a fact (9.18). Its control is
+  "Check for updates", a small standard button; while it runs it says "Checking…" and cannot be
+  clicked (9.1). It is disabled too while a version downloads, is ready or installs: that version
+  is not looked for again, the box under it is the reason, and its tooltip says it ("Version
+  0.4.0 is downloading.", "Version 0.4.0 is ready to install."). Under it, as for the test of a
+  host (9.21):
   - the check icon in `--ok` and "Ramure is up to date.", then when, in `--muted`: "Checked just
     now.", "Checked 5 min ago.";
   - the warning icon in `--bad` and "Ramure could not reach GitHub. Check your connection, then
     try again.", announced, then the reason the system gave, as it is, in the code font. After a
     check that failed on its own: "The last automatic check failed 3 h ago. Check your
-    connection, then try again."; when a release is published before all its installers: "The
-    new version has no installer for this system yet. Try again later.";
+    connection, then try again."; when a release is published before all its installers, after
+    a click or not: "The new version has no installer for this system yet. Try again later.";
   - nothing when a version was found: the box says it.
 - **"Automatic update check"**, a choice (9.19), with the help "Ramure asks GitHub whether a
   newer version exists.":
   - "On": "At startup, then once a day. Nothing is downloaded or installed on its own.";
   - "Off": "Ramure never contacts the network on its own. Use “Check for updates” when you want
     to."
-  "Reset all" turns it back on, as it does for every setting of the section.
+  "Reset all" turns it back on, as it does for every setting of the section that is shown.
 - **A copy that cannot update itself**, built from the sources, says so in the help of
   "Version": "This copy was built from the sources and cannot update itself. New versions are on
   github.com/kihak12/Ramure/releases." It has no button and no "Automatic update check", and the
   dot never shows.
 
-**The box.** When a version was found, a box follows the two rows: `--accent-soft` background,
+**The box.** When a version was found, a box follows the row "Version", above "Automatic update
+check": it belongs to the version, and it stays apart from the chosen option of the choice,
+whose tint is close to its own in dark: `--accent-soft` background,
 8 px corners, 10 px of inner margin, no border, as the strip of uncommitted changes (9.22). Its
 text is in `--ink`, the only text color that reads on the tint (2.4), and its buttons are small
 standard buttons, which stand out from it (9.1); the settings page has no main button (9.18).
@@ -1695,19 +1711,24 @@ The install takes two steps, so that the download never interrupts and only the 
 | State | First line, 13.5 px, weight 650 | Second line, 11.5 px | Then |
 |---|---|---|---|
 | Available | "Version 0.4.0 is available" | "Published Nov 12, 2026. What changed is on github.com/kihak12/Ramure/releases." | "Download update" |
-| Downloading | "Downloading version 0.4.0…" | A bar, and at its right "6.2 of 11.4 MB" in tabular figures; "6.2 MB" and a bar that sweeps when the size is not known. Then the waiting ring and "Verifying…". | "Cancel" |
+| Downloading | "Downloading version 0.4.0…" | A bar, and at its right "6.2 of 11.4 MB" in tabular figures; "6.2 MB" and a bar that sweeps when the size is not known. Then the waiting ring and "Verifying…". | "Stop downloading", disabled while it verifies: nothing is left to stop |
 | Ready | "Version 0.4.0 is ready to install" | "Nothing changes until you restart. You can keep working." | "Restart and install…" |
 | Installing | "Installing version 0.4.0…" | The waiting ring and "Ramure restarts when it is done." | Nothing: it cannot stop halfway |
 
 - The second line is one line high in every state, the bar included: the button under it does
-  not move from one state to the next (9.1).
+  not move from one state to the next (9.1). The first line says what is in progress, and the
+  button of a step gives way to the next: "Download update" to "Stop downloading", a download
+  that has started being stopped, not canceled (12), then to "Restart and install…". The focus
+  follows.
 - The download goes on when the user leaves the page. A version that is ready stays ready until
   Ramure closes; it is downloaded again after that.
 - **A failure** is said under the box, on the card, where `--bad` reads: the warning icon in
   `--bad`, then the sentence in `--ink`, announced. The button of the step stays at hand in the
   box.
   - "The download failed. Check your connection, then try again.", then the reason as it is.
-  - "The download did not pass verification and was discarded. Try again."
+  - "The download did not pass verification and was discarded. Try again." The box goes back to
+    "available", whenever the verification failed: after the download, or once more before the
+    install.
   - "The update was not installed. Ramure is unchanged.", then the reason as it is; from the
     `.deb`, when the system did not install the package: "The update was not installed: Ubuntu
     did not get the administrator password, or refused the package. Ramure is unchanged."

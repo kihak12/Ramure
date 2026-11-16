@@ -44,6 +44,17 @@
   const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const megabytes = (bytes: number) => (bytes / 1_048_576).toFixed(1);
 
+  /** Why "Check for updates" is disabled while a version is on its way; empty when it is not. */
+  const settled = $derived(
+    !found || phase === 'idle' || phase === 'available'
+      ? ''
+      : phase === 'ready'
+        ? `Version ${found.version} is ready to install.`
+        : phase === 'installing'
+          ? `Version ${found.version} is installing.`
+          : `Version ${found.version} is downloading.`,
+  );
+
   const percent = $derived(updates.progress.total ? Math.min(100, (updates.progress.done / updates.progress.total) * 100) : null);
   const received = $derived(
     updates.progress.total ? `${megabytes(updates.progress.done)} of ${megabytes(updates.progress.total)} MB` : `${megabytes(updates.progress.done)} MB`,
@@ -93,12 +104,13 @@
       id="set-version"
       name="Version {info.version}"
       help={info.canUpdate ? '' : `This copy was built from the sources and cannot update itself. New versions are on ${RELEASES}.`}
-      busy={updates.checking ? 'Checking for updates…' : ''}
       fact
     >
       {#if info.canUpdate}
-        <button class="btn small check" type="button" disabled={updates.checking || (phase !== 'idle' && phase !== 'available')} onclick={() => void updates.check(true)}>
-          Check for updates
+        <!-- While it runs, the button says so (guidelines, 9.1). A version that downloads, is ready
+             or installs is not looked for again: the box is the reason, and the tooltip says it. -->
+        <button class="btn small check" type="button" disabled={updates.checking || settled !== ''} title={settled} onclick={() => void updates.check(true)}>
+          {updates.checking ? 'Checking…' : 'Check for updates'}
         </button>
         {#if !updates.checking && checked}
           {#if checked.failure}
@@ -106,7 +118,8 @@
             <p class="result" role={checked.manual ? 'alert' : undefined}>
               <span class="bad"><Icon name="warning" size={14} /></span>
               <span>
-                {#if checked.manual}{checked.failure.message}{:else}The last automatic check failed {ago(checked.at)}. Check your connection, then try again.{/if}
+                <!-- A failure with no reason from the system is not the network: it says itself what to do. -->
+                {#if checked.manual || !checked.failure.reason}{checked.failure.message}{:else}The last automatic check failed {ago(checked.at)}. Check your connection, then try again.{/if}
               </span>
             </p>
             {#if checked.failure.reason}<p class="reason mono">{checked.failure.reason}</p>{/if}
@@ -119,19 +132,6 @@
         {/if}
       {/if}
     </SettingRow>
-
-    {#if info.canUpdate}
-      <SettingRow id="set-update-check" name="Automatic update check" help="Ramure asks GitHub whether a newer version exists." group>
-        <Choice
-          name="set-update-check"
-          labelledby="set-update-check-name"
-          describedby="set-update-check-help"
-          value={prefs.updateCheck ? 'on' : 'off'}
-          options={AUTO}
-          onchange={(value) => savePrefs({ updateCheck: value === 'on' })}
-        />
-      </SettingRow>
-    {/if}
 
     {#if found}
       <div class="box" bind:this={box}>
@@ -162,8 +162,9 @@
         </div>
         {#if phase === 'available'}
           <div><button class="btn small" type="button" onclick={download}>Download update</button></div>
-        {:else if phase === 'downloading'}
-          <div><button class="btn small" type="button" onclick={() => void cancel()}>Cancel</button></div>
+        {:else if phase === 'downloading' || phase === 'verifying'}
+          <!-- While it verifies, nothing is left to stop: the button keeps its place. -->
+          <div><button class="btn small" type="button" disabled={phase === 'verifying'} onclick={() => void cancel()}>Stop downloading</button></div>
         {:else if phase === 'ready'}
           <div><button class="btn small" type="button" onclick={() => void restart()}>Restart and install…</button></div>
         {/if}
@@ -179,6 +180,20 @@
         </div>
       {/if}
     {/if}
+
+    {#if info.canUpdate}
+      <SettingRow id="set-update-check" name="Automatic update check" help="Ramure asks GitHub whether a newer version exists." group>
+        <Choice
+          name="set-update-check"
+          labelledby="set-update-check-name"
+          describedby="set-update-check-help"
+          value={prefs.updateCheck ? 'on' : 'off'}
+          options={AUTO}
+          onchange={(value) => savePrefs({ updateCheck: value === 'on' })}
+        />
+      </SettingRow>
+    {/if}
+
   {/if}
 </section>
 

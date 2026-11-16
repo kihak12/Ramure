@@ -50,11 +50,18 @@ pub struct Progress {
 pub struct Failure {
     message: String,
     reason: Option<String>,
+    /// The download is gone: the version is available again, not ready.
+    discarded: bool,
 }
 
 impl Failure {
     fn new(message: &str, reason: Option<String>) -> Self {
-        Self { message: message.into(), reason }
+        Self { message: message.into(), reason, discarded: false }
+    }
+
+    /// The download did not pass verification: it is not kept.
+    fn not_verified() -> Self {
+        Self { message: NOT_VERIFIED.into(), reason: None, discarded: true }
     }
 }
 
@@ -119,7 +126,7 @@ fn check_failure(error: &Error) -> Failure {
 fn download_failure(error: &Error) -> Failure {
     match error {
         Error::Reqwest(_) | Error::Network(_) | Error::Io(_) => Failure::new(DOWNLOAD_FAILED, Some(error.to_string())),
-        _ => Failure::new(NOT_VERIFIED, None),
+        _ => Failure::not_verified(),
     }
 }
 
@@ -127,7 +134,7 @@ fn install_failure(error: &Error) -> Failure {
     match error {
         Error::AuthenticationFailed | Error::DebInstallFailed | Error::PackageInstallFailed => Failure::new(NO_PASSWORD, None),
         // The bytes were verified once more before the install.
-        Error::Minisign(_) => Failure::new(NOT_VERIFIED, None),
+        Error::Minisign(_) | Error::MissingSignedVersion => Failure::not_verified(),
         other => Failure::new(NOT_INSTALLED, Some(other.to_string())),
     }
 }
@@ -222,8 +229,12 @@ pub async fn update_install(app: AppHandle, state: State<'_, Updates>) -> Result
     match result {
         Ok(()) => app.restart(),
         Err(error) => {
-            *state.bytes.lock().unwrap() = Some(bytes);
-            Err(install_failure(&error))
+            let failure = install_failure(&error);
+            // What did not pass verification is dropped; anything else can be tried again.
+            if !failure.discarded {
+                *state.bytes.lock().unwrap() = Some(bytes);
+            }
+            Err(failure)
         }
     }
 }
@@ -274,7 +285,13 @@ mod tests {
         assert!(cut.reason.is_some());
         // What is not the network is the signature: the reason would only name the internals.
         let forged = download_failure(&Error::MissingSignedVersion);
-        assert_eq!(forged, Failure::new("The download did not pass verification and was discarded. Try again.", None));
+        assert_eq!(forged.message, "The download did not pass verification and was discarded. Try again.");
+        assert_eq!(forged.reason, None);
+        // It is not kept: the version is available again, not ready.
+        assert!(forged.discarded);
+        assert!(!cut.discarded);
+        // The same at the install, where the signature is checked once more.
+        assert_eq!(install_failure(&Error::MissingSignedVersion), forged);
     }
 
     #[test]
@@ -288,5 +305,7 @@ mod tests {
         let other = install_failure(&Error::TempDirNotFound);
         assert_eq!(other.message, "The update was not installed. Ramure is unchanged.");
         assert_eq!(other.reason.as_deref(), Some("failed to create temporary directory"));
+        // The download is kept: the install can be tried again.
+        assert!(!other.discarded);
     }
 }
