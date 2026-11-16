@@ -130,7 +130,7 @@ pub enum Refused {
     Retained,
 }
 
-fn other(e: impl std::fmt::Display) -> SshError {
+pub(crate) fn other(e: impl std::fmt::Display) -> SshError {
     SshError::Other { message: e.to_string() }
 }
 
@@ -188,7 +188,7 @@ enum HostVerdict {
     Changed { fingerprint: String, line: usize },
 }
 
-struct ClientHandler {
+pub(crate) struct ClientHandler {
     host: String,
     port: u16,
     accepted: Option<String>,
@@ -533,20 +533,20 @@ pub fn ssh_defaults() -> Defaults {
 }
 
 /// A connection open and authenticated, ready to receive a channel.
-struct Opened {
-    handle: Handle<ClientHandler>,
-    fingerprint: String,
-    known_host: bool,
-    learn_failed: Option<String>,
-    auth_method: String,
+pub(crate) struct Opened {
+    pub(crate) handle: Handle<ClientHandler>,
+    pub(crate) fingerprint: String,
+    pub(crate) known_host: bool,
+    pub(crate) learn_failed: Option<String>,
+    pub(crate) auth_method: String,
     /// The typed secret that worked, and the name to keep it under if asked.
-    typed: Option<(String, String)>,
+    pub(crate) typed: Option<(String, String)>,
 }
 
 /// Connects to `host:port`, checks the fingerprint of the server and authenticates `user`. Shared
 /// by a session and the test of a host. `forwards`: where the connections of the remote forwards
 /// of a session go; none for a test.
-async fn open_authenticated(
+pub(crate) async fn open_authenticated(
     host: &str,
     port: u16,
     user: &str,

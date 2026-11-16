@@ -23,7 +23,7 @@ tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
 # `ring` rather than `aws-lc-rs`: it builds on Windows without NASM or CMake.
 russh = { version = "0.65.1", default-features = false, features = ["ring", "flate2", "rsa"] }
-tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "macros", "time", "net", "io-util"] }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "macros", "time", "net", "io-util", "fs"] }
 rusqlite = { version = "0.41.1", features = ["bundled"] }
 uuid = { version = "1.29.2", features = ["v4"] }
 rand = "0.10"
@@ -38,3 +38,5 @@ sha1 = "0.11"
 data-encoding = "2.11"
 tauri-plugin-updater = "2.14"
 tauri-plugin-window-state = "2.5.0"
+# SFTP over a russh connection: the file explorer of the hosts (module Files).
+russh-sftp = "3.0.1"
