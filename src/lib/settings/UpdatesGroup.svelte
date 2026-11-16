@@ -142,9 +142,12 @@
             {#if phase === 'verifying'}
               <p class="wait"><span class="spinner" aria-hidden="true"></span>Verifying…</p>
             {:else}
-              <ProgressBar {percent} />
-              <!-- The figures change with every chunk: they are not read one by one. -->
-              <p class="figures" aria-hidden="true">{received}</p>
+              <!-- On one line, as high as a line of text: the button under it keeps its place from
+                   one state to the next. The figures change with every chunk: they are not read. -->
+              <div class="progress">
+                <ProgressBar {percent} />
+                <p class="figures" aria-hidden="true">{received}</p>
+              </div>
             {/if}
           {:else if phase === 'ready'}
             <p class="head">Version {found.version} is ready to install</p>
@@ -180,8 +183,10 @@
 </section>
 
 <style>
+  /* A small button, 24 px, centered where a field, 32 px, would be: level with the name. */
   .check {
     justify-self: start;
+    margin-top: 4px;
   }
   p {
     margin: 0;
@@ -235,8 +240,15 @@
     display: grid;
     gap: 2px;
   }
+  .progress {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
   .figures {
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .wait {
     display: flex;

@@ -1694,10 +1694,12 @@ The install takes two steps, so that the download never interrupts and only the 
 | State | First line, 13.5 px, weight 650 | Second line, 11.5 px | Then |
 |---|---|---|---|
 | Available | "Version 0.4.0 is available" | "Published Nov 12, 2026. What changed is on github.com/kihak12/Ramure/releases." | "Download update" |
-| Downloading | "Downloading version 0.4.0…" | A bar, and "6.2 of 11.4 MB" in tabular figures; "6.2 MB" and a bar that sweeps when the size is not known. Then the waiting ring and "Verifying…". | "Cancel" |
+| Downloading | "Downloading version 0.4.0…" | A bar, and at its right "6.2 of 11.4 MB" in tabular figures; "6.2 MB" and a bar that sweeps when the size is not known. Then the waiting ring and "Verifying…". | "Cancel" |
 | Ready | "Version 0.4.0 is ready to install" | "Nothing changes until you restart. You can keep working." | "Restart and install…" |
 | Installing | "Installing version 0.4.0…" | The waiting ring and "Ramure restarts when it is done." | Nothing: it cannot stop halfway |
 
+- The second line is one line high in every state, the bar included: the button under it does
+  not move from one state to the next (9.1).
 - The download goes on when the user leaves the page. A version that is ready stays ready until
   Ramure closes; it is downloaded again after that.
 - **A failure** is said under the box, on the card, where `--bad` reads: the warning icon in
