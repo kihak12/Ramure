@@ -17,9 +17,9 @@ Free software (MIT), local, no account.
   </picture>
 </p>
 
-**Status: milestones J1, J2 and J3 are done; J4 is under way.** The J0 prototype validated the graph
-and the SSH terminal on Windows and Ubuntu. Everyday Git (J1), advanced Git (J2) and SSH (J3) are
-complete. J4 brings SFTP, tunnels, installers and updates; all but SFTP are there.
+**Status: milestones J1 to J4 are done.** The J0 prototype validated the graph and the SSH
+terminal on Windows and Ubuntu. Everyday Git (J1), advanced Git (J2), SSH (J3), and SFTP, tunnels,
+installers and updates (J4) are complete.
 
 The interface is in English. Where it helps to find something on screen, this page gives its
 label in quotes.
@@ -167,6 +167,24 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   for again. The form of a host and "Manage keys…" show what is kept, and forget it; deleting
   a host forgets its password. Without a keyring, nothing is offered, and Ramure says so.
 
+### Files
+
+- **A module of its own**, the folder in the rail (Ctrl + Shift + L): panes side by side, up to
+  four, each showing a folder of this machine or of a host of the book, reached over SFTP. A
+  host's pane uses the same connection, fingerprint check and kept secrets as a terminal. "Browse
+  files", in the menu of a host, opens it there.
+- **Browsing**: the path as segments to click, or typed (`~` is the home folder); "Up", "Refresh",
+  hidden files on demand, columns sorted by name, date or size. The panes and their folders come
+  back at the next launch; a host is connected when you ask.
+- **Drag and drop**: drag files and folders from one pane to another to copy them, between this
+  machine and a host or between two hosts; onto a folder row to put them inside it. On the same
+  place, a drop moves them, unless Ctrl is held. "Copy to …" and "Move to …", in the menu of a
+  row, do the same from the keyboard. Before replacing what is already there, Ramure asks.
+- **Transfers** run in the background, in a card under the panes: progress in bytes and files,
+  "Cancel transfer", "Retry". A file is written under a temporary name and takes its own once
+  whole: a canceled transfer leaves no half file. What could not be copied is listed with why.
+- **Tidying**: "New folder…", "Rename…" (F2), "Delete…" (always confirmed), "Copy path".
+
 ### Settings, shortcuts and command log
 
 - **Settings page**: the button at the foot of the rail, or Ctrl + , . It opens on the section
@@ -182,11 +200,12 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - **Updates**: "General" shows the version that runs and checks for a newer one. The download
   is verified against the signature of the release before anything is installed. Before the
   restart, Ramure lists what it would close: SSH sessions and their tunnels, terminals where
-  programs run, a commit message being typed.
+  programs run, transfers under way, a commit message being typed.
 
 ### Not there yet
 
-- Milestone J4: SFTP.
+- The Files module does not open or edit a file, and does not take files dropped from the file
+  manager of the system: use a pane of this machine.
 - Tunnels are not read from `~/.ssh/config` (LocalForward, RemoteForward, DynamicForward), nor
   written to it, yet (#163).
 - The interface exists in English only: no other language is planned.
@@ -266,6 +285,12 @@ states it.
 cd src-tauri && cargo test
 ```
 
+To run the SFTP test against a real server, name it and the key that opens it:
+
+```bash
+cd src-tauri && RAMURE_SFTP_TEST="user@host:22:/path/to/key" cargo test files_go_both_ways
+```
+
 To measure how long a real repository takes to load, without opening the interface:
 
 ```bash
@@ -276,12 +301,13 @@ cd src-tauri && RAMURE_TEST_REPO=/path/to/repository cargo test real_repo -- --n
 
 | Folder | Content |
 | --- | --- |
-| `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/settings/`, `lib/ui/`; the design tokens are in `app.css` |
+| `src/` | Svelte 5 interface: `lib/git/`, `lib/ssh/`, `lib/files/`, `lib/settings/`, `lib/ui/`; the design tokens are in `app.css` |
 | `docs/` | The [design guidelines](docs/design-guidelines.md), [how to release](docs/releasing.md), the logo in `logo/`, and screenshots of the application in `screenshots/` |
 | `scripts/` | Checks run by `npm run check`, the script that sets the version, the tool that derives the application icons from the logo, and the one that takes screenshots of the application on Linux |
 | `.github/workflows/` | The release workflow, which builds the installers on Windows and Ubuntu |
 | `src-tauri/src/git/` | Running git, the log parser, lane computation |
 | `src-tauri/src/ssh/` | russh sessions, reading `~/.ssh/config`, the host book and keys |
+| `src-tauri/src/files/` | The file explorer: folders of this machine and of the hosts over SFTP, transfers between them |
 | `.claude/` | For Claude Code: the `design-reviewer` subagent, which reviews interface changes against the design guidelines, the `ux-designer` subagent, which proposes improvements to a screen, and the trials that measure them |
 
 The interface touches neither the disk nor the network: it calls the commands of the Rust core.

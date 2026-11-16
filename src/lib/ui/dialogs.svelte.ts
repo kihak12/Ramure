@@ -33,6 +33,17 @@ export interface DialogSpec {
   danger?: boolean;
   /** Secondary action, between "Cancel" and the main button: the dialog closes, then the action runs. */
   extra?: { label: string; run: () => void };
+  /**
+   * Runs the action when the main button is pressed, before the dialog closes: the reason it
+   * failed is said under the first field, and the dialog stays open with what was typed
+   * (guidelines, 9.10 and 9.11). Null: done, the dialog closes.
+   */
+  check?: (answers: Answers) => Promise<string | null>;
+  /** The label of the main button while `check` runs: "Renaming…" (guidelines, 9.1). */
+  busyLabel?: string;
+  /** The part of the first field selected when the dialog opens, as [start, end]: a name up to
+   *  its extension. The whole text otherwise. */
+  select?: [number, number];
 }
 
 export type Answers = Record<string, FieldValue>;

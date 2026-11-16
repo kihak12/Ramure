@@ -59,17 +59,25 @@ export async function mayCloseRepo(name: string, sessions: Session[]): Promise<b
   });
 }
 
-/** Quitting the application stops every local terminal, those of the repositories and those of the SSH module. */
-export async function mayQuit(sessions: Session[]): Promise<boolean> {
+/** What quitting or restarting does to the transfers of the Files module that run (guidelines, 9.24). */
+const transfersStopped = (n: number) =>
+  n === 1 ? 'A transfer is running. It will be stopped; the files already copied stay.' : `${n} transfers are running. They will be stopped; the files already copied stay.`;
+
+/** Quitting the application stops every local terminal, those of the repositories and those of
+ *  the SSH module, and the transfers of the Files module. */
+export async function mayQuit(sessions: Session[], transfers = 0): Promise<boolean> {
   const { programs, unknown } = await running(sessions);
-  if (!programs && !unknown) return true;
-  const body = programs
+  if (!programs && !unknown && !transfers) return true;
+  const terminals = programs
     ? programs === 1
       ? `A program is running in a terminal. It will be stopped ${LOST}.`
       : `Programs are running in ${programs} terminals. They will be stopped and their output lost.`
     : unknown === 1
       ? `A terminal is open. Whatever runs in it will be stopped ${LOST}.`
-      : `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`;
+      : unknown
+        ? `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`
+        : '';
+  const body = [terminals, transfers ? transfersStopped(transfers) : ''].filter(Boolean).join(' ');
   return dialogs.confirm({ title: 'Quit Ramure?', body, confirmLabel: 'Quit', danger: true });
 }
 
@@ -88,7 +96,7 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
  * What installing an update would lose, one line each (guidelines, 9.23): the restart closes SSH
  * sessions and their tunnels, local terminals, and what a repository tab does not keep.
  */
-export async function restartLosses(sessions: Session[], tunnels: number, repos: OpenRepo[]): Promise<string[]> {
+export async function restartLosses(sessions: Session[], tunnels: number, repos: OpenRepo[], transfers = 0): Promise<string[]> {
   const lines: string[] = [];
   const remote = sessions.filter((s) => s.kind === 'ssh' && s.status !== 'closed').length;
   if (remote) {
@@ -109,6 +117,7 @@ export async function restartLosses(sessions: Session[], tunnels: number, repos:
         : `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`,
     );
   }
+  if (transfers) lines.push(transfersStopped(transfers));
   for (const repo of repos) {
     if (repo.busy) lines.push(`Git is working in ${repo.name}. Restarting now would stop it.`);
     if (repo.message) lines.push(`The commit message in ${repo.name} will be lost.`);

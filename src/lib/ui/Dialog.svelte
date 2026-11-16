@@ -10,7 +10,14 @@
   const open = $derived(dialogs.current);
   const spec = $derived(open?.spec ?? null);
   const fields = $derived(spec?.fields ?? []);
+  /** The first field takes the refusal of `check` under it; without a text field, the last line does. */
+  const textFirst = $derived(fields.length > 0 && !['checkbox', 'select', 'textarea', 'number'].includes(fields[0].type));
   const valid = $derived(fields.every((f) => !f.required || String(values[f.name] ?? '').trim() !== ''));
+
+  /** Why `check` refused what was typed: said under the first field. */
+  let refusal = $state('');
+  let busy = $state(false);
+  let firstField = $state<HTMLInputElement>();
 
   const initial = (field: Field) => field.value ?? (field.type === 'checkbox' ? false : field.type === 'number' ? 0 : '');
 
@@ -19,19 +26,38 @@
     if (!element) return;
     if (open && !element.open) {
       values = Object.fromEntries((open.spec.fields ?? []).map((f) => [f.name, initial(f)]));
+      refusal = '';
+      busy = false;
       element.showModal();
+      // A name is selected up to its extension: typing replaces the name and keeps the extension.
+      const range = open.spec.select;
+      if (range) queueMicrotask(() => firstField?.setSelectionRange(range[0], range[1]));
     } else if (!open && element.open) {
       element.close();
     }
   });
 
-  function submit(event: SubmitEvent) {
+  async function submit(event: SubmitEvent) {
     event.preventDefault();
-    if (!valid) return;
+    if (!valid || busy) return;
     const answers: Answers = {};
     for (const field of fields) {
       const value = values[field.name];
       answers[field.name] = typeof value === 'string' ? value.trim() : value;
+    }
+    const check = spec?.check;
+    if (check) {
+      const asked = open;
+      busy = true;
+      const reason = await check(answers).catch((e: unknown) => String(e));
+      busy = false;
+      // The dialog was closed meanwhile (Escape): what the check says no longer has a place.
+      if (dialogs.current !== asked) return;
+      if (reason) {
+        refusal = reason;
+        firstField?.focus();
+        return;
+      }
     }
     dialogs.close(answers);
   }
@@ -82,17 +108,36 @@
               <input class="field" type="number" min={field.min} max={field.max} bind:value={values[field.name]} />
             {:else}
               <!-- svelte-ignore a11y_autofocus -->
-              <input
-                class="field"
-                class:mono={field.mono}
-                type="text"
-                placeholder={field.placeholder}
-                spellcheck="false"
-                autocomplete="off"
-                autofocus={i === 0 && !spec.danger}
-                bind:value={values[field.name]}
-              />
+              {#if i === 0}
+                <input
+                  class="field"
+                  class:mono={field.mono}
+                  class:invalid={!!refusal}
+                  type="text"
+                  placeholder={field.placeholder}
+                  spellcheck="false"
+                  autocomplete="off"
+                  autofocus={!spec.danger}
+                  aria-invalid={refusal ? 'true' : undefined}
+                  aria-describedby={refusal ? 'dialog-refusal' : undefined}
+                  bind:this={firstField}
+                  bind:value={values[field.name]}
+                  oninput={() => (refusal = '')}
+                />
+              {:else}
+                <input
+                  class="field"
+                  class:mono={field.mono}
+                  type="text"
+                  placeholder={field.placeholder}
+                  spellcheck="false"
+                  autocomplete="off"
+                  bind:value={values[field.name]}
+                />
+              {/if}
             {/if}
+            <!-- What the action refused, under the field, announced at once (guidelines, 9.3). -->
+            {#if i === 0 && refusal}<small class="refusal" id="dialog-refusal" role="alert">{refusal}</small>{/if}
             {#if field.hint}<small>{field.hint}</small>{/if}
           </label>
         {/if}
@@ -100,6 +145,9 @@
       </div>
 
       <footer>
+        <!-- What the action refused, on the left of the last line, the buttons staying where they
+             are (guidelines, 9.1 and 9.21). -->
+        {#if refusal && !textFirst}<p class="failure" role="alert"><Icon name="warning" size={14} /> <span>{refusal}</span></p>{/if}
         <!-- The way out, the secondary action, then the main one, at the right (guidelines, 9.1, "Hierarchy"). -->
         <!-- Destructive action: the focus lands on "Cancel", so that Enter destroys nothing (guidelines, 9.10). -->
         <!-- svelte-ignore a11y_autofocus -->
@@ -118,8 +166,8 @@
           >
         {/if}
         <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid} autofocus={fields.length === 0 && !spec.danger}>
-          {spec.confirmLabel}
+        <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid || busy} autofocus={fields.length === 0 && !spec.danger}>
+          {busy && spec.busyLabel ? spec.busyLabel : spec.confirmLabel}
         </button>
       </footer>
     </form>
@@ -200,6 +248,9 @@
     color: var(--muted);
     font-size: var(--fs-small);
   }
+  .row small.refusal {
+    color: var(--bad);
+  }
   textarea {
     resize: vertical;
     min-height: 70px;
@@ -217,5 +268,21 @@
     justify-content: flex-end;
     gap: 8px;
     margin-top: 4px;
+  }
+  /* It wraps under itself, on the left: the buttons stay at the top of the line (guidelines, 9.1). */
+  .failure {
+    flex: 1 1 0;
+    min-width: 0;
+    align-self: flex-start;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    margin: 0;
+    color: var(--bad);
+    font-size: var(--fs-small);
+    overflow-wrap: anywhere;
+  }
+  .failure :global(.icon) {
+    margin-top: 1px;
   }
 </style>

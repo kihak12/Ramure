@@ -4,7 +4,7 @@
 const STORAGE_KEY = 'ramure.keys';
 
 /** Module where a shortcut acts; without a module, it acts everywhere (guidelines, section 11). */
-export type Scope = 'git' | 'ssh';
+export type Scope = 'git' | 'ssh' | 'files';
 
 export interface Shortcut {
   /** Id of the command triggered (the same as in the palette). */
@@ -27,6 +27,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'palette', group: 'General', title: 'Command palette', keys: 'Ctrl+K' },
   { id: 'view-git', group: 'General', title: 'Show repositories', keys: 'Ctrl+Shift+G' },
   { id: 'view-ssh', group: 'General', title: 'Show SSH terminal', keys: 'Ctrl+Shift+T' },
+  { id: 'view-files', group: 'General', title: 'Show files', keys: 'Ctrl+Shift+L' },
   { id: 'settings', group: 'General', title: 'Settings', keys: 'Ctrl+,' },
   { id: 'shortcuts', group: 'General', title: 'Keyboard shortcuts', keys: '' },
   { id: 'terminal-new', group: 'General', title: 'New local terminal', keys: 'Ctrl+Shift+N' },
@@ -39,6 +40,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'terminal-search', group: 'Terminal', title: 'Search the terminal', keys: 'Ctrl+Shift+F', scope: 'ssh' },
   { id: 'terminal-journal', group: 'Terminal', title: 'Record or stop terminal log', keys: '', scope: 'ssh' },
   { id: 'terminal-tunnels', group: 'Terminal', title: 'Show or hide tunnels', keys: '', scope: 'ssh' },
+  { id: 'files-add-pane', group: 'Files', title: 'Add pane', keys: '', scope: 'files' },
+  { id: 'files-hidden', group: 'Files', title: 'Show or hide hidden files', keys: '', scope: 'files' },
+  { id: 'files-mkdir', group: 'Files', title: 'New folder…', keys: '', scope: 'files' },
   { id: 'tab-new', group: 'Tabs', title: 'New tab', keys: 'Ctrl+T', scope: 'git' },
   { id: 'tab-close', group: 'Tabs', title: 'Close tab', keys: 'Ctrl+W', scope: 'git' },
   { id: 'tab-next', group: 'Tabs', title: 'Next tab', keys: 'Ctrl+Tab', scope: 'git' },
