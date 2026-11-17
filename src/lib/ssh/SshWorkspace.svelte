@@ -14,6 +14,8 @@
   import Terminal from './Terminal.svelte';
   import { addressOf, count, emptyHost, type Host } from './types';
   import { motion } from '../ui/motion';
+  import { modules } from '../ui/modules.svelte';
+  import { files } from '../files/files.svelte';
 
   /** True when the SSH module is on screen. */
   let { active = false }: { active?: boolean } = $props();
@@ -82,6 +84,15 @@
   function hostMenu(event: MouseEvent, host: Host) {
     menu.open(event, [
       { label: 'Open terminal', icon: 'terminal', disabled: host.proxyJump, run: () => ssh.open(host) },
+      {
+        label: 'Browse files',
+        icon: 'folder',
+        disabled: host.proxyJump,
+        run: () => {
+          modules.show('files');
+          files.browse(host);
+        },
+      },
       { separator: true },
       { label: 'Edit…', icon: 'pencil', run: () => (ssh.editing = host) },
       { label: 'Duplicate…', icon: 'copy', run: () => (ssh.editing = { ...host, id: '', alias: `${host.alias} (copy)` }) },

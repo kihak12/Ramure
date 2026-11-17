@@ -33,6 +33,10 @@
     settings:
       '<path d="M2.5 4.5h7M12 4.5h1.5M2.5 11.5H4M6.5 11.5h7"/><circle cx="10.5" cy="4.5" r="1.5"/><circle cx="5.2" cy="11.5" r="1.5"/>',
     folder: '<path d="M2 4.5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/>',
+    // A folder with a plus: a new folder (guidelines, section 7).
+    'folder-plus': '<path d="M2 4.5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M8 7.3v3.4M6.3 9h3.4"/>',
+    // A sheet with a folded corner: a file.
+    file: '<path d="M4.5 1.5h4.8l3.2 3.2v8.8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1z"/><path d="M9.3 1.5v3.2h3.2"/>',
     terminal: '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="m5 6.5 2 1.5-2 1.5M8.5 10h2.5"/>',
     warning: '<path d="M8 2.5 14 13H2zM8 6.5v3M8 11.2v.1"/>',
     copy: '<rect x="5.5" y="5.5" width="8" height="8" rx="1"/><path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/>',

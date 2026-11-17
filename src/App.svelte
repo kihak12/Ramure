@@ -8,6 +8,10 @@
   import { ssh } from './lib/ssh/ssh.svelte';
   import GitWorkspace from './lib/git/GitWorkspace.svelte';
   import SshWorkspace from './lib/ssh/SshWorkspace.svelte';
+  import FilesWorkspace from './lib/files/FilesWorkspace.svelte';
+  import { filesCommands } from './lib/files/commands';
+  import { files } from './lib/files/files.svelte';
+  import { modules, type Module } from './lib/ui/modules.svelte';
   import ContextMenu from './lib/ui/ContextMenu.svelte';
   import Dialog from './lib/ui/Dialog.svelte';
   import Icon from './lib/ui/Icon.svelte';
@@ -25,7 +29,7 @@
     const stop = getCurrentWindow().onCloseRequested(async (event) => {
       try {
         const locals = [...ssh.sessions, ...workspace.tabs.flatMap((tab) => tab.repo.terminals.sessions)];
-        if (!(await mayQuit(locals))) event.preventDefault();
+        if (!(await mayQuit(locals, files.running))) event.preventDefault();
       } catch {
         /* let it close */
       }
@@ -39,26 +43,23 @@
     return () => updates.stop();
   });
 
-  type View = 'git' | 'ssh';
-  let view = $state<View>('git');
+  const view = $derived(modules.view);
   // The settings page takes the place of the module; leaving it brings back the one that was shown.
   const shown = $derived(settingsPage.open ? 'settings' : view);
 
   let settingsButton = $state<HTMLButtonElement>();
 
   /** The settings open on the section of the module they are opened from (guidelines, section 9.18). */
-  const toggleSettings = () => settingsPage.toggle(view === 'git' ? 'git' : 'ssh');
+  const toggleSettings = () => settingsPage.toggle(view === 'git' ? 'git' : view === 'ssh' ? 'ssh' : 'general');
 
-  function show(module: View) {
-    view = module;
-    settingsPage.hide();
-  }
+  const show = (module: Module) => modules.show(module);
 
   /** Every command available now, with its shortcut. */
   function commands(): Command[] {
     const general: Command[] = [
       { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Show repositories', disabled: shown === 'git', run: () => show('git') },
       { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Show SSH terminal', disabled: shown === 'ssh', run: () => show('ssh') },
+      { id: 'view-files', group: 'Modules', icon: 'folder', title: 'Show files', keywords: 'sftp explorer browse transfer upload download', disabled: shown === 'files', run: () => show('files') },
       { id: 'settings', group: 'Modules', icon: 'settings', title: settingsPage.open ? 'Close settings' : 'Settings', keywords: 'preferences options theme dark light colors style graph', run: toggleSettings },
       {
         id: 'terminal-new',
@@ -74,7 +75,14 @@
       { id: 'shortcuts', group: 'Modules', icon: 'settings', title: 'Keyboard shortcuts', keywords: 'keys keyboard settings', run: () => settingsPage.show('keys') },
     ];
     // The Git actions only make sense in front of a repository.
-    const all = shown === 'git' ? [...gitCommands(), ...general] : shown === 'ssh' ? [...sshCommands(), ...general] : general;
+    const all =
+      shown === 'git'
+        ? [...gitCommands(), ...general]
+        : shown === 'ssh'
+          ? [...sshCommands(), ...general]
+          : shown === 'files'
+            ? [...filesCommands(), ...general]
+            : general;
     return all.map((command) => {
       const combo = keys.binding(command.id);
       return combo ? { ...command, shortcut: display(combo) } : command;
@@ -127,6 +135,9 @@
     <button type="button" aria-pressed={shown === 'ssh'} title="SSH terminal" aria-label="SSH terminal" onclick={() => show('ssh')}>
       <Icon name="terminal" size={18} />
     </button>
+    <button type="button" aria-pressed={shown === 'files'} title="Files" aria-label="Files" onclick={() => show('files')}>
+      <Icon name="folder" size={18} />
+    </button>
     <button class="last" type="button" title="Command palette{keys.binding('palette') ? ` (${display(keys.binding('palette'))})` : ''}" aria-label="Command palette" onclick={openPalette}>
       <Icon name="search" size={18} />
     </button>
@@ -148,6 +159,7 @@
   <main>
     <section class="pane" class:hidden={shown !== 'git'} inert={shown !== 'git'}><GitWorkspace active={shown === 'git'} /></section>
     <section class="pane" class:hidden={shown !== 'ssh'} inert={shown !== 'ssh'}><SshWorkspace active={shown === 'ssh'} /></section>
+    <section class="pane" class:hidden={shown !== 'files'} inert={shown !== 'files'} aria-label="Files"><FilesWorkspace /></section>
     <section class="pane" class:hidden={shown !== 'settings'} inert={shown !== 'settings'} aria-label="Settings"><SettingsPage /></section>
   </main>
 </div>

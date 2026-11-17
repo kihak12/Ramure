@@ -3,6 +3,7 @@
   import { prefs, savePrefs } from '../git/prefs.svelte';
   import { workspace } from '../git/workspace.svelte';
   import { mayRestart, restartLosses } from '../ssh/guard';
+  import { files } from '../files/files.svelte';
   import { ssh } from '../ssh/ssh.svelte';
   import Choice from '../ui/Choice.svelte';
   import { focusWithRing } from '../ui/focus';
@@ -89,7 +90,7 @@
     const repos = workspace.tabs
       .filter((tab) => tab.repo.path)
       .map((tab) => ({ name: workspace.title(tab), message: tab.repo.message.trim() !== '', busy: tab.repo.busy !== '' }));
-    if (await mayRestart(found.version, info.installer, await restartLosses(sessions, tunnels, repos))) {
+    if (await mayRestart(found.version, info.installer, await restartLosses(sessions, tunnels, repos, files.running))) {
       void updates.install().then(follow);
     } else {
       await follow();

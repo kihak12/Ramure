@@ -1,6 +1,7 @@
 //! Core of Ramure: everything that touches the disk and the network goes through here.
 //! The interface only calls the commands declared in `invoke_handler`.
 
+mod files;
 mod git;
 mod journal;
 mod local;
@@ -31,6 +32,7 @@ pub fn run() {
         // not used: the window then opens where the system puts it.
         .plugin(tauri_plugin_window_state::Builder::new().with_state_flags(WINDOW_STATE).build())
         .manage(ssh::SshState::default())
+        .manage(files::FilesState::default())
         .manage(local::LocalState::default())
         .manage(git::clone::CloneState::default())
         .manage(update::Updates::default())
@@ -136,6 +138,17 @@ pub fn run() {
             ssh::keyfiles::ssh_keys_list,
             ssh::keyfiles::ssh_key_generate,
             ssh::keyfiles::ssh_key_import,
+            files::sftp_connect,
+            files::sftp_close,
+            files::files_home,
+            files::files_list,
+            files::files_mkdir,
+            files::files_rename,
+            files::files_remove,
+            files::files_existing,
+            files::files_move,
+            files::transfer::transfer_start,
+            files::transfer::transfer_cancel,
         ])
         .run(tauri::generate_context!())
         .expect("Ramure failed to start");

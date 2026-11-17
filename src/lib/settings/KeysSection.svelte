@@ -11,7 +11,7 @@
   let filter = $state('');
 
   // A shortcut that acts in one module only says so beside its group (guidelines, section 9.18).
-  const MODULES = { git: 'Git', ssh: 'SSH' } as const;
+  const MODULES = { git: 'Git', ssh: 'SSH', files: 'Files' } as const;
 
   const custom = $derived(Object.keys(keys.overrides).length > 0);
   const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
