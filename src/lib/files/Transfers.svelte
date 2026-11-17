@@ -53,7 +53,7 @@
 
 <section class="transfers" aria-label="Transfers">
   <header>
-    <span class="label">Transfers · {files.transfers.length}</span>
+    <span class="label count">Transfers · {files.transfers.length}</span>
     <button class="btn ghost small" type="button" disabled={!finished} onclick={() => files.clearFinished()}>Clear finished</button>
   </header>
   <ul>
@@ -67,7 +67,8 @@
             {:else}
               <Icon name={t.state === 'done' ? 'check' : t.state === 'canceled' ? 'stop' : 'warning'} size={14} />
             {/if}
-            <span>{WORDS[t.state]}</span>
+            <!-- The state is announced when it changes: "Copied" is the answer (guidelines, 11). -->
+            <span role="status">{WORDS[t.state]}</span>
           </span>
           <span class="what" title="{t.route}, into {t.dest}{t.relayed ? '. The files go through this machine.' : ''}">
             <span class="name">{t.title}</span>
@@ -107,6 +108,9 @@
     background: var(--panel);
     overflow: hidden;
     animation: fade-in var(--t-med) var(--ease);
+  }
+  .count {
+    font-variant-numeric: tabular-nums;
   }
   header {
     flex: none;

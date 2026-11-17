@@ -313,7 +313,7 @@ Two weights, no more.
 | Token | Weight | Use |
 |---|---|---|
 | `--fw-regular` | 400 | Body text. |
-| `--fw-strong` | 650 | Titles, labels, main button, current element (active tab, current branch), label of a local branch, the sentence of the strip of uncommitted changes (9.22), the first line of the box of an update (9.23). |
+| `--fw-strong` | 650 | Titles, labels, main button, current element (active tab, current branch), label of a local branch, the sentence of the strip of uncommitted changes (9.22), the first line of the box of an update (9.23), the sentence a pane says at the foot of a drop (9.24). |
 
 ### 3.4 Rules
 
@@ -876,6 +876,15 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
   What was typed in the dialog is lost, without a question.
 - On opening, focus goes to the first field. For a destructive action, it goes to "Cancel".
+- **An action done in the dialog.** A rename, a new folder or a deletion runs when its button is
+  pressed, before the dialog closes, so that what went wrong is said where the user looks
+  (9.11). The button says it in "-ing" ("Renaming…", "Deleting…") and cannot be pressed again; it
+  lasts an instant and cannot stop halfway, so neither the veil, Escape nor "Cancel" closes the
+  dialog meanwhile. A refusal stays in the dialog, with what was typed: under the field it is
+  about, in 11.5 px and `--bad`, the field in its error state (9.3), which takes the focus back;
+  or, with no field, on the left of the last line, the warning icon before it, the buttons
+  staying where they are, and the focus on the main button. Done, the dialog closes. A rename
+  opens with the name selected up to its extension.
 - A destructive action says what will be lost, and whether it can be recovered.
 
 ### 9.11 Notifications
@@ -1758,6 +1767,7 @@ next start does not bring back.
   - "Programs are running in 2 terminals. They will be stopped and their output lost.", with the
     words of "Quit Ramure?" (9.15); where there is no way to know, on Windows: "3 terminals are
     open. Whatever runs in them will be stopped and its output lost.";
+  - "2 transfers are running. They will be stopped; the files already copied stay." (9.24);
   - "The commit message in workshop will be lost.";
   - "Git is working in workshop. Restarting now would stop it."
 - Under the box, in `--muted`, what the system will do: "Ubuntu will ask for your administrator
@@ -1788,8 +1798,9 @@ place: "This machine", or a host of the book.
   pane to choose a location. It then comes back as it was left: the same panes, on the same
   folders. A host is never connected at launch: its pane says "Not connected" and offers
   "Connect", so that three panes never ask three passwords at once.
-- **An empty pane** chooses its location: the title "Choose a location", the filter field of the
-  host book (9.3) when the book has hosts, then a list (9.6): "This machine" with the computer
+- **An empty pane** chooses its location. Its header says "Empty pane" in `--muted`; under it, the
+  title "Choose a location", 15 px in weight 650 as the title of a panel (3.2), the filter field of
+  the host book (9.3) when the book has hosts, then a list (9.6): "This machine" with the computer
   icon and the home folder under it, then the hosts as the book shows them, in their groups,
   with their color bar, their name and their address (9.21). A click or Enter opens one: nothing
   else can be done with a row. With no host, a sentence says where they come from, "Add hosts in
@@ -1798,8 +1809,10 @@ place: "This machine", or a host of the book.
 - **The header** of a pane, 35 px, says where it is. Its location is a ghost button, which opens
   the menu of the locations under it (9.9): "This machine", then the hosts. For a host: the 8 px
   dot of its tab (9.15), in its color or `--ok`, then its name in weight 650 and its address in
-  the code font and `--muted`, cut first. For this machine: the computer icon and "This
-  machine". A state follows as a fragment (12): "connecting…". On the right, two ghost buttons
+  the code font and `--muted`, cut first; its tooltip says the state in words, "Connected". For
+  this machine: the computer icon and "This machine", in weight 650 too. Then a chevron turned
+  down, as a list has (9.3). A state follows the name as a fragment (12): "connecting…". The
+  location button is a ghost button: it shrinks when pressed. On the right, two ghost buttons
   made of an icon alone, 24 × 24 px: "Add pane", which adds an empty pane to the right of this
   one and is disabled at four, its tooltip saying why ("Four panes at most. Close one first."),
   and "Close pane". The last pane is never closed: it becomes empty.
@@ -1808,8 +1821,10 @@ place: "This machine", or a host of the book.
 
 **The path bar**, 36 px, under the header: "Up" (an icon alone, Backspace or Alt + ↑ from the
 list), then the folder as a path of segments in the interface font, each a ghost button 24 px
-high that opens its folder, "/" between them in `--faint`. A path too long for the pane gives
-way on the left: its last segments stay. A click on the bar, past the segments, turns it into a
+high and 24 px wide at the least that opens its folder, "/" between them in `--faint` (none
+after the root, "/" or "C:\", which ends with its own). A short path starts on the left; a path
+too long for the pane gives way on the left, the bar scrolling to its last segments, with no
+scrollbar. The ring of a segment is drawn inside it, so that the bar does not cut it. A click on the bar, past the segments, turns it into a
 field (9.3) with the path selected: Enter opens what is typed, `~` being the home folder, and
 Escape gives the segments back; a folder that cannot be opened turns the field to its error
 state, with the reason under it. Then four ghost buttons made of an icon alone: "Type a path",
@@ -1833,12 +1848,16 @@ of 24 px (4.3, 9.6):
   selects up to it, Ctrl + A selects them all. The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
   folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
-- **The menu of a row**: "Open" for a folder, "Copy to …" for each other pane on another place
-  and "Move to …" for each other pane on the same place, naming the pane and its folder ("Copy to
-  staging · /var/www"): the keyboard way to do what dragging does. Then "Rename…", "New
-  folder…", "Copy path", and after a separator "Delete…".
-- **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12
+- **The menu of a row**: "Open" for a folder, "Copy to …" (copy icon) for each other pane on
+  another place and "Move to …" (folder icon) for each other pane on the same place, naming the
+  pane and its folder ("Copy to staging · /var/www"): the keyboard way to do what dragging does.
+  Then "Rename…", "New folder…", "Copy path", and after a separator "Delete…", or "Delete 3
+  items…" for a selection of several. The empty part of a list has a menu of its own: "New
+  folder…", "Refresh", and "Show hidden files" or "Hide hidden files".
+- **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
+- **Under the veil** of a connection that is not open, the list and the buttons of the path bar
+  cannot be reached: the panel is all there is to do.
 - **While it lists**, the waiting ring and "Loading…" take the place of the count, and the rows
   of the folder it leaves stay at 45% until the new ones come. A folder that cannot be listed
   says why in place of the rows, the warning icon in `--bad` before the sentence ("Access denied
@@ -1859,11 +1878,13 @@ at half opacity (9.6).
 - **What receives it.** A folder row receives the drop into that folder: it takes the 2 px
   outline in `--accent`, inside the row, as a branch label does (9.4). Anywhere else on a pane,
   its header and its path bar included, the drop goes into the folder the pane shows: the list
-  takes an `--accent-soft` tint. Nothing else changes size or place.
+  takes the `--hover` tint, which stays apart from the selection in both themes (2.4), where
+  `--accent-soft` would come too close to `--sel` in dark. Nothing else changes size or place.
 - **What it does.** Between two places, a drop copies. On one place, the same pane or two panes
   on the same host, it moves: a rename, nothing is copied. Ctrl, held at the drop, copies there
-  too. While the pointer is over a pane, its foot says it in `--ink`: "Copy 3 items here", "Move
-  2 items into releases". A drop that cannot be made is refused, with the "not allowed" cursor and
+  too. While the pointer is over a pane, its foot says it in `--ink` and weight 650, on an
+  `--accent-soft` band, as the strip of uncommitted changes speaks (9.22): "Copy 3 items here",
+  "Move 2 items into releases". A drop that cannot be made is refused, with the "not allowed" cursor and
   the reason in the foot: "Already in this folder.", "A folder cannot go into itself.", "Not
   connected."
 - **A name already there.** A copy that would replace something first asks (9.10): "Replace 2
@@ -1880,11 +1901,12 @@ at half opacity (9.6).
 - Its header: "Transfers · 2" in 12 px, weight 650, `--muted`, and "Clear finished", a small
   ghost button, disabled while every transfer runs.
 - One row each, 28 px; past three rows the card scrolls. From left to right: the state, its icon
-  and its word in a column of their own (12), only the icon taking the state color: "Counting…"
+  and its word in a column of their own (12), only the icon taking the state color; the word is
+  announced when it changes (`role="status"`), "Copied" being the answer: "Counting…"
   and "Copying…" (the 12 px ring), "Copied" (check, `--ok`), "Incomplete" (warning, `--warn`),
   "Failed" (warning, `--bad`), "Canceled" (stop); what is copied, "dist" or "3 items", then the
-  way it goes in `--muted`, "This machine → staging"; between two hosts, its tooltip says that
-  the files go through this machine. Then a bar of 120 px (9.23), and "18.4 of 60 MB · 12 of 40
+  way it goes in `--muted`, "This machine → staging", its tooltip naming the folder it goes into;
+  between two hosts, the tooltip also says that the files go through this machine. Then a bar of 120 px (9.23), and "18.4 of 60 MB · 12 of 40
   files" in 11.5 px and tabular figures. Last, a ghost button made of an icon alone: "Cancel
   transfer" (stop) while it runs, "Retry" (refresh) after a failure, "Remove" (cross) once it is
   over.
@@ -1898,7 +1920,8 @@ at half opacity (9.6).
 - "Cancel transfer" stops at once: the file being written goes, the files already copied stay.
   Closing a pane that a transfer uses asks first (9.10): "Close this pane?", "A transfer to
   staging is running. It will be stopped; the files already copied stay.", with "Cancel" and
-  "Close pane", a danger button. Closing the window asks the same in "Quit Ramure?" (9.15).
+  "Close pane", a danger button. Closing the window asks the same in "Quit Ramure?" (9.15), and
+  "Restart and install…" lists them among what the restart stops (9.23).
 
 **Connecting.** The pane of a host connects when it is opened or when "Connect" is clicked. What
 the connection says or asks shows in a panel over the list of the pane, under its header, on a

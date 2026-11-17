@@ -21,7 +21,6 @@
   const ready = $derived(pane.location?.kind === 'local' || pane.phase.step === 'ready');
   const selected = $derived(new Set(pane.selected));
   const selectedBytes = $derived(rows.filter((e) => selected.has(e.name) && !e.dir).reduce((n, e) => n + e.size, 0));
-  const focused = $derived(files.focused === pane.key);
 
   /** What the header says of the connection, as a fragment (guidelines, 12). */
   const stateText = $derived(
@@ -242,7 +241,7 @@
       const refusal = files.refusal(dragged, other, other.path);
       out.push({
         label: `${same ? 'Move' : 'Copy'} to ${files.label(other)} · ${other.path}`,
-        icon: same ? undefined : 'copy',
+        icon: same ? 'folder' : 'copy',
         disabled: !!refusal,
         hint: refusal || undefined,
         run: () => void files.drop(dragged, other, other.path),
@@ -275,7 +274,7 @@
     menu.open(e, [
       { label: 'New folder…', icon: 'folder-plus', run: () => void files.mkdir(pane) },
       { label: 'Refresh', icon: 'refresh', keys: 'F5', run: () => void files.refresh(pane) },
-      { label: 'Show hidden files', checked: pane.hidden, run: () => toggleHidden() },
+      { label: pane.hidden ? 'Hide hidden files' : 'Show hidden files', icon: 'eye', run: () => toggleHidden() },
     ]);
   }
 
@@ -376,7 +375,7 @@
         bind:this={whereEl}
         aria-haspopup="menu"
         aria-expanded={menu.isUnder(whereEl)}
-        title={menu.isUnder(whereEl) ? undefined : `${label}${host ? ` · ${files.address(pane)}` : ''} — choose another location`}
+        title={menu.isUnder(whereEl) ? undefined : `${label}${host ? ` · ${files.address(pane)} · ${pane.phase.step === 'ready' ? 'Connected' : pane.phase.step === 'connecting' ? 'Connecting' : 'Not connected'}` : ''} — choose another location`}
         onclick={(e) => menu.openUnder(e.currentTarget, locations, e.detail === 0)}
       >
         {#if pane.location.kind === 'local'}
@@ -392,14 +391,14 @@
             style:--c={host?.color ? `var(--l${host.color})` : 'var(--ok)'}
           ></span>
         {/if}
-        <span class="name" class:strong={focused}>{label}</span>
+        <span class="name">{label}</span>
         {#if host}<span class="address mono">{files.address(pane)}</span>{/if}
         {#if stateText}<span class="state">{stateText}</span>{/if}
         <!-- Turned down: it opens a menu, as a list does (guidelines, 9.3). -->
         <span class="down" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
     {:else}
-      <span class="title" class:strong={focused}>Empty pane</span>
+      <span class="title">Empty pane</span>
     {/if}
     <span class="acts">
       <button
@@ -469,7 +468,7 @@
       <button class="icon-btn" type="button" aria-label="Refresh" title="Refresh (F5)" disabled={!ready} onclick={() => void files.refresh(pane)}>
         <Icon name="refresh" size={16} />
       </button>
-      <button class="icon-btn toggle" type="button" aria-label="Show hidden files" title="Show hidden files" aria-pressed={pane.hidden} onclick={toggleHidden}>
+      <button class="icon-btn toggle" type="button" aria-label="Show hidden files" title="Show hidden files" aria-pressed={pane.hidden} disabled={!ready} onclick={toggleHidden}>
         <Icon name="eye" size={16} />
       </button>
       <button class="icon-btn" type="button" aria-label="New folder…" title="New folder…" disabled={!ready} onclick={() => void files.mkdir(pane)}>
@@ -488,7 +487,7 @@
         {#each [['name', 'Name'], ['modified', 'Modified'], ['size', 'Size']] as [by, title] (by)}
           <button class="col {by}" type="button" onclick={() => sortBy(by as SortBy)} aria-label="Sort by {title.toLowerCase()}">
             <span>{title}</span>
-            {#if pane.sort.by === by}<span class="arrow" class:desc={pane.sort.desc} aria-hidden="true"><Icon name="chevron" size={12} /></span>{/if}
+            {#if pane.sort.by === by}<span class="arrow" class:desc={pane.sort.desc} aria-hidden="true"><Icon name="chevron" size={14} /></span>{/if}
           </button>
         {/each}
       </div>
@@ -507,6 +506,7 @@
           aria-multiselectable="true"
           aria-activedescendant={currentIndex >= 0 ? rowId(currentIndex) : undefined}
           aria-busy={pane.loading}
+          inert={!ready}
           bind:this={listEl}
           onkeydown={onListKey}
           onfocus={onListFocus}
@@ -610,7 +610,12 @@
     color: var(--ink);
     cursor: pointer;
     text-align: left;
-    transition: background var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  .where:active {
+    transform: scale(0.97);
   }
   .where:hover,
   .where[aria-expanded='true'] {
@@ -627,12 +632,10 @@
   .name {
     flex: none;
     max-width: 60%;
+    font-weight: var(--fw-strong);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .strong {
-    font-weight: var(--fw-strong);
   }
   .address {
     min-width: 0;
@@ -722,6 +725,7 @@
   }
   .crumb {
     flex: none;
+    min-width: 24px;
     max-width: 180px;
     height: 24px;
     padding: 0 4px;
@@ -729,11 +733,25 @@
     border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
+    text-align: center;
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: background var(--t-fast) var(--ease);
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  .crumb:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .crumb:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  /* The bar scrolls sideways and would cut a ring drawn outside the segment: it is drawn inside. */
+  .crumb:focus-visible {
+    outline-offset: -2px;
   }
   .crumb:last-child {
     color: var(--ink);
@@ -757,7 +775,7 @@
   }
   .path-error {
     margin: 0;
-    padding: 0 12px 6px 36px;
+    padding: 0 12px 6px 32px;
     color: var(--bad);
     font-size: var(--fs-small);
   }
@@ -769,9 +787,10 @@
     min-height: 0;
     transition: background var(--t-fast) var(--ease);
   }
-  /* The drop goes into the folder the pane shows (guidelines, 9.24). */
+  /* The drop goes into the folder the pane shows (guidelines, 9.24): the tint of a hover, which
+     stays apart from the selection in both themes (2.4). */
   .body.target {
-    background: var(--accent-soft);
+    background: var(--hover);
   }
   .cols,
   .row {
@@ -792,20 +811,25 @@
     gap: 2px;
     min-width: 0;
     height: 24px;
-    padding: 0;
+    padding: 0 4px;
     border: 0;
+    border-radius: var(--radius-s);
     background: none;
     color: var(--muted);
     font-size: var(--fs-label);
     font-weight: var(--fw-strong);
     cursor: pointer;
+    transition:
+      background var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease);
   }
   .col:hover {
+    background: var(--hover);
     color: var(--ink);
   }
   .col.name {
     grid-column: 1 / 3;
-    padding-left: 28px;
+    padding-left: 24px;
   }
   .col.size {
     justify-content: flex-end;
@@ -877,6 +901,7 @@
   .modified {
     color: var(--muted);
     font-size: var(--fs-label);
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
   }

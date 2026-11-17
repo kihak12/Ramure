@@ -28,7 +28,11 @@
     }
     if (step === 'connecting' || step === 'ready') return;
     void tick().then(() => {
-      if (!card || !card.closest('[data-pane]')?.contains(document.activeElement)) return;
+      // The keyboard is taken from nobody: only when it was in this pane, or nowhere (the row or
+      // the button just clicked has gone).
+      const active = document.activeElement;
+      const lost = !active || active === document.body;
+      if (!card || (!lost && !card.closest('[data-pane]')?.contains(active))) return;
       const first = card.querySelector<HTMLElement>('input[type="password"], .btn.primary');
       if (first instanceof HTMLInputElement) first.focus();
       else focusWithRing(first ?? undefined);

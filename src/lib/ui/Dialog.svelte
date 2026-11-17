@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import Icon from './Icon.svelte';
   import Select from './Select.svelte';
   import { veil } from './veil';
@@ -55,7 +56,9 @@
       if (dialogs.current !== asked) return;
       if (reason) {
         refusal = reason;
-        firstField?.focus();
+        // The keyboard goes back to the field to correct, or else to the main button.
+        if (firstField) firstField.focus();
+        else void tick().then(() => element?.querySelector<HTMLElement>('footer .btn:last-child')?.focus());
         return;
       }
     }
@@ -68,9 +71,11 @@
   bind:this={element}
   oncancel={(e) => {
     e.preventDefault();
-    dialogs.close(null);
+    // An action that runs in the dialog lasts an instant and cannot stop halfway: neither Escape
+    // nor the veil closes it meanwhile (guidelines, 9.10).
+    if (!busy) dialogs.close(null);
   }}
-  use:veil={() => dialogs.close(null)}
+  use:veil={() => !busy && dialogs.close(null)}
 >
   {#if spec}
     <form onsubmit={submit}>
@@ -137,7 +142,7 @@
               {/if}
             {/if}
             <!-- What the action refused, under the field, announced at once (guidelines, 9.3). -->
-            {#if i === 0 && refusal}<small class="refusal" id="dialog-refusal" role="alert">{refusal}</small>{/if}
+            {#if i === 0 && textFirst && refusal}<small class="refusal" id="dialog-refusal" role="alert">{refusal}</small>{/if}
             {#if field.hint}<small>{field.hint}</small>{/if}
           </label>
         {/if}
@@ -151,7 +156,7 @@
         <!-- The way out, the secondary action, then the main one, at the right (guidelines, 9.1, "Hierarchy"). -->
         <!-- Destructive action: the focus lands on "Cancel", so that Enter destroys nothing (guidelines, 9.10). -->
         <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn" type="button" autofocus={!!spec.danger} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Cancel'}</button>
+        <button class="btn" type="button" autofocus={!!spec.danger} disabled={busy} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Cancel'}</button>
         {#if spec.extra}
           {@const extra = spec.extra}
           <button

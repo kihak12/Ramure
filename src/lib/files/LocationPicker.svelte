@@ -159,8 +159,8 @@
     width: 100%;
     display: flex;
     align-items: stretch;
-    gap: 9px;
-    padding: 7px 8px;
+    gap: 8px;
+    padding: 6px 8px;
     border: 0;
     border-radius: var(--radius);
     background: none;
@@ -196,7 +196,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
     line-height: 1.3;
   }
   .text b,
