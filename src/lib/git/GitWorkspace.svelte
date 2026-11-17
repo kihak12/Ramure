@@ -208,12 +208,17 @@
       opacity var(--t-med) var(--ease),
       visibility 0s;
   }
+  /* A hidden tab keeps its state, but its content is no longer laid out: resizing a card, which
+     all the tabs share, lays out the tab in view only. It stops being laid out once faded out. */
   .view.hidden {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    content-visibility: hidden;
     transition:
       opacity var(--t-med) var(--ease),
-      visibility 0s var(--t-med);
+      visibility 0s var(--t-med),
+      content-visibility 0s var(--t-med);
+    transition-behavior: allow-discrete;
   }
 </style>

@@ -32,8 +32,10 @@
   let bodyWidth = $state(0);
   const sides = $derived(fit(bodyWidth));
   // A hidden card has no column left, nor its handle: the center goes to the edge of the view.
+  // The widths are written on the grid itself, not in inherited variables: a variable that changes
+  // makes every element of the view compute its style again, at each move of a handle.
   const columns = $derived(
-    [layout.sidebarHidden ? '' : 'var(--sidebar) 8px', 'minmax(0, 1fr)', layout.detailHidden ? '' : '8px var(--detail)'].join(' ').trim(),
+    [layout.sidebarHidden ? '' : `${sides.sidebar}px 8px`, 'minmax(0, 1fr)', layout.detailHidden ? '' : `8px ${sides.detail}px`].join(' ').trim(),
   );
 
   // Terminal of the repository, under the graph: its height, the one chosen brought down to the room there is.
@@ -109,9 +111,7 @@
       class="body"
       class:bare={!repo.result}
       bind:clientWidth={bodyWidth}
-      style:--sidebar="{sides.sidebar}px"
-      style:--detail="{sides.detail}px"
-      style:--columns={columns}
+      style:grid-template-columns={repo.result ? columns : undefined}
     >
       {#if repo.result}
         <!-- A hidden card stays mounted: its filter, its position and the message being written are kept. -->
@@ -132,7 +132,7 @@
       {/if}
 
       <!-- The graph, and under it the terminal of the repository, as wide as it (guidelines, section 9.20). -->
-      <div class="middle" bind:clientHeight={middleHeight} style:--terminal="{terminalSize.value}px">
+      <div class="middle" bind:clientHeight={middleHeight}>
         <!-- Hidden, the graph stays mounted: its position and its selection are kept. -->
         <div class="center" bind:this={centerEl} hidden={graphHidden} inert={graphHidden}>
           <Graph {repo} />
@@ -165,7 +165,14 @@
             />
           {/if}
           <!-- Hidden, it stays mounted: its shells keep running. -->
-          <div class="terminal" class:alone={graphHidden} bind:this={terminalEl} hidden={!terminals.shown} inert={!terminals.shown}>
+          <div
+            class="terminal"
+            class:alone={graphHidden}
+            style:height={graphHidden ? undefined : `${terminalSize.value}px`}
+            bind:this={terminalEl}
+            hidden={!terminals.shown}
+            inert={!terminals.shown}
+          >
             <TerminalPanel {repo} active={active && terminals.shown} />
           </div>
         {/if}
@@ -254,8 +261,7 @@
     position: relative;
     flex: 1;
     display: grid;
-    /* Between the cards, two 8 px handles: they stand for the gap. */
-    grid-template-columns: var(--columns);
+    /* Between the cards, two 8 px handles: they stand for the gap. The columns are set inline. */
     padding: 0 8px 8px;
     min-height: 0;
   }
@@ -296,9 +302,9 @@
     flex: none;
     height: 8px;
   }
+  /* Its height is set inline, from the handle. */
   .terminal {
     flex: none;
-    height: var(--terminal);
     min-height: 0;
   }
   /* Without the graph, the terminal holds the whole column. */
