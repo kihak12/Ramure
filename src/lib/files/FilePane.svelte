@@ -14,6 +14,7 @@
   let { pane }: { pane: Pane } = $props();
 
   const rows = $derived(visible(pane));
+  const crumbs = $derived(segments(pane.path));
   const hiddenCount = $derived(pane.hidden ? 0 : pane.entries.filter((e) => e.hidden).length);
   const label = $derived(files.label(pane));
   const host = $derived(files.host(pane));
@@ -299,16 +300,23 @@
     over = null;
   }
 
-  function dragOver(e: DragEvent) {
+  /** Where the pointer of a drag aims in this pane: a folder row, or the folder the pane shows. */
+  function aim(e: DragEvent) {
     const dragged = files.drag;
-    if (!dragged || !pane.location) return;
+    if (!dragged || !pane.location) return null;
     const row = e.target instanceof Element ? e.target.closest<HTMLElement>('.row') : null;
     const entry = row ? rows[Number(row.dataset.index)] : undefined;
     // A folder row receives the drop into it, unless it is one of the rows dragged.
     const intoRow = entry?.dir && !(dragged.paneKey === pane.key && dragged.names.includes(entry.name));
     const dest = intoRow && entry ? joinPath(pane.path, entry.name) : pane.path;
-    const refusal = files.refusal(dragged, pane, dest);
-    over = { dest, into: intoRow && entry ? entry.name : null, refusal, copy: e.ctrlKey };
+    return { dragged, dest, into: intoRow && entry ? entry.name : null, refusal: files.refusal(dragged, pane, dest), copy: e.ctrlKey };
+  }
+
+  function dragOver(e: DragEvent) {
+    const aimed = aim(e);
+    if (!aimed) return;
+    const { dragged, refusal } = aimed;
+    over = aimed;
     if (refusal) {
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
       return;
@@ -319,19 +327,21 @@
     if (e.dataTransfer) e.dataTransfer.dropEffect = moves ? 'move' : 'copy';
   }
 
+  /** The pointer left the pane: WebKit does not always say where it went, so its position decides. */
   function dragLeave(e: DragEvent) {
-    const into = e.relatedTarget;
-    if (!(into instanceof Node) || !e.currentTarget || !(e.currentTarget as Node).contains(into)) over = null;
+    const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const inside = e.clientX > box.left && e.clientX < box.right && e.clientY > box.top && e.clientY < box.bottom;
+    if (!inside || (e.clientX === 0 && e.clientY === 0)) over = null;
   }
 
+  /** The drop aims where the pointer is now, whatever the last `dragover` said. */
   function drop(e: DragEvent) {
     e.preventDefault();
-    const dragged = files.drag;
-    const target = over;
+    const aimed = aim(e);
     over = null;
     files.drag = null;
-    if (!dragged || !target || target.refusal) return;
-    void files.drop(dragged, pane, target.dest, e.ctrlKey);
+    if (!aimed || aimed.refusal) return;
+    void files.drop(aimed.dragged, pane, aimed.dest, e.ctrlKey);
   }
 
   const dragging = $derived(files.drag?.paneKey === pane.key ? new Set(files.drag.names) : null);
@@ -346,6 +356,9 @@
   aria-label={label}
   onfocusin={() => (files.focused = pane.key)}
   onpointerdown={() => (files.focused = pane.key)}
+  ondragover={dragOver}
+  ondragleave={dragLeave}
+  ondrop={drop}
 >
   <header>
     {#if pane.location}
@@ -434,8 +447,9 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="crumbs" onclick={(e) => e.target === e.currentTarget && ready && void editPath()} title={ready ? 'Click to type a path' : undefined}>
-          {#each segments(pane.path) as segment, i (segment.path)}
-            {#if i > 0}<span class="sep" aria-hidden="true">/</span>{/if}
+          {#each crumbs as segment, i (segment.path)}
+            <!-- The root ("/", "C:\") already ends with its separator. -->
+            {#if i > 0 && !/[\\/]$/.test(crumbs[i - 1].name)}<span class="sep" aria-hidden="true">/</span>{/if}
             <button class="crumb" type="button" disabled={!ready} title={segment.path} onclick={() => void files.list(pane, segment.path)}>{segment.name}</button>
           {/each}
         </div>
@@ -459,9 +473,6 @@
       class="body"
       class:target={!!over && !over.refusal && !over.into}
       role="presentation"
-      ondragover={dragOver}
-      ondragleave={dragLeave}
-      ondrop={drop}
       oncontextmenu={listMenu}
     >
       <div class="cols" role="presentation">

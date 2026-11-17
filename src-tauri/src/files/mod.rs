@@ -252,7 +252,11 @@ impl Fs {
         let path = path.trim();
         match self {
             Fs::Local => {
-                let expanded = if path.is_empty() { ssh::config::expand("~") } else { ssh::config::expand(path) };
+                // `~` alone, or nothing, is the home folder; `expand` only knows `~/`.
+                let expanded = match (path, ssh::config::home()) {
+                    ("" | "~", Some(home)) => home,
+                    _ => ssh::config::expand(path),
+                };
                 let shown = expanded.to_string_lossy().to_string();
                 let resolved = tokio::fs::canonicalize(&expanded).await.map_err(|e| local_error(&e, &shown))?;
                 Ok(paths::local_display(&resolved))
@@ -867,6 +871,16 @@ mod tests {
         assert!(entry.hidden);
         assert!(!entry.dir);
         assert_eq!(entry.size, 42);
+    }
+
+    #[tokio::test]
+    async fn the_home_folder_is_where_a_pane_of_this_machine_opens() {
+        let Some(home) = ssh::config::home() else { return };
+        let Ok(home) = std::fs::canonicalize(home) else { return };
+        let expected = paths::local_display(&home);
+        assert_eq!(Fs::Local.resolve("").await.unwrap(), expected);
+        assert_eq!(Fs::Local.resolve("~").await.unwrap(), expected);
+        assert_eq!(Fs::Local.list("").await.unwrap().path, expected);
     }
 
     #[tokio::test]

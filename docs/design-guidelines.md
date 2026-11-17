@@ -1857,9 +1857,9 @@ pane. A row dragged outside the selection becomes the selection. The rows dragge
 at half opacity (9.6).
 
 - **What receives it.** A folder row receives the drop into that folder: it takes the 2 px
-  outline in `--accent`, inside the row, as a branch label does (9.4). Anywhere else in the list
-  of a pane, the drop goes into the folder the pane shows: the list takes an `--accent-soft`
-  tint. Nothing else changes size or place.
+  outline in `--accent`, inside the row, as a branch label does (9.4). Anywhere else on a pane,
+  its header and its path bar included, the drop goes into the folder the pane shows: the list
+  takes an `--accent-soft` tint. Nothing else changes size or place.
 - **What it does.** Between two places, a drop copies. On one place, the same pane or two panes
   on the same host, it moves: a rename, nothing is copied. Ctrl, held at the drop, copies there
   too. While the pointer is over a pane, its foot says it in `--ink`: "Copy 3 items here", "Move
