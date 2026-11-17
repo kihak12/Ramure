@@ -258,7 +258,7 @@
     if (modified) {
       const sure = await dialogs.confirm({
         title: 'Close without saving?',
-        body: 'The choices and corrections made in this editor will be lost. The file keeps its conflict markers.',
+        body: 'The choices and corrections made in this editor will be lost for good. The file keeps its conflict markers.',
         confirmLabel: 'Close without saving',
         danger: true,
       });
@@ -296,7 +296,7 @@
   class="conflict"
   aria-label="Conflict editor: {file.path}"
   onkeydown={onKey}
-  in:fly={{ y: 16, duration: motion.med }}
+  in:fly={{ y: 10, duration: motion.med }}
   out:fly={{ y: 10, duration: motion.fast }}
 >
   <header>
@@ -313,20 +313,26 @@
         {/if}
       </small>
     </div>
-    <button class="btn" type="button" onclick={close} title="Close (Escape)"><Icon name="x" size={14} /> Close</button>
+    <button class="btn small" type="button" onclick={close} title="Close (Escape)"><Icon name="x" size={14} /> Close</button>
     <button
-      class="btn primary"
+      class="btn primary small"
       type="button"
       disabled={!canSave}
       onclick={save}
-      title={canSave ? 'Write the file and mark it as resolved (Ctrl + S)' : editable ? 'Decide every conflict first.' : 'Write the file and mark it as resolved'}
+      title={canSave
+        ? 'Write the file and mark it as resolved (Ctrl + S)'
+        : !editable
+          ? 'Write the file and mark it as resolved'
+          : markersLeft
+            ? 'Decide every conflict first.'
+            : 'Git is working: wait for it to finish.'}
     >
       <Icon name="check" size={14} /> Save and mark resolved
     </button>
   </header>
 
   {#if error}
-    <p class="note err">{error}</p>
+    <p class="note err" role="alert">{error}</p>
   {:else if !data}
     <p class="note">Reading the versions of the file…</p>
   {:else if !editable}
@@ -348,7 +354,7 @@
     <div class="sides">
       <div class="side ours">
         <div class="bar">
-          <span class="chip" aria-hidden="true">1</span>
+          <span class="side-chip" aria-hidden="true">1</span>
           <b>{names.ours}</b>
           <small class="mono">{current?.oursLabel ?? ''}</small>
           <button class="btn small" type="button" disabled={!open} onclick={() => keepAll('ours')} title="Keep this side in every conflict left">Keep all</button>
@@ -367,7 +373,7 @@
       </div>
       <div class="side theirs">
         <div class="bar">
-          <span class="chip" aria-hidden="true">2</span>
+          <span class="side-chip" aria-hidden="true">2</span>
           <b>{names.theirs}</b>
           <small class="mono">{current?.theirsLabel ?? ''}</small>
           <button class="btn small" type="button" disabled={!open} onclick={() => keepAll('theirs')} title="Keep this side in every conflict left">Keep all</button>
@@ -389,9 +395,9 @@
     <div class="choose">
       {#if current}
         <div class="nav">
-          <button class="btn small icon" type="button" aria-label="Previous conflict" title="Previous conflict (Shift + F8)" disabled={blocks.length < 2} onclick={() => step(-1)}><Icon name="up" size={14} /></button>
+          <button class="btn small square" type="button" aria-label="Previous conflict" title="Previous conflict (Shift + F8)" disabled={blocks.length < 2} onclick={() => step(-1)}><Icon name="up" size={14} /></button>
           <span class="count">Conflict <b>{Math.min(index, blocks.length - 1) + 1}</b> of {blocks.length}</span>
-          <button class="btn small icon" type="button" aria-label="Next conflict" title="Next conflict (F8)" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
+          <button class="btn small square" type="button" aria-label="Next conflict" title="Next conflict (F8)" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
         </div>
         <button class="btn small take ours" type="button" onclick={() => take('ours')}>{names.keepOurs}</button>
         <button class="btn small take theirs" type="button" onclick={() => take('theirs')}>{names.keepTheirs}</button>
@@ -409,7 +415,7 @@
       <div class="side result">
         <div class="bar">
           <b>Result</b>
-          <small>check lines above to fill it; it stays editable</small>
+          <small>Check lines above to fill it; it stays editable.</small>
         </div>
         <ConflictResult
           bind:this={result}
@@ -426,7 +432,7 @@
       </div>
       {#if showBase && data.base !== null}
         <div class="side base">
-          <div class="bar"><b>Common ancestor</b><small>before both changes</small></div>
+          <div class="bar"><b>Common ancestor</b><small>Before both changes.</small></div>
           <CodeEditor bind:this={baseView} value={data.base} readonly marks={baseMarks} lineSeparator={separator} label="Common ancestor, read-only" />
         </div>
       {/if}
@@ -561,14 +567,15 @@
     white-space: nowrap;
   }
   /* The number of a side: the letter of a file state, on the tint of its side (guidelines, 9.6). */
-  .chip {
+  .side-chip {
     flex: none;
-    display: inline-grid;
+    display: grid;
     place-items: center;
-    min-width: 16px;
+    width: 16px;
     height: 16px;
     border-radius: var(--radius-xs);
     background: color-mix(in srgb, var(--c) 30%, var(--panel));
+    font-family: var(--f-mono);
     font-size: var(--fs-micro);
     font-weight: var(--fw-strong);
   }
@@ -589,7 +596,7 @@
     gap: 6px;
     margin-right: 6px;
   }
-  .btn.icon {
+  .btn.square {
     min-width: 24px;
     padding: 2px 4px;
   }

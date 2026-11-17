@@ -301,7 +301,7 @@
     '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px' },
     '.cm-content': { caretColor: 'var(--ink)' },
     '.cm-cursor': { borderLeftColor: 'var(--ink)' },
-    '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--faint)', border: 'none', borderRight: '1px solid var(--line-soft)' },
+    '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
     '.cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
     '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--ink)' },
     '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
@@ -316,7 +316,7 @@
       minWidth: '14px',
       height: '14px',
       borderRadius: 'var(--radius-xs)',
-      fontFamily: 'var(--f-ui)',
+      fontFamily: 'var(--f-mono)',
       fontSize: 'var(--fs-micro)',
       fontWeight: 'var(--fw-strong)',
       color: 'var(--ink)',

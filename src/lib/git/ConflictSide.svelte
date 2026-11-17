@@ -39,35 +39,26 @@
   });
 
   /** The checkbox of a line, in its gutter: the mouse picks with it, the keyboard goes through the lines. */
+  /** The whole cell of the gutter is the target: a click on it, box or not, keeps the line. */
   class Box extends GutterMarker {
     readonly block: number;
     readonly line: number;
     readonly kept: boolean;
-    readonly faded: boolean;
-    readonly calls: Calls;
-    constructor(block: number, line: number, kept: boolean, faded: boolean, calls: Calls) {
+    constructor(block: number, line: number, kept: boolean) {
       super();
       this.block = block;
       this.line = line;
       this.kept = kept;
-      this.faded = faded;
-      this.calls = calls;
     }
     eq(other: Box) {
-      return other.block === this.block && other.line === this.line && other.kept === this.kept && other.faded === this.faded;
+      return other.block === this.block && other.line === this.line && other.kept === this.kept;
     }
     toDOM() {
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.tabIndex = -1;
       box.checked = this.kept;
-      box.className = this.faded ? 'faded' : '';
       box.setAttribute('aria-hidden', 'true');
-      box.addEventListener('mousedown', (e) => e.preventDefault());
-      box.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.calls.pick(this.block, this.line, e.shiftKey);
-      });
       return box;
     }
   }
@@ -78,28 +69,32 @@
     readonly count: number;
     readonly state: 'on' | 'off' | 'mixed';
     readonly edited: boolean;
+    readonly current: boolean;
     readonly calls: Calls;
-    constructor(block: number, count: number, state: 'on' | 'off' | 'mixed', edited: boolean, calls: Calls) {
+    constructor(block: number, count: number, state: 'on' | 'off' | 'mixed', edited: boolean, current: boolean, calls: Calls) {
       super();
       this.block = block;
       this.count = count;
       this.state = state;
       this.edited = edited;
+      this.current = current;
       this.calls = calls;
     }
     eq(other: Head) {
-      return other.block === this.block && other.count === this.count && other.state === this.state && other.edited === this.edited;
+      return (
+        other.block === this.block && other.count === this.count && other.state === this.state && other.edited === this.edited && other.current === this.current
+      );
     }
     toDOM() {
       const head = document.createElement('div');
-      head.className = 'cm-conflict-head';
+      // The current conflict reads by its header, in --ink and weight 650 (guidelines, 9.26).
+      head.className = this.current ? 'cm-conflict-head current' : 'cm-conflict-head';
       const label = document.createElement('label');
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.tabIndex = -1;
       box.checked = this.state === 'on';
       box.indeterminate = this.state === 'mixed';
-      if (this.edited) box.className = 'faded';
       box.addEventListener('mousedown', (e) => e.preventDefault());
       box.addEventListener('click', (e) => {
         e.preventDefault();
@@ -128,12 +123,16 @@
       if (conflict.at < 0 || !conflict.kept.length) continue;
       const first = lineOf(state, conflict.at + 1);
       ranges.push(
-        Decoration.widget({ widget: new Head(conflict.index, conflict.kept.length, conflict.state, conflict.edited, calls), block: true, side: -1 }).range(first.from),
+        Decoration.widget({
+          widget: new Head(conflict.index, conflict.kept.length, conflict.state, conflict.edited, conflict.index === info.current, calls),
+          block: true,
+          side: -1,
+        }).range(first.from),
       );
       conflict.kept.forEach((kept, i) => {
         const line = lineOf(state, conflict.at + 1 + i);
         const cursor = info.focused && info.cursor?.block === conflict.index && info.cursor.line === i;
-        const classes = ['cm-side-line', kept ? 'cm-side-kept' : '', conflict.index === info.current ? 'cm-side-current' : '', cursor ? 'cm-side-cursor' : '']
+        const classes = ['cm-side-line', kept ? 'cm-side-kept' : '', cursor ? 'cm-side-cursor' : '']
           .filter(Boolean)
           .join(' ');
         ranges.push(Decoration.line({ class: classes }).range(line.from));
@@ -142,13 +141,13 @@
     return Decoration.set(ranges, true);
   }
 
-  function boxes(state: EditorState, calls: Calls): RangeSet<GutterMarker> {
+  function boxes(state: EditorState): RangeSet<GutterMarker> {
     const info = state.field(infoField);
     const marks = [];
     for (const conflict of info.conflicts) {
       if (conflict.at < 0) continue;
       for (let i = 0; i < conflict.kept.length; i++) {
-        marks.push(new Box(conflict.index, i, conflict.kept[i], conflict.edited, calls).range(lineOf(state, conflict.at + 1 + i).from));
+        marks.push(new Box(conflict.index, i, conflict.kept[i]).range(lineOf(state, conflict.at + 1 + i).from));
       }
     }
     return RangeSet.of(marks, true);
@@ -158,11 +157,13 @@
     '&': { height: '100%', fontSize: 'var(--fs-code)', backgroundColor: 'var(--bg)', color: 'var(--ink)' },
     '&.cm-focused': { outline: 'none' },
     '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px' },
-    '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--faint)', border: 'none', borderRight: '1px solid var(--line-soft)' },
+    // The numbers of the lines are read: --muted, as in a diff (guidelines, 2.3 and 9.14).
+    '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
     '.cm-picks': { minWidth: '22px' },
-    '.cm-picks .cm-gutterElement': { display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    '.cm-picks input, .cm-conflict-head input': { margin: '0' },
-    '.cm-picks input.faded, .cm-conflict-head input.faded': { opacity: '0.45' },
+    '.cm-picks .cm-gutterElement': { display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+    '.cm-picks input': { margin: '0', pointerEvents: 'none' },
+    '.cm-conflict-head input': { margin: '0' },
+    '.cm-conflict-head.current': { color: 'var(--ink)', fontWeight: 'var(--fw-strong)' },
     '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
     '.cm-side-kept': { backgroundColor: 'color-mix(in srgb, var(--c) 24%, transparent)' },
     // The line of the keyboard: an inner ring, never around the whole pane (guidelines, 9.6).
@@ -237,7 +238,20 @@
         EditorView.editable.of(false),
         EditorView.lineWrapping,
         infoField,
-        gutter({ class: 'cm-picks', markers: (v) => boxes(v.state, calls) }),
+        gutter({
+          class: 'cm-picks',
+          markers: (v) => boxes(v.state),
+          domEventHandlers: {
+            mousedown: (v, block, event) => {
+              const n = v.state.doc.lineAt(block.from).number - 1;
+              const hit = v.state.field(infoField).conflicts.find((c) => c.at >= 0 && n >= c.at && n < c.at + c.kept.length);
+              if (!hit) return false;
+              event.preventDefault();
+              calls.pick(hit.index, n - hit.at, (event as MouseEvent).shiftKey);
+              return true;
+            },
+          },
+        }),
         lineNumbers(),
         EditorView.decorations.compute([infoField], (s) => decorate(s, calls)),
         theme,
@@ -323,7 +337,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
   class="pane"
-  tabindex="0"
+  tabindex={stops.length ? 0 : -1}
   role="group"
   aria-label="{label}: the arrows go through the lines of the conflicts, Space keeps a line or lets it go"
   bind:this={paneEl}

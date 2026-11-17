@@ -183,6 +183,8 @@ Every theme must meet them, in light and in dark.
 | `--accent` on `--accent-soft` (the icon of an active module or of a pressed action) | 3:1 |
 | `--accent` on `--side`, `--hover-side`, `--sel` and `--hover` (the dot that says an update waits, 9.23) | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
+| `--ink` on the tints of the two sides of the conflict editor, 10%, 24% and 30% of `--l0` and `--l1`, and on their "Keep" buttons, at rest and on hover (9.26) | 7:1 |
+| `--accent`, the ring of the keyboard, on a line kept in the conflict editor (9.26) | 3:1 |
 | Each terminal color (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
 A hover has to be seen, and the selection has to stand apart from its background and from the
@@ -2026,10 +2028,15 @@ whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a
 
 **The header**, one line: the merge icon in `--warn`, the path of the file in the code font, and
 under it what is left, "2 conflicts to decide", or "No conflict left: the file can be saved".
-Then "Close", standard, and "Save and mark resolved", the main button, disabled while a conflict
-is left, its tooltip saying why. Saving writes the file and marks it resolved (`git add`).
+Then "Close" and "Save and mark resolved", small buttons as the actions of a card are (9.1), in
+the order of the last line of a dialog: the way out, then the main button, at the right, since
+the editor is a step that ends with saving. "Save and mark resolved" is disabled while a conflict
+is left; the line under the path says why, and its tooltip repeats it: "Decide every conflict
+first.", or "Git is working: wait for it to finish." Saving writes the file and marks it resolved
+(`git add`).
 
-**The two sides**, side by side, read only, each with its line numbers; long lines wrap.
+**The two sides**, side by side, read only, each with its line numbers in `--muted`, as in a diff
+(9.14); long lines wrap.
 
 - Their names follow the operation, since git swaps the roles in a rebase: in a rebase, "Upstream",
   the commits already applied, and "Your commit", the commit being replayed; in a merge, a
@@ -2038,23 +2045,30 @@ is left, its tooltip saying why. Saving writes the file and marks it resolved (`
   the code font and `--muted`, cut first, then "Keep all", a small standard button that keeps
   this side in every conflict left.
 - The two sides take the first two colors of the graph, `--l0` for side 1 and `--l1` for side 2,
-  as the preview of the graph does (2.2): the one other place they are allowed. The result has no
-  color of its own.
+  as the preview of the graph does (2.2): the one other place they are allowed. Their tints are
+  checked against `--ink` in every theme (2.4). The result has no color of its own: its lines take
+  the tint of the side they were kept from.
+- **The chip** of a side, "1" or "2", is the letter of a file state (9.6): the code font, weight
+  650, on 30% of the color of its side, 16 px in the bars, 14 px in the gutter of the result,
+  whose lines are 18 px.
 - **A line of a conflict** has a checkbox (9.3) in a gutter of its own, before its number, and a
   tint of 10% of its side's color. Kept, the box is checked and the tint goes to 24%, as a line
   picked in a diff gets stronger (9.14). A click keeps the line or lets it go; Shift + click
   extends from the last line clicked, in the same conflict. A line outside any conflict has no
-  checkbox. The box is a target of the mouse only: the keyboard goes through the lines (below).
+  checkbox. The whole cell of the gutter is the target, 22 px wide and as high as the line,
+  18 px: an exception to the 24 px target, as the resize handle is (9.16), which the keyboard makes
+  up for (below).
 - **The header of a conflict**, a row of 24 px above its first line, on each side: a checkbox,
-  then "Conflict 1 · 5 lines" in 11.5 px and `--muted`. The box keeps or lets go every line of
-  that side in that conflict; it is partly checked when only some are kept (9.3). A conflict
-  that has no line on one side has no header there.
+  then "Conflict 1 · 5 lines" in 11.5 px and `--muted`; the header of the current conflict is in
+  `--ink` and weight 650, the one mark of the current conflict in the sides. The box keeps or lets
+  go every line of that side in that conflict; it is partly checked when only some are kept
+  (9.3). A conflict that has no line on one side has no header there.
 
 **The bar**, between the sides and the result, from left to right: "Conflict 1 of 3" between two
 small buttons made of an icon alone, "Previous conflict" and "Next conflict" (Shift + F8, F8); then
 small standard buttons that set the lines of the current conflict, which can then be picked one by
 one: "Keep upstream" and "Keep your commit" (or "Keep your version" and "Keep the incoming
-version"), each with the tint of its side, "Keep both", "Keep both, reversed", "Keep neither";
+version"), each with 12% of the color of its side, 24% on hover in place of `--hover`, "Keep both", "Keep both, reversed", "Keep neither";
 then "Start over", a small ghost button, which puts the conflict back as it was; at the right, the
 checkbox "Show the common ancestor". The verb is "Keep", everywhere, in the list of the files too.
 
@@ -2076,9 +2090,10 @@ lines of side 1, then those of side 2; "Keep both, reversed" puts side 2 first.
 - A conflict is decided once a line is kept, or "Keep neither" was chosen. Letting go of its last
   line leaves it to decide again.
 - Typing stays free. Typing in a conflict already decided marks it "edited by hand", said in its
-  headers, whose checkboxes go to 45%. Keeping a line there afterwards asks first (9.10): "Replace
-  your edits?", "The lines typed in conflict 2 give way to the lines kept. Ctrl + Z brings them
-  back.", with "Cancel" and "Replace edits".
+  headers; its boxes stay as they are, since they still work. Keeping a line there afterwards asks
+  first (9.10): "Replace your edits?", "The lines typed in conflict 2 give way to the lines kept.
+  Ctrl + Z brings them back.", with "Cancel" and "Replace edits", the main button, which has the
+  focus: nothing is lost that Ctrl + Z does not bring back, so it is not a destructive action.
 - **Ctrl + Z** undoes the last choice, a line, a header, a button, wherever the focus is in the
   editor; in the result, it undoes what was typed when that came last.
 
@@ -2087,13 +2102,19 @@ conflict and marks it, as the sides do.
 
 **Keyboard.**
 
-- The two sides are stops of the tab order, and a click on a side, its text or a box, gives it
-  the keyboard; the ring of its line shows for the keyboard only (9.6). In a side, ↑ and ↓ go from line to line of the
+- The two sides are stops of the tab order, a side with no line to go through excepted, and a click
+  on a side, its text or a box, gives it the keyboard; the ring of its line shows for the keyboard
+  only (9.6). The tab order goes down each side, its "Keep all", then its lines, then the other
+  side, then the bar. In a side, ↑ and ↓ go from line to line of the
   conflicts, Home and End to the first and the last, with the inner ring of 9.6 on the line; Space
   keeps the line or lets it go; Shift with an arrow extends, in the same conflict. What the line
   becomes is announced: "Line 4 of conflict 1, kept: port = 8443".
 - F8 and Shift + F8 go to the next and the previous conflict, Ctrl + S saves once nothing is left
-  to decide, Escape closes, after "Close without saving?" when something was changed.
+  to decide, Escape closes, after "Close without saving?" when something was changed: "The
+  choices and corrections made in this editor will be lost for good. The file keeps its conflict
+  markers."
+- The captions of the bars of the result and of the ancestor are sentences: "Check lines above to
+  fill it; it stays editable.", "Before both changes."
 
 **A file that cannot be merged line by line**, binary, too large, or deleted on one side, says so
 in place of the panes, with "Keep upstream" and "Keep your commit" (or their merge names).

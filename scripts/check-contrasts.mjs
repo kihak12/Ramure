@@ -55,6 +55,12 @@ const LABEL_HOVER = 0.28; // background of a hovered label
 const TOWARD_INK = 0.9; // hover on a solid fill: 10% toward --ink
 const CAPSULE = 0.15; // capsule of a message: a veil of the color, on the bare, hovered or selected row
 const MATCH = 0.3; // search match in the terminal: the accent on --term-bg (Terminal.svelte)
+// Tints of the two sides of the conflict editor (ConflictSide, ConflictResult, ConflictEditor).
+const SIDE_LINE = 0.1; // a line of a conflict, and a line of the result kept from a side
+const SIDE_KEPT = 0.24; // a line kept
+const SIDE_CHIP = 0.3; // the chip "1" or "2"
+const SIDE_BUTTON = 0.12; // "Keep upstream", "Keep your commit"
+const SIDE_BUTTON_HOVER = 0.24;
 
 // The minimum color distances, in light then in dark: a hover shows on its background, and the
 // selection stands apart from its background and from the hover. Each is the lowest value of the
@@ -126,6 +132,21 @@ function check(name, t, dark) {
     for (const bg of ['--panel', '--hover', '--sel']) {
       need(`--ink on a ${lane} capsule, row in ${bg}`, contrast(t['--ink'], mix(c, CAPSULE, t[bg])), 7);
     }
+  }
+  // The two sides of the conflict editor take --l0 and --l1 (guidelines, 2.2 and 9.26): the text on
+  // their tints, and the ring of the keyboard on a line kept.
+  for (const side of ['--l0', '--l1']) {
+    const c = t[side];
+    const tints = [
+      ['a line', SIDE_LINE, '--bg'],
+      ['a kept line', SIDE_KEPT, '--bg'],
+      ['a chip in a bar', SIDE_CHIP, '--panel'],
+      ['a chip in the result', SIDE_CHIP, '--bg'],
+      ['a Keep button', SIDE_BUTTON, '--raised'],
+      ['a hovered Keep button', SIDE_BUTTON_HOVER, '--raised'],
+    ];
+    for (const [what, p, bg] of tints) need(`--ink on ${what} of ${side}`, contrast(t['--ink'], mix(c, p, t[bg])), 7);
+    need(`--accent ring on a kept line of ${side}`, contrast(t['--accent'], mix(c, SIDE_KEPT, t['--bg'])), 3);
   }
 }
 
