@@ -361,6 +361,9 @@ From left to right and from top to bottom:
 
 - No line separates these areas: the background and the space are enough.
 - The window is at least 1000 × 600 px; no area may overflow at that size.
+- The window opens again at the size, the place and the maximized state it was left in, the first
+  time at 1440 × 880. A place on a screen that is no longer there is not used: the window then
+  opens where the system puts it. It shows once it has its size and its place, never before.
 - When a side card is hidden, the gap of its handle goes with it: the center card sits 8 px from
   the edge of the window.
 - The settings page takes the place of the module, to the right of the rail (9.18).

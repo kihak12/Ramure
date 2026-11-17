@@ -9,6 +9,7 @@
 #   SCREEN_KEYRING=1 scripts/screen.sh open …           with a system keyring, empty and unlocked
 #   SCREEN_KEYRING=0 scripts/screen.sh open …           with no keyring at all
 #   SCREEN_BIN=/usr/bin/ramure scripts/screen.sh open … an installed copy, not the build
+#   SCREEN_WINDOW=keep scripts/screen.sh open …         the window size and place of the last run
 #
 # Between "open" and "capture", xdotool drives the application, on display :99:
 #   DISPLAY=:99 xdotool mousemove 760 138 click 1
@@ -58,6 +59,9 @@ case ${1:-} in
     # Only the data of the application is cleared: the system may hold the rest of the folder.
     rm -rf "$home/.local/share/dev.ramure.app"
     mkdir -p "$home/.local/share/dev.ramure.app/localstorage"
+    # The window opens at the size and the place it was left: a screenshot starts from the size of
+    # tauri.conf.json, unless SCREEN_WINDOW=keep asks for the one the last run left.
+    [ "${SCREEN_WINDOW:-}" = keep ] || rm -f "$home/.config/dev.ramure.app/.window-state.json"
     python3 - "$home/.local/share/dev.ramure.app/localstorage/tauri_localhost_0.localstorage" "$@" <<'P'
 import json, os, sqlite3, sys
 db = sqlite3.connect(sys.argv[1])

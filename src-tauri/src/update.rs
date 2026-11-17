@@ -12,6 +12,7 @@ use tauri::ipc::Channel;
 use tauri::utils::config::BundleType;
 use tauri::{AppHandle, State};
 use tauri_plugin_updater::{Error, Update, UpdaterExt};
+use tauri_plugin_window_state::AppHandleExt;
 
 /// What the settings show before any check.
 #[derive(Serialize, Debug, PartialEq)]
@@ -226,6 +227,9 @@ pub fn update_cancel(state: State<'_, Updates>) {
 pub async fn update_install(app: AppHandle, state: State<'_, Updates>) -> Result<(), Failure> {
     let update = state.found.lock().unwrap().clone().ok_or_else(|| Failure::new(NOTHING_FOUND, None))?;
     let bytes = state.bytes.lock().unwrap().take().ok_or_else(|| Failure::new(NOT_DOWNLOADED, None))?;
+    // A restart, or the installer of Windows, ends Ramure without the usual way out: the size and
+    // the place of the window are kept now, so that the new version opens as this one was.
+    let _ = app.save_window_state(crate::WINDOW_STATE);
     // The install waits for the system: on Ubuntu, for the administrator password.
     let (result, bytes) = tokio::task::spawn_blocking(move || (update.install(&bytes), bytes))
         .await
