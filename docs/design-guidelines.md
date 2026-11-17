@@ -2071,7 +2071,8 @@ lines of side 1, then those of side 2; "Keep both, reversed" puts side 2 first.
 - A conflict not decided yet is not shown as the markers of git: it is one band of 24 px on
   `--warn-soft`, with the letter "!" (9.6) and "Conflict 2 of 3: check the lines to keep", which
   the caret steps over. The markers stay in the file underneath, so that saving is refused while
-  one is left.
+  one is left. The numbers of the lines it hides are skipped: the result counts the lines of the
+  file, markers included, until the conflict is decided.
 - A conflict is decided once a line is kept, or "Keep neither" was chosen. Letting go of its last
   line leaves it to decide again.
 - Typing stays free. Typing in a conflict already decided marks it "edited by hand", said in its
@@ -2086,7 +2087,8 @@ conflict and marks it, as the sides do.
 
 **Keyboard.**
 
-- The two sides are stops of the tab order. In a side, ↑ and ↓ go from line to line of the
+- The two sides are stops of the tab order, and a click on a side, its text or a box, gives it
+  the keyboard; the ring of its line shows for the keyboard only (9.6). In a side, ↑ and ↓ go from line to line of the
   conflicts, Home and End to the first and the last, with the inner ring of 9.6 on the line; Space
   keeps the line or lets it go; Shift with an arrow extends, in the same conflict. What the line
   becomes is announced: "Line 4 of conflict 1, kept: port = 8443".

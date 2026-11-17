@@ -212,8 +212,11 @@
   } = $props();
 
   let host = $state<HTMLDivElement>();
+  let paneEl = $state<HTMLDivElement>();
   let view: EditorView | undefined;
   let focused = $state(false);
+  /** The ring of the line shows for the keyboard only: a click leaves none behind (guidelines, 9.6). */
+  let keyboard = $state(false);
   let cursor = $state<{ block: number; line: number } | null>(null);
   let said = $state('');
   // The widgets call through this object: it always holds the callbacks of the last render.
@@ -246,7 +249,7 @@
   });
 
   $effect(() => {
-    const info: Info = { conflicts, current, cursor, focused };
+    const info: Info = { conflicts, current, cursor, focused: focused && keyboard };
     view?.dispatch({ effects: setInfo.of(info) });
   });
 
@@ -271,6 +274,7 @@
 
   function onKey(e: KeyboardEvent) {
     if (!stops.length) return;
+    if (['ArrowDown', 'ArrowUp', 'Home', 'End', ' '].includes(e.key)) keyboard = true;
     const at = cursor ? stops.findIndex((s) => s.block === cursor!.block && s.line === cursor!.line) : -1;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
@@ -285,8 +289,9 @@
     }
   }
 
-  function onFocus() {
+  function onFocus(e: FocusEvent) {
     focused = true;
+    keyboard = (e.target as HTMLElement).matches(':focus-visible');
     // The first line of the current conflict takes the ring, if none has it yet.
     if (!cursor && stops.length) {
       cursor = stops.find((s) => s.block === current) ?? stops[0];
@@ -321,9 +326,16 @@
   tabindex="0"
   role="group"
   aria-label="{label}: the arrows go through the lines of the conflicts, Space keeps a line or lets it go"
+  bind:this={paneEl}
   onkeydown={onKey}
   onfocus={onFocus}
   onblur={() => (focused = false)}
+  onpointerdown={() => {
+    // The text of a side cannot take the focus, nor its boxes: the pane takes it, so that its keys,
+    // and those of the editor (Ctrl + Z, Ctrl + S, F8), work after a click.
+    keyboard = false;
+    if (document.activeElement !== paneEl) paneEl?.focus({ preventScroll: true });
+  }}
 >
   <div class="editor" bind:this={host}></div>
   <p class="spoken" aria-live="polite">{said}</p>
