@@ -111,6 +111,12 @@ export class Repo {
   reword = $state<{ sha: string; text: string | null; original: string } | null>(null);
   /** Where the focus goes back when the rewording ends: the row of the graph, or the button. */
   #rewordFrom: HTMLElement | null = null;
+  /** Counts the requests to reword: each one gives the keyboard to the field, a draft kept too. */
+  rewordAsk = $state(0);
+  /** The last request that the field has answered by taking the keyboard. */
+  rewordServed = 0;
+  /** Counts the requests to reword a commit that cannot be: its reason is brought forward. */
+  rewordRefused = $state(0);
   /** Local terminals opened in the folder of the repository, under the graph (guidelines, section 9.20). */
   readonly terminals = new RepoTerminals();
 
@@ -572,11 +578,16 @@ export class Repo {
     }
     const commit = this.current;
     revealDetail();
-    if (!commit || this.locked || this.rewordCheck(commit).reason) return false;
+    if (!commit || this.locked) return false;
+    if (this.rewordCheck(commit).reason) {
+      this.rewordRefused++;
+      return false;
+    }
     const from = document.activeElement;
     this.#rewordFrom = from instanceof HTMLElement && from !== document.body ? from : null;
     // The draft of this commit, if one was left: it is taken up again.
     if (this.reword?.sha !== commit.sha) this.reword = { sha: commit.sha, text: null, original: '' };
+    this.rewordAsk++;
     return true;
   }
 
@@ -585,9 +596,12 @@ export class Repo {
     const from = this.#rewordFrom;
     this.#rewordFrom = null;
     void tick().then(() => {
-      // The button of a commit that has a new SHA is gone with its panel: the graph takes it.
-      const graph = document.querySelector<HTMLElement>('section.view:not(.hidden) [aria-label="Commit history"]');
-      focusWithRing(from?.isConnected ? from : graph);
+      // "Reword" gives way to the form while it is open: the button of the panel shown now takes
+      // the focus back. Otherwise the graph does.
+      const view = document.querySelector('section.view:not(.hidden)');
+      const button = from?.classList.contains('reword-open') ? view?.querySelector<HTMLElement>('button.reword-open') : null;
+      const graph = view?.querySelector<HTMLElement>('[aria-label="Commit history"]');
+      focusWithRing(from?.isConnected ? from : (button ?? graph));
     });
   }
 

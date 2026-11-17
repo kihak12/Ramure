@@ -137,7 +137,8 @@
     </label>
     {#if repo.amend && headPushed}
       <p class="warn small" transition:slide={{ duration: motion.med }}>
-        This commit is already on the remote: after amending it, you will have to force push.
+        <Icon name="warning" size={14} />
+        <span>This commit is already on the remote: after amending it, you will have to force push.</span>
       </p>
     {/if}
     <label class="label" for="commit-message">Commit message</label>
@@ -226,10 +227,19 @@
     margin: 0;
     font-size: var(--fs-small);
   }
+  /* A tinted box, with the warning icon, as the box of a reworded commit (guidelines, 5 and 9.25). */
   .warn {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
     padding: 6px 8px;
-    border-radius: var(--radius-s);
+    border-radius: var(--radius);
     background: var(--warn-soft);
+  }
+  .warn :global(.icon) {
+    flex: none;
+    margin-top: 1px;
+    color: var(--warn);
   }
   .amend {
     display: flex;
