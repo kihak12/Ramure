@@ -8,6 +8,11 @@ mod ssh;
 mod update;
 
 use tauri::{Emitter, Manager};
+use tauri_plugin_window_state::StateFlags;
+
+/// What the window keeps from one launch to the next: its size, its place and whether it is
+/// maximized (guidelines, 4.2). Not whether it is shown: it always opens.
+pub const WINDOW_STATE: StateFlags = StateFlags::SIZE.union(StateFlags::POSITION).union(StateFlags::MAXIMIZED);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,11 +27,20 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // The window opens again as it was left. A place on a screen that is no longer there is
+        // not used: the window then opens where the system puts it.
+        .plugin(tauri_plugin_window_state::Builder::new().with_state_flags(WINDOW_STATE).build())
         .manage(ssh::SshState::default())
         .manage(local::LocalState::default())
         .manage(git::clone::CloneState::default())
         .manage(update::Updates::default())
         .setup(|app| {
+            // The window is created hidden, then given its size and its place: it shows once,
+            // where it belongs, rather than jumping there.
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
             // Host book: %APPDATA%\Ramure on Windows, ~/.config/ramure elsewhere.
             let folder = if cfg!(windows) { "Ramure" } else { "ramure" };
             let store = app

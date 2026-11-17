@@ -171,6 +171,7 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 - **Settings page**: the button at the foot of the rail, or Ctrl + , . It opens on the section
   of the module you are in. Every setting applies at once; there is nothing to save.
+- **The window** opens again at the size, the place and the maximized state it was left in.
 - **Light or dark**: "System" follows the system, "Light" and "Dark" hold one.
 - **Color themes**: Slate (the default), Ink, Undergrowth and Ember, each in light and dark.
   A theme changes the colors only. `npm run check` verifies that every theme meets the contrasts
@@ -291,4 +292,6 @@ Open Font License 1.1.
 ## Known limits
 
 - Hosts that go through a bastion (`ProxyJump`) are not supported.
+- Under Wayland, the system places the window itself: only its size and its maximized state come
+  back at the next launch.
 - The graph column is limited to about twenty lanes.
