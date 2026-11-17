@@ -336,9 +336,19 @@ export function commitMenu(repo: Repo, commit: CommitRow): MenuItem[] {
   const isHead = commit.sha === repo.head?.sha;
   const merge = commit.parents.length > 1;
   const name = `commit ${short(commit.sha)}`;
+  const reword = repo.rewordCheck(commit);
   return [
     { label: 'Create branch here…', icon: 'branch', run: () => void createBranch(repo, commit.sha, name) },
     { label: 'Create tag here…', icon: 'tag', run: () => void createTag(repo, commit.sha) },
+    // No "…": the message is edited in the detail panel, not in a dialog (guidelines, 9.25).
+    {
+      label: 'Reword message',
+      icon: 'pencil',
+      keys: 'F2',
+      disabled: !!reword.reason || repo.locked,
+      hint: reword.reason || 'Give this commit a new message, in the detail panel',
+      run: () => repo.startReword(commit),
+    },
     { separator: true },
     {
       label: 'Cherry-pick this commit',

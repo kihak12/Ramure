@@ -31,6 +31,17 @@ export function gitCommands(): Command[] {
     add({ id: 'pull', group: 'Actions', icon: 'pull', title: 'Pull', keywords: 'remote update', hint: status?.upstream ?? 'no remote branch', disabled: !idle || !status?.upstream, run: () => void repo.sync('pull') });
     add({ id: 'push', group: 'Actions', icon: 'push', title: status?.upstream || !branch ? 'Push' : 'Publish branch', keywords: 'remote upload publish', hint: status?.ahead ? `${plural(status.ahead, 'commit')} to push` : undefined, disabled: !idle || !branch, run: () => void repo.sync('push') });
     add({ id: 'push-force', group: 'Actions', icon: 'push', title: 'Force push…', keywords: 'push force lease', disabled: !idle || !status?.upstream, run: () => void forcePush(repo) });
+    const reword = repo.current && !repo.current.wip ? repo.rewordCheck(repo.current) : null;
+    add({
+      id: 'reword',
+      group: 'Actions',
+      icon: 'pencil',
+      title: 'Reword message',
+      keywords: 'rename edit change commit message amend',
+      disabled: !idle || !reword || !!reword.reason,
+      hint: !reword ? 'select a commit' : reword.reason ? reword.reason : undefined,
+      run: () => repo.startReword(),
+    });
     add({ id: 'branch', group: 'Actions', icon: 'branch', title: 'Create branch…', keywords: 'new branch', disabled: !idle || !repo.head, run: () => repo.head && void createBranch(repo, repo.head.sha, branch ?? 'HEAD') });
     add({ id: 'wip', group: 'Actions', icon: 'pencil', title: 'Show working changes', keywords: 'stage index wip commit', hint: repo.wipCount ? plural(repo.wipCount, 'file') : 'none', disabled: repo.wipCount === 0, run: () => repo.showWip() });
     add({ id: 'stage-all', group: 'Actions', icon: 'plus', title: 'Stage all', keywords: 'add index', disabled: !idle || !status?.unstaged.length, run: () => void repo.stage(status?.unstaged ?? []) });

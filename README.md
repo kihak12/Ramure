@@ -68,6 +68,11 @@ label in quotes.
 - **Staging by hunk or by line**: in the diff of a changed file, click the lines to stage
   (Shift + click for a range), or stage a whole hunk.
 - **Commit**: message, Ctrl + Enter, and "Amend last commit".
+- **Reword a commit**: "Reword" in the detail panel, F2 in the graph, or "Reword message" in the
+  menu of a commit, edits its message in place. The last commit is amended with its message only,
+  what is staged stays staged; an older commit of the current branch is reworded by replaying the
+  commits after it. What cannot be reworded says why before the click: a commit of another
+  branch, a merge on the way, an operation in progress, uncommitted changes for an older commit.
 - **Stashes**: stash with untracked files, pop, apply, drop, view the content.
 
 ### Branches, tags and history

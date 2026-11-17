@@ -3,6 +3,7 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
+import { focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
 import { revealDetail } from './layout.svelte';
 import { prefs, type Settings } from './prefs.svelte';
@@ -10,6 +11,7 @@ import { RepoTerminals } from './terminals.svelte';
 import type {
   CommandLog,
   CommitDetail,
+  CommitRow,
   ConflictFile,
   Diff,
   Done,
@@ -21,6 +23,7 @@ import type {
   RebasePlan,
   RefOp,
   Refs,
+  Reworded,
   Status,
   TodoItem,
 } from './types';
@@ -53,6 +56,19 @@ export const OPERATION: Record<Operation, string> = {
 };
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** What rewording a commit would do, or why it cannot be done (guidelines, 9.25). */
+export interface RewordCheck {
+  /** Why it cannot be done; empty when it can. */
+  reason: string;
+  /** The commit is HEAD: only its message is amended. */
+  head: boolean;
+  /** The commits after it, replayed with new SHAs. */
+  replayed: number;
+  /** It is on a remote: a force push will be needed. */
+  pushed: boolean;
+}
 
 export class Repo {
   // `$state.raw`: 50,000 rows must not be wrapped in reactive proxies.
@@ -79,6 +95,8 @@ export class Repo {
   message = $state('');
   amend = $state(false);
   detail = $state.raw<CommitDetail | null>(null);
+  /** The commit `detail` belongs to (`currentKey` when it was read). */
+  detailFor = $state('');
   detailError = $state('');
   openFile = $state<OpenFile | null>(null);
   diff = $state.raw<Diff | null>(null);
@@ -88,6 +106,17 @@ export class Repo {
   conflictFile = $state.raw<FileChange | null>(null);
   /** Plan of an interactive rebase being prepared; the dialog opens when it exists. */
   rebasePlan = $state.raw<RebasePlan | null>(null);
+  /** The message being reworded in the detail panel (guidelines, 9.25), kept as a draft while
+   *  another commit is looked at. `text` is null until the whole message is known. */
+  reword = $state<{ sha: string; text: string | null; original: string } | null>(null);
+  /** Where the focus goes back when the rewording ends: the row of the graph, or the button. */
+  #rewordFrom: HTMLElement | null = null;
+  /** Counts the requests to reword: each one gives the keyboard to the field, a draft kept too. */
+  rewordAsk = $state(0);
+  /** The last request that the field has answered by taking the keyboard. */
+  rewordServed = 0;
+  /** Counts the requests to reword a commit that cannot be: its reason is brought forward. */
+  rewordRefused = $state(0);
   /** Local terminals opened in the folder of the repository, under the graph (guidelines, section 9.20). */
   readonly terminals = new RepoTerminals();
 
@@ -121,6 +150,21 @@ export class Repo {
     this.commits.find((c) => !c.wip && c.refs.some((r) => r.kind === 'head' || r.kind === 'detached')) ?? null,
   );
   branch = $derived(this.status?.branch ?? this.result?.branch ?? null);
+  /** The loaded commits that are on the current branch: reachable from HEAD. */
+  onBranch = $derived.by(() => {
+    const reached = new Set<string>();
+    if (!this.head) return reached;
+    const bySha = new Map(this.commits.map((c) => [c.sha, c]));
+    const pending = [this.head.sha];
+    while (pending.length) {
+      const sha = pending.pop()!;
+      if (reached.has(sha)) continue;
+      reached.add(sha);
+      const commit = bySha.get(sha);
+      if (commit) pending.push(...commit.parents);
+    }
+    return reached;
+  });
 
   // Current commit when the history was last loaded; `undefined` while it is unknown.
   #logHead: string | null | undefined;
@@ -184,6 +228,8 @@ export class Repo {
       }
       this.result = data;
       this.record(data.commands);
+      // A draft of a commit that is no longer there goes with it.
+      if (this.reword && !data.commits.some((c) => c.sha === this.reword?.sha)) this.reword = null;
       if (previous?.wip) this.selected = data.commits[0]?.wip ? 0 : -1;
       else if (previous) this.selected = data.commits.findIndex((c) => c.sha === previous.sha);
       else this.selected = -1;
@@ -486,6 +532,113 @@ export class Repo {
     );
   }
 
+  // --- Rewording a commit (guidelines, 9.25) ------------------------------------------------
+
+  /** What rewording `commit` would do, or why it cannot be done, from what is loaded: said before
+   *  any click. The core checks it again. */
+  rewordCheck(commit: CommitRow): RewordCheck {
+    const status = this.status;
+    const out: RewordCheck = { reason: '', head: false, replayed: 0, pushed: this.hasRemote && !commit.localOnly };
+    if (commit.wip) return { ...out, reason: 'These changes are not committed yet.' };
+    if (status?.operation) return { ...out, reason: `A ${status.operation} is in progress. Continue or abort it before rewording.` };
+    if (!this.onBranch.has(commit.sha)) {
+      return { ...out, reason: `This commit is not on ${this.branch ?? 'the current branch'}. Switch to a branch that contains it to reword it.` };
+    }
+    if (commit.sha === this.head?.sha) return { ...out, head: true };
+    if (commit.parents.length > 1) return { ...out, reason: 'This commit is a merge: only the last commit can be reworded when it is a merge.' };
+    // The commits after it: on the branch, and not reachable from it.
+    const bySha = new Map(this.commits.map((c) => [c.sha, c]));
+    const below = new Set<string>();
+    const pending = [commit.sha];
+    while (pending.length) {
+      const sha = pending.pop()!;
+      if (below.has(sha)) continue;
+      below.add(sha);
+      pending.push(...(bySha.get(sha)?.parents ?? []));
+    }
+    const after = [...this.onBranch].filter((sha) => !below.has(sha)).map((sha) => bySha.get(sha));
+    if (after.some((c) => c && c.parents.length > 1)) {
+      return { ...out, reason: 'A merge commit lies between this commit and HEAD: rewording would flatten it. Choose a more recent commit.' };
+    }
+    if (status && !status.branch) return { ...out, reason: 'HEAD is detached: switch to a branch to reword an older commit.' };
+    if (status && (status.staged.length || status.unstaged.some((f) => f.kind !== 'untracked'))) {
+      return { ...out, reason: 'Uncommitted changes are in the way: stash or commit them first.' };
+    }
+    return { ...out, replayed: after.length };
+  }
+
+  /** Opens the rewording of `commit`, the selected one by default, in the detail panel, which
+   *  comes back if it was hidden. True if it opened. */
+  startReword(of?: CommitRow) {
+    if (of && of.sha !== this.current?.sha) {
+      const index = this.commits.findIndex((c) => c.sha === of.sha);
+      if (index < 0) return false;
+      this.selected = index;
+      this.reveal(index);
+    }
+    const commit = this.current;
+    revealDetail();
+    if (!commit || this.locked) return false;
+    if (this.rewordCheck(commit).reason) {
+      this.rewordRefused++;
+      return false;
+    }
+    const from = document.activeElement;
+    this.#rewordFrom = from instanceof HTMLElement && from !== document.body ? from : null;
+    // The draft of this commit, if one was left: it is taken up again.
+    if (this.reword?.sha !== commit.sha) this.reword = { sha: commit.sha, text: null, original: '' };
+    this.rewordAsk++;
+    return true;
+  }
+
+  /** The focus goes back to where the rewording started. */
+  #rewordBack() {
+    const from = this.#rewordFrom;
+    this.#rewordFrom = null;
+    void tick().then(() => {
+      // "Reword" gives way to the form while it is open: the button of the panel shown now takes
+      // the focus back. Otherwise the graph does.
+      const view = document.querySelector('section.view:not(.hidden)');
+      const button = from?.classList.contains('reword-open') ? view?.querySelector<HTMLElement>('button.reword-open') : null;
+      const graph = view?.querySelector<HTMLElement>('[aria-label="Commit history"]');
+      focusWithRing(from?.isConnected ? from : (button ?? graph));
+    });
+  }
+
+  /** "Cancel" or Escape: the draft is dropped, as in a dialog. */
+  cancelReword() {
+    this.reword = null;
+    this.#rewordBack();
+  }
+
+  /** "Save message": the commit gets its new message, and stays selected under its new SHA. */
+  async saveReword() {
+    const draft = this.reword;
+    if (!this.result || this.busy || !draft || draft.text === null || !draft.text.trim()) return;
+    this.busy = 'reword';
+    let done: Reworded | null = null;
+    try {
+      done = await this.git<Reworded>('git_reword', { sha: draft.sha, message: draft.text });
+    } catch (e) {
+      toasts.err('The commit could not be reworded', errorText(e));
+    } finally {
+      this.busy = '';
+    }
+    if (!done) {
+      // A rebase that stopped leaves its banner: the history is read again.
+      await this.reload();
+      return;
+    }
+    this.reword = null;
+    const detail = [`New SHA ${done.sha.slice(0, 7)}.`];
+    if (done.replayed) detail.push(`${plural(done.replayed, 'later commit')} ${done.replayed === 1 ? 'was' : 'were'} replayed.`);
+    if (done.pushed) detail.push('Force push to update the remote.');
+    toasts.ok('Commit reworded', detail.join(' '));
+    await this.reload();
+    this.selectSha(done.sha);
+    this.#rewordBack();
+  }
+
   /** Starts the automatic fetch; returns the function that stops it. */
   startAutoFetch() {
     const timer = window.setInterval(() => {
@@ -597,6 +750,7 @@ export class Repo {
     window.clearTimeout(this.#detailTimer);
     this.closeDiff();
     this.detail = null;
+    this.detailFor = '';
     this.detailError = '';
     const commit = this.current;
     if (!commit || commit.wip || !this.result) return;
@@ -607,7 +761,10 @@ export class Repo {
           sha: commit.sha,
           parent: commit.parents[0] ?? null,
         });
-        if (key === this.currentKey) this.detail = data;
+        if (key === this.currentKey) {
+          this.detail = data;
+          this.detailFor = key;
+        }
       } catch (e) {
         if (key === this.currentKey) this.detailError = errorText(e);
       }

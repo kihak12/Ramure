@@ -618,6 +618,82 @@ pub fn rebase_interactive(
     guarded(repo, result)
 }
 
+// --- Rewording a commit -------------------------------------------------------------------
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Reworded {
+    /// The new SHA of the reworded commit.
+    pub sha: String,
+    /// The commits after it, replayed with new SHAs.
+    pub replayed: usize,
+    /// It was on a remote: a force push will be needed to update it.
+    pub pushed: bool,
+}
+
+/// Gives the commit `sha` of the current branch a new message.
+///
+/// HEAD is amended with `--only`: what is staged stays staged. An older commit is reworded by
+/// replaying the commits after it, after saving the branch in `refs/ramure/backup`. Refused while
+/// an operation is stopped, for a commit that is not on the current branch, when a merge commit
+/// lies on the way, and, for an older commit, when tracked files have uncommitted changes or HEAD
+/// is detached. The interface says these before the click; they are checked here again.
+/// `editor`: the sequence editor of the rebase (tests); Ramure itself by default.
+pub fn reword(journal: &mut Vec<CommandLog>, repo: &Path, sha: &str, message: &str, editor: Option<&str>) -> Result<Reworded, String> {
+    check_sha(sha)?;
+    let message = message.trim();
+    if message.is_empty() {
+        return Err("Write a commit message.".into());
+    }
+    if let Some(op) = operation(repo) {
+        return Err(format!("A {op} is in progress. Continue or abort it before rewording."));
+    }
+    let target = text(&step(journal, repo, &["rev-parse", "--verify", &format!("{sha}^{{commit}}")])?);
+    step(journal, repo, &["merge-base", "--is-ancestor", &target, "HEAD"])
+        .map_err(|_| "This commit is not on the current branch. Switch to a branch that contains it to reword it.".to_string())?;
+    let head = text(&step(journal, repo, &["rev-parse", "HEAD"])?);
+    let pushed = !step(journal, repo, &["for-each-ref", "--count=1", "--contains", &target, "refs/remotes"])?.is_empty();
+
+    if target == head {
+        // Only the message changes: neither the staged changes nor the tree. `--allow-empty` for a
+        // commit that changes nothing; `--cleanup=whitespace` keeps the lines that start with "#".
+        let args = ["commit", "--amend", "--only", "--allow-empty", "--cleanup=whitespace", "-F", "-"];
+        step_with(journal, repo, &args, Opts { input: Some(message.as_bytes()), ..Opts::default() })?;
+        let sha = text(&step(journal, repo, &["rev-parse", "HEAD"])?);
+        return Ok(Reworded { sha, replayed: 0, pushed });
+    }
+
+    let parents = text(&step(journal, repo, &["rev-list", "--parents", "-n", "1", &target])?);
+    if parents.split_whitespace().count() > 2 {
+        return Err("This commit is a merge: only the last commit can be reworded when it is a merge.".into());
+    }
+    let range = format!("{target}..HEAD");
+    if text(&step(journal, repo, &["rev-list", "--merges", "--count", &range])?) != "0" {
+        return Err("A merge commit lies between this commit and HEAD: rewording would flatten it. Choose a more recent commit.".into());
+    }
+    if step(journal, repo, &["symbolic-ref", "--quiet", "HEAD"]).is_err() {
+        return Err("HEAD is detached: there is no branch to save before replaying. Switch to a branch to reword an older commit.".into());
+    }
+    if !step(journal, repo, &["status", "--porcelain", "--untracked-files=no"])?.is_empty() {
+        return Err("Uncommitted changes are in the way: replaying commits needs a clean working directory. Stash or commit them first.".into());
+    }
+
+    let base = parents.split_whitespace().nth(1).map(str::to_string);
+    let mut todo = vec![TodoItem { action: "reword".into(), sha: target.clone(), message: Some(message.to_string()) }];
+    let after = text(&step(journal, repo, &["rev-list", "--reverse", &range])?);
+    todo.extend(after.lines().map(|sha| TodoItem { action: "pick".into(), sha: sha.to_string(), message: None }));
+    let replayed = todo.len() - 1;
+    let outcome = rebase_interactive(journal, repo, base.as_deref(), &todo, editor)?;
+    if outcome.stopped.is_some() {
+        return Err(format!(
+            "The rewording stopped while replaying the commits: resolve the conflicts, then continue the rebase.\n{}",
+            outcome.output
+        ));
+    }
+    let sha = text(&step(journal, repo, &["rev-parse", &format!("HEAD~{replayed}")])?);
+    Ok(Reworded { sha, replayed, pushed })
+}
+
 // --- Commands exposed to the interface ----------------------------------------------------
 
 type Reply<T> = Result<Done<T>, Failed>;
@@ -665,6 +741,11 @@ pub async fn git_resolve(repo: String, path: String, side: String) -> Reply<Stat
         status(j, repo)
     })
     .await
+}
+
+#[tauri::command]
+pub async fn git_reword(repo: String, sha: String, message: String) -> Reply<Reworded> {
+    blocking(move |j| reword(j, Path::new(&repo), &sha, &message, None)).await
 }
 
 #[tauri::command]
@@ -919,6 +1000,77 @@ refs/tags/v1\x1fddd\x1feee\x1f\x1f\x1f \n";
         // The backups must not clutter the graph.
         let log = crate::git::log::load(dir, None).unwrap();
         assert!(log.commits.iter().all(|c| c.subject != "revert" && !c.refs.iter().any(|r| r.name.contains("ramure"))));
+    }
+
+    #[test]
+    fn rewording_head_leaves_the_staged_changes_staged() {
+        let repo = three_commits("reword-head");
+        let dir = repo.0.as_path();
+        let mut j = Vec::new();
+        let tree = repo.git(&["rev-parse", "HEAD^{tree}"]);
+        repo.write("b.txt", "staged\n");
+        stage(&mut j, dir, &["b.txt".into()]).unwrap();
+        let done = reword(&mut j, dir, &repo.git(&["rev-parse", "HEAD"]), "Three, said better\n\n# kept, not a comment", None).unwrap();
+        assert_eq!((done.replayed, done.pushed), (0, false));
+        assert_eq!(done.sha, repo.git(&["rev-parse", "HEAD"]));
+        assert_eq!(repo.git(&["log", "-1", "--format=%B"]), "Three, said better\n\n# kept, not a comment");
+        assert_eq!(repo.git(&["rev-parse", "HEAD^{tree}"]), tree, "the staged file is not in the commit");
+        assert_eq!(repo.git(&["diff", "--cached", "--name-only"]), "b.txt", "and it is still staged");
+        assert!(reword(&mut j, dir, &done.sha, "  \n", None).is_err(), "an empty message is refused");
+    }
+
+    #[test]
+    fn rewording_an_older_commit_replays_the_ones_after_it() {
+        let repo = three_commits("reword-older");
+        let dir = repo.0.as_path();
+        let mut j = Vec::new();
+        let first = repo.git(&["rev-parse", "HEAD~2"]);
+        let done = reword(&mut j, dir, &repo.git(&["rev-parse", "HEAD~1"]), "TWO", Some("cp")).unwrap();
+        assert_eq!(done.replayed, 1);
+        assert_eq!(repo.git(&["log", "--format=%s"]), "three\nTWO\none");
+        assert_eq!(done.sha, repo.git(&["rev-parse", "HEAD~1"]));
+        assert_eq!(repo.git(&["rev-parse", "HEAD~2"]), first, "what comes before it does not move");
+        assert_eq!(std::fs::read_to_string(dir.join("a.txt")).unwrap(), "1\n2\n3\n");
+        assert!(repo.git(&["for-each-ref", "refs/ramure/backup"]).contains("refs/ramure/backup/"));
+
+        // The first commit of the repository too: it has no parent to replay onto.
+        let root = reword(&mut j, dir, &first, "ONE", Some("cp")).unwrap();
+        assert_eq!(root.replayed, 2);
+        assert_eq!(repo.git(&["log", "--format=%s"]), "three\nTWO\nONE");
+    }
+
+    #[test]
+    fn rewording_is_refused_when_history_cannot_be_replayed_safely() {
+        let repo = three_commits("reword-refused");
+        let dir = repo.0.as_path();
+        let mut j = Vec::new();
+        let older = repo.git(&["rev-parse", "HEAD~1"]);
+
+        // Uncommitted changes to a tracked file: an older commit no, HEAD yes.
+        repo.write("a.txt", "changed\n");
+        let err = reword(&mut j, dir, &older, "TWO", Some("cp")).unwrap_err();
+        assert!(err.contains("Uncommitted changes"), "{err}");
+        assert!(reword(&mut j, dir, &repo.git(&["rev-parse", "HEAD"]), "THREE", None).is_ok());
+        repo.git(&["checkout", "--", "a.txt"]);
+        let older = repo.git(&["rev-parse", "HEAD~1"]);
+
+        // A commit of another branch.
+        repo.git(&["switch", "-q", "-c", "side", "HEAD~2"]);
+        repo.write("s.txt", "s\n");
+        stage(&mut j, dir, &["s.txt".into()]).unwrap();
+        commit(&mut j, dir, "side", false).unwrap();
+        let side = repo.git(&["rev-parse", "HEAD"]);
+        repo.git(&["switch", "-q", "-"]);
+        let err = reword(&mut j, dir, &side, "SIDE", Some("cp")).unwrap_err();
+        assert!(err.contains("not on the current branch"), "{err}");
+
+        // A merge on the way.
+        repo.git(&["merge", "-q", "--no-ff", "-m", "merge side", "side"]);
+        let err = reword(&mut j, dir, &older, "TWO", Some("cp")).unwrap_err();
+        assert!(err.contains("merge commit lies between"), "{err}");
+        // The merge itself, at HEAD, can be reworded, and stays a merge.
+        assert!(reword(&mut j, dir, &repo.git(&["rev-parse", "HEAD"]), "Merge the side branch", None).is_ok());
+        assert_eq!(repo.git(&["rev-list", "--parents", "-n", "1", "HEAD"]).split_whitespace().count(), 3);
     }
 
     #[test]

@@ -59,6 +59,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'wip', group: 'Work in progress', title: 'Show working changes', keys: 'Ctrl+Shift+M', scope: 'git' },
   { id: 'stage-all', group: 'Work in progress', title: 'Stage all', keys: 'Ctrl+Shift+A', scope: 'git' },
   { id: 'stash', group: 'Work in progress', title: 'Stash changes…', keys: 'Ctrl+Shift+S', scope: 'git' },
+  { id: 'reword', group: 'Work in progress', title: 'Reword message', keys: '', scope: 'git' },
   { id: 'pop', group: 'Work in progress', title: 'Pop latest stash', keys: '', scope: 'git' },
   { id: 'op-continue', group: 'Work in progress', title: 'Continue operation in progress', keys: '', scope: 'git' },
   { id: 'op-abort', group: 'Work in progress', title: 'Abort operation in progress…', keys: '', scope: 'git' },
