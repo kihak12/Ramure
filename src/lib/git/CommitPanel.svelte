@@ -93,8 +93,9 @@
           {/if}
           {#if !check.head && check.replayed}
             <p class="note">
-              The {check.replayed === 1 ? 'commit after this one is' : `${check.replayed} commits after this one are`} replayed and get new SHAs. The position of
-              {repo.branch} is saved in refs/ramure/backup.
+              {check.replayed === 1
+                ? 'The commit after this one is replayed and gets a new SHA.'
+                : `The ${check.replayed} commits after this one are replayed and get new SHAs.`} The position of {repo.branch} is saved in refs/ramure/backup.
             </p>
           {/if}
           {#if check.pushed}
