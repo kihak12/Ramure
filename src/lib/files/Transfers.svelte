@@ -69,7 +69,7 @@
             {/if}
             <span>{WORDS[t.state]}</span>
           </span>
-          <span class="what" title={t.relayed ? `${t.route}. The files go through this machine.` : t.route}>
+          <span class="what" title="{t.route}, into {t.dest}{t.relayed ? '. The files go through this machine.' : ''}">
             <span class="name">{t.title}</span>
             <span class="route">{t.route}</span>
           </span>

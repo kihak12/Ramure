@@ -39,6 +39,14 @@
   );
 
   let listEl = $state<HTMLElement>();
+  let crumbsEl = $state<HTMLElement>();
+  // The end of a long path stays in view; a short one starts on the left (guidelines, 9.24).
+  $effect(() => {
+    void crumbs;
+    void tick().then(() => {
+      if (crumbsEl) crumbsEl.scrollLeft = crumbsEl.scrollWidth;
+    });
+  });
   let whereEl = $state<HTMLButtonElement>();
   let pathField = $state<HTMLInputElement>();
   let editing = $state(false);
@@ -387,7 +395,8 @@
         <span class="name" class:strong={focused}>{label}</span>
         {#if host}<span class="address mono">{files.address(pane)}</span>{/if}
         {#if stateText}<span class="state">{stateText}</span>{/if}
-        <Icon name="chevron" size={14} />
+        <!-- Turned down: it opens a menu, as a list does (guidelines, 9.3). -->
+        <span class="down" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
     {:else}
       <span class="title" class:strong={focused}>Empty pane</span>
@@ -446,7 +455,7 @@
         <!-- A click past the segments types a path (guidelines, 9.24). -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="crumbs" onclick={(e) => e.target === e.currentTarget && ready && void editPath()} title={ready ? 'Click to type a path' : undefined}>
+        <div class="crumbs" bind:this={crumbsEl} onclick={(e) => e.target === e.currentTarget && ready && void editPath()} title={ready ? 'Click to type a path' : undefined}>
           {#each crumbs as segment, i (segment.path)}
             <!-- The root ("/", "C:\") already ends with its separator. -->
             {#if i > 0 && !/[\\/]$/.test(crumbs[i - 1].name)}<span class="sep" aria-hidden="true">/</span>{/if}
@@ -648,6 +657,11 @@
   .dot.on {
     background: var(--c);
   }
+  .down {
+    flex: none;
+    display: grid;
+    transform: rotate(90deg);
+  }
   .where .spinner {
     margin: -2px;
   }
@@ -694,19 +708,17 @@
     min-height: 36px;
     padding: 0 6px;
   }
+  /* The first segments give way on the left: the bar scrolls to the end of the path, with no
+     scrollbar. */
   .crumbs {
     flex: 1;
     min-width: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    overflow: hidden;
+    overflow-x: auto;
+    scrollbar-width: none;
     height: 28px;
     cursor: text;
-  }
-  /* The first segments give way on the left: the end of the path stays in view. */
-  .crumbs > :first-child {
-    margin-left: auto;
   }
   .crumb {
     flex: none;
