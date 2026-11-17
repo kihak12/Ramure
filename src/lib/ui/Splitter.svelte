@@ -50,12 +50,26 @@
     dragging = true;
   }
 
+  // One size per frame at most: a mouse can send several moves between two frames, and each size
+  // lays the view out again.
+  let pending: number | null = null;
+  let frame = 0;
+  function flush() {
+    frame = 0;
+    if (pending !== null) onchange(pending);
+    pending = null;
+  }
+
   function move(e: PointerEvent) {
-    if (origin) onchange(clamp(origin.value + (along(e) - origin.at) * direction));
+    if (!origin) return;
+    pending = clamp(origin.value + (along(e) - origin.at) * direction);
+    if (!frame) frame = requestAnimationFrame(flush);
   }
 
   function up() {
     if (!origin) return;
+    if (frame) cancelAnimationFrame(frame);
+    flush();
     origin = null;
     dragging = false;
     oncommit();
