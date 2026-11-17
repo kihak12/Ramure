@@ -330,11 +330,17 @@
   onkeydown={onKey}
   onfocus={onFocus}
   onblur={() => (focused = false)}
-  onpointerdown={() => {
+  onpointerdown={(e) => {
     // The text of a side cannot take the focus, nor its boxes: the pane takes it, so that its keys,
     // and those of the editor (Ctrl + Z, Ctrl + S, F8), work after a click.
     keyboard = false;
     if (document.activeElement !== paneEl) paneEl?.focus({ preventScroll: true });
+    // A click on a line of a conflict makes it the line of the keyboard: the arrows go on from it.
+    const at = view?.posAtCoords({ x: e.clientX, y: e.clientY });
+    if (at === null || at === undefined || !view) return;
+    const n = view.state.doc.lineAt(at).number - 1;
+    const hit = conflicts.find((c) => c.at >= 0 && n >= c.at && n < c.at + c.kept.length);
+    if (hit) cursor = { block: hit.index, line: n - hit.at };
   }}
 >
   <div class="editor" bind:this={host}></div>
