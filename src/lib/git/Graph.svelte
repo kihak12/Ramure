@@ -336,6 +336,12 @@
       revealDetail();
       return;
     }
+    // F2 rewords the selected commit, in the detail panel (guidelines, 9.25).
+    if (e.key === 'F2' && repo.selected >= 0) {
+      e.preventDefault();
+      repo.startReword();
+      return;
+    }
     const page = Math.max(1, Math.floor(viewH / ROW) - 1);
     const moves: Record<string, number> = {
       ArrowDown: repo.selected + 1,

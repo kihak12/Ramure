@@ -78,6 +78,16 @@ export interface Diff {
   truncated: boolean;
 }
 
+/** A commit given a new message (src-tauri/src/git/ops.rs). */
+export interface Reworded {
+  /** The new SHA of the reworded commit. */
+  sha: string;
+  /** The commits after it, replayed with new SHAs. */
+  replayed: number;
+  /** It was on a remote: a force push will be needed. */
+  pushed: boolean;
+}
+
 export interface CommitDetail {
   message: string;
   files: FileChange[];

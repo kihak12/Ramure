@@ -3,6 +3,7 @@
   import Icon from '../ui/Icon.svelte';
   import { discardFiles } from './actions';
   import FileList from './FileList.svelte';
+  import MessageField from './MessageField.svelte';
   import type { Repo } from './repo.svelte';
   import type { FileChange } from './types';
   import { motion } from '../ui/motion';
@@ -18,7 +19,6 @@
   const canCommit = $derived(
     (status.staged.length > 0 || repo.amend) && message.trim().length > 0 && !busy && conflicts.length === 0,
   );
-  const subjectLength = $derived(message.split('\n')[0].length);
   const headPushed = $derived(repo.hasRemote && !!repo.head && !repo.head.localOnly);
   const plural = (n: number) => (n === 1 ? '' : 's');
 
@@ -141,28 +141,19 @@
       </p>
     {/if}
     <label class="label" for="commit-message">Commit message</label>
-    <textarea
-      id="commit-message"
-      class="field"
-      rows="4"
-      placeholder="Summary on the first line, details after"
-      bind:value={repo.message}
-      onkeydown={onKey}
-      disabled={busy}
-    ></textarea>
-    {#if blocker}
-      <!-- Ctrl + Enter refused: an icon is added to the color, and the text, inserted again, is announced again. -->
-      <p id="commit-blocker" class="why small" class:nudged aria-live="polite">
-        {#key nudged}
-          {#if nudged}<Icon name="warning" size={14} />{/if}
-          <span>{blocker}</span>
-        {/key}
-      </p>
-    {/if}
-    <div class="send">
-      <small class="muted" class:long={subjectLength > 72} title="Length of the first line: past 72 characters, many tools cut it.">
-        {subjectLength} / 72
-      </small>
+    <MessageField id="commit-message" bind:value={repo.message} onkeydown={onKey} disabled={busy}>
+      {#snippet notes()}
+        {#if blocker}
+          <!-- Ctrl + Enter refused: an icon is added to the color, and the text, inserted again, is announced again. -->
+          <p id="commit-blocker" class="why small" class:nudged aria-live="polite">
+            {#key nudged}
+              {#if nudged}<Icon name="warning" size={14} />{/if}
+              <span>{blocker}</span>
+            {/key}
+          </p>
+        {/if}
+      {/snippet}
+      {#snippet actions()}
       <button
         class="btn primary"
         type="button"
@@ -179,7 +170,8 @@
           Commit
         {/if}
       </button>
-    </div>
+      {/snippet}
+    </MessageField>
   </section>
 </div>
 
@@ -245,13 +237,6 @@
     gap: 6px;
     color: var(--muted);
   }
-  textarea {
-    resize: vertical;
-    min-height: 64px;
-    max-height: 220px;
-    font-family: var(--f-mono);
-    font-size: var(--fs-code);
-  }
   .why {
     display: flex;
     align-items: center;
@@ -261,19 +246,6 @@
     transition: color var(--t-fast) var(--ease);
   }
   .why.nudged {
-    color: var(--warn);
-  }
-  .send {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .send small {
-    font-size: var(--fs-small);
-    font-variant-numeric: tabular-nums;
-  }
-  .send small.long {
     color: var(--warn);
   }
 </style>

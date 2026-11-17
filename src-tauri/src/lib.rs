@@ -100,6 +100,7 @@ pub fn run() {
             git::ops::git_history,
             git::ops::git_operate,
             git::ops::git_resolve,
+            git::ops::git_reword,
             git::ops::git_rebase_plan,
             git::ops::git_rebase_interactive,
             git::clone::git_clone,

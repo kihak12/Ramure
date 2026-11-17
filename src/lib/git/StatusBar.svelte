@@ -39,7 +39,7 @@
   </button>
   <div class="stats" aria-live="polite">
     {#if repo.busy}
-      {@const doing = repo.switching ? `Switching to ${repo.switching}…` : 'Working…'}
+      {@const doing = repo.switching ? `Switching to ${repo.switching}…` : repo.busy === 'reword' ? 'Rewording…' : 'Working…'}
       <span class="busy" title={doing}><span class="spinner" aria-hidden="true"></span><span class="doing">{doing}</span></span>
     {/if}
     {#if fetchText}<span class="fetch" class:bad={repo.lastFetch?.ok === false} title={fetchText}>{fetchText}</span>{/if}

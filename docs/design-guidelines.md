@@ -53,6 +53,7 @@ The two screenshots show the application as it is, on a demonstration repository
    - [9.22 Uncommitted changes](#922-uncommitted-changes)
    - [9.23 Updates](#923-updates)
    - [9.24 Files](#924-files)
+   - [9.25 Rewording a commit](#925-rewording-a-commit)
 10. [Commit graph](#10-commit-graph)
 11. [Accessibility](#11-accessibility)
 12. [Tone of the interface text](#12-tone-of-the-interface-text)
@@ -1936,6 +1937,67 @@ at the most, and its text wraps. "Cancel" gives the pane back to the choice of a
   lost connection stay under the veil, dimmed. A pane does not reconnect on its own: a click is
   enough, and a transfer that was cut says so in its row.
 - Each pane opens its own connection, a secret kept in the keyring makes the second one silent.
+### 9.25 Rewording a commit
+
+Giving a commit a new message, without leaving it: the message is edited in place, in the detail
+panel, the files of the commit still in view. "Reword" is the word of git and of the interactive
+rebase (12).
+
+**Where it starts.** "Reword", a small ghost button at the right of the "Commit" label of the
+panel; F2 on the selected commit of the graph, a key of the list as Enter is, which shows the
+detail panel if it is hidden (9.17); "Reword message" in the menu of a commit, without "…", since
+it opens no dialog (9.9), F2 recalled on its right; and "Reword message" in the palette, to which
+a shortcut can be given (9.18). A click on the text of the message stays
+free, to select and copy it: the message is never a field at rest.
+
+**Editing.** The label becomes "Commit message". The subject and the description give way to one
+text area, the commit field of the uncommitted changes (9.22): the code font, its "N / 72"
+counter of the first line, in `--warn` past 72. It is prefilled with the whole message and takes
+the focus, the caret at the end of the first line. Under it, on one line, the counter on the left,
+then "Cancel", a small standard button, and "Save message", a small main button, at the right, as
+in the panel of the changes. The rest of the panel, the SHA, the author and the changed files,
+stays under the form and still works.
+
+- Enter is a new line. Ctrl + Enter saves, and the tooltip of "Save message" says so. Escape
+  cancels, as in a dialog (9.10), and gives the focus back to where the edit started: the row of
+  the graph after F2, the button "Reword" after a click.
+- "Save message" is disabled while the message is unchanged or empty, and says why in its
+  tooltip: "Change the message to save it.", "Write a commit message."
+- The text typed is a draft of the repository, as the message of a commit is: selecting another
+  commit hides the form, coming back shows it again with the draft. A draft of a commit that is
+  no longer there goes.
+
+**What it does, said before saving**, under the field, one line each, 4 px apart (9.10):
+
+- HEAD with staged files, in `--muted`: "The 2 staged files are not part of this commit." They
+  stay staged: the last commit is amended with its message only.
+- An older commit, in `--muted`: "The 3 commits after this one are replayed and get new SHAs.
+  The position of main is saved in refs/ramure/backup."
+- A commit already on the remote, in a box on `--warn-soft` with the warning icon: "This commit
+  is already on the remote: after rewording it, you will have to force push."
+
+**When it cannot be done**, "Reword" is disabled, and a sentence in `--muted` at 11.5 px under
+the message says why, also its tooltip (9.1) and the hint of the menu item and of the palette.
+It is known before any click:
+
+- "This commit is not on main. Switch to a branch that contains it to reword it."
+- "A merge commit lies between this commit and HEAD: rewording would flatten it. Choose a more
+  recent commit.", and for a merge commit that is not HEAD: "This commit is a merge: only the
+  last commit can be reworded when it is a merge."
+- "A rebase is in progress. Continue or abort it before rewording.", with the name of the
+  operation stopped.
+- For an older commit: "Uncommitted changes are in the way: stash or commit them first.", and
+  with HEAD detached: "HEAD is detached: switch to a branch to reword an older commit."
+- While git works, it is disabled with no sentence.
+
+**While it saves**, the fields are disabled and the button says "Saving…"; the status bar says
+"Rewording…" with the waiting ring (9.13).
+
+**After.** The reworded commit stays selected, under its new SHA, and the graph keeps it in view.
+A notification says "Commit reworded", and in its detail, in the code font, the new SHA, the
+commits replayed ("2 later commits were replayed.") and, when it was on the remote, "Force push
+to update the remote." A failure is said by an error notification, and the form stays open with
+the draft.
 
 ## 10. Commit graph
 
@@ -2075,6 +2137,7 @@ here is what is read in the documentation of git and in a terminal.
 | revert | "Revert this commit"; the operation in progress: "Revert in progress" |
 | an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort`. In the banner, "Abort…" opens its confirmation (9.1); a command that names the operation says it: "Abort revert…". |
 | amend | "Amend last commit" |
+| reword | "Reword", "Reword message"; a reworded commit, "Commit reworded" |
 | discard | "Discard changes…", for what is not committed; it asks first (9.1) |
 | the changes not yet committed | "uncommitted changes" in a sentence; "working changes" in a command: "Show working changes" |
 | stash apply, stash drop | "Apply stash", "Drop stash" |
