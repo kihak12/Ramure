@@ -35,10 +35,26 @@
     invoke<string>('files_home', { place: { kind: 'local' } }).then((path) => (home = path)).catch(() => {});
   });
 
+  /** ↑ and ↓ go from location to location, Home and End to the ends (guidelines, 9.6); from the
+   *  filter, ↓ goes to the first. */
+  function onKey(e: KeyboardEvent) {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    const rows = [...(e.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('button.row:not(:disabled)')];
+    if (!rows.length) return;
+    const fromFilter = e.target instanceof HTMLInputElement;
+    if (fromFilter && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const at = rows.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      fromFilter ? 0 : e.key === 'Home' ? 0 : e.key === 'End' ? rows.length - 1 : e.key === 'ArrowDown' ? Math.min(at + 1, rows.length - 1) : Math.max(at - 1, 0);
+    rows[next].focus();
+  }
+
   const address = (host: Host) => addressOf(host.user || ssh.defaultUser, host.hostname, host.port);
 </script>
 
-<div class="picker">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="picker" onkeydown={onKey}>
   <h3>Choose a location</h3>
   {#if ssh.hosts.length}
     <label class="search">
