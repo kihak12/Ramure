@@ -413,6 +413,8 @@ From left to right and from top to bottom:
 
 - No line separates these areas: the background and the space are enough.
 - The window is at least 1000 × 600 px; no area may overflow at that size.
+- The window itself never scrolls: only the areas inside the cards do. A content a few pixels
+  too tall must not let a script scroll the page and cut the top of the window.
 - The window opens again at the size, the place and the maximized state it was left in, the first
   time at 1440 × 880. A place on a screen that is no longer there is not used: the window then
   opens where the system puts it. It shows once it has its size and its place, never before.
