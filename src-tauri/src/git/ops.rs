@@ -12,7 +12,7 @@ use super::work::{Diff, Status, check_sha, status, to_diff};
 use super::{CommandLog, Done, Failed, Opts, blocking, check_name, report, run, step, step_with, text};
 
 /// git's messages in English, for the few outputs that Ramure has to interpret.
-const ENGLISH: [(&str, &str); 1] = [("LC_ALL", "C")];
+pub(super) const ENGLISH: [(&str, &str); 1] = [("LC_ALL", "C")];
 
 // --- Reading the references ---------------------------------------------------------------
 

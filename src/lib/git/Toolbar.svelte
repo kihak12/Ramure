@@ -2,7 +2,7 @@
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import { display, keys } from '../ui/keys.svelte';
   import { menu, type MenuItem } from '../ui/menu.svelte';
-  import { createBranch, stashChanges } from './actions';
+  import { createBranch, push, stashChanges } from './actions';
   import { layout, toggleSide } from './layout.svelte';
   import type { Repo } from './repo.svelte';
 
@@ -93,7 +93,7 @@
       status && status.branch && !status.upstream ? 'Publish' : 'Push',
       status?.upstream ? `git push to ${status.upstream}` : 'Publish the branch and link it to its counterpart on the remote',
       !ready || !status?.branch,
-      () => void repo.sync('push'),
+      () => void push(repo),
       status?.ahead ? String(status.ahead) : undefined,
     )}
   </div>

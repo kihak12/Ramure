@@ -259,11 +259,26 @@ export async function resetTo(repo: Repo, commit: CommitRow) {
   await repo.history({ op: 'reset', sha: commit.sha, mode }, `${branch} reset to ${short(commit.sha)}`, 'Reset failed');
 }
 
-export async function forcePush(repo: Repo) {
+/** Pushes the current branch; a push refused because the branch and its remote counterpart have
+ *  diverged, after a rebase, an amend or a reword, offers a force push (guidelines, 9.2). */
+export async function push(repo: Repo) {
+  if ((await repo.sync('push')) === 'rejected') await forcePush(repo, true);
+}
+
+/** `rejected`: a plain push has just been rejected, and the dialog says why. */
+export async function forcePush(repo: Repo, rejected = false) {
+  const upstream = repo.status?.upstream ?? 'the remote branch';
+  const behind = repo.status?.behind ?? 0;
+  const lease = `A force push replaces ${upstream} with your branch (git push --force-with-lease), unless someone has pushed work there that you have not fetched.`;
   const confirmed = await dialogs.confirm({
     title: `Force push ${repo.branch ?? ''}?`,
-    body: 'The remote branch is replaced by yours (git push --force-with-lease). The push is refused if someone has pushed work in the meantime that you have not fetched.',
-    warning: 'The remote commits that are not on your branch will be lost.',
+    body: rejected
+      ? `The push was rejected: ${upstream} has commits that your branch does not have, as after a rebase, an amend or a reset. ${lease} To keep those commits instead, cancel, then pull.`
+      : lease,
+    warning:
+      behind > 0
+        ? `${commits(behind)} of ${upstream} that ${behind === 1 ? 'is' : 'are'} not on your branch will be lost on the remote. This cannot be undone from Ramure.`
+        : `The commits of ${upstream} that are not on your branch will be lost on the remote. This cannot be undone from Ramure.`,
     confirmLabel: 'Force push',
     danger: true,
   });
@@ -403,13 +418,15 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
   const remote = label.remotes[0] ?? null;
   const target = local ?? remote!;
   const isCurrent = local !== null && local === current;
+  // The destructive items come last, after a separator (guidelines, 9.9).
+  const destructive: MenuItem[] = [];
 
   if (isCurrent) {
     items.push(
       { label: 'Pull', icon: 'pull', disabled: !repo.status?.upstream, run: () => void repo.sync('pull') },
-      { label: repo.status?.upstream ? 'Push' : 'Publish branch', icon: 'push', run: () => void repo.sync('push') },
-      { label: 'Force push…', icon: 'push', danger: true, disabled: !repo.status?.upstream, run: () => void forcePush(repo) },
+      { label: repo.status?.upstream ? 'Push' : 'Publish branch', icon: 'push', run: () => void push(repo) },
     );
+    destructive.push({ label: 'Force push…', icon: 'push', danger: true, disabled: !repo.status?.upstream, run: () => void forcePush(repo) });
   } else {
     items.push(
       {
@@ -435,11 +452,12 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
   items.push({ separator: true }, { label: 'Create branch here…', icon: 'branch', run: () => void createBranch(repo, sha, target) });
   if (local) {
     items.push({ label: 'Rename branch…', icon: 'pencil', run: () => void renameBranch(repo, local) });
-    items.push({ label: 'Delete branch…', icon: 'trash', danger: true, disabled: isCurrent, run: () => void deleteBranch(repo, local) });
+    destructive.push({ label: 'Delete branch…', icon: 'trash', danger: true, disabled: isCurrent, run: () => void deleteBranch(repo, local) });
   }
   for (const name of label.remotes) {
-    items.push({ label: `Delete ${name} from the remote…`, icon: 'trash', danger: true, run: () => void deleteRemoteBranch(repo, name) });
+    destructive.push({ label: `Delete ${name} from the remote…`, icon: 'trash', danger: true, run: () => void deleteRemoteBranch(repo, name) });
   }
+  if (destructive.length) items.push({ separator: true }, ...destructive);
   return items;
 }
 
