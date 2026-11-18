@@ -144,6 +144,7 @@ pub fn run() {
             files::files_home,
             files::files_list,
             files::files_mkdir,
+            files::files_create,
             files::files_rename,
             files::files_remove,
             files::files_existing,

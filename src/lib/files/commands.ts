@@ -44,6 +44,16 @@ export function filesCommands(): Command[] {
       run: () => pane && void files.mkdir(pane),
     },
     {
+      id: 'files-touch',
+      group: 'Files',
+      icon: 'file-plus',
+      title: 'New file…',
+      keywords: 'create empty touch',
+      disabled: !ready,
+      hint: ready ? undefined : 'the pane is not connected',
+      run: () => pane && void files.touch(pane),
+    },
+    {
       id: 'files-clear',
       group: 'Files',
       icon: 'x',

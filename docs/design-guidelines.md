@@ -68,7 +68,8 @@ What the interface favors:
 1. **Content first.** The graph, the diff and the terminal fill the screen. Everything else
    steps back: no decoration on working screens.
 2. **Color means something.** A bright color stands for a branch, a state or the main action,
-   or for a marker that the user chose: the color of an SSH host. Nothing else.
+   or for a marker that the user chose: the color of an SSH host. The accent also marks what
+   opens in place: a folder of the Files module (2.3). Nothing else.
 3. **Surfaces rather than lines.** Areas are separated by their background and by space. Lines
    are only used inside a card or a dialog.
 4. **One shape, one role.** A slightly rounded rectangle can be clicked. A pill or a circle
@@ -116,7 +117,7 @@ component that hard-codes one.
 | `--hover-side` | Background of a hovered element on the window background: rail, toolbar, tabs, status bar. | `#ccdaf0` | `#13213a` |
 | `--sel` | Background of a selected element. | `#b9d7ff` | `#14396a` |
 | `--accent` | Main action, focus, active element, link. | `#126bed` | `#64a5ff` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded, the strip of uncommitted changes (9.22), the box of an update (9.23). | `#d8e7fe` | `#12325e` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded, the strip of uncommitted changes (9.22), the box of an update (9.23), a folder row that receives a drop and the foot that says where it goes (9.24). | `#d8e7fe` | `#12325e` |
 | `--on-accent` | Text placed on the accent or on a branch color. | `#ffffff` | `#08131f` |
 | `--ok` / `--ok-soft` | Success, added line. | `#037c40` / `#cdf0d9` | `#42c887` / `#043d22` |
 | `--warn` / `--warn-soft` | Warning, pending operation. | `#905601` / `#fde5b5` | `#f9a52c` / `#442e06` |
@@ -150,8 +151,10 @@ Eight colors, reserved for the graph. A branch takes the color of its column: co
   between two tokens.
 - **The accent** stands for one thing at a time: the main button of a surface (9.1,
   "Hierarchy"), the focus, the active element, the changes not yet committed, which the
-  "WIP" row and the strip of the detail panel show (9.22), and a newer version that waits, which
-  a dot and the box of the settings show (9.23). Never two main buttons in one surface.
+  "WIP" row and the strip of the detail panel show (9.22), a newer version that waits, which
+  a dot and the box of the settings show (9.23), and in the Files module the icon of a folder,
+  which opens in place, the outline of a folder that receives a drop and the border of the
+  rectangle that selects (9.24). Never two main buttons in one surface.
 - **State colors** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
 - **`--faint`** never carries information that is needed: its contrast is too low for text that
   has to be read.
@@ -176,6 +179,11 @@ Every theme must meet them, in light and in dark.
 | The letter of a file state on its tint, on a row at rest, hovered or selected (9.6) | 4.5:1 |
 | The icon of a notification on its tint (9.11), and the initials of an author in "Classic" on theirs (10.3) | 3:1 |
 | `--muted` on `--bg` (the header of a hunk, 9.14) | 4.5:1 |
+| `--muted` on `--accent-soft` (a folder that receives a drop, 9.24) | 4.5:1 |
+| `--ink` on the header of the pane of a host, tinted with its color (9.24) | 7:1 |
+| The dot of a host, and the `--muted` icons (chevron, "Add pane", "Close pane"), on the header of its pane, tinted with its color (9.24) | 3:1 |
+| `--warn` on `--warn-soft` (the icon of an incomplete transfer, 9.24) | 3:1 |
+| `--muted` on `--bad-soft` (the way of a failed transfer, 9.24) | 4.5:1 |
 | `--ink` on `--accent-soft`, `--ok-soft`, `--warn-soft`, `--bad-soft` | 7:1 |
 | `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--hover-side`, `--warn-soft` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch color, at rest and on hover | 4.5:1 |
@@ -293,7 +301,7 @@ not change them: they hold for the four, which `npm run check` checks.
 
 | Token | Use | Light | Dark |
 |---|---|---|---|
-| `--tint-veil` | The capsule of a message and the band that links it to its commit (10.2) | 24% | 18% |
+| `--tint-veil` | The capsule of a message and the band that links it to its commit (10.2); the header of the pane of a host (9.24) | 24% | 18% |
 | `--tint-label` | A branch or tag label at rest, "Ribbon" rendering (9.4) | 34% | 24% |
 | `--tint-label-soft` | A label at rest, "Classic" rendering | 24% | 18% |
 | `--tint-label-hover` | A hovered label; the current branch in "Classic"; the ring around the current branch in "Ribbon" | 40% | 28% |
@@ -482,7 +490,8 @@ The interface has four levels. Each is recognized by its background.
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
   leaves it, the same sheet turned over, for an export, the sheet with lines for the log of a
   session, the tunnel for an SSH tunnel, the folder for a folder and for the Files module, the
-  sheet with a folded corner for a file, the folder with a plus for a new folder, the pencil for
+  sheet with a folded corner for a file, the folder with a plus for a new folder, the sheet with
+  a folded corner and a plus for a new file, both pluses of the same size, the pencil for
   an edit or a change, the trash for a deletion, the square for stopping or aborting, the
   circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
   connection. An icon that stands for a git
@@ -789,9 +798,12 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
   the area that scrolls, its scrollbar apart.
 - **No colored bar on the edge** to mark the selection.
-- Keyboard focus: a 1.5 px inner ring in `--accent` on the selected row. **Never an outline
-  around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
-  selected when it receives focus, the first one becomes selected.
+- Keyboard focus: a 1.5 px inner ring in `--accent` on the current row, the one the arrows
+  move: the selected row, or in a list of files a row that is not selected (the parent row, or
+  the row last reached once the selection is taken away, 9.24). **Never an outline around the
+  whole list.** Focus stays on the list, which handles the arrow keys; if no row is selected when
+  it receives focus, the first one becomes selected, except after a press on the empty part of a
+  list of files, which takes the selection away (9.24).
 - **A list in sections**, such as the branch list, is a tree: the title of a section is a row too,
   which folds and unfolds it, inset 6 px from the edges of the card like the rows. ↑ and ↓ go from
   row to row, titles included, Home and End to the ends; → unfolds a title, or goes down to its
@@ -1815,7 +1827,8 @@ The install takes two steps, so that the download never interrupts and only the 
     `.deb`, when the system did not install the package: "The update was not installed: Ubuntu
     did not get the administrator password, or refused the package. Ramure is unchanged."
 - The bar is the one of the clone: 6 px high, `--line` behind, `--accent` in front
-  (`src/lib/ui/ProgressBar.svelte`).
+  (`src/lib/ui/ProgressBar.svelte`). The bar of a transfer that has ended takes the color of its
+  result (9.24); the accent is the bar of what runs.
 
 **"Restart and install…"** always opens a confirmation (9.10), since the restart closes what the
 next start does not bring back.
@@ -1852,12 +1865,13 @@ its cards, like the other modules.
 **Panes.** The module is a row of panes, each one a card (9.8) that shows one folder of one
 place: "This machine", or a host of the book.
 
-- The panes share the width equally, 300 px at the least, and four at the most: three fit in a
+- The panes share the width equally, 300 px at the least, and four at the most, two at the
+  least, since the module is made to copy from one to another: three fit in a
   window 1000 px wide, four at 1440 px. When they do not fit, the row scrolls sideways with the
   thin scrollbar (9.6), and each keeps its 300 px.
 - The first time, the module opens on two panes: "This machine" in the home folder, and an empty
   pane to choose a location. It then comes back as it was left: the same panes, on the same
-  folders. A host is never connected at launch: its pane says "Not connected" and offers
+  folders, an empty pane completing a row of one. A host is never connected at launch: its pane says "Not connected" and offers
   "Connect", so that three panes never ask three passwords at once.
 - **An empty pane** chooses its location. Its header says "Empty pane" in `--muted`; under it, the
   title "Choose a location", 15 px in weight 650 as the title of a panel (3.2), the filter field of
@@ -1870,13 +1884,20 @@ place: "This machine", or a host of the book.
 - **The header** of a pane, 35 px, says where it is. Its location is a ghost button, which opens
   the menu of the locations under it (9.9): "This machine", then the hosts. For a host: the 8 px
   dot of its tab (9.15), in its color or `--ok`, then its name in weight 650 and its address in
-  the code font and `--muted`, cut first; its tooltip says the state in words, "Connected". For
+  the code font and `--muted`, cut first; its tooltip says the state in words, "Connected".
+  Once connected, the header of a host that has a color takes `--tint-veil` of that color over
+  `--panel` (2.7), from one edge of the card to the other, its corners following the card: where
+  a drop lands, the server is seen before it is read. On the tint the address moves to `--ink`,
+  where `--muted` would not read; the dot stays. A host without a color, a host not connected and
+  "This machine" keep the bare card: the `--ok` of the dot says a state, not a choice. For
   this machine: the computer icon and "This machine", in weight 650 too. Then a chevron turned
   down, as a list has (9.3). A state follows the name as a fragment (12): "connecting…". The
   location button is a ghost button: it shrinks when pressed. On the right, two ghost buttons
   made of an icon alone, 24 × 24 px: "Add pane", which adds an empty pane to the right of this
   one and is disabled at four, its tooltip saying why ("Four panes at most. Close one first."),
-  and "Close pane". The last pane is never closed: it becomes empty.
+  and "Close pane". Of two panes, neither is closed: the one closed becomes empty, and offers
+  the locations again, the hosts of the book among them. An empty pane of two cannot be closed,
+  its tooltip saying why and what to do ("Two panes always stay. Choose a location instead.").
 - "Browse files", in the menu of a host in the book, shows the module with that host: in the
   empty pane if there is one, otherwise in a new pane, or in place of the last pane at four.
 
@@ -1888,33 +1909,51 @@ too long for the pane gives way on the left, the bar scrolling to its last segme
 scrollbar. The ring of a segment is drawn inside it, so that the bar does not cut it. A click on the bar, past the segments, turns it into a
 field (9.3) with the path selected: Enter opens what is typed, `~` being the home folder, and
 Escape gives the segments back; a folder that cannot be opened turns the field to its error
-state, with the reason under it. Then four ghost buttons made of an icon alone: "Type a path",
+state, with the reason under it. Then five ghost buttons made of an icon alone: "Type a path",
 the pencil, which does the same from the keyboard, "Refresh" (F5 from the list), "Show hidden
 files", a toggle (9.1) with the eye icon, pressed while the files whose name starts with a dot,
-and those Windows hides, are listed, and "New folder…".
+and those Windows hides, are listed, "New folder…" and "New file…", the folder and the sheet
+with a plus (7).
 
 **The list.** A header of columns, 26 px, "Name", "Modified" and "Size", separated from the rows
 by a `--line-soft` line: a click sorts by the column, a second click reverses the order, and a
 chevron in `--muted` says which column sorts and which way. Folders always come first. Then rows
 of 24 px (4.3, 9.6):
 
-- the folder icon or the file icon, 16 px in `--muted`, never colored; the name, cut with an
-  ellipsis and whole in its tooltip; for a link, the word "link" after it, in `--muted` at
+- the folder icon in `--accent`, or the file icon in `--muted`, 16 px: what opens in place is
+  told from a file at a glance, on a row at rest, hovered or selected (2.3, 2.4); the name, cut
+  with an ellipsis and whole in its tooltip; for a link, the word "link" after it, in `--muted` at
   11.5 px, as "partly" (9.6). A link to a folder opens as a folder.
 - "Modified", the short date in 12 px and `--muted` ("Nov 9, 2026"), the full date and the time
   in its tooltip; it gives way under 420 px of pane, as the columns of the graph do (10.1).
 - "Size", aligned on the right, in tabular figures, in kB, MB and GB of 1,000 bytes ("12.4 MB");
   empty for a folder.
+- **The parent row**, "..", comes first while the folder has a parent: the "up" icon and its
+  name in `--muted`, no date and no size, never the folder color. A double-click, or Enter, goes
+  up, as "Up" does. It is not an item: it is never selected, so a click on it only makes it the
+  current row, and Ctrl + A, Shift + click, the menu, dragging and the counts of the foot leave
+  it out. The arrows and Home reach it. A drop on it goes into the parent folder, as on a folder
+  row.
 - **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
   selects up to it, Ctrl + A selects them all. The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
   folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
+- **A click on the empty part** of the list, under the rows, takes the selection away, as
+  Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
+  folder has an empty part too, once scrolled to the end.
+- **Dragging from the empty part** draws a rectangle that selects: a 1 px `--accent` border with
+  `--radius-xs` corners and no fill, which would hide the selection under it. The rows it
+  touches are selected as it grows and let go as it shrinks; with Ctrl or Shift held at the
+  start, they add to the selection that was there. A press on the scrollbar scrolls, and never
+  starts one. Near the top or the bottom of the list, the
+  list scrolls and the rectangle follows. Escape, while it is drawn, puts the selection back as
+  it was. A row is dragged from the row itself: the rectangle never starts on a row.
 - **The menu of a row**: "Open" for a folder, "Copy to …" (copy icon) for each other pane on
   another place and "Move to …" (folder icon) for each other pane on the same place, naming the
   pane and its folder ("Copy to staging · /var/www"): the keyboard way to do what dragging does.
-  Then "Rename…", "New folder…", "Copy path", and after a separator "Delete…", or "Delete 3
-  items…" for a selection of several. The empty part of a list has a menu of its own: "New
-  folder…", "Refresh", and "Show hidden files" or "Hide hidden files".
+  Then "Rename…", "New folder…", "New file…", "Copy path", and after a separator "Delete…", or
+  "Delete 3 items…" for a selection of several. The empty part of a list has a menu of its own:
+  "New folder…", "New file…", "Refresh", and "Show hidden files" or "Hide hidden files".
 - **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar
@@ -1923,8 +1962,11 @@ of 24 px (4.3, 9.6):
   of the folder it leaves stay at 45% until the new ones come. A folder that cannot be listed
   says why in place of the rows, the warning icon in `--bad` before the sentence ("Access denied
   to /root. Check its permissions."), with "Go up", a small standard button.
-- "Rename…", "New folder…" and "Delete…" open a dialog (9.10). The rename has one field, its
-  name selected up to the extension; a name that is taken is refused under the field. The
+- "Rename…", "New folder…", "New file…" and "Delete…" open a dialog (9.10). The rename has one
+  field, its name selected up to the extension; a name that is taken is refused under the
+  field, and so is it for a new folder or a new file: a new file is empty, and never replaces
+  one that is there. A new folder or file goes into the folder the pane shows, whatever row the
+  menu was opened on, and becomes the selection. The
   deletion says what is lost: "Delete 3 items from staging?", "They are deleted from the server
   for good, with what the folders hold: they cannot be recovered.", or "from this machine",
   "… they do not go to the trash", with "Cancel", which has the focus, and "Delete", a danger
@@ -1937,7 +1979,9 @@ pane. A row dragged outside the selection becomes the selection. The rows dragge
 at half opacity (9.6).
 
 - **What receives it.** A folder row receives the drop into that folder: it takes the 2 px
-  outline in `--accent`, inside the row, as a branch label does (9.4). Anywhere else on a pane,
+  outline in `--accent`, inside the row, as a branch label does (9.4), over an `--accent-soft`
+  fill, the tint of the foot that says where the drop goes: on a row of 24 px, the outline alone
+  is missed while the pointer moves. The parent row receives it the same way. Anywhere else on a pane,
   its header and its path bar included, the drop goes into the folder the pane shows: the list
   takes the `--hover` tint, which stays apart from the selection in both themes (2.4), where
   `--accent-soft` would come too close to `--sel` in dark. Nothing else changes size or place.
@@ -1966,9 +2010,18 @@ at half opacity (9.6).
   announced when it changes (`role="status"`), "Copied" being the answer: "Counting…"
   and "Copying…" (the 12 px ring), "Copied" (check, `--ok`), "Incomplete" (warning, `--warn`),
   "Failed" (warning, `--bad`), "Canceled" (stop); what is copied, "dist" or "3 items", then the
-  way it goes in `--muted`, "This machine → staging", its tooltip naming the folder it goes into;
-  between two hosts, the tooltip also says that the files go through this machine. Then a bar of 120 px (9.23), and "18.4 of 60 MB · 12 of 40
-  files" in 11.5 px and tabular figures. Last, a ghost button made of an icon alone: "Cancel
+  way it goes in `--muted`, "This machine → staging", each host in it after the 8 px dot of its
+  color when it has one, as on the header of its pane; its tooltip names the folder it goes into;
+  between two hosts, the tooltip also says that the files go through this machine. Then a bar of
+  120 px (9.23), in `--accent` while it runs, then in the color of the result: `--ok` "Copied",
+  `--warn` "Incomplete", `--bad` "Failed", `--muted` "Canceled"; and "18.4 of 60 MB · 12 of 40
+  files" in 11.5 px and tabular figures.
+- A bar whose total was never known, the transfer having stopped while it counted, stays empty;
+  a copy with nothing to copy, an empty folder, is full.
+- A transfer "Incomplete" or "Failed" sits on a tinted box, `--warn-soft` or `--bad-soft`, with
+  `--radius` corners and neither border nor shadow, its row and the lines under it included: a
+  result to act on is seen from across the screen. A transfer that runs, is copied or canceled
+  stays on the bare card, so that a long list of results stays calm. Last, a ghost button made of an icon alone: "Cancel
   transfer" (stop) while it runs, "Retry" (refresh) after a failure, "Remove" (cross) once it is
   over.
 - Under a row that ended badly, in 11.5 px, what happened and what to do: in `--bad` the reason
