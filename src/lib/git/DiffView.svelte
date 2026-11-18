@@ -611,6 +611,11 @@
     padding-right: 10px;
     border-right: 1px solid var(--line-soft);
   }
+  /* The edge of the card closes the new side. A border there would stick out of the table by half
+     its width, as borders do in a collapsed table, and scroll the lines sideways by a pixel. */
+  .split .half:last-child {
+    border-right: 0;
+  }
   .split .half .sign {
     display: inline-block;
     width: 18px;
