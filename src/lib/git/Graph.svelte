@@ -390,6 +390,12 @@
   // above the lanes, and catches no pointer (guidelines, 9.4).
   let spacer = $state<HTMLDivElement>();
   let wide = $state<{ label: Label; commit: CommitRow; x: number; y: number } | null>(null);
+  // The history read again (a fetch, a reload) may take the label away from under a still pointer,
+  // with no mouseleave: its copy goes with it.
+  $effect(() => {
+    void commits;
+    wide = null;
+  });
   function widen(chip: HTMLElement, label: Label, commit: CommitRow) {
     const name = chip.querySelector<HTMLElement>('.ref-name');
     if (!spacer || !name || name.scrollWidth <= name.clientWidth) return;
