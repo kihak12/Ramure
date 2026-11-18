@@ -2,7 +2,7 @@
 // branches, tags, open tabs and recent repositories.
 
 import type { Command } from '../ui/palette.svelte';
-import { abortOperation, createBranch, forcePush, stashChanges, switchBranch, switchToRemote } from './actions';
+import { abortOperation, createBranch, forcePush, push, stashChanges, switchBranch, switchToRemote } from './actions';
 import { bare } from './labels';
 import { layout, toggleSide, toggleSides } from './layout.svelte';
 import { OPERATION } from './repo.svelte';
@@ -29,7 +29,7 @@ export function gitCommands(): Command[] {
     }
     add({ id: 'fetch', group: 'Actions', icon: 'fetch', title: 'Fetch', keywords: 'remote download update', hint: 'git fetch --all --prune', disabled: !idle, run: () => void repo.sync('fetch') });
     add({ id: 'pull', group: 'Actions', icon: 'pull', title: 'Pull', keywords: 'remote update', hint: status?.upstream ?? 'no remote branch', disabled: !idle || !status?.upstream, run: () => void repo.sync('pull') });
-    add({ id: 'push', group: 'Actions', icon: 'push', title: status?.upstream || !branch ? 'Push' : 'Publish branch', keywords: 'remote upload publish', hint: status?.ahead ? `${plural(status.ahead, 'commit')} to push` : undefined, disabled: !idle || !branch, run: () => void repo.sync('push') });
+    add({ id: 'push', group: 'Actions', icon: 'push', title: status?.upstream || !branch ? 'Push' : 'Publish branch', keywords: 'remote upload publish', hint: status?.ahead ? `${plural(status.ahead, 'commit')} to push` : undefined, disabled: !idle || !branch, run: () => void push(repo) });
     add({ id: 'push-force', group: 'Actions', icon: 'push', title: 'Force push…', keywords: 'push force lease', disabled: !idle || !status?.upstream, run: () => void forcePush(repo) });
     const reword = repo.current && !repo.current.wip ? repo.rewordCheck(repo.current) : null;
     add({

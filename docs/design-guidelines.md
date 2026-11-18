@@ -621,6 +621,12 @@ its own buttons.
 - A counter (commits to pull, to push) is a round badge in `--accent`, at the top right of the
   icon.
 - During an operation, the icon spins and the button is disabled.
+- **A push refused because the branch and its remote counterpart have diverged**, as after a
+  rebase, an amend or a reword, is not an error notification: the confirmation of a force push
+  opens in its place (9.10). It says that the push was refused and why, then how many commits of
+  the remote branch the force push removes. The push is the same from the toolbar, the palette,
+  the menu of the branch and its shortcut. A push refused for another reason (the remote has
+  commits not fetched yet, an authentication) stays an error notification.
 - The repository and the current branch are on the left, at the edge of the toolbar, above the
   left edge of the cards; the branch in the code font. Each has a fixed width, 140 px and
   200 px, so that the actions keep their place whatever the names. The two widths only yield to
@@ -853,8 +859,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 ### 9.10 Dialogs
 
 - To confirm a destructive action, to enter a few values, to offer a way through when an
-  action would be refused ("Stash and switch"), or to confirm a restart of the application, even
-  when nothing is lost (9.23). Never for plain information: that is the role
+  action would be refused ("Stash and switch") or has just been (a force push after a refused
+  push, 9.2), or to confirm a restart of the application, even when nothing is lost (9.23). Never for plain information: that is the role
   of a notification. Never for a setting: settings have their page (9.18).
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form

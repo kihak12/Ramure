@@ -259,11 +259,27 @@ export async function resetTo(repo: Repo, commit: CommitRow) {
   await repo.history({ op: 'reset', sha: commit.sha, mode }, `${branch} reset to ${short(commit.sha)}`, 'Reset failed');
 }
 
-export async function forcePush(repo: Repo) {
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** Pushes the current branch; a push refused because the branch and its remote counterpart have
+ *  diverged, after a rebase, an amend or a reword, offers a force push (guidelines, 9.2). */
+export async function push(repo: Repo) {
+  if ((await repo.sync('push')) === 'rejected') await forcePush(repo, true);
+}
+
+/** `rejected`: a plain push has just been refused, and the dialog says why. */
+export async function forcePush(repo: Repo, rejected = false) {
+  const upstream = repo.status?.upstream ?? 'the remote branch';
+  const behind = repo.status?.behind ?? 0;
   const confirmed = await dialogs.confirm({
     title: `Force push ${repo.branch ?? ''}?`,
-    body: 'The remote branch is replaced by yours (git push --force-with-lease). The push is refused if someone has pushed work in the meantime that you have not fetched.',
-    warning: 'The remote commits that are not on your branch will be lost.',
+    body: rejected
+      ? `The push was refused: ${upstream} and your branch have diverged, as after a rebase or an amend. A force push replaces ${upstream} with your branch (git push --force-with-lease). It is refused if someone has pushed work in the meantime that you have not fetched.`
+      : 'The remote branch is replaced by yours (git push --force-with-lease). The push is refused if someone has pushed work in the meantime that you have not fetched.',
+    warning:
+      behind > 0
+        ? `${plural(behind, 'commit')} of ${upstream} that ${behind === 1 ? 'is' : 'are'} not on your branch will be lost.`
+        : 'The remote commits that are not on your branch will be lost.',
     confirmLabel: 'Force push',
     danger: true,
   });
@@ -407,7 +423,7 @@ export function labelMenu(repo: Repo, label: Label, sha: string): MenuItem[] {
   if (isCurrent) {
     items.push(
       { label: 'Pull', icon: 'pull', disabled: !repo.status?.upstream, run: () => void repo.sync('pull') },
-      { label: repo.status?.upstream ? 'Push' : 'Publish branch', icon: 'push', run: () => void repo.sync('push') },
+      { label: repo.status?.upstream ? 'Push' : 'Publish branch', icon: 'push', run: () => void push(repo) },
       { label: 'Force push…', icon: 'push', danger: true, disabled: !repo.status?.upstream, run: () => void forcePush(repo) },
     );
   } else {

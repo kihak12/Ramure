@@ -56,6 +56,10 @@ export const OPERATION: Record<Operation, string> = {
 };
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** A push refused because the branch and its remote counterpart have diverged, after a rebase, an
+ *  amend or a reword: git says so in English (src-tauri/src/git/work.rs, `sync`). A force push is
+ *  then offered rather than an error (guidelines, 9.2). */
+const REJECTED = /\(non-fast-forward\)/;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** What rewording a commit would do, or why it cannot be done (guidelines, 9.25). */
@@ -437,7 +441,8 @@ export class Repo {
   }
 
   /** Runs a long operation, shows its result, then reloads the history. */
-  async #task(label: string, failed: string, action: () => Promise<Outcome | string>, done: string) {
+  /** `spared`: a failure it recognizes is not notified: the caller offers a way through. */
+  async #task(label: string, failed: string, action: () => Promise<Outcome | string>, done: string, spared?: (e: unknown) => boolean) {
     if (!this.result || this.busy) return false;
     this.busy = label;
     let ok = false;
@@ -452,7 +457,7 @@ export class Repo {
       }
       ok = true;
     } catch (e) {
-      toasts.err(failed, errorText(e));
+      if (!spared?.(e)) toasts.err(failed, errorText(e));
     } finally {
       this.busy = '';
     }
@@ -461,10 +466,14 @@ export class Repo {
     return ok;
   }
 
-  /** `quiet`: automatic fetch, with no notification; a failure is read in the status bar. */
-  async sync(action: SyncAction, quiet = false) {
+  /** `quiet`: automatic fetch, with no notification; a failure is read in the status bar.
+   *  Returns `'rejected'` for a push refused because the branches have diverged: the caller offers
+   *  a force push (actions.ts, `push`), and no error is notified. */
+  async sync(action: SyncAction, quiet = false): Promise<'rejected' | undefined> {
     if (!this.result || this.busy) return;
     if (!quiet) {
+      let rejected = false;
+      const spared = (e: unknown) => (rejected = action === 'push' && REJECTED.test(errorText(e)));
       await this.#task(action, SYNC[action].failed, async () => {
         try {
           const outcome = await this.git<Outcome>('git_sync', { action, pullMode: this.settings.pullMode });
@@ -474,8 +483,8 @@ export class Repo {
           if (action === 'fetch') this.lastFetch = { at: Date.now(), ok: false };
           throw e;
         }
-      }, SYNC[action].done);
-      return;
+      }, SYNC[action].done, spared);
+      return rejected ? 'rejected' : undefined;
     }
     this.busy = action;
     let changed = false;
