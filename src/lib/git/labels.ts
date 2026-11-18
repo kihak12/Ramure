@@ -10,6 +10,7 @@ export interface Label {
   /** Remote branches on the same commit (`origin/main`). */
   remotes: string[];
   tag: string | null;
+  /** Its tooltip: the names it stands for, as git writes them (guidelines, 9.4). */
   title: string;
 }
 
@@ -29,14 +30,13 @@ export function labelsOf(commit: CommitRow, shortRemotes: boolean): Label[] {
   for (const ref of commit.refs) {
     if (ref.kind === 'head' || ref.kind === 'local') {
       const twins = commit.refs.filter((r) => r.kind === 'remote' && bare(r.name) === ref.name).map((r) => r.name);
-      const what = ref.kind === 'head' ? 'Current branch' : 'Local branch';
       out.push({
         name: ref.name,
         kind: ref.kind,
         local: ref.name,
         remotes: twins,
         tag: null,
-        title: twins.length ? `${what} ${ref.name}, on the same commit as ${twins.join(', ')}` : `${what} ${ref.name}`,
+        title: [ref.name, ...twins].join(', '),
       });
     } else if (ref.kind === 'remote') {
       if (locals.has(bare(ref.name))) continue;
@@ -46,12 +46,12 @@ export function labelsOf(commit: CommitRow, shortRemotes: boolean): Label[] {
         local: null,
         remotes: [ref.name],
         tag: null,
-        title: `Remote branch ${ref.name}`,
+        title: ref.name,
       });
     } else if (ref.kind === 'tag') {
-      out.push({ name: ref.name, kind: ref.kind, local: null, remotes: [], tag: ref.name, title: `Tag ${ref.name}` });
+      out.push({ name: ref.name, kind: ref.kind, local: null, remotes: [], tag: ref.name, title: ref.name });
     } else {
-      out.push({ name: 'HEAD', kind: ref.kind, local: null, remotes: [], tag: null, title: 'Detached HEAD' });
+      out.push({ name: 'HEAD', kind: ref.kind, local: null, remotes: [], tag: null, title: 'HEAD' });
     }
   }
   return out.sort((a, b) => ORDER[a.kind] - ORDER[b.kind]);
