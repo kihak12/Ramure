@@ -735,6 +735,12 @@ textarea {
   color: inherit;
 }
 
+/* The browser gives a button 1 px by 6 px of padding: a 16 px icon does not fit in a 24 px button
+   and slides to the right, off center (guidelines, 7). A button sets its own padding, or none. */
+button {
+  padding: 0;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;

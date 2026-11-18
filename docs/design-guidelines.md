@@ -453,6 +453,9 @@ The interface has four levels. Each is recognized by its background.
   command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
+- An icon alone sits at the exact center of its button, which the hover background shows: no
+  button keeps the padding that the browser gives it (1 px by 6 px), which pushes a 16 px icon
+  out of a 24 px button, to the right. A button sets its own padding, or none.
 - An icon never carries a state on its own: it is backed by text or by a tooltip.
 
 ## 8. Motion
