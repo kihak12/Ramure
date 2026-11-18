@@ -453,9 +453,9 @@ The interface has four levels. Each is recognized by its background.
   command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
-- An icon alone sits at the exact center of its button, which the hover background shows: no
-  button keeps the padding that the browser gives it (1 px by 6 px), which pushes a 16 px icon
-  out of a 24 px button, to the right. A button sets its own padding, or none.
+- An icon alone sits at the exact center of its button, which the hover background shows. The
+  padding that the browser gives a button (1 px by 6 px) would push a 16 px icon out of a 24 px
+  button, to the right: `src/app.css` resets it to 0, and a button sets its own padding, or none.
 - An icon never carries a state on its own: it is backed by text or by a tooltip.
 
 ## 8. Motion
@@ -541,7 +541,7 @@ States are the same everywhere:
   toward `--ink`, darker in light and lighter in dark, like the label of the current branch
   (9.4): its text gains contrast in both themes, where a lighter background lost it.
 - Every button is at least 24 px high, the small one included, and a button made of an icon
-  alone is at least 24 × 24 px.
+  alone is at least 24 × 24 px, its icon at the exact center (7).
 - Press: shrinks to 97%.
 - The label is a verb in the imperative, with its object when the context does not give it:
   "Create branch", not "OK". A toggle that shows or hides something is named by what it shows
