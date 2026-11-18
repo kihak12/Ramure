@@ -584,7 +584,7 @@
     color: var(--bad);
   }
   .t-hunk {
-    background: var(--accent-soft);
+    background: var(--bg);
     color: var(--muted);
   }
   .t-meta {

@@ -109,7 +109,7 @@ function check(name, t, dark) {
   // line), and the --accent icon of an active module or of a pressed action shows on them.
   for (const bg of ['--accent-soft', '--ok-soft', '--warn-soft', '--bad-soft']) need(`--ink on ${bg}`, contrast(t['--ink'], t[bg]), 7);
   need('--accent on --accent-soft', contrast(t['--accent'], t['--accent-soft']), 3);
-  need('--muted on --accent-soft (the header of a hunk)', contrast(t['--muted'], t['--accent-soft']), 4.5);
+  need('--muted on --bg (the header of a hunk)', contrast(t['--muted'], t['--bg']), 4.5);
   // The dot that says an update waits: on the rail, at rest and hovered, and on the entry
   // "General" of the settings, current or hovered (9.23).
   for (const bg of ['--side', '--hover-side', '--sel', '--hover']) need(`--accent on ${bg}`, contrast(t['--accent'], t[bg]), 3);

@@ -175,7 +175,7 @@ Every theme must meet them, in light and in dark.
 | `--ink` on a line of a diff, added or removed, at rest, hovered to be picked and picked (9.14) | 7:1 |
 | The letter of a file state on its tint, on a row at rest, hovered or selected (9.6) | 4.5:1 |
 | The icon of a notification on its tint (9.11), and the initials of an author in "Classic" on theirs (10.3) | 3:1 |
-| `--muted` on `--accent-soft` (the header of a hunk, 9.14) | 4.5:1 |
+| `--muted` on `--bg` (the header of a hunk, 9.14) | 4.5:1 |
 | `--ink` on `--accent-soft`, `--ok-soft`, `--warn-soft`, `--bad-soft` | 7:1 |
 | `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--hover-side`, `--warn-soft` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch color, at rest and on hover | 4.5:1 |
@@ -978,8 +978,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Added line: a background at `--tint-added` of `--ok`, a "+" sign in `--ok`. Removed line: a
   background at `--tint-removed` of `--bad`, a "−" sign in `--bad` (2.7).
 - The sign is always there: color alone never says whether a line is added or removed.
-- The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--accent-soft`, in `--muted`: it is not a
-  selection, and does not take its color.
+- The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--bg`, the recessed background, in
+  `--muted`: it separates the hunks, and takes neither the color of the selection nor that of
+  the accent, which would make it look selected in dark.
 - A line picked to be staged on its own has a stronger tint, `--tint-line-pick` more, and its
   sign in bold; a line hovered to be picked takes `--tint-line-hover` more (2.7). No colored
   bar on its edge.
