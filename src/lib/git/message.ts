@@ -18,8 +18,11 @@ export interface MessageView {
 
 /** A trailer: a token, a colon, a space, then a value. */
 const TRAILER = /^[A-Za-z][A-Za-z0-9-]*: \S/;
-/** A line that keeps its paragraph as written: indented, a list sign, a quote, a heading. */
-const KEEP = /^(\s|[-*•>#]|\d+[.)]\s)/;
+/**
+ * A line that keeps its paragraph as written: indented by a space or a tab, a list sign followed
+ * by a space ("- ", "* ", "• ", "1. ", "1) "), a quote (">"), a heading ("# ").
+ */
+const KEEP = /^([ \t]|[-*•]\s|\d+[.)]\s|>|#+\s)/;
 
 /** Reads the description of a commit: the message without its subject line. */
 export function readMessage(description: string): MessageView {

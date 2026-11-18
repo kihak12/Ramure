@@ -110,7 +110,7 @@ component that hard-codes one.
 | `--panel` | Background of the cards and of the active tab. | `#ffffff` | `#181b21` |
 | `--bg` | Recessed background, inside a card: input fields. | `#f2f4f7` | `#101216` |
 | `--raised` | Background of buttons and of what floats: menus, dialogs, notifications. | `#ffffff` | `#20242c` |
-| `--line` | Border of buttons, fields and floating elements. | `#ccd1da` | `#343a46` |
+| `--line` | Border of buttons, fields and floating elements; separator inside a dialog, and between the zones of the detail panel of a commit (6, 9.27). | `#ccd1da` | `#343a46` |
 | `--line-soft` | Discreet separator inside a card. | `#dfe3ea` | `#262b34` |
 | `--ink` | Body text. | `#141820` | `#eceff4` |
 | `--muted` | Secondary text: captions, metadata, labels. | `#4d5463` | `#a4abb8` |
@@ -346,7 +346,7 @@ not change them: they hold for the four, which `npm run check` checks.
 |---|---|---|
 | `--fs-micro` | 10.5 px | Counters, badges, shortcut keys. |
 | `--fs-small` | 11.5 px | Captions, toolbar labels, status bar, graph labels, metadata. |
-| `--fs-label` | 12 px | Field labels, column headers, section titles, secondary columns of a list (author, date). |
+| `--fs-label` | 12 px | Field labels, column headers, section titles, secondary columns of a list (author, date), the facts of a commit in its detail panel (9.27). |
 | `--fs-body` | 13.5 px | Text, list rows, buttons, menus. |
 | `--fs-title` | 15 px | Title of a dialog, of a panel or of a section of the settings page, input of the command palette. |
 | `--fs-display` | 24 px | Start page only. |
@@ -2077,8 +2077,7 @@ Giving a commit a new message, without leaving it: the message is edited in plac
 panel, the files of the commit still in view. "Reword" is the word of git and of the interactive
 rebase (12).
 
-**Where it starts.** "Reword", a small ghost button at the right of the "Commit" label of the
-panel: ghost rather than the standard of the actions of a card (9.1), since it acts on the
+**Where it starts.** "Reword", a small ghost button at the right of the head of the panel (9.27): ghost rather than the standard of the actions of a card (9.1), since it acts on the
 message right under it and comes second to reading it, the lightest level that does the job; F2 on the selected commit of the graph, a key of the list as Enter is, which shows the
 detail panel if it is hidden (9.17); "Reword message" in the menu of a commit, without "…", since
 it opens no dialog (9.9), F2 recalled on its right; and "Reword message" in the palette, to which
@@ -2093,7 +2092,7 @@ the focus, the caret at the end of the first line. Under it, on one line, the co
 then "Cancel", a small standard button, and "Save message", a small main button, at the right, as
 in the panel of the changes: the order of a dialog, the main button last, and not that of a strip
 (9.1), since the form is a dialog opened in place. The form takes the whole width of the panel.
-The rest of the panel, the SHA, the author and the changed files, stays under the form and still
+The rest of the panel, the facts of the commit and the changed files, stays under the form and still
 works.
 
 - Enter is a new line. Ctrl + Enter saves, and the tooltip of "Save message" says so. Escape
@@ -2267,20 +2266,21 @@ at the right (9.25).
   short ("Nov 17, 2026, 4:47 PM"), the full date in the tooltip, tabular figures.
 - Then, 4 px apart, each on a line at 12 px in `--muted`: where the commit is, with its icon
   (7), the cloud and "On the remote", or the computer and "Local only, not pushed yet", when the
-  repository has a remote; the branches and tags on the commit, with the branch icon, their names
-  in the code font in `--ink`; "Parent" or "Parents", then each parent as a small ghost button
-  with its short SHA in the code font, which selects that commit in the graph. A first commit
-  says "No parent: first commit".
+  repository has a remote; "Refs", then the branches and tags on the commit, their names in the
+  code font in `--ink`, cut on the right with the whole list in the tooltip (3.4); "Parent" or
+  "Parents", then each parent as a small ghost button with its short SHA in the code font, which
+  selects that commit in the graph. A first commit says "No parent: first commit".
 
 **The message**, its own zone: the description in `--ink` at `--fs-body`. The hierarchy comes
 from the size and the weight of the subject, not from a grey.
 
 - The lines of a paragraph are joined to the width of the panel: git messages are cut at 72
   characters, and kept as they are, they alternate long and short lines in a narrow panel. A
-  paragraph is kept as written when one of its lines starts with a space, a list sign ("-", "*",
-  "•", "1."), ">" or "#". Paragraphs are 8 px apart.
-- The trailers of git, the last paragraph whose lines all read "Token: value" ("Co-Authored-By:
-  …", "Signed-off-by: …"), are set apart 12 px under the description, one per line, in
+  paragraph is kept as written when one of its lines starts with a space or a tab, a list sign
+  followed by a space ("- ", "* ", "• ", "1. ", "1) "), ">", or "#" followed by a space: a line
+  that starts with "--amend" or "#182" is joined. Paragraphs are 8 px apart.
+- The trailers of git, the last paragraph whose lines all read "Token: value", the token a word
+  of letters, digits and hyphens ("Co-Authored-By: …", "Signed-off-by: …"), are set apart 12 px under the description, one per line, in
   `--muted` at 11.5 px. They close a description: a paragraph alone stays one, since the body of
   a merge of GitHub, the title of the pull request, often reads "Area: what changes". "Closes
   #182." is not a trailer either: it stays in the description.
@@ -2290,11 +2290,15 @@ from the size and the weight of the subject, not from a grey.
 **The files**, the last zone: one heading line, "Changed files · 14" at 12 px, `--fw-strong`,
 `--ink`, never cut, and at the right the totals of the commit, "+320" in `--ok` and "−41" in
 `--bad`, tabular figures. For a merge, "(against the first parent)" goes on a line of its own
-under it, in `--muted` at 11.5 px. Then the list, 6 px under it, each file with its counts of
-lines (9.6).
+under it, in `--muted` at 11.5 px. Then the list, its first row 6 px under the heading, each file
+with its counts of lines (9.6).
 
-**Between the zones**, a `--line` line the whole width of the card, 16 px under a zone and 12 px
-above the next (6). A commit with no description, no trailer and nothing that keeps it from
+- While git lists the files, three ghost lines stand in their place. The description comes with
+  the files, so the message zone shows then. A failure says so in `--bad` in place of the files,
+  and a commit that changes no file says "This commit changes no files."
+
+**Between the zones**, a `--line` line the whole width of the card, its scrollbar apart, 16 px
+under a zone and 12 px above the next (6). A commit with no description, no trailer and nothing that keeps it from
 being reworded has no message zone, and so one line less.
 
 - While the message is edited (9.25), the form takes the place of the subject and the message,

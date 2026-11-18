@@ -238,7 +238,8 @@
       </p>
     {/if}
     {#if commit.refs.length}
-      <p class="fact"><Icon name="branch" size={14} /> <span class="mono refs">{commit.refs.map((r) => r.name).join(', ')}</span></p>
+      {@const refs = commit.refs.map((r) => r.name).join(', ')}
+      <p class="fact"><span>Refs</span> <span class="mono refs" title={refs}>{refs}</span></p>
     {/if}
     <p class="fact parents">
       {#if commit.parents.length}
@@ -379,22 +380,20 @@
   .fact :global(.icon) {
     flex: none;
   }
+  /* Cut on the right, the whole list in the tooltip (guidelines, 3.4). */
   .refs {
     min-width: 0;
     font-size: var(--fs-code);
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .parents {
     flex-wrap: wrap;
-    gap: 2px;
+    gap: 2px 6px;
   }
-  /* A narrow ghost button: the short SHA stays close to "Parent" and to the next one. */
   .parent {
-    padding: 2px 4px;
     font-size: var(--fs-code);
-  }
-  .parents > span {
-    margin-right: 4px;
   }
   /* The description in --ink: the subject stands out by its size and weight (guidelines, 9.27). */
   .message {
@@ -468,10 +467,11 @@
   .copy:active {
     transform: scale(0.97);
   }
-  /* The rows reach 6 px past the text on each side: their names line up with the heading. */
+  /* The rows reach 6 px past the text on each side: their names line up with the heading. The
+     first row starts 6 px under the heading, the 4 px of the zone and 2 px (guidelines, 9.27). */
   .files {
     width: calc(100% + 12px);
-    margin: -1px -6px 0;
+    margin: 2px -6px 0;
   }
   .muted {
     color: var(--muted);

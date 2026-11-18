@@ -14,8 +14,14 @@ test('the lines of a paragraph cut at 72 columns are joined', () => {
 });
 
 test('a list, a quote or an indented block is kept as written', () => {
-  for (const block of ['- one\n- two', '* one\n* two', '1. one\n2. two', '> quoted\n> text', 'Code:\n    let x = 1;', '# Heading\ntext']) {
+  for (const block of ['- one\n- two', '* one\n* two', '1. one\n2. two', '1) one\n2) two', '> quoted\n> text', '\tindented\nby a tab', 'Code:\n    let x = 1;', '# Heading\ntext']) {
     assert.deepEqual(readMessage(block).paragraphs, [{ text: block, pre: true }], block);
+  }
+});
+
+test('a wrapped line that starts with an option, an issue or a sign is joined', () => {
+  for (const block of ['It now passes\n--amend --only to git.', 'Fixes the bug of\n#182 and more.', 'The count goes\n-1 when it leaves.', 'A pointer, then\n*ptr is read.']) {
+    assert.equal(readMessage(block).paragraphs[0].pre, false, block);
   }
 });
 
