@@ -49,11 +49,7 @@ const lab = (rgb) => {
 /** The color distance ΔE CIE76: under 2, it cannot be seen; around 10, it is plain to see. */
 const distance = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
 
-// Tints of the components that put text on a branch color (Graph.svelte).
-const LABEL_REST = 0.24; // background of a label
-const LABEL_HOVER = 0.28; // background of a hovered label
 const TOWARD_INK = 0.9; // hover on a solid fill: 10% toward --ink
-const CAPSULE = 0.15; // capsule of a message: a veil of the color, on the bare, hovered or selected row
 const MATCH = 0.3; // search match in the terminal: the accent on --term-bg (Terminal.svelte)
 
 // The minimum color distances, in light then in dark: a hover shows on its background, and the
@@ -71,12 +67,39 @@ const DISTANCES = [
 
 const findings = [];
 
+/** The strengths of the tints of a block (section 2.7): `--tint-veil` → 0.24. */
+function tints(body) {
+  const out = {};
+  for (const [, name, value] of body.matchAll(/(--tint-[\w-]+):\s*([\d.]+)%;/g)) out[name] = Number(value) / 100;
+  return out;
+}
+// The strengths are those of Slate, in light and in dark, for every theme: a theme changes colors only (2.5).
+const STRENGTHS = {
+  light: tints(block(`[data-palette='slate'] {`) ?? ''),
+  dark: tints(block(`[data-palette='slate'][data-theme='dark'] {`) ?? ''),
+};
+// A theme changes colors only: the strengths are written in the blocks of Slate and nowhere else.
+for (const palette of PALETTES.filter((p) => p !== 'slate')) {
+  for (const selector of [`[data-palette='${palette}'] {`, `[data-palette='${palette}']:not([data-theme='light']) {`, `[data-palette='${palette}'][data-theme='dark'] {`]) {
+    if (/--tint-/.test(block(selector) ?? '')) findings.push(`${palette}: a strength of tint is written in its block, where only Slate writes them`);
+  }
+}
+for (const [mode, values] of Object.entries(STRENGTHS)) {
+  for (const name of ['--tint-veil', '--tint-label', '--tint-label-soft', '--tint-label-hover', '--tint-letter', '--tint-added', '--tint-removed', '--tint-line-hover', '--tint-line-pick']) {
+    if (!(name in values)) findings.push(`slate, ${mode}: ${name} is missing`);
+  }
+}
+
 /** `dark`: the theme is dark. Every ANSI color reads on it, except black in dark and white in
  *  light: those are backgrounds (guidelines, section 2.6). */
 function check(name, t, dark) {
   const need = (what, value, minimum) => {
     if (value < minimum) findings.push(`${name}: ${what} at ${value.toFixed(2)}:1, needs ${minimum}:1`);
   };
+  const s = STRENGTHS[dark ? 'dark' : 'light'];
+  const LABEL_REST = Math.max(s['--tint-label'], s['--tint-label-soft']); // background of a label
+  const LABEL_HOVER = s['--tint-label-hover']; // background of a hovered label
+  const CAPSULE = s['--tint-veil']; // capsule of a message, on the bare, hovered or selected row
   const lanes = Array.from({ length: 8 }, (_, i) => [`--l${i}`, t[`--l${i}`]]);
   for (const bg of ['--panel', '--bg', '--sel', '--hover', '--hover-side']) need(`--ink on ${bg}`, contrast(t['--ink'], t[bg]), 7);
   // Secondary text: in a card, on the window, on what floats, on a hovered row, and in the banner
@@ -86,6 +109,7 @@ function check(name, t, dark) {
   // line), and the --accent icon of an active module or of a pressed action shows on them.
   for (const bg of ['--accent-soft', '--ok-soft', '--warn-soft', '--bad-soft']) need(`--ink on ${bg}`, contrast(t['--ink'], t[bg]), 7);
   need('--accent on --accent-soft', contrast(t['--accent'], t['--accent-soft']), 3);
+  need('--muted on --bg (the header of a hunk)', contrast(t['--muted'], t['--bg']), 4.5);
   // The dot that says an update waits: on the rail, at rest and hovered, and on the entry
   // "General" of the settings, current or hovered (9.23).
   for (const bg of ['--side', '--hover-side', '--sel', '--hover']) need(`--accent on ${bg}`, contrast(t['--accent'], t[bg]), 3);
@@ -126,6 +150,29 @@ function check(name, t, dark) {
     for (const bg of ['--panel', '--hover', '--sel']) {
       need(`--ink on a ${lane} capsule, row in ${bg}`, contrast(t['--ink'], mix(c, CAPSULE, t[bg])), 7);
     }
+    need(`${lane} author initials on their tint`, contrast(c, mix(c, s['--tint-letter'], t['--panel'])), 3);
+  }
+  // A line of a diff, at rest, hovered to be picked, and picked (9.14): the code reads on it.
+  for (const [state, strength] of [['--ok', s['--tint-added']], ['--bad', s['--tint-removed']]]) {
+    for (const [what, p] of [['line', strength], ['hovered line', strength + s['--tint-line-hover']], ['picked line', strength + s['--tint-line-pick']]]) {
+      need(`--ink on a ${state} ${what} of a diff`, contrast(t['--ink'], mix(t[state], p, t['--panel'])), 7);
+    }
+    // The line shows on the card, and the hovered line and the picked line stand apart from it.
+    const [rest, hover, picked] = [0, s['--tint-line-hover'], s['--tint-line-pick']].map((d) => mix(t[state], strength + d, t['--panel']));
+    for (const [what, a, b, day, night] of [['line and --panel', rest, t['--panel'], 14, 18], ['line and hovered line', rest, hover, 7, 6], ['hovered line and picked line', hover, picked, 5, 5]]) {
+      const minimum = dark ? night : day;
+      const value = distance(a, b);
+      if (value < minimum) findings.push(`${name}: distance between a ${state} ${what} of a diff at ${value.toFixed(1)}, needs ${minimum}`);
+    }
+  }
+  // The letter of a file state, halfway to --ink, on its tint, on a row at rest, hovered or
+  // selected (9.6): the tint lets the row show through. The icon of a notification, in its own
+  // color, on the same tint over what floats (9.11).
+  for (const state of ['--ok', '--warn', '--bad', '--accent']) {
+    for (const bg of ['--panel', '--hover', '--sel']) {
+      need(`a ${state} letter on its tint, row in ${bg}`, contrast(mix(t[state], 0.5, t['--ink']), mix(t[state], s['--tint-letter'], t[bg])), 4.5);
+    }
+    need(`a ${state} icon on its tint`, contrast(t[state], mix(t[state], s['--tint-letter'], t['--raised'])), 3);
   }
 }
 

@@ -111,7 +111,7 @@
     height: 22px;
     border-radius: 50%;
     color: var(--c);
-    background: color-mix(in srgb, var(--c) 16%, transparent);
+    background: color-mix(in srgb, var(--c) var(--tint-letter), transparent);
   }
   .text {
     min-width: 0;

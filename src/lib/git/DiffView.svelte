@@ -572,19 +572,19 @@
     padding-right: 16px;
   }
   .t-add {
-    background: color-mix(in srgb, var(--ok) 14%, transparent);
+    background: color-mix(in srgb, var(--ok) var(--tint-added), transparent);
   }
   .t-add .sign {
     color: var(--ok);
   }
   .t-del {
-    background: color-mix(in srgb, var(--bad) 13%, transparent);
+    background: color-mix(in srgb, var(--bad) var(--tint-removed), transparent);
   }
   .t-del .sign {
     color: var(--bad);
   }
   .t-hunk {
-    background: var(--sel);
+    background: var(--bg);
     color: var(--muted);
   }
   .t-meta {
@@ -622,13 +622,13 @@
     padding: 0 6px;
   }
   .c-del {
-    background: color-mix(in srgb, var(--bad) 13%, transparent);
+    background: color-mix(in srgb, var(--bad) var(--tint-removed), transparent);
   }
   .c-del .sign {
     color: var(--bad);
   }
   .c-add {
-    background: color-mix(in srgb, var(--ok) 14%, transparent);
+    background: color-mix(in srgb, var(--ok) var(--tint-added), transparent);
   }
   .c-add .sign {
     color: var(--ok);
@@ -642,24 +642,24 @@
     color: inherit;
   }
   .c-del mark {
-    background: color-mix(in srgb, var(--bad) 34%, transparent);
+    background: color-mix(in srgb, var(--bad) calc(var(--tint-removed) + var(--tint-line-pick)), transparent);
   }
   .c-add mark {
-    background: color-mix(in srgb, var(--ok) 36%, transparent);
+    background: color-mix(in srgb, var(--ok) calc(var(--tint-added) + var(--tint-line-pick)), transparent);
   }
   .c-del.pickable:hover {
-    background: color-mix(in srgb, var(--bad) 22%, transparent);
+    background: color-mix(in srgb, var(--bad) calc(var(--tint-removed) + var(--tint-line-hover)), transparent);
   }
   .c-add.pickable:hover {
-    background: color-mix(in srgb, var(--ok) 24%, transparent);
+    background: color-mix(in srgb, var(--ok) calc(var(--tint-added) + var(--tint-line-hover)), transparent);
   }
   .c-del.picked,
   .c-del.picked:hover {
-    background: color-mix(in srgb, var(--bad) 34%, transparent);
+    background: color-mix(in srgb, var(--bad) calc(var(--tint-removed) + var(--tint-line-pick)), transparent);
   }
   .c-add.picked,
   .c-add.picked:hover {
-    background: color-mix(in srgb, var(--ok) 38%, transparent);
+    background: color-mix(in srgb, var(--ok) calc(var(--tint-added) + var(--tint-line-pick)), transparent);
   }
 
   /* Picking lines: a picked line shows by its stronger tint and its bold sign, with no colored bar
@@ -669,18 +669,18 @@
     transition: background var(--t-fast) var(--ease);
   }
   .pickable.t-add:hover {
-    background: color-mix(in srgb, var(--ok) 24%, transparent);
+    background: color-mix(in srgb, var(--ok) calc(var(--tint-added) + var(--tint-line-hover)), transparent);
   }
   .pickable.t-del:hover {
-    background: color-mix(in srgb, var(--bad) 22%, transparent);
+    background: color-mix(in srgb, var(--bad) calc(var(--tint-removed) + var(--tint-line-hover)), transparent);
   }
   .picked.t-add,
   .picked.t-add:hover {
-    background: color-mix(in srgb, var(--ok) 38%, transparent);
+    background: color-mix(in srgb, var(--ok) calc(var(--tint-added) + var(--tint-line-pick)), transparent);
   }
   .picked.t-del,
   .picked.t-del:hover {
-    background: color-mix(in srgb, var(--bad) 34%, transparent);
+    background: color-mix(in srgb, var(--bad) calc(var(--tint-removed) + var(--tint-line-pick)), transparent);
   }
   .picked .sign {
     font-weight: var(--fw-strong);

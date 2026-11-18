@@ -30,7 +30,6 @@
   const BUFFER = 24; // rows rendered above and below the visible area
   const STEP = 12; // the render window only moves in steps of 12 rows
   const BAND = 24; // height of the band that links a commit to the capsule of its message
-  const BAND_ALPHA = 0.15; // same opacity as the CSS capsule that extends it in the message column
 
   let scrollTop = $state(0);
   let viewH = $state(600);
@@ -154,7 +153,8 @@
 
     // Ribbon: a band of the color of the branch leaves the commit and runs to its message.
     if (ribbon) {
-      ctx.globalAlpha = BAND_ALPHA;
+      // The same strength as the capsule that goes on in the message column (guidelines, 2.7).
+      ctx.globalAlpha = parseFloat(css.getPropertyValue('--tint-veil')) / 100;
       for (let i = winStart; i < winEnd; i++) {
         const commit = commits[i];
         const cx = commit.lane < shownLanes ? x(commit.lane) : width - pad;
@@ -786,7 +786,7 @@
     padding: 0 8px;
     border-radius: var(--radius-s);
     border: 1px solid var(--c, var(--line));
-    background: color-mix(in srgb, var(--c, var(--line)) 16%, var(--panel));
+    background: color-mix(in srgb, var(--c, var(--line)) var(--tint-label-soft), var(--panel));
     font-weight: var(--fw-regular);
     /* A label never changes size: not on click, not on hover, not on drop. */
     transition:
@@ -794,7 +794,7 @@
       border-color var(--t-fast) var(--ease);
   }
   .ref:hover {
-    background: color-mix(in srgb, var(--c, var(--line)) 28%, var(--panel));
+    background: color-mix(in srgb, var(--c, var(--line)) var(--tint-label-hover), var(--panel));
   }
   .ref[draggable='true'] {
     cursor: grab;
@@ -813,7 +813,7 @@
   .ref.k-head,
   .ref.k-detached {
     font-weight: var(--fw-strong);
-    background: color-mix(in srgb, var(--c) 28%, var(--panel));
+    background: color-mix(in srgb, var(--c) var(--tint-label-hover), var(--panel));
   }
   .ref.k-remote {
     border-style: dashed;
@@ -829,11 +829,11 @@
      The icon, the border and the weight say whether it is a local branch, a remote one or a tag.
      The current branch is solid. */
   .ribbon .ref:not(.k-detached) {
-    background: color-mix(in srgb, var(--c, var(--line)) 24%, var(--panel));
+    background: color-mix(in srgb, var(--c, var(--line)) var(--tint-label), var(--panel));
   }
-  /* No more than 28%: beyond, the text falls under 7:1 in some dark themes (guidelines, section 2.4). */
+  /* The strengths are tokens (guidelines, 2.7): in dark, beyond 28%, the text would fall under 7:1. */
   .ribbon .ref:not(.k-detached):hover {
-    background: color-mix(in srgb, var(--c, var(--line)) 28%, var(--panel));
+    background: color-mix(in srgb, var(--c, var(--line)) var(--tint-label-hover), var(--panel));
   }
   .ribbon .ref.local {
     border-color: color-mix(in srgb, var(--c) 55%, transparent);
@@ -843,7 +843,7 @@
     background: var(--c);
     border-color: var(--c);
     color: var(--on-accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) var(--tint-label-hover), transparent);
   }
   /* On hover, the background moves toward the color of the body text: darker in light, lighter in
      dark. The text of the current branch gains contrast there in both themes. */
@@ -911,7 +911,7 @@
     height: var(--band);
     padding-right: 14px;
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
-    background: color-mix(in srgb, var(--c) 15%, transparent);
+    background: color-mix(in srgb, var(--c) var(--tint-veil), transparent);
   }
   .subject {
     overflow: hidden;
@@ -971,7 +971,7 @@
     font-weight: var(--fw-strong);
     letter-spacing: -0.02em;
     color: var(--c);
-    background: color-mix(in srgb, var(--c) 20%, var(--panel));
+    background: color-mix(in srgb, var(--c) var(--tint-letter), var(--panel));
     border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
   }
   .date {
