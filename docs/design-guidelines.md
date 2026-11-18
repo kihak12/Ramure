@@ -2280,10 +2280,11 @@ from the size and the weight of the subject, not from a grey.
   followed by a space ("- ", "* ", "• ", "1. ", "1) "), ">", or "#" followed by a space: a line
   that starts with "--amend" or "#182" is joined. Paragraphs are 8 px apart.
 - The trailers of git, the last paragraph whose lines all read "Token: value", the token a word
-  of letters, digits and hyphens ("Co-Authored-By: …", "Signed-off-by: …"), are set apart 12 px under the description, one per line, in
-  `--muted` at 11.5 px. They close a description: a paragraph alone stays one, since the body of
-  a merge of GitHub, the title of the pull request, often reads "Area: what changes". "Closes
-  #182." is not a trailer either: it stays in the description.
+  that starts with a letter, then letters, digits and hyphens ("Co-Authored-By: …",
+  "Signed-off-by: …"), are set apart 12 px under the description, one per line, in `--muted` at
+  11.5 px. They close a description: a paragraph alone stays one, since the body of a merge of
+  GitHub, the title of the pull request, often reads "Area: what changes". "Closes #182." is not a
+  trailer either: it stays in the description.
 - The view only changes the layout: "Reword" edits the message as written.
 - Why the commit cannot be reworded comes last in this zone (9.25).
 
