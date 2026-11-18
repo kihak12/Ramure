@@ -5,7 +5,7 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use super::ops::{Outcome, default_remote, guarded, operation};
+use super::ops::{ENGLISH, Outcome, default_remote, guarded, operation};
 use super::{CommandLog, Done, Failed, Opts, blocking, patch, step, step_with, text};
 
 /// Beyond this, the diff is cut: the interface would not show more anyway.
@@ -368,7 +368,10 @@ pub fn sync(
                 remote = default_remote(journal, repo)?;
                 args.extend(["-u", &remote, "HEAD"]);
             }
-            step_with(journal, repo, &args, plain)
+            // In English: the interface reads “(non-fast-forward)” in a refused push, the branch
+            // and its remote counterpart having diverged after a rebase or an amend, to offer a
+            // force push (src/lib/git/repo.svelte.ts, REJECTED).
+            step_with(journal, repo, &args, Opts { envs: &ENGLISH, ..plain })
         }
         other => return Err(format!("Unknown action: “{other}”.")),
     };
@@ -659,7 +662,8 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         clone.write("c.txt", "three, fixed\n");
         stage(&mut j, dir, &["c.txt".into()]).unwrap();
         commit(&mut j, dir, "remote, fixed", true).unwrap();
-        assert!(sync(&mut j, dir, "push", None).is_err());
+        let refused = sync(&mut j, dir, "push", None).unwrap_err();
+        assert!(refused.contains("(non-fast-forward)"), "{refused}");
         sync(&mut j, dir, "push-force", None).unwrap();
         assert_eq!(origin.git(&["log", "-1", "--format=%s", "topic"]), "remote, fixed");
     }
