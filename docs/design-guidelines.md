@@ -1008,6 +1008,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 ### 9.14 Diff
 
 - Code font, 12 px. Line numbers in `--muted`.
+- Of the header git writes above the first hunk, the `diff --git`, `---` and `+++` lines, which
+  name the file again, and the `index` line, which gives the SHAs of the two versions, are not
+  shown: the header of the card names the file, with its full path in a tooltip. A header line
+  that says more stays, in `--muted`: a new or deleted file, a change of mode, a rename, a binary
+  file.
 - Added line: a background at `--tint-added` of `--ok`, a "+" sign in `--ok`. Removed line: a
   background at `--tint-removed` of `--bad`, a "−" sign in `--bad` (2.7).
 - The sign is always there: color alone never says whether a line is added or removed.
