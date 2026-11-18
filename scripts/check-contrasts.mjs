@@ -158,6 +158,7 @@ function check(name, t, dark) {
     }
     // The header of the pane of a host, tinted with its color (9.24): --ink is the capsule's.
     need(`${lane} dot on the header of a host pane`, contrast(c, mix(c, CAPSULE, t['--panel'])), 3);
+    need(`--muted icons on the header of a ${lane} host pane`, contrast(t['--muted'], mix(c, CAPSULE, t['--panel'])), 3);
     need(`${lane} author initials on their tint`, contrast(c, mix(c, s['--tint-letter'], t['--panel'])), 3);
   }
   // A line of a diff, at rest, hovered to be picked, and picked (9.14): the code reads on it.

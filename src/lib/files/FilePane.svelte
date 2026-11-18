@@ -282,6 +282,8 @@
   /** A press on the empty part takes the selection away and starts a rectangle; never on a row. */
   function pressList(e: PointerEvent) {
     if (e.button !== 0 || !listEl || !ready || (e.target instanceof Element && e.target.closest('.row'))) return;
+    // A press on the scrollbar scrolls: it is outside the content.
+    if (e.clientX - listEl.getBoundingClientRect().left >= listEl.clientWidth) return;
     files.focused = pane.key;
     const at = point(e);
     const adds = e.ctrlKey || e.metaKey || e.shiftKey;
@@ -1030,7 +1032,7 @@
     position: relative;
     overflow-y: auto;
     min-height: 0;
-    padding: 4px 6px 54px;
+    padding: 4px 6px 48px;
     outline: none;
   }
   .band {

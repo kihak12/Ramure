@@ -21,7 +21,7 @@
   const finished = $derived(files.transfers.some((t) => !running(t)));
 
   const percent = (t: Transfer) =>
-    t.state === 'counting' ? null : t.progress.bytesTotal ? Math.min(100, (t.progress.bytesDone / t.progress.bytesTotal) * 100) : t.state === 'copying' ? 0 : 100;
+    t.state === 'counting' ? null : t.progress.bytesTotal ? Math.min(100, (t.progress.bytesDone / t.progress.bytesTotal) * 100) : t.state === 'done' ? 100 : 0;
 
   /** "18.4 of 60 MB · 12 of 40 files". */
   function amounts(t: Transfer): string {

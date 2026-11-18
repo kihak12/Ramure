@@ -117,7 +117,7 @@ component that hard-codes one.
 | `--hover-side` | Background of a hovered element on the window background: rail, toolbar, tabs, status bar. | `#ccdaf0` | `#13213a` |
 | `--sel` | Background of a selected element. | `#b9d7ff` | `#14396a` |
 | `--accent` | Main action, focus, active element, link. | `#126bed` | `#64a5ff` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded, the strip of uncommitted changes (9.22), the box of an update (9.23). | `#d8e7fe` | `#12325e` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded, the strip of uncommitted changes (9.22), the box of an update (9.23), a folder row that receives a drop and the foot that says where it goes (9.24). | `#d8e7fe` | `#12325e` |
 | `--on-accent` | Text placed on the accent or on a branch color. | `#ffffff` | `#08131f` |
 | `--ok` / `--ok-soft` | Success, added line. | `#037c40` / `#cdf0d9` | `#42c887` / `#043d22` |
 | `--warn` / `--warn-soft` | Warning, pending operation. | `#905601` / `#fde5b5` | `#f9a52c` / `#442e06` |
@@ -152,8 +152,9 @@ Eight colors, reserved for the graph. A branch takes the color of its column: co
 - **The accent** stands for one thing at a time: the main button of a surface (9.1,
   "Hierarchy"), the focus, the active element, the changes not yet committed, which the
   "WIP" row and the strip of the detail panel show (9.22), a newer version that waits, which
-  a dot and the box of the settings show (9.23), and the icon of a folder in the Files module,
-  which opens in place (9.24). Never two main buttons in one surface.
+  a dot and the box of the settings show (9.23), and in the Files module the icon of a folder,
+  which opens in place, the outline of a folder that receives a drop and the border of the
+  rectangle that selects (9.24). Never two main buttons in one surface.
 - **State colors** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
 - **`--faint`** never carries information that is needed: its contrast is too low for text that
   has to be read.
@@ -180,7 +181,7 @@ Every theme must meet them, in light and in dark.
 | `--muted` on `--bg` (the header of a hunk, 9.14) | 4.5:1 |
 | `--muted` on `--accent-soft` (a folder that receives a drop, 9.24) | 4.5:1 |
 | `--ink` on the header of the pane of a host, tinted with its color (9.24) | 7:1 |
-| The dot of a host on the header of its pane, tinted with its color (9.24) | 3:1 |
+| The dot of a host, and the `--muted` icons (chevron, "Add pane", "Close pane"), on the header of its pane, tinted with its color (9.24) | 3:1 |
 | `--warn` on `--warn-soft` (the icon of an incomplete transfer, 9.24) | 3:1 |
 | `--muted` on `--bad-soft` (the way of a failed transfer, 9.24) | 4.5:1 |
 | `--ink` on `--accent-soft`, `--ok-soft`, `--warn-soft`, `--bad-soft` | 7:1 |
@@ -780,9 +781,12 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
   the area that scrolls, its scrollbar apart.
 - **No colored bar on the edge** to mark the selection.
-- Keyboard focus: a 1.5 px inner ring in `--accent` on the selected row. **Never an outline
-  around the whole list.** Focus stays on the list, which handles the arrow keys; if no row is
-  selected when it receives focus, the first one becomes selected.
+- Keyboard focus: a 1.5 px inner ring in `--accent` on the current row, the one the arrows
+  move: the selected row, or in a list of files a row that is not selected (the parent row, or
+  the row last reached once the selection is taken away, 9.24). **Never an outline around the
+  whole list.** Focus stays on the list, which handles the arrow keys; if no row is selected when
+  it receives focus, the first one becomes selected, except after a press on the empty part of a
+  list of files, which takes the selection away (9.24).
 - **A list in sections**, such as the branch list, is a tree: the title of a section is a row too,
   which folds and unfolds it, inset 6 px from the edges of the card like the rows. ↑ and ↓ go from
   row to row, titles included, Home and End to the ends; → unfolds a title, or goes down to its
@@ -1913,12 +1917,13 @@ of 24 px (4.3, 9.6):
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
   folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
-  Escape does. The list keeps the height of two rows empty under its last row, so that a full
+  Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
   folder has an empty part too, once scrolled to the end.
 - **Dragging from the empty part** draws a rectangle that selects: a 1 px `--accent` border with
   `--radius-xs` corners and no fill, which would hide the selection under it. The rows it
   touches are selected as it grows and let go as it shrinks; with Ctrl or Shift held at the
-  start, they add to the selection that was there. Near the top or the bottom of the list, the
+  start, they add to the selection that was there. A press on the scrollbar scrolls, and never
+  starts one. Near the top or the bottom of the list, the
   list scrolls and the rectangle follows. Escape, while it is drawn, puts the selection back as
   it was. A row is dragged from the row itself: the rectangle never starts on a row.
 - **The menu of a row**: "Open" for a folder, "Copy to …" (copy icon) for each other pane on
@@ -1986,6 +1991,8 @@ at half opacity (9.6).
   120 px (9.23), in `--accent` while it runs, then in the color of the result: `--ok` "Copied",
   `--warn` "Incomplete", `--bad` "Failed", `--muted` "Canceled"; and "18.4 of 60 MB · 12 of 40
   files" in 11.5 px and tabular figures.
+- A bar whose total was never known, the transfer having stopped while it counted, stays empty;
+  a copy with nothing to copy, an empty folder, is full.
 - A transfer "Incomplete" or "Failed" sits on a tinted box, `--warn-soft` or `--bad-soft`, with
   `--radius` corners and neither border nor shadow, its row and the lines under it included: a
   result to act on is seen from across the screen. A transfer that runs, is copied or canceled
