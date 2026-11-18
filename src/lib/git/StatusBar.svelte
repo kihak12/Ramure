@@ -102,8 +102,10 @@
     color: var(--ink);
     white-space: nowrap;
   }
+  /* When room runs short, the command gives its place up before the timings: it is cut with an
+     ellipsis, and its tooltip gives it whole. Its shrink factor is far above that of the timings. */
   .log-btn {
-    flex: 0 1 auto;
+    flex: 0 1000 auto;
     border: 0;
     background: none;
     color: var(--muted);
