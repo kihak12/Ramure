@@ -11,7 +11,8 @@
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
 
-  let { repo }: { repo: Repo } = $props();
+  /** `active`: the tab of this graph is the one in view, in the module in view. */
+  let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
   // Hidden tabs stay mounted: the ids of the rows belong to each one.
   const uid = $props.id();
 
@@ -256,7 +257,21 @@
     // Draws again when the window, the data, the width, the style or the theme change.
     void dark;
     void fontsReady;
-    draw();
+    // A hidden tab does not draw, and draws again when it comes back into view: while it is
+    // hidden, the browser may drop the pixels of the canvas, which would come back empty.
+    if (active) draw();
+  });
+
+  // The browser lost the canvas (a reset of the graphics card, memory): it gives it back empty.
+  // A hidden tab draws when it comes back into view.
+  $effect(() => {
+    const lanes = canvas;
+    if (!lanes) return;
+    const redraw = () => {
+      if (active) draw();
+    };
+    lanes.addEventListener('contextrestored', redraw);
+    return () => lanes.removeEventListener('contextrestored', redraw);
   });
 
   // Staggered entrance after an opening or a full reload.

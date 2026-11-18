@@ -135,7 +135,7 @@
       <div class="middle" bind:clientHeight={middleHeight}>
         <!-- Hidden, the graph stays mounted: its position and its selection are kept. -->
         <div class="center" bind:this={centerEl} hidden={graphHidden} inert={graphHidden}>
-          <Graph {repo} />
+          <Graph {repo} {active} />
           {#if repo.openFile}
             <DiffView
               title={repo.openFile.title}
