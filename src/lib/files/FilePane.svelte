@@ -429,6 +429,12 @@
    *  `named`: the folder the foot names. */
   let over = $state<{ dest: string; into: string | null; named: string | null; refusal: string; copy: boolean } | null>(null);
 
+  // A drag that ends anywhere, canceled with Escape or dropped elsewhere, ends in the source pane
+  // only: the other panes let go of where it would have landed.
+  $effect(() => {
+    if (!files.drag) over = null;
+  });
+
   function dragStart(e: DragEvent, entry: Entry) {
     if (!selected.has(entry.name)) selectOnly(entry.name);
     files.drag = { paneKey: pane.key, names: [...pane.selected] };
