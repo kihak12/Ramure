@@ -1002,12 +1002,23 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - 26 px high, 11.5 px text in `--muted`, on the window background.
 - On the left, the branch and the last git command, in the code font. On the right, the
   timings.
+- A command that only reads a diff to show it in the diff card (9.14), the diff of a file, of a
+  file of a commit or of a stash, is not the last command of the status bar: opening a diff does
+  nothing to the repository, and its command would hide the last one that did. The same holds
+  when it fails: the diff card shows the error. The command log lists it with the others. The
+  command that lists the files of a commit, when the commit is selected, is not one of them: it
+  stays the last command.
 - During an operation, the right side starts with the waiting ring and a few words:
   "Switching to main…", or "Working…" when the operation has no name of its own.
 
 ### 9.14 Diff
 
 - Code font, 12 px. Line numbers in `--muted`.
+- Of the header git writes above the first hunk, the `diff --git`, `---` and `+++` lines, which
+  name the file again, and the `index` line, which gives the SHAs of the two versions, are not
+  shown: the header of the card names the file, with its full path in a tooltip. A header line
+  that says more stays, in `--muted`: a new or deleted file, a change of mode, a rename, a binary
+  file.
 - Added line: a background at `--tint-added` of `--ok`, a "+" sign in `--ok`. Removed line: a
   background at `--tint-removed` of `--bad`, a "−" sign in `--bad` (2.7).
 - The sign is always there: color alone never says whether a line is added or removed.
@@ -2353,8 +2364,8 @@ apply to that text.
 - **A destructive action** says what will be lost, and whether it can be recovered.
 - **"Cancel" and "Undo" are not the same word.** "Cancel" leaves a dialog or stops what has not
   happened yet; "Undo" takes back what was just done, in a notification (9.11).
-- **The git commands** that are run are always shown as they are, in the status bar and in the
-  command log.
+- **The git commands** that are run are always shown as they are: all of them in the command log,
+  the last one in the status bar, unless it only reads a diff to show it (9.13).
 
 Git vocabulary is used as git uses it: the interface says what git says, so that what is read
 here is what is read in the documentation of git and in a terminal.

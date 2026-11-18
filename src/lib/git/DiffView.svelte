@@ -31,6 +31,8 @@
   } = $props();
 
   const MAX_LINES = 5000;
+  /** Lines of the file header that name the file again, or give the SHAs of its two versions. */
+  const NAMES_THE_FILE = /^(diff --git |index |--- |\+\+\+ )/;
 
   interface Line {
     /** Position in the text of the diff: it is what the Rust core expects. */
@@ -63,9 +65,10 @@
         hunk++;
         lines.push({ index, type: 'hunk', old: null, new: null, text: line, hunk });
       } else if (!inHunk || line.startsWith('diff --git ')) {
-        // File header: paths, modes, index.
+        // File header. The lines that name the file again, or give its SHAs, are left out
+        // (guidelines, 9.14); those that say more stay: new or deleted file, mode, rename, binary.
         inHunk = false;
-        lines.push({ index, type: 'meta', old: null, new: null, text: line, hunk });
+        if (!NAMES_THE_FILE.test(line)) lines.push({ index, type: 'meta', old: null, new: null, text: line, hunk });
       } else if (line.startsWith('+')) {
         added++;
         lines.push({ index, type: 'add', old: null, new: newNo++, text: line.slice(1), hunk });
@@ -277,7 +280,7 @@
 <section class="diff" bind:this={root} aria-label="Diff of {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <div class="names">
-      <b class="mono">{title}</b>
+      <b class="mono" {title}>{title}</b>
       {#if subtitle}<small>{subtitle}</small>{/if}
     </div>
     {#if canSelect && selected.size}
