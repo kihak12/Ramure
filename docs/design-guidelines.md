@@ -103,24 +103,24 @@ component that hard-codes one.
 
 | Token | Role | Light | Dark |
 |---|---|---|---|
-| `--side` | Window background: rail, tabs, toolbar, status bar, space between the cards. | `#eaecf1` | `#0c0d11` |
+| `--side` | Window background: rail, tabs, toolbar, status bar, space between the cards. | `#e2e6ed` | `#0a0b0f` |
 | `--panel` | Background of the cards and of the active tab. | `#ffffff` | `#181b21` |
-| `--bg` | Recessed background, inside a card: input fields. | `#f6f7f9` | `#111318` |
+| `--bg` | Recessed background, inside a card: input fields. | `#f2f4f7` | `#101216` |
 | `--raised` | Background of buttons and of what floats: menus, dialogs, notifications. | `#ffffff` | `#20242c` |
-| `--line` | Border of buttons, fields and floating elements. | `#d9dce3` | `#2b303a` |
-| `--line-soft` | Discreet separator inside a card. | `#e7e9ee` | `#21252d` |
-| `--ink` | Body text. | `#171a21` | `#e6e9ef` |
-| `--muted` | Secondary text: captions, metadata, labels. | `#5c6370` | `#959ca9` |
-| `--faint` | Hint in an empty field, disabled element, decorative marker. | `#8f95a1` | `#676e7b` |
-| `--hover` | Background of a hovered element, on a card or on what floats. | `#eaf2fe` | `#1d293a` |
-| `--hover-side` | Background of a hovered element on the window background: rail, toolbar, tabs, status bar. | `#d8e2f2` | `#101a27` |
-| `--sel` | Background of a selected element. | `#cee5ff` | `#112f56` |
+| `--line` | Border of buttons, fields and floating elements. | `#ccd1da` | `#343a46` |
+| `--line-soft` | Discreet separator inside a card. | `#dfe3ea` | `#262b34` |
+| `--ink` | Body text. | `#141820` | `#eceff4` |
+| `--muted` | Secondary text: captions, metadata, labels. | `#4d5463` | `#a4abb8` |
+| `--faint` | Hint in an empty field, disabled element, decorative marker. | `#7b8290` | `#707886` |
+| `--hover` | Background of a hovered element, on a card or on what floats. | `#e0ebfd` | `#1f2d42` |
+| `--hover-side` | Background of a hovered element on the window background: rail, toolbar, tabs, status bar. | `#ccdaf0` | `#13213a` |
+| `--sel` | Background of a selected element. | `#b9d7ff` | `#14396a` |
 | `--accent` | Main action, focus, active element, link. | `#126bed` | `#64a5ff` |
-| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded, the strip of uncommitted changes (9.22), the box of an update (9.23). | `#e3eefe` | `#102a4e` |
+| `--accent-soft` | Accent-tinted background: hovered menu item, active module in the rail, pressed "Terminal" action of the toolbar, row of a shortcut being recorded, the strip of uncommitted changes (9.22), the box of an update (9.23). | `#d8e7fe` | `#12325e` |
 | `--on-accent` | Text placed on the accent or on a branch color. | `#ffffff` | `#08131f` |
-| `--ok` / `--ok-soft` | Success, added line. | `#037c40` / `#def5e6` | `#42c887` / `#02321b` |
-| `--warn` / `--warn-soft` | Warning, pending operation. | `#905601` / `#fef0d4` | `#f9a52c` / `#3e2a06` |
-| `--bad` / `--bad-soft` | Error, destructive action, removed line. | `#bc0400` / `#ffe4e0` | `#fe6c62` / `#41100f` |
+| `--ok` / `--ok-soft` | Success, added line. | `#037c40` / `#cdf0d9` | `#42c887` / `#043d22` |
+| `--warn` / `--warn-soft` | Warning, pending operation. | `#905601` / `#fde5b5` | `#f9a52c` / `#442e06` |
+| `--bad` / `--bad-soft` | Error, destructive action, removed line. | `#bc0400` / `#ffd6cf` | `#fe6c62` / `#4e1513` |
 | `--term-bg` / `--term-ink` | Background and text of the terminal. | `#fbfbfc` / `#1c1f27` | `#0b0c10` / `#d5dae3` |
 | `--scrim` | Veil behind a dialog. | `rgb(18 22 30 / 0.32)` | `rgb(0 0 0 / 0.55)` |
 
@@ -155,8 +155,8 @@ Eight colors, reserved for the graph. A branch takes the color of its column: co
 - **State colors** (`--ok`, `--warn`, `--bad`) only say the state. They do not decorate.
 - **`--faint`** never carries information that is needed: its contrast is too low for text that
   has to be read.
-- A state-tinted background uses the `-soft` token, or 13 to 15% of the color over the
-  background.
+- A state-tinted background uses the `-soft` token, or a strength of tint of section 2.7: never a
+  percentage written in a component.
 - **Hover and selection are tints of the accent**, of growing strength: `--hover` on a card,
   `--hover-side` on the window background, darker in light and lighter in dark than the surface,
   and `--sel`, more saturated, so that the selection stays apart from the hover. Every theme
@@ -172,6 +172,9 @@ Every theme must meet them, in light and in dark.
 |---|---|
 | `--ink` on `--panel`, `--bg`, `--sel`, `--hover`, `--hover-side` | 7:1 |
 | `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
+| `--ink` on a line of a diff, added or removed, at rest, hovered to be picked and picked (9.14) | 7:1 |
+| The letter of a file state on its tint (9.6) | 4.5:1 |
+| The icon of a notification, and the initials of a commit, on their tint | 3:1 |
 | `--ink` on `--accent-soft`, `--ok-soft`, `--warn-soft`, `--bad-soft` | 7:1 |
 | `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--hover-side`, `--warn-soft` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch color, at rest and on hover | 4.5:1 |
@@ -186,7 +189,7 @@ Every theme must meet them, in light and in dark.
 A hover has to be seen, and the selection has to stand apart from its background and from the
 hover. The second table gives the minimum distance between each hover and its background,
 between the selection and its background (a card, or what floats, such as the command palette),
-and between the selection and the hover. The distance is the ΔE CIE76, in CIELAB, from sRGB with
+between the selection and the hover, and between the states of a line of a diff. The distance is the ΔE CIE76, in CIELAB, from sRGB with
 a D65 white: below 2 it cannot be seen, around 10 it is plain.
 
 Each minimum is the lowest value of the four themes, rounded down to a whole number: a later
@@ -204,6 +207,9 @@ closer to the hover: there, a hover at 7 was seen, discreet but visible.
 | `--sel` from `--panel` (a selected row in a card) | 18 | 24 |
 | `--sel` from `--raised` (a selected row in what floats, such as the command palette) | 18 | 21 |
 | `--sel` from `--hover` (the selection next to a hovered row) | 9 | 15 |
+| A line of a diff, added or removed, from `--panel` (9.14) | 14 | 18 |
+| A line of a diff from the same line hovered to be picked | 7 | 6 |
+| A hovered line of a diff from the same line picked | 5 | 5 |
 
 `npm run check` checks the contrasts and the distances of every theme, in light and in dark
 (`scripts/check-contrasts.mjs`).
@@ -272,6 +278,34 @@ Slate.
   lightened or darkened by the terminal until it reaches it: a text in any other color (256
   colors, true colors), a text in black on the dark background or in white on the light one,
   and the default text on a colored background.
+
+### 2.7 Tint strengths
+
+How much of a color is laid over its background, when an element is tinted by a color rather than
+by a `-soft` token: a branch label, the capsule of a message, the letter of a file state, a line of
+a diff. They are tokens, as the colors are: the elements below never write a percentage of their
+own.
+
+They are stronger in light, where a light tint washes out on white and makes the screen look pale;
+capped in dark, where a stronger tint would take the contrast of the text (2.4). A color theme does
+not change them: they hold for the four, which `npm run check` checks.
+
+| Token | Use | Light | Dark |
+|---|---|---|---|
+| `--tint-veil` | The capsule of a message and the band that links it to its commit (10.2) | 24% | 18% |
+| `--tint-label` | A branch or tag label at rest, "Ribbon" rendering (9.4) | 34% | 24% |
+| `--tint-label-soft` | A label at rest, "Classic" rendering | 24% | 18% |
+| `--tint-label-hover` | A hovered label, the current branch in "Classic", the ring of the current branch | 40% | 28% |
+| `--tint-letter` | The letter of a file state (9.6), the icon of a notification (9.11), the initials of a commit | 24% | 20% |
+| `--tint-added` | An added line of a diff (9.14) | 22% | 20% |
+| `--tint-removed` | A removed line of a diff | 20% | 20% |
+| `--tint-line-hover` | What a line of a diff hovered to be picked adds to its tint | 10% | 7% |
+| `--tint-line-pick` | What a picked line, and a change marked inside a line, add to its tint | 18% | 13% |
+
+- The steps of a line are shorter in dark: the picked line keeps `--ink` at 7:1, and the line at
+  rest can be as strong as in light. A line, hovered or picked, stays apart from the one before
+  (2.4 and `npm run check`).
+- The letter of a file state moves 20% toward `--ink`, so that it reads on its stronger tint.
 
 ## 3. Typography
 
@@ -686,7 +720,7 @@ buttons.
 
 | Type | Rendering |
 |---|---|
-| Local branch | Background: 24% of the branch color over `--panel`. Border: the same color at 55%. `--ink` text, weight 650. "Computer" icon. |
+| Local branch | Background: `--tint-label` of the branch color over `--panel`, `--tint-label-soft` in "Classic" (2.7). Border: the same color at 55%. `--ink` text, weight 650. "Computer" icon. |
 | Current branch | Solid background in the branch color, surrounded by a ring of the same color. `--on-accent` text, weight 650, preceded by a check mark. |
 | Remote branch | The same background as a local branch. Dashed border in the branch color, weight 400. "Cloud" icon. |
 | Tag | The same background as a local branch. Solid border in the branch color, weight 400. "Tag" icon. |
@@ -696,8 +730,8 @@ buttons.
   weight tell them apart, never the tint.
 - **A label never changes size**: not on click, not on hover, not when a branch is dragged onto
   it.
-- Hover: the tint of the background gets stronger, 28% at most: beyond that, `--ink` falls
-  under 7:1 in some dark themes. The solid background of the current branch moves 10% toward
+- Hover: the tint of the background gets stronger, `--tint-label-hover` (2.7): in dark, beyond
+  28%, `--ink` falls under 7:1 in some themes. The solid background of the current branch moves 10% toward
   `--ink`, darker in light and lighter in dark, so that its text gains contrast in both themes.
 - The icons of a label are 14 px.
 - Drop target: a 2 px outline in `--accent`, offset by 2 px.
@@ -765,7 +799,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   holds for the rows that hold a button of their own: the host book, the file lists, the recent
   repositories of the start page.
 - The state of a file is a letter on a tinted background, never a color alone: M modified, A
-  added, D deleted, R renamed, C copied, T type changed, U untracked, "!" in conflict.
+  added, D deleted, R renamed, C copied, T type changed, U untracked, "!" in conflict. The tint
+  is `--tint-letter` of the color of the state; the letter is that color moved 20% toward
+  `--ink`, so that it reads on the tint (2.7).
 - A file that is only partly staged carries the word "partly" after its name, in `--muted`
   at 11.5 px, in both lists.
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
@@ -899,7 +935,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   `~/.ssh/config`, 9.15).
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
-  colored bar on the edge.
+  colored bar on the edge. The circle takes `--tint-letter` of the color of the state (2.7).
 - A short title, then the detail, in the code font at 11.5 px whatever it says: the output of
   git as it is, a path, or the reason of a failure with what to do.
 - In the title, a word of more than 36 characters, such as the name of a branch or a path, is
@@ -936,10 +972,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 ### 9.14 Diff
 
 - Code font, 12 px. Line numbers in `--muted`.
-- Added line: a background at 14% of `--ok`, a "+" sign in `--ok`. Removed line: a background at
-  13% of `--bad`, a "−" sign in `--bad`.
+- Added line: a background at `--tint-added` of `--ok`, a "+" sign in `--ok`. Removed line: a
+  background at `--tint-removed` of `--bad`, a "−" sign in `--bad` (2.7).
 - The sign is always there: color alone never says whether a line is added or removed.
-- A line picked to be staged on its own has a stronger tint and its sign in bold. No colored
+- A line picked to be staged on its own has a stronger tint, `--tint-line-pick` more, and its
+  sign in bold; a line hovered to be picked takes `--tint-line-hover` more (2.7). No colored
   bar on its edge.
 - From the keyboard, the lines behave like a list (9.6): ↑ and ↓ move from one changed line to
   the next, Home and End go to the first and to the last, with the inner ring on the line; Space
@@ -2049,7 +2086,7 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 | Radius of a commit | 10 px |
 | Radius of a merge commit | 5 px |
 | Thickness of a line | 3 px |
-| Band behind a commit | 24 px high, 15% of the branch color |
+| Band behind a commit | 24 px high, `--tint-veil` of the branch color (2.7) |
 
 - **A commit** is a round dot in the color of its branch, with the initial of its author in
   `--on-accent`. A ring in the color of the card sets it apart from the lines.
@@ -2058,8 +2095,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   merge commit included. In "Classic", the initials of the "Author" column do (10.3).
 - **Lines** are straight as long as the branch keeps its column. A change of column is a soft
   curve, with no corner.
-- **The message** sits in a capsule: a background at 15% of the branch color, rounded like a
-  pill on the right, as wide as the text. A band of the same tint links it to the dot.
+- **The message** sits in a capsule: a background at `--tint-veil` of the branch color (2.7),
+  rounded like a pill on the right, as wide as the text. A band of the same tint links it to the dot.
 - **A label** is linked to its commit by a thin line in the branch color.
 - **The current commit** carries a halo (section 8), and the label of its branch is solid.
 - **Changes in progress** take the first row: an empty circle, the words `// WIP` in the code
@@ -2262,3 +2299,6 @@ the curves of the graph (10).
   `docs/design/`. It was removed once these guidelines had become the only reference. Git keeps
   it: `git show 72eb9ec:docs/design/directions.md` for the look, and
   `git show 72eb9ec:docs/design/logo.md` for the logo.
+- **The colors** were made stronger on November 18, 2026: the screen looked pale. Slate has
+  darker lines, text and tints in light, deeper ones in dark, and the strengths of the tints of
+  a color became tokens (2.7), stronger in light, capped in dark by the contrast of the text.

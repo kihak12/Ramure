@@ -10,27 +10,27 @@
   color-scheme: light;
 
   /* Colors (guidelines, section 2) */
-  --side: #eaecf1;
+  --side: #e2e6ed;
   --panel: #ffffff;
-  --bg: #f6f7f9;
+  --bg: #f2f4f7;
   --raised: #ffffff;
-  --line: #d9dce3;
-  --line-soft: #e7e9ee;
-  --ink: #171a21;
-  --muted: #5c6370;
-  --faint: #8f95a1;
-  --hover: #eaf2fe;
-  --hover-side: #d8e2f2;
-  --sel: #cee5ff;
+  --line: #ccd1da;
+  --line-soft: #dfe3ea;
+  --ink: #141820;
+  --muted: #4d5463;
+  --faint: #7b8290;
+  --hover: #e0ebfd;
+  --hover-side: #ccdaf0;
+  --sel: #b9d7ff;
   --accent: #126bed;
-  --accent-soft: #e3eefe;
+  --accent-soft: #d8e7fe;
   --on-accent: #ffffff;
   --ok: #037c40;
-  --ok-soft: #def5e6;
+  --ok-soft: #cdf0d9;
   --warn: #905601;
-  --warn-soft: #fef0d4;
+  --warn-soft: #fde5b5;
   --bad: #bc0400;
-  --bad-soft: #ffe4e0;
+  --bad-soft: #ffd6cf;
   --term-bg: #fbfbfc;
   --term-ink: #1c1f27;
   /* The 16 ANSI colors of the terminal (section 2.6): 0 to 7, then their bright versions, 8 to 15. */
@@ -60,6 +60,15 @@
   --l5: #ce216e;
   --l6: #03808b;
   --l7: #5d6c02;
+  --tint-line-pick: 18%;
+  --tint-line-hover: 10%;
+  --tint-removed: 20%;
+  --tint-added: 22%;
+  --tint-letter: 24%;
+  --tint-label-hover: 40%;
+  --tint-label-soft: 24%;
+  --tint-label: 34%;
+  --tint-veil: 24%;
 
   /* Brand colors (section 13): those of the icon. They change neither in dark nor with the color
      theme. */
@@ -110,27 +119,27 @@
   :root:not([data-theme='light']),
   [data-palette='slate']:not([data-theme='light']) {
     color-scheme: dark;
-    --side: #0c0d11;
+    --side: #0a0b0f;
     --panel: #181b21;
-    --bg: #111318;
+    --bg: #101216;
     --raised: #20242c;
-    --line: #2b303a;
-    --line-soft: #21252d;
-    --ink: #e6e9ef;
-    --muted: #959ca9;
-    --faint: #676e7b;
-    --hover: #1d293a;
-    --hover-side: #101a27;
-    --sel: #112f56;
+    --line: #343a46;
+    --line-soft: #262b34;
+    --ink: #eceff4;
+    --muted: #a4abb8;
+    --faint: #707886;
+    --hover: #1f2d42;
+    --hover-side: #13213a;
+    --sel: #14396a;
     --accent: #64a5ff;
-    --accent-soft: #102a4e;
+    --accent-soft: #12325e;
     --on-accent: #08131f;
     --ok: #42c887;
-    --ok-soft: #02321b;
+    --ok-soft: #043d22;
     --warn: #f9a52c;
-    --warn-soft: #3e2a06;
+    --warn-soft: #442e06;
     --bad: #fe6c62;
-    --bad-soft: #41100f;
+    --bad-soft: #4e1513;
     --term-bg: #0b0c10;
     --term-ink: #d5dae3;
     --ansi-0: #272a31;
@@ -158,6 +167,15 @@
     --l5: #f96ea2;
     --l6: #07c6d0;
     --l7: #afc340;
+    --tint-line-pick: 13%;
+    --tint-line-hover: 7%;
+    --tint-removed: 20%;
+    --tint-added: 20%;
+    --tint-letter: 20%;
+    --tint-label-hover: 28%;
+    --tint-label-soft: 18%;
+    --tint-label: 24%;
+    --tint-veil: 18%;
     --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
     --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
   }
@@ -165,27 +183,27 @@
 [data-theme='dark'],
 [data-palette='slate'][data-theme='dark'] {
   color-scheme: dark;
-  --side: #0c0d11;
+  --side: #0a0b0f;
   --panel: #181b21;
-  --bg: #111318;
+  --bg: #101216;
   --raised: #20242c;
-  --line: #2b303a;
-  --line-soft: #21252d;
-  --ink: #e6e9ef;
-  --muted: #959ca9;
-  --faint: #676e7b;
-  --hover: #1d293a;
-  --hover-side: #101a27;
-  --sel: #112f56;
+  --line: #343a46;
+  --line-soft: #262b34;
+  --ink: #eceff4;
+  --muted: #a4abb8;
+  --faint: #707886;
+  --hover: #1f2d42;
+  --hover-side: #13213a;
+  --sel: #14396a;
   --accent: #64a5ff;
-  --accent-soft: #102a4e;
+  --accent-soft: #12325e;
   --on-accent: #08131f;
   --ok: #42c887;
-  --ok-soft: #02321b;
+  --ok-soft: #043d22;
   --warn: #f9a52c;
-  --warn-soft: #3e2a06;
+  --warn-soft: #442e06;
   --bad: #fe6c62;
-  --bad-soft: #41100f;
+  --bad-soft: #4e1513;
   --term-bg: #0b0c10;
   --term-ink: #d5dae3;
   --ansi-0: #272a31;
@@ -213,6 +231,15 @@
   --l5: #f96ea2;
   --l6: #07c6d0;
   --l7: #afc340;
+  --tint-line-pick: 13%;
+  --tint-line-hover: 7%;
+  --tint-removed: 20%;
+  --tint-added: 20%;
+  --tint-letter: 20%;
+  --tint-label-hover: 28%;
+  --tint-label-soft: 18%;
+  --tint-label: 24%;
+  --tint-veil: 18%;
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
 }
