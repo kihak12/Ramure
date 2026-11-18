@@ -11,7 +11,8 @@
     "check": "svelte-check --tsconfig ./tsconfig.json && node scripts/check-tokens.mjs && node scripts/check-contrasts.mjs && node scripts/check-names.mjs && node scripts/version.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
     "version:set": "node scripts/version.mjs",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

@@ -90,3 +90,82 @@ export function locate(haystack: string[], needle: string[], near: number): numb
   }
   return best;
 }
+
+// --- Picking lines (guidelines, 9.26) -----------------------------------------------------
+
+export type Side = 'ours' | 'theirs';
+
+/** The lines of each side of a conflict: what a pick is about. */
+export interface Sides {
+  ours: string[];
+  theirs: string[];
+}
+
+/** Which lines of each side of a conflict are kept. */
+export interface Pick {
+  ours: boolean[];
+  theirs: boolean[];
+  /** "Keep both, reversed": the lines of the second side come first. */
+  reversed: boolean;
+  /** "Keep neither": the conflict is decided, with no line kept. */
+  neither: boolean;
+}
+
+export type Choice = 'ours' | 'theirs' | 'both' | 'both-reversed' | 'neither';
+
+/** Nothing kept yet: the conflict is still to decide. */
+export const emptyPick = (block: Sides): Pick => ({
+  ours: block.ours.map(() => false),
+  theirs: block.theirs.map(() => false),
+  reversed: false,
+  neither: false,
+});
+
+/** A conflict is decided once a line is kept, or once "Keep neither" was chosen. */
+export const isDecided = (pick: Pick) => pick.neither || pick.ours.some(Boolean) || pick.theirs.some(Boolean);
+
+/** The buttons of the bar: they set the lines, which can then be picked one by one. */
+export function choose(block: Sides, choice: Choice): Pick {
+  const all = (lines: string[], on: boolean) => lines.map(() => on);
+  return {
+    ours: all(block.ours, choice === 'ours' || choice === 'both' || choice === 'both-reversed'),
+    theirs: all(block.theirs, choice === 'theirs' || choice === 'both' || choice === 'both-reversed'),
+    reversed: choice === 'both-reversed',
+    neither: choice === 'neither',
+  };
+}
+
+/** Lines `from` to `to` of one side, both included, kept or let go: a click, or Shift + click. */
+export function pickLines(pick: Pick, side: Side, from: number, to: number, on: boolean): Pick {
+  const [low, high] = from <= to ? [from, to] : [to, from];
+  const lines = pick[side].map((kept, i) => (i >= low && i <= high ? on : kept));
+  // Letting go of the last line leaves the conflict to decide again, not decided with nothing.
+  return { ...pick, [side]: lines, neither: false };
+}
+
+/** Every line of one side kept, or let go: the checkbox of the header of a conflict. */
+export const pickSide = (pick: Pick, side: Side, on: boolean): Pick => pickLines(pick, side, 0, pick[side].length - 1, on);
+
+/** The state of the checkbox of a side in the header of a conflict. */
+export function sideState(pick: Pick, side: Side): 'on' | 'off' | 'mixed' {
+  const kept = pick[side].filter(Boolean).length;
+  return kept === 0 ? 'off' : kept === pick[side].length ? 'on' : 'mixed';
+}
+
+/**
+ * The lines kept, in the order of the result, with the side each comes from. The order is fixed,
+ * never that of the clicks. When both sides have as many lines and no row keeps both, it goes row
+ * by row: the value of each line from the side it was taken from. Otherwise, the lines of the first
+ * side, then those of the second ("reversed": the second first).
+ */
+export function resolved(block: Sides, pick: Pick): { line: string; side: Side }[] {
+  if (pick.neither) return [];
+  const rows = block.ours.length === block.theirs.length && !block.ours.some((_, i) => pick.ours[i] && pick.theirs[i]);
+  if (rows) {
+    return block.ours.flatMap((line, i) =>
+      pick.ours[i] ? [{ line, side: 'ours' as Side }] : pick.theirs[i] ? [{ line: block.theirs[i], side: 'theirs' as Side }] : [],
+    );
+  }
+  const of = (side: Side) => block[side].flatMap((line, i) => (pick[side][i] ? [{ line, side }] : []));
+  return pick.reversed ? [...of('theirs'), ...of('ours')] : [...of('ours'), ...of('theirs')];
+}

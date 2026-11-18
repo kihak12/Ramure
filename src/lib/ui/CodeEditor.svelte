@@ -45,7 +45,7 @@
     '.cm-cursor': { borderLeftColor: 'var(--ink)' },
     '.cm-gutters': {
       backgroundColor: 'var(--bg)',
-      color: 'var(--faint)',
+      color: 'var(--muted)',
       border: 'none',
       borderRight: '1px solid var(--line-soft)',
     },

@@ -46,7 +46,7 @@
   // During a rebase, git swaps the roles: “ours” is the base, “theirs” the commit being replayed.
   const sides = $derived(
     status.operation === 'rebase'
-      ? { ours: 'Keep the base version', theirs: 'Keep your change' }
+      ? { ours: 'Keep upstream', theirs: 'Keep your commit' }
       : { ours: 'Keep your version', theirs: 'Keep the incoming version' },
   );
 
