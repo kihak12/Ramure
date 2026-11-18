@@ -181,7 +181,7 @@ Every theme must meet them, in light and in dark.
 | `--ink` on a line of a diff, added or removed, at rest, hovered to be picked and picked (9.14) | 7:1 |
 | The letter of a file state on its tint, on a row at rest, hovered or selected (9.6) | 4.5:1 |
 | The icon of a notification on its tint (9.11), and the initials of an author in "Classic" on theirs (10.3) | 3:1 |
-| The line of a lane on its own sleeve, under the pointer (10.2) | 2:1 |
+| The line of a lane on its own sleeve, under the pointer, on a row at rest, hovered or selected (10.2): of the same color, the line stays apart from it; the sleeve carries no information | 2:1 |
 | `--muted` on `--bg` (the header of a hunk, 9.14) | 4.5:1 |
 | `--muted` on `--accent-soft` (a folder that receives a drop, 9.24) | 4.5:1 |
 | `--ink` on the header of the pane of a host, tinted with its color (9.24) | 7:1 |
@@ -519,7 +519,7 @@ The interface has four levels. Each is recognized by its background.
 | Token | Value | Use |
 |---|---|---|
 | `--ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | The only curve in the application. Only a continuous rotation or a continuous sweep is linear. |
-| `--t-fast` | 110 ms | Hover, press, focus, color change, disappearance. |
+| `--t-fast` | 110 ms | Hover, press, focus, color change, disappearance; the rest of the pointer before the lane under it stands out (10.2). |
 | `--t-med` | 200 ms | Appearance of a menu or a dialog, folding of a section. |
 | `--t-slow` | 340 ms | Long move: the rail marker, reordering of a list. |
 | `--t-step` | 14 ms | Delay between two elements of a staggered entrance. |
@@ -544,8 +544,8 @@ button: the cross and the "+" of a tab bar, the close button of a notification o
   on hover. The copy that shows the whole name of a cut label (9.4) leaves the label as it is, and
   appears at once.
   on hover.
-- The lane under the pointer (10.2): it stands out and goes back at once. Only its delay,
-  `--t-fast`, keeps it from blinking.
+- The lane under the pointer (10.2): it stands out with no fade, once the pointer has rested
+  `--t-fast` on it, so that sweeping the rows does not make it blink; it goes back at once.
 - The scrolling of the graph, of the diff and of the terminal.
 - The move of the selection from the keyboard: it is immediate.
 - The width of a card that is hidden or shown: the graph would be laid out again at every frame.
@@ -2389,10 +2389,15 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   commit's.
   - The lane is that of the commit of the row under the pointer. In the "Graph" column, the line
     under the pointer, within 8 px of its axis, is taken instead: a branch can be picked where it
-    passes, not only at its commits. The WIP row gives none.
+    passes straight, not only at its commits; a curve is not picked, the row of its commit is.
+    This zone is not a target (11): nothing is clicked there, the click selects the row.
+  - The WIP row gives none: the lane that stands out stays, and the one that was about to stand
+    out does not.
   - It stands out after the pointer has rested `--t-fast` on a lane, so that sweeping the rows
     does not make the graph blink, and goes as soon as the pointer leaves the history. It does
     not go when the history scrolls.
+  - It is an aid to the pointer only, by choice: it carries no information, and from the
+    keyboard a branch is followed through the selection and the detail of each commit.
 
 ### 10.3 Rules
 

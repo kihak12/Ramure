@@ -145,7 +145,12 @@
   }
 
   function aim(event: MouseEvent, row: HTMLElement, commit: CommitRow, index: number) {
-    if (commit.wip) return; // the row of the changes gives no lane: what stands out stays
+    // The row of the changes gives no lane: what stands out stays, what was about to does not.
+    if (commit.wip) {
+      window.clearTimeout(aimTimer);
+      aimed = null;
+      return;
+    }
     const lane = laneAt(event, row, commit, index);
     if (lit && lit.lane === lane && index >= lit.top && index <= lit.bottom + 1) {
       window.clearTimeout(aimTimer);

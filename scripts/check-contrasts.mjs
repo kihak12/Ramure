@@ -164,8 +164,11 @@ function check(name, t, dark) {
       // The capsule of a commit of the lane under the pointer (10.2).
       need(`--ink on a ${lane} capsule of the lane under the pointer, row in ${bg}`, contrast(t['--ink'], mix(c, s['--tint-lane-veil'], t[bg])), 7);
     }
-    // The 3 px line of the lane under the pointer, on its own sleeve (10.2).
-    need(`${lane} line on its sleeve`, contrast(c, mix(c, s['--tint-lane'], t['--panel'])), 2);
+    // The 3 px line of the lane under the pointer, on its own sleeve, on a row at rest, hovered
+    // or selected (10.2).
+    for (const bg of ['--panel', '--hover', '--sel']) {
+      need(`${lane} line on its sleeve, row in ${bg}`, contrast(c, mix(c, s['--tint-lane'], t[bg])), 2);
+    }
     // The header of the pane of a host, tinted with its color (9.24): --ink is the capsule's.
     need(`${lane} dot on the header of a host pane`, contrast(c, mix(c, CAPSULE, t['--panel'])), 3);
     need(`--muted icons on the header of a ${lane} host pane`, contrast(t['--muted'], mix(c, CAPSULE, t['--panel'])), 3);
