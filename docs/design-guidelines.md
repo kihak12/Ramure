@@ -373,7 +373,8 @@ Two weights, no more.
 - Numbers that line up or that change (counters, dates, columns) use tabular figures
   (`font-variant-numeric: tabular-nums`).
 - Text that is too long is cut on the right with an ellipsis, and its full value appears in a
-  tooltip. The title of a notification is the one exception (section 9.11).
+  tooltip. The title of a notification is an exception (section 9.11). A branch or tag label of
+  the graph also shows its whole name on hover, in a copy of itself, besides its tooltip (9.4).
 - **Tooltips** are those of the system, the `title` of an element: their look and their delay
   are the system's, and Ramure draws none of its own. A tooltip holds text only, never an action.
   The tooltip of the element that opened a menu keeps quiet while the menu is open (9.9).
@@ -537,7 +538,8 @@ button: the cross and the "+" of a tab bar, the close button of a notification o
 **What is not animated.**
 
 - Branch and tag labels, list rows, tabs and menu items never change size, neither on click nor
-  on hover.
+  on hover. The copy that shows the whole name of a cut label (9.4) leaves the label as it is, and
+  appears at once.
 - The scrolling of the graph, of the diff and of the terminal.
 - The move of the selection from the keyboard: it is immediate.
 - The width of a card that is hidden or shown: the graph would be laid out again at every frame.
@@ -764,6 +766,17 @@ buttons.
   weight tell them apart, never the tint.
 - **A label never changes size**: not on click, not on hover, not when a branch is dragged onto
   it.
+- **Its whole name, on hover.** A label cut by its column shows its whole name while the pointer
+  is on it: a copy of the label, as wide as its name, at the same place and with the background of
+  a hovered label, floats over the graph and the rows on its right, above the lanes. The label
+  under it keeps its size and its actions; the copy catches no pointer and goes as soon as the
+  pointer leaves the label, or the history scrolls or is read again. A label that is not cut has
+  no copy. The copy is the label, not a floating surface (6): no shadow, no other border, and it
+  may hide the point of its commit and the start of the message while the pointer is on it.
+- **Its tooltip is its name**, with nothing else: the names it stands for, as git writes them,
+  "origin/fix/encoding" for a remote branch, "main, origin/main" for a local branch and its remote
+  on the same commit (3.4). What a double-click, a right-click and a drag do is said by the
+  menu of the label and by these guidelines, not by the tooltip.
 - Hover: the tint of the background gets stronger, `--tint-label-hover` (2.7): in dark, beyond
   28%, `--ink` falls under 7:1 in some themes. The solid background of the current branch moves 10% toward
   `--ink`, darker in light and lighter in dark, so that its text gains contrast in both themes.
@@ -779,7 +792,8 @@ buttons.
   background, `--line` border, `--shadow-pop` shadow, as what floats (6), but 8 px corners
   (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays within the
   "Branch / tag" column, 6 px from each edge, so that the graph never covers it: a long name is
-  cut with an ellipsis, and is whole in the tooltip of its label (3.4). It stays open as long as
+  cut with an ellipsis, and is whole on hover and in the tooltip of its label, as anywhere in the
+  column. It stays open as long as
   the pointer is on it, and its labels behave like the others: hover, double-click, right-click,
   drop target.
 - Double-click: switch to the branch. Right-click: the branch menu.

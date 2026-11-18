@@ -311,6 +311,7 @@
 
   function onScroll() {
     if (!scroller) return;
+    wide = null;
     scrollTop = scroller.scrollTop;
     lastScroll = performance.now();
     if (!raf) {
@@ -385,6 +386,24 @@
     }
   }
 
+  // A label cut by its column, under the pointer: a copy shows its whole name over the graph,
+  // above the lanes, and catches no pointer (guidelines, 9.4).
+  let spacer = $state<HTMLDivElement>();
+  let wide = $state<{ label: Label; commit: CommitRow; x: number; y: number } | null>(null);
+  // The history read again (a fetch, a reload) may take the label away from under a still pointer,
+  // with no mouseleave: its copy goes with it.
+  $effect(() => {
+    void commits;
+    wide = null;
+  });
+  function widen(chip: HTMLElement, label: Label, commit: CommitRow) {
+    const name = chip.querySelector<HTMLElement>('.ref-name');
+    if (!spacer || !name || name.scrollWidth <= name.clientWidth) return;
+    const box = chip.getBoundingClientRect();
+    const origin = spacer.getBoundingClientRect();
+    wide = { label, commit, x: box.left - origin.left, y: box.top - origin.top };
+  }
+
   // Label hovered during a drag, to highlight it.
   let dropOn = $state('');
   const labelKey = (label: Label, commit: CommitRow) => `${commit.sha}:${label.kind}:${label.name}`;
@@ -432,9 +451,12 @@
     class:local={label.local !== null}
     class:drop={dropOn === labelKey(label, commit)}
     style:--c="var(--l{commit.lane % 8})"
-    title="{label.title} — double-click to switch, right-click for actions, drag onto another branch to merge or rebase"
+    title={label.title}
     draggable={isBranch(label) ? 'true' : undefined}
+    onmouseenter={(e) => widen(e.currentTarget, label, commit)}
+    onmouseleave={() => (wide = null)}
     ondragstart={(e) => {
+      wide = null;
       drag.label = label;
       e.dataTransfer?.setData('text/plain', label.name);
       if (e.dataTransfer) e.dataTransfer.effectAllowed = 'link';
@@ -456,13 +478,17 @@
     }}
     oncontextmenu={(e) => menu.open(e, labelMenu(repo, label, commit.sha))}
   >
-    {#if label.kind === 'head'}<Icon name="check" size={14} />{/if}
-    <span class="ref-name">{label.name}</span>
-    <!-- During the switch, the ring takes the place of an icon: the label keeps its size. -->
-    {#if label.local}{#if waiting}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="laptop" size={14} />{/if}{/if}
-    {#if label.remotes.length}{#if waiting && !label.local}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="cloud" size={14} />{/if}{/if}
-    {#if label.tag}<Icon name="tag" size={14} />{/if}
+    {@render inside(label, waiting)}
   </span>
+{/snippet}
+
+{#snippet inside(label: Label, waiting: boolean)}
+  {#if label.kind === 'head'}<Icon name="check" size={14} />{/if}
+  <span class="ref-name">{label.name}</span>
+  <!-- During the switch, the ring takes the place of an icon: the label keeps its size. -->
+  {#if label.local}{#if waiting}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="laptop" size={14} />{/if}{/if}
+  {#if label.remotes.length}{#if waiting && !label.local}<span class="wait" aria-hidden="true"><span class="spinner"></span></span>{:else}<Icon name="cloud" size={14} />{/if}{/if}
+  {#if label.tag}<Icon name="tag" size={14} />{/if}
 {/snippet}
 
 <div
@@ -504,7 +530,19 @@
     aria-label="Commit history"
     aria-activedescendant={repo.current ? `${uid}-commit-${repo.selected}` : undefined}
   >
-    <div class="spacer" class:fresh style:height="{commits.length * ROW}px">
+    <div class="spacer" class:fresh bind:this={spacer} style:height="{commits.length * ROW}px">
+      {#if wide}
+        {@const label = wide.label}
+        {@const waiting = repo.switching !== null && (label.local === repo.switching || label.remotes.includes(repo.switching))}
+        <span
+          class="ref wide k-{label.kind}"
+          class:local={label.local !== null}
+          style:--c="var(--l{wide.commit.lane % 8})"
+          style:left="{wide.x}px"
+          style:top="{wide.y}px"
+          aria-hidden="true">{@render inside(label, waiting)}</span
+        >
+      {/if}
       <canvas
         bind:this={canvas}
         class="lanes"
@@ -808,8 +846,18 @@
       background var(--t-fast) var(--ease),
       border-color var(--t-fast) var(--ease);
   }
-  .ref:hover {
+  .ref:hover,
+  .ref.wide {
     background: color-mix(in srgb, var(--c, var(--line)) var(--tint-label-hover), var(--panel));
+  }
+  /* The copy of a cut label, its whole name over the graph: above the lanes, at the place of the
+     label, which keeps the pointer (guidelines, 9.4). */
+  .ref.wide {
+    position: absolute;
+    z-index: 3;
+    max-width: none;
+    white-space: nowrap;
+    pointer-events: none;
   }
   .ref[draggable='true'] {
     cursor: grab;
@@ -847,7 +895,8 @@
     background: color-mix(in srgb, var(--c, var(--line)) var(--tint-label), var(--panel));
   }
   /* The strengths are tokens (guidelines, 2.7): in dark, beyond 28%, the text would fall under 7:1. */
-  .ribbon .ref:not(.k-detached):hover {
+  .ribbon .ref:not(.k-detached):hover,
+  .ribbon .ref.wide:not(.k-detached) {
     background: color-mix(in srgb, var(--c, var(--line)) var(--tint-label-hover), var(--panel));
   }
   .ribbon .ref.local {
@@ -862,7 +911,8 @@
   }
   /* On hover, the background moves toward the color of the body text: darker in light, lighter in
      dark. The text of the current branch gains contrast there in both themes. */
-  .ribbon .ref.k-head:hover {
+  .ribbon .ref.k-head:hover,
+  .ribbon .ref.k-head.wide {
     background: color-mix(in srgb, var(--c) 90%, var(--ink));
     border-color: color-mix(in srgb, var(--c) 90%, var(--ink));
   }
