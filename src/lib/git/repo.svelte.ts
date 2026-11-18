@@ -60,6 +60,8 @@ const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
  *  amend or a reword: git says so in English (src-tauri/src/git/work.rs, `sync`). A force push is
  *  then offered rather than an error (guidelines, 9.2). */
 const REJECTED = /\(non-fast-forward\)/;
+/** A push rejected because the remote has commits that were not fetched: say what to do. */
+const FETCH_FIRST = /\(fetch first\)/;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** What rewording a commit would do, or why it cannot be done (guidelines, 9.25). */
@@ -473,7 +475,14 @@ export class Repo {
     if (!this.result || this.busy) return;
     if (!quiet) {
       let rejected = false;
-      const spared = (e: unknown) => (rejected = action === 'push' && REJECTED.test(errorText(e)));
+      const spared = (e: unknown) => {
+        if (action !== 'push') return false;
+        if (FETCH_FIRST.test(errorText(e))) {
+          toasts.err('Push rejected', 'The remote branch has commits that you have not fetched. Pull, then push again.');
+          return true;
+        }
+        return (rejected = REJECTED.test(errorText(e)));
+      };
       await this.#task(action, SYNC[action].failed, async () => {
         try {
           const outcome = await this.git<Outcome>('git_sync', { action, pullMode: this.settings.pullMode });

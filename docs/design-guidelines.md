@@ -621,12 +621,19 @@ its own buttons.
 - A counter (commits to pull, to push) is a round badge in `--accent`, at the top right of the
   icon.
 - During an operation, the icon spins and the button is disabled.
-- **A push refused because the branch and its remote counterpart have diverged**, as after a
-  rebase, an amend or a reword, is not an error notification: the confirmation of a force push
-  opens in its place (9.10). It says that the push was refused and why, then how many commits of
-  the remote branch the force push removes. The push is the same from the toolbar, the palette,
-  the menu of the branch and its shortcut. A push refused for another reason (the remote has
-  commits not fetched yet, an authentication) stays an error notification.
+- **A push rejected as "non-fast-forward"**, the remote branch having commits that the local
+  one does not have, as after a rebase, an amend, a reword or a reset, is not an error
+  notification: the confirmation of a force push opens in its place (9.10). Its body says that
+  the push was rejected and why, what a force push does (`git push --force-with-lease`), and the
+  other way out: "To keep those commits instead, cancel, then pull." Its warning says how many
+  commits of the remote branch are lost when they are known (the commits already fetched), and
+  that this cannot be undone from Ramure. "Force push…", in the menu of the current branch and
+  in the palette, opens the same confirmation without the first sentence. "Push" keeps its label
+  without "…": the dialog only comes when the push is rejected. The push is the same from the
+  toolbar, the palette, the menu of the branch and its shortcut.
+- A push rejected because the remote has commits that were not fetched is an error
+  notification that says what to do: "Push rejected", then "The remote branch has commits that
+  you have not fetched. Pull, then push again." Any other failure shows git's output (9.11).
 - The repository and the current branch are on the left, at the edge of the toolbar, above the
   left edge of the cards; the branch in the code font. Each has a fixed width, 140 px and
   200 px, so that the actions keep their place whatever the names. The two widths only yield to
@@ -859,9 +866,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 ### 9.10 Dialogs
 
 - To confirm a destructive action, to enter a few values, to offer a way through when an
-  action would be refused ("Stash and switch") or has just been (a force push after a refused
-  push, 9.2), or to confirm a restart of the application, even when nothing is lost (9.23). Never for plain information: that is the role
-  of a notification. Never for a setting: settings have their page (9.18).
+  action would be refused ("Stash and switch") or has just been (a force push after a rejected
+  push, 9.2), or to confirm a restart of the application, even when nothing is lost (9.23).
+  Never for plain information: that is the role of a notification. Never for a setting:
+  settings have their page (9.18).
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
   takes the width it needs, up to 760 px: the clone 560 px, the form of a host 600 px (9.21),
@@ -2148,6 +2156,7 @@ here is what is read in the documentation of git and in a terminal.
 | Git | In the interface |
 |---|---|
 | fetch, pull, push | Fetch, Pull, Push; a fetch, a pull. A push that creates the upstream of a branch: "Publish branch" |
+| push --force-with-lease, rejected | Force push, a force push; a push is "rejected", as git says |
 | stash, stash pop | Stash, Pop stash; a stash |
 | stage, unstage | Stage, Unstage |
 | merge, rebase, cherry-pick | Merge, Rebase, Cherry-pick |
