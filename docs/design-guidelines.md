@@ -2299,8 +2299,8 @@ with its counts of lines (9.6).
   and a commit that changes no file says "This commit changes no files."
 
 **Between the zones**, a `--line` line the whole width of the card, its scrollbar apart, 16 px
-under a zone and 12 px above the next (6). A commit with no description, no trailer and nothing that keeps it from
-being reworded has no message zone, and so one line less.
+under a zone and 12 px above the next (6). A commit with no description, no trailer and nothing
+that keeps it from being reworded has no message zone, and so one line less.
 
 - While the message is edited (9.25), the form takes the place of the subject and the message,
   and the rest of the zone of the commit goes under the form, as its own zone.
