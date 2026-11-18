@@ -165,6 +165,8 @@
     '.cm-conflict-head input': { margin: '0' },
     '.cm-conflict-head.current': { color: 'var(--ink)', fontWeight: 'var(--fw-strong)' },
     '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
+    // A change that does not conflict: the tint of a line of a conflict at rest, with no box (9.26).
+    '.cm-side-change': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
     '.cm-side-kept': { backgroundColor: 'color-mix(in srgb, var(--c) 24%, transparent)' },
     // The line of the keyboard: an inner ring, never around the whole pane (guidelines, 9.6).
     '.cm-side-cursor': { boxShadow: 'inset 0 0 0 1.5px var(--accent)' },
@@ -192,6 +194,7 @@
     value,
     lineSeparator = '\n',
     label,
+    changes = [],
     conflicts,
     current,
     lines,
@@ -203,6 +206,8 @@
     lineSeparator?: string;
     /** Name of the side: "Upstream", "Your commit"… */
     label: string;
+    /** Lines changed from the common ancestor outside the conflicts, from 0. */
+    changes?: number[];
     conflicts: SideConflict[];
     /** The current conflict. */
     current: number;
@@ -254,6 +259,13 @@
         }),
         lineNumbers(),
         EditorView.decorations.compute([infoField], (s) => decorate(s, calls)),
+        // The text of a side does not change: its changes are tinted once.
+        EditorView.decorations.compute([], (s) =>
+          Decoration.set(
+            changes.filter((n) => n < s.doc.lines).map((n) => Decoration.line({ class: 'cm-side-change' }).range(s.doc.line(n + 1).from)),
+            true,
+          ),
+        ),
         theme,
         EditorView.contentAttributes.of({ 'aria-hidden': 'true' }),
       ],
