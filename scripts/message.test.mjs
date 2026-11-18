@@ -38,8 +38,14 @@ test('a paragraph with one line that is not a trailer stays in the description',
   assert.equal(view.paragraphs.length, 2);
 });
 
-test('only trailers, or nothing', () => {
-  assert.deepEqual(readMessage('Refs: #200'), { paragraphs: [], trailers: ['Refs: #200'] });
+test('a paragraph alone is a description, even when it reads "Area: what changes"', () => {
+  // The body of a merge of GitHub: the title of the pull request.
+  const title = 'Conflicts: pick the lines to keep, one by one, from both sides (#186)';
+  assert.deepEqual(readMessage(title), { paragraphs: [{ text: title, pre: false }], trailers: [] });
+  assert.deepEqual(readMessage('Refs: #200').trailers, []);
+});
+
+test('nothing', () => {
   assert.deepEqual(readMessage(''), { paragraphs: [], trailers: [] });
   assert.deepEqual(readMessage('\n\n  \n'), { paragraphs: [], trailers: [] });
 });

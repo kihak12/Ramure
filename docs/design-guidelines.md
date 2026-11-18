@@ -2281,14 +2281,17 @@ from the size and the weight of the subject, not from a grey.
   "•", "1."), ">" or "#". Paragraphs are 8 px apart.
 - The trailers of git, the last paragraph whose lines all read "Token: value" ("Co-Authored-By:
   …", "Signed-off-by: …"), are set apart 12 px under the description, one per line, in
-  `--muted` at 11.5 px. "Closes #182." is not one: it stays in the description.
+  `--muted` at 11.5 px. They close a description: a paragraph alone stays one, since the body of
+  a merge of GitHub, the title of the pull request, often reads "Area: what changes". "Closes
+  #182." is not a trailer either: it stays in the description.
 - The view only changes the layout: "Reword" edits the message as written.
 - Why the commit cannot be reworded comes last in this zone (9.25).
 
 **The files**, the last zone: one heading line, "Changed files · 14" at 12 px, `--fw-strong`,
-`--ink`, with "(against the first parent)" for a merge in `--muted` at 11.5 px, and at the right
-the totals of the commit, "+320" in `--ok` and "−41" in `--bad`, tabular figures. Then the list,
-6 px under it, each file with its counts of lines (9.6).
+`--ink`, never cut, and at the right the totals of the commit, "+320" in `--ok` and "−41" in
+`--bad`, tabular figures. For a merge, "(against the first parent)" goes on a line of its own
+under it, in `--muted` at 11.5 px. Then the list, 6 px under it, each file with its counts of
+lines (9.6).
 
 **Between the zones**, a `--line` line the whole width of the card, 16 px under a zone and 12 px
 above the next (6). A commit with no description, no trailer and nothing that keeps it from

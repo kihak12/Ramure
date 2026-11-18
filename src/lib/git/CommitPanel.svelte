@@ -386,10 +386,15 @@
   }
   .parents {
     flex-wrap: wrap;
-    gap: 2px 6px;
+    gap: 2px;
   }
+  /* A narrow ghost button: the short SHA stays close to "Parent" and to the next one. */
   .parent {
+    padding: 2px 4px;
     font-size: var(--fs-code);
+  }
+  .parents > span {
+    margin-right: 4px;
   }
   /* The description in --ink: the subject stands out by its size and weight (guidelines, 9.27). */
   .message {
@@ -408,17 +413,22 @@
   .message .why {
     margin-top: 4px;
   }
+  /* The heading and the totals on one line; for a merge, "(against the first parent)" under them. */
   .files-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 6px;
+    gap: 2px 6px;
     min-width: 0;
   }
   .heading {
     font-size: var(--fs-label);
     font-weight: var(--fw-strong);
+    white-space: nowrap;
   }
   .against {
+    order: 1;
+    flex-basis: 100%;
     color: var(--muted);
     font-size: var(--fs-small);
   }

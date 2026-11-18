@@ -29,8 +29,10 @@ export function readMessage(description: string): MessageView {
     .map((block) => block.replace(/^\n+|\n+$/g, ''))
     .filter((block) => block.trim() !== '');
 
+  // The trailers close a description: alone, "Area: what changes" is the body of a merge of
+  // GitHub, the title of the pull request, and not a trailer.
   let trailers: string[] = [];
-  const last = blocks.at(-1)?.split('\n');
+  const last = blocks.length > 1 ? blocks.at(-1)!.split('\n') : null;
   if (last && last.every((line) => TRAILER.test(line))) {
     trailers = last;
     blocks.pop();
