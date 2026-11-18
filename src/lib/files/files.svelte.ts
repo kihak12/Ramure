@@ -167,6 +167,8 @@ class Files {
     const panes = Array.isArray(saved) && saved.length
       ? saved.slice(0, MAX_PANES).map((s) => blank(s.location ?? null, s.path ?? '', !!s.hidden, s.sort ?? { by: 'name', desc: false }))
       : [blank({ kind: 'local' }), blank(null)];
+    // Two panes at least: the module is made to copy from one to another (guidelines, 9.24).
+    if (panes.length < 2) panes.push(blank(null));
     this.panes = panes;
     this.focused = panes[0].key;
     for (const pane of this.panes) if (pane.location?.kind === 'local') void this.list(pane, pane.path);
@@ -263,7 +265,8 @@ class Files {
       for (const t of using) void invoke('transfer_cancel', { id: t.id });
     }
     this.#disconnect(pane);
-    if (this.panes.length === 1) {
+    // Of two panes, the one closed becomes empty and offers the locations again (9.24).
+    if (this.panes.length <= 2) {
       Object.assign(pane, blank(null), { key: pane.key });
     } else {
       const at = this.panes.indexOf(pane);
@@ -471,19 +474,29 @@ class Files {
   }
 
   /** "New folder…": its name in a dialog; a name that is taken is said there. */
-  async mkdir(pane: Pane) {
+  mkdir(pane: Pane) {
+    return this.#create(pane, 'folder');
+  }
+
+  /** "New file…": an empty file; it never replaces one that is there (guidelines, 9.24). */
+  touch(pane: Pane) {
+    return this.#create(pane, 'file');
+  }
+
+  async #create(pane: Pane, what: 'folder' | 'file') {
     const place = this.place(pane);
     if (!place) return;
     let made = '';
     const answers = await dialogs.ask({
-      title: 'New folder',
+      title: what === 'folder' ? 'New folder' : 'New file',
       body: `In ${pane.path}`,
       fields: [{ name: 'name', label: 'Name', type: 'text', required: true }],
-      confirmLabel: 'Create folder',
+      confirmLabel: what === 'folder' ? 'Create folder' : 'Create file',
       busyLabel: 'Creating…',
       check: async (a) => {
         try {
-          made = nameOf(await invoke<string>('files_mkdir', { place, dir: pane.path, name: String(a.name) }));
+          const command = what === 'folder' ? 'files_mkdir' : 'files_create';
+          made = nameOf(await invoke<string>(command, { place, dir: pane.path, name: String(a.name) }));
           return null;
         } catch (e) {
           return fsMessage(e);

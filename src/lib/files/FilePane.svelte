@@ -397,6 +397,7 @@
       ...(send.length ? [...send, { separator: true } as const] : []),
       { label: 'Rename…', icon: 'pencil', keys: 'F2', disabled: !single, hint: single ? undefined : 'Select one item to rename it.', run: () => void files.rename(pane, entry) },
       { label: 'New folder…', icon: 'folder-plus', run: () => void files.mkdir(pane) },
+      { label: 'New file…', icon: 'file-plus', run: () => void files.touch(pane) },
       { label: 'Copy path', icon: 'copy', disabled: !single, run: () => void files.copyPath(pane, entry) },
       { separator: true },
       { label: names.length === 1 ? 'Delete…' : `Delete ${names.length} items…`, icon: 'trash', keys: 'Delete', danger: true, run: () => void files.remove(pane, names) },
@@ -408,6 +409,7 @@
     if (!ready || !pane.location) return;
     menu.open(e, [
       { label: 'New folder…', icon: 'folder-plus', run: () => void files.mkdir(pane) },
+      { label: 'New file…', icon: 'file-plus', run: () => void files.touch(pane) },
       { label: 'Refresh', icon: 'refresh', keys: 'F5', run: () => void files.refresh(pane) },
       { label: pane.hidden ? 'Hide hidden files' : 'Show hidden files', icon: 'eye', run: () => toggleHidden() },
     ]);
@@ -562,8 +564,8 @@
         class="icon-btn"
         type="button"
         aria-label="Close pane"
-        title={files.panes.length === 1 && !pane.location ? 'The last pane stays' : 'Close pane'}
-        disabled={files.panes.length === 1 && !pane.location}
+        title={files.panes.length <= 2 && !pane.location ? 'Two panes always stay.' : 'Close pane'}
+        disabled={files.panes.length <= 2 && !pane.location}
         onclick={() => void files.close(pane)}
       >
         <Icon name="x" size={16} />
@@ -620,6 +622,9 @@
       </button>
       <button class="icon-btn" type="button" aria-label="New folder…" title="New folder…" disabled={!ready} onclick={() => void files.mkdir(pane)}>
         <Icon name="folder-plus" size={16} />
+      </button>
+      <button class="icon-btn" type="button" aria-label="New file…" title="New file…" disabled={!ready} onclick={() => void files.touch(pane)}>
+        <Icon name="file-plus" size={16} />
       </button>
     </div>
     {#if editing && pathError}<p class="path-error" id="path-error-{pane.key}" role="alert">{pathError}</p>{/if}

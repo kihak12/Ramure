@@ -490,7 +490,8 @@ The interface has four levels. Each is recognized by its background.
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
   leaves it, the same sheet turned over, for an export, the sheet with lines for the log of a
   session, the tunnel for an SSH tunnel, the folder for a folder and for the Files module, the
-  sheet with a folded corner for a file, the folder with a plus for a new folder, the pencil for
+  sheet with a folded corner for a file, the folder with a plus for a new folder, the same sheet
+  with a plus for a new file, the pencil for
   an edit or a change, the trash for a deletion, the square for stopping or aborting, the
   circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
   connection. An icon that stands for a git
@@ -1847,12 +1848,13 @@ its cards, like the other modules.
 **Panes.** The module is a row of panes, each one a card (9.8) that shows one folder of one
 place: "This machine", or a host of the book.
 
-- The panes share the width equally, 300 px at the least, and four at the most: three fit in a
+- The panes share the width equally, 300 px at the least, and four at the most, two at the
+  least, since the module is made to copy from one to another: three fit in a
   window 1000 px wide, four at 1440 px. When they do not fit, the row scrolls sideways with the
   thin scrollbar (9.6), and each keeps its 300 px.
 - The first time, the module opens on two panes: "This machine" in the home folder, and an empty
   pane to choose a location. It then comes back as it was left: the same panes, on the same
-  folders. A host is never connected at launch: its pane says "Not connected" and offers
+  folders, an empty pane completing a row of one. A host is never connected at launch: its pane says "Not connected" and offers
   "Connect", so that three panes never ask three passwords at once.
 - **An empty pane** chooses its location. Its header says "Empty pane" in `--muted`; under it, the
   title "Choose a location", 15 px in weight 650 as the title of a panel (3.2), the filter field of
@@ -1876,7 +1878,9 @@ place: "This machine", or a host of the book.
   location button is a ghost button: it shrinks when pressed. On the right, two ghost buttons
   made of an icon alone, 24 × 24 px: "Add pane", which adds an empty pane to the right of this
   one and is disabled at four, its tooltip saying why ("Four panes at most. Close one first."),
-  and "Close pane". The last pane is never closed: it becomes empty.
+  and "Close pane". Of two panes, neither is closed: the one closed becomes empty, and offers
+  the locations again, the hosts of the book among them. An empty pane of two cannot be closed,
+  its tooltip saying why ("Two panes always stay.").
 - "Browse files", in the menu of a host in the book, shows the module with that host: in the
   empty pane if there is one, otherwise in a new pane, or in place of the last pane at four.
 
@@ -1888,10 +1892,11 @@ too long for the pane gives way on the left, the bar scrolling to its last segme
 scrollbar. The ring of a segment is drawn inside it, so that the bar does not cut it. A click on the bar, past the segments, turns it into a
 field (9.3) with the path selected: Enter opens what is typed, `~` being the home folder, and
 Escape gives the segments back; a folder that cannot be opened turns the field to its error
-state, with the reason under it. Then four ghost buttons made of an icon alone: "Type a path",
+state, with the reason under it. Then five ghost buttons made of an icon alone: "Type a path",
 the pencil, which does the same from the keyboard, "Refresh" (F5 from the list), "Show hidden
 files", a toggle (9.1) with the eye icon, pressed while the files whose name starts with a dot,
-and those Windows hides, are listed, and "New folder…".
+and those Windows hides, are listed, "New folder…" and "New file…", the folder and the sheet
+with a plus (7).
 
 **The list.** A header of columns, 26 px, "Name", "Modified" and "Size", separated from the rows
 by a `--line-soft` line: a click sorts by the column, a second click reverses the order, and a
@@ -1929,9 +1934,9 @@ of 24 px (4.3, 9.6):
 - **The menu of a row**: "Open" for a folder, "Copy to …" (copy icon) for each other pane on
   another place and "Move to …" (folder icon) for each other pane on the same place, naming the
   pane and its folder ("Copy to staging · /var/www"): the keyboard way to do what dragging does.
-  Then "Rename…", "New folder…", "Copy path", and after a separator "Delete…", or "Delete 3
-  items…" for a selection of several. The empty part of a list has a menu of its own: "New
-  folder…", "Refresh", and "Show hidden files" or "Hide hidden files".
+  Then "Rename…", "New folder…", "New file…", "Copy path", and after a separator "Delete…", or
+  "Delete 3 items…" for a selection of several. The empty part of a list has a menu of its own:
+  "New folder…", "New file…", "Refresh", and "Show hidden files" or "Hide hidden files".
 - **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar
@@ -1940,8 +1945,10 @@ of 24 px (4.3, 9.6):
   of the folder it leaves stay at 45% until the new ones come. A folder that cannot be listed
   says why in place of the rows, the warning icon in `--bad` before the sentence ("Access denied
   to /root. Check its permissions."), with "Go up", a small standard button.
-- "Rename…", "New folder…" and "Delete…" open a dialog (9.10). The rename has one field, its
-  name selected up to the extension; a name that is taken is refused under the field. The
+- "Rename…", "New folder…", "New file…" and "Delete…" open a dialog (9.10). The rename has one
+  field, its name selected up to the extension; a name that is taken is refused under the
+  field, and so is it for a new folder or a new file: a new file is empty, and never replaces
+  one that is there. What is created becomes the selection. The
   deletion says what is lost: "Delete 3 items from staging?", "They are deleted from the server
   for good, with what the folders hold: they cannot be recovered.", or "from this machine",
   "… they do not go to the trash", with "Cancel", which has the focus, and "Delete", a danger

@@ -17,7 +17,7 @@ use russh::client::Handle;
 use russh::Disconnect;
 use russh_sftp::client::error::Error as SftpError;
 use russh_sftp::client::SftpSession;
-use russh_sftp::protocol::{FileAttributes, FileType, StatusCode};
+use russh_sftp::protocol::{FileAttributes, FileType, OpenFlags, StatusCode};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -384,6 +384,26 @@ impl Fs {
         }
     }
 
+    /// Creates an empty file; refused if something of that name is already there, so that
+    /// nothing is ever emptied.
+    pub async fn create_file(&self, path: &str) -> Result<(), FsError> {
+        match self {
+            Fs::Local => tokio::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(path)
+                .await
+                .map(drop)
+                .map_err(|e| local_error(&e, path)),
+            Fs::Remote(remote) => remote
+                .sftp
+                .open_with_flags(path, OpenFlags::CREATE | OpenFlags::EXCLUDE | OpenFlags::WRITE)
+                .await
+                .map(drop)
+                .map_err(|e| remote.error(&e, path)),
+        }
+    }
+
     pub async fn rename(&self, from: &str, to: &str) -> Result<(), FsError> {
         match self {
             Fs::Local => tokio::fs::rename(from, to).await.map_err(|e| {
@@ -684,6 +704,18 @@ pub async fn files_mkdir(state: State<'_, FilesState>, place: Place, dir: String
     Ok(path)
 }
 
+/// Creates the empty file `name` in `dir`. Its path.
+#[tauri::command]
+pub async fn files_create(state: State<'_, FilesState>, place: Place, dir: String, name: String) -> Result<String, FsError> {
+    let fs = state.fs(place)?;
+    let path = fs.join(&dir, valid_name(&name)?);
+    if fs.lstat(&path).await?.is_some() {
+        return Err(FsError::other(format!("“{}” already exists in {dir}. Choose another name.", name.trim())));
+    }
+    fs.create_file(&path).await?;
+    Ok(path)
+}
+
 /// Gives `path` a new name, in the same folder. Its new path.
 #[tauri::command]
 pub async fn files_rename(state: State<'_, FilesState>, place: Place, path: String, name: String) -> Result<String, FsError> {
@@ -898,6 +930,32 @@ mod tests {
         assert_eq!(find("link").map(|e| (e.kind, e.dir)), Some((Kind::Link, true)));
         assert!(listing.parent.is_some());
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_new_file_is_empty_and_never_replaces_one_that_is_there() {
+        let dir = std::env::temp_dir().join(format!("ramure-create-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("notes.txt").to_string_lossy().to_string();
+        Fs::Local.create_file(&path).await.unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"");
+        std::fs::write(&path, b"kept").unwrap();
+        assert!(Fs::Local.create_file(&path).await.is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), b"kept");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_new_file_on_a_server_never_replaces_one_that_is_there() {
+        let Some(remote) = test_remote().await else { return };
+        let server = Fs::Remote(remote);
+        let base = format!("/tmp/ramure-sftp-{}", uuid::Uuid::new_v4());
+        server.mkdir(&base).await.unwrap();
+        let path = format!("{base}/notes.txt");
+        server.create_file(&path).await.unwrap();
+        assert_eq!(server.lstat(&path).await.unwrap().map(|m| m.size), Some(0));
+        assert!(server.create_file(&path).await.is_err());
+        server.remove_all(&base).await.unwrap();
     }
 
     #[tokio::test]
