@@ -113,7 +113,9 @@ interface Span {
 const inside = (spans: Span[], line: number) => spans.some((s) => line >= s.from && line < s.to);
 
 /** The lines of `side` changed from `base`, outside `conflicts`. */
-function changed(base: string[], side: string[], conflicts: Span[]): number[] {
+function changed(base: string[], side: string[], conflicts: Span[] | null): number[] {
+  // A conflict not found in the side: its lines would pass for changes, so the side marks nothing.
+  if (!conflicts) return [];
   const out: number[] = [];
   for (const h of diffLines(base, side)) {
     for (let line = h.fromB; line < h.toB; line++) if (!inside(conflicts, line)) out.push(line);
@@ -137,15 +139,16 @@ function follow(from: string[], to: string[]): Map<number, number> {
 /**
  * `base` null: the file has no common ancestor (added on both sides), and nothing is marked
  * outside the conflicts. `oursConflicts`, `theirsConflicts`: the lines of the conflicts in each
- * side; `resultConflicts`: those of the result, its markers included.
+ * side, null when one of them was not found there; `resultConflicts`: those of the result, its
+ * markers included.
  */
 export function mergedChanges(
   base: string[] | null,
   ours: string[],
   theirs: string[],
   result: string[],
-  oursConflicts: Span[],
-  theirsConflicts: Span[],
+  oursConflicts: Span[] | null,
+  theirsConflicts: Span[] | null,
   resultConflicts: Span[],
 ): MergedChanges {
   if (!base) return { ours: [], theirs: [], result: [] };

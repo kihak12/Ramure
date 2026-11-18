@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { Annotation, Prec, RangeSet, StateEffect, StateField, Transaction, type EditorState } from '@codemirror/state';
+  import { Annotation, Prec, RangeSet, StateEffect, StateField, Transaction, type EditorState, type RangeValue } from '@codemirror/state';
   import { Decoration, type DecorationSet, EditorView, GutterMarker, WidgetType, gutter } from '@codemirror/view';
 
   /** Where a conflict is in the result: from the start of its first line to the start of the line
@@ -108,6 +108,24 @@
     }
   }
 
+  /**
+   * The marks of the lines git merged, after a change: a line typed in or deleted is no longer
+   * git's and loses its mark; a line moved by what is typed above it keeps it (guidelines, 9.26).
+   */
+  function follow<T extends RangeValue>(marks: RangeSet<T>, tr: Transaction): RangeSet<T> {
+    if (!tr.docChanged) return marks;
+    const touched = (from: number) => {
+      const line = tr.startState.doc.lineAt(from);
+      let hit = false;
+      tr.changes.iterChangedRanges((a, b) => {
+        // A line inserted at its start only pushes it down.
+        if (a <= line.to && b >= line.from && !(a === b && a === line.from)) hit = true;
+      });
+      return hit;
+    };
+    return marks.update({ filter: (from) => !touched(from) }).map(tr.changes);
+  }
+
   /** The lines of a region, in the document as it is now. */
   function linesOf(state: EditorState, region: Region) {
     if (region.to <= region.from) return null;
@@ -171,12 +189,12 @@
     const lines = merged.filter((m) => m.line < doc.lines);
     const mergedTints = StateField.define<DecorationSet>({
       create: () => Decoration.set(lines.map((m) => Decoration.line({ class: `cm-from-${m.side}` }).range(doc.line(m.line + 1).from)), true),
-      update: (tints, tr) => tints.map(tr.changes),
+      update: (tints, tr) => follow(tints, tr),
       provide: (f) => EditorView.decorations.from(f),
     });
     const mergedChips = StateField.define<RangeSet<GutterMarker>>({
       create: () => RangeSet.of(lines.map((m) => new Chip(m.side, true).range(doc.line(m.line + 1).from)), true),
-      update: (chips, tr) => chips.map(tr.changes),
+      update: (chips, tr) => follow(chips, tr),
     });
 
     const decorations = EditorView.decorations.compute([field, infoField], (state) => {

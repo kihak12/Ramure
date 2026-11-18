@@ -46,6 +46,13 @@ test('a line changed alike on both sides has no single side in the result', () =
   assert.deepEqual(changes.result, []);
 });
 
+test('a side whose conflicts were not all found marks nothing', () => {
+  const changes = mergedChanges(base, ours, theirs, result, null, conflicts.theirs, conflicts.result);
+  assert.deepEqual(changes.ours, []);
+  assert.deepEqual(changes.theirs, [7]);
+  assert.deepEqual(changes.result, [{ line: 11, side: 'theirs' }]);
+});
+
 test('without a common ancestor, nothing is marked outside the conflicts', () => {
   assert.deepEqual(mergedChanges(null, ours, theirs, result, [], [], []), { ours: [], theirs: [], result: [] });
 });

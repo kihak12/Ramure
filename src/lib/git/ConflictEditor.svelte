@@ -83,13 +83,16 @@
   const changes = $derived.by(() => {
     if (!data || !editable) return null;
     const span = (at: number, count: number) => ({ from: at, to: at + count });
+    // The conflicts of a side, or null when one of them is not found there.
+    const spans = (side: Side, at: number[]) =>
+      blocks.some((b, i) => b[side].length && at[i] < 0) ? null : blocks.flatMap((b, i) => (at[i] >= 0 ? [span(at[i], b[side].length)] : []));
     return mergedChanges(
       data.base === null ? null : baseLines,
       oursLines,
       theirsLines,
       splitLines(data.merged ?? '', separator),
-      blocks.flatMap((b, i) => (oursAt[i] >= 0 ? [span(oursAt[i], b.ours.length)] : [])),
-      blocks.flatMap((b, i) => (theirsAt[i] >= 0 ? [span(theirsAt[i], b.theirs.length)] : [])),
+      spans('ours', oursAt),
+      spans('theirs', theirsAt),
       blocks.map((b) => span(b.start, b.end - b.start + 1)),
     );
   });

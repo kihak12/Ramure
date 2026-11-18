@@ -2202,10 +2202,11 @@ first.", or "Git is working: wait for it to finish." Saving writes the file and 
   18 px: an exception to the 24 px target, as the resize handle is (9.16), which the keyboard makes
   up for (below).
 - **A change that does not conflict**, a line that a side changed from the common ancestor outside
-  the conflicts, takes 10% of the color of its side, as a line of a conflict at rest, but has no
-  checkbox and no header: git has already merged it into the result, and there is nothing to
+  the conflicts, takes 10% of the color of its side, as a line of a conflict at rest, and a "+"
+  in `--muted` in the gutter of the boxes, so that the color does not say it alone (11); it has
+  no checkbox and no header: git has already merged it into the result, and there is nothing to
   pick. Without a common ancestor, a file added on both sides, nothing is marked outside the
-  conflicts.
+  conflicts; nor in a side where a conflict is not found, whose lines would pass for changes.
 - **The header of a conflict**, a row of 24 px above its first line, on each side: a checkbox,
   then "Conflict 1 · 5 lines" in 11.5 px and `--muted`; the header of the current conflict is in
   `--ink` and weight 650, the one mark of the current conflict in the sides. The box keeps or lets
@@ -2232,8 +2233,10 @@ lines of side 1, then those of side 2; "Keep both, reversed" puts side 2 first.
   color alone (11). A line typed by hand has neither.
 - A line that git merged from a side, outside the conflicts, carries the chip of its side on its
   tint too: the result says where every change comes from, not only those of the conflicts. A
-  line changed alike on both sides has no single side, and no chip. These marks follow the lines
-  when the text above them is typed.
+  line changed alike on both sides has no single side, and no chip. The tooltip of the chip tells
+  the two apart: "Kept from side 1" for a line kept from a conflict, "Merged by git from side 1"
+  for a change that did not conflict. These marks follow the lines when the text above them is
+  typed; a line typed in or deleted loses its mark, as a line typed by hand has none.
 - A conflict not decided yet is not shown as the markers of git: it is one band of 24 px on
   `--warn-soft`, with the letter "!" (9.6) and "Conflict 2 of 3: check the lines to keep", which
   the caret steps over. The markers stay in the file underneath, so that saving is refused while

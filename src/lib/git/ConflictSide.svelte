@@ -38,8 +38,8 @@
     },
   });
 
-  /** The checkbox of a line, in its gutter: the mouse picks with it, the keyboard goes through the lines. */
-  /** The whole cell of the gutter is the target: a click on it, box or not, keeps the line. */
+  /** The checkbox of a line, in its gutter: the mouse picks with it, the keyboard goes through the
+   *  lines. The whole cell of the gutter is the target: a click on it, box or not, keeps the line. */
   class Box extends GutterMarker {
     readonly block: number;
     readonly line: number;
@@ -62,6 +62,21 @@
       return box;
     }
   }
+
+  /** The sign of a change that does not conflict, in the gutter of the boxes: not the color alone (11). */
+  class Plus extends GutterMarker {
+    eq() {
+      return true;
+    }
+    toDOM() {
+      const sign = document.createElement('span');
+      sign.className = 'cm-side-plus';
+      sign.textContent = '+';
+      sign.title = 'Changed from the common ancestor, merged by git';
+      return sign;
+    }
+  }
+  const plus = new Plus();
 
   /** The header of a conflict, above its first line: a box for the whole side. */
   class Head extends WidgetType {
@@ -165,8 +180,7 @@
     '.cm-conflict-head input': { margin: '0' },
     '.cm-conflict-head.current': { color: 'var(--ink)', fontWeight: 'var(--fw-strong)' },
     '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
-    // A change that does not conflict: the tint of a line of a conflict at rest, with no box (9.26).
-    '.cm-side-change': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
+    '.cm-side-plus': { color: 'var(--muted)', fontWeight: 'var(--fw-strong)' },
     '.cm-side-kept': { backgroundColor: 'color-mix(in srgb, var(--c) 24%, transparent)' },
     // The line of the keyboard: an inner ring, never around the whole pane (guidelines, 9.6).
     '.cm-side-cursor': { boxShadow: 'inset 0 0 0 1.5px var(--accent)' },
@@ -235,6 +249,10 @@
   };
 
   onMount(() => {
+    // Where each change that does not conflict starts, in this side, which does not change.
+    const doc = State.create({ doc: value, extensions: [State.lineSeparator.of(lineSeparator)] }).doc;
+    const changeLines = changes.filter((n) => n < doc.lines).map((n) => doc.line(n + 1).from);
+    const changeSigns = RangeSet.of(changeLines.map((from) => plus.range(from)), true);
     const state = State.create({
       doc: value,
       extensions: [
@@ -245,7 +263,8 @@
         infoField,
         gutter({
           class: 'cm-picks',
-          markers: (v) => boxes(v.state),
+          // The boxes of the conflicts, and the sign of the changes that do not conflict.
+          markers: (v) => [boxes(v.state), changeSigns],
           domEventHandlers: {
             mousedown: (v, block, event) => {
               const n = v.state.doc.lineAt(block.from).number - 1;
@@ -259,13 +278,9 @@
         }),
         lineNumbers(),
         EditorView.decorations.compute([infoField], (s) => decorate(s, calls)),
-        // The text of a side does not change: its changes are tinted once.
-        EditorView.decorations.compute([], (s) =>
-          Decoration.set(
-            changes.filter((n) => n < s.doc.lines).map((n) => Decoration.line({ class: 'cm-side-change' }).range(s.doc.line(n + 1).from)),
-            true,
-          ),
-        ),
+        // The text of a side does not change: its changes are marked once, with the tint of a line
+        // of a conflict at rest (9.26).
+        EditorView.decorations.of(Decoration.set(changeLines.map((from) => Decoration.line({ class: 'cm-side-line cm-side-change' }).range(from)), true)),
         theme,
         EditorView.contentAttributes.of({ 'aria-hidden': 'true' }),
       ],
