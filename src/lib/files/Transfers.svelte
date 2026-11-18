@@ -16,6 +16,8 @@
   };
 
   const running = (t: Transfer) => t.state === 'counting' || t.state === 'copying';
+  /** The bar takes the color of the result once it has ended (guidelines, 9.24). */
+  const TONE = { counting: 'accent', copying: 'accent', done: 'ok', incomplete: 'warn', failed: 'bad', canceled: 'muted' } as const;
   const finished = $derived(files.transfers.some((t) => !running(t)));
 
   const percent = (t: Transfer) =>
@@ -59,7 +61,8 @@
   <ul>
     {#each files.transfers as t (t.id)}
       {@const more = details(t)}
-      <li>
+      <!-- A result to act on sits on a tinted box (guidelines, 9.24). -->
+      <li class:warn={t.state === 'incomplete'} class:bad={t.state === 'failed'}>
         <div class="row">
           <span class="state s-{t.state}">
             {#if running(t)}
@@ -72,9 +75,11 @@
           </span>
           <span class="what" title="{t.route}, into {t.dest}{t.relayed ? '. The files go through this machine.' : ''}">
             <span class="name">{t.title}</span>
-            <span class="route">{t.route}</span>
+            <span class="route"
+              >{#each [t.from, t.to] as end, i (i)}{#if i}{' → '}{/if}{#if end.color}<span class="dot" style:--c="var(--l{end.color})" aria-hidden="true"></span>{/if}{end.label}{/each}</span
+            >
           </span>
-          <span class="bar"><ProgressBar percent={percent(t)} /></span>
+          <span class="bar"><ProgressBar percent={percent(t)} tone={TONE[t.state]} /></span>
           <span class="amounts">{amounts(t)}</span>
           {#if running(t)}
             <button class="icon-btn" type="button" aria-label="Cancel transfer of {t.title}" title="Cancel transfer" onclick={() => files.cancel(t)}>
@@ -171,6 +176,26 @@
     text-overflow: ellipsis;
     color: var(--muted);
     font-size: var(--fs-small);
+  }
+  /* The dot of a host, as on the header of its pane (guidelines, 9.24). */
+  .route .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin: 0 4px 0 2px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  li {
+    margin: 0 -8px 2px;
+    padding: 0 8px;
+    border-radius: var(--radius);
+  }
+  li.warn {
+    background: var(--warn-soft);
+  }
+  li.bad {
+    background: var(--bad-soft);
   }
   .amounts {
     color: var(--muted);

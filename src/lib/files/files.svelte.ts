@@ -83,8 +83,9 @@ export interface Transfer {
   /** Why it failed. */
   error: string;
   /** What to run again for "Retry". */
-  from: { paneKey: number; place: Place; label: string };
-  to: { paneKey: number; place: Place; label: string };
+  /** `color`: the color of a host, "0" to "7", or "" (guidelines, 9.24). */
+  from: { paneKey: number; place: Place; label: string; color: string };
+  to: { paneKey: number; place: Place; label: string; color: string };
   sources: string[];
   dest: string;
 }
@@ -651,8 +652,8 @@ class Files {
       progress: { counting: true, filesTotal: 0, filesDone: 0, bytesTotal: 0, bytesDone: 0, current: '' },
       summary: null,
       error: '',
-      from: { paneKey: source.key, place: from, label: sourceLabel },
-      to: { paneKey: target.key, place: to, label: targetLabel },
+      from: { paneKey: source.key, place: from, label: sourceLabel, color: this.host(source)?.color ?? '' },
+      to: { paneKey: target.key, place: to, label: targetLabel, color: this.host(target)?.color ?? '' },
       sources: names.map((n) => joinPath(source.path, n)),
       dest,
     };

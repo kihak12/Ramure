@@ -120,6 +120,12 @@ function check(name, t, dark) {
   // A ghost danger button and the destructive item of a menu, hovered, and in the banner of a
   // stopped operation.
   for (const bg of ['--bad-soft', '--warn-soft']) need(`--bad on ${bg}`, contrast(t['--bad'], t[bg]), 4.5);
+  // A transfer that ended badly, on its tinted box (9.24): the icon of an incomplete one, the way
+  // of a failed one.
+  need('--warn on --warn-soft', contrast(t['--warn'], t['--warn-soft']), 3);
+  need('--muted on --bad-soft', contrast(t['--muted'], t['--bad-soft']), 4.5);
+  // The date of a folder row that receives a drop (9.24).
+  need('--muted on --accent-soft', contrast(t['--muted'], t['--accent-soft']), 4.5);
   need('--accent on --panel', contrast(t['--accent'], t['--panel']), 3);
   for (const [a, b, day, night] of DISTANCES) {
     const minimum = dark ? night : day;
@@ -150,6 +156,8 @@ function check(name, t, dark) {
     for (const bg of ['--panel', '--hover', '--sel']) {
       need(`--ink on a ${lane} capsule, row in ${bg}`, contrast(t['--ink'], mix(c, CAPSULE, t[bg])), 7);
     }
+    // The header of the pane of a host, tinted with its color (9.24): --ink is the capsule's.
+    need(`${lane} dot on the header of a host pane`, contrast(c, mix(c, CAPSULE, t['--panel'])), 3);
     need(`${lane} author initials on their tint`, contrast(c, mix(c, s['--tint-letter'], t['--panel'])), 3);
   }
   // A line of a diff, at rest, hovered to be picked, and picked (9.14): the code reads on it.

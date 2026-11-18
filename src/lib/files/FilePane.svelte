@@ -9,7 +9,7 @@
   import ConnectPanel from './ConnectPanel.svelte';
   import LocationPicker from './LocationPicker.svelte';
   import { files, MAX_PANES, visible, type Pane, type SortBy } from './files.svelte';
-  import { fullDate, joinPath, parentPath, segments, shortDate, size, type Entry } from './types';
+  import { fullDate, joinPath, nameOf, parentPath, segments, shortDate, size, type Entry } from './types';
 
   let { pane }: { pane: Pane } = $props();
 
@@ -21,6 +21,13 @@
   const ready = $derived(pane.location?.kind === 'local' || pane.phase.step === 'ready');
   const selected = $derived(new Set(pane.selected));
   const selectedBytes = $derived(rows.filter((e) => selected.has(e.name) && !e.dir).reduce((n, e) => n + e.size, 0));
+  /** Once connected, the header of a host with a color takes a tint of it (guidelines, 9.24). */
+  const tint = $derived(host?.color && pane.phase.step === 'ready' ? `var(--l${host.color})` : null);
+
+  /** The parent row, "..": the current row when it is chosen, never an item (guidelines, 9.24). */
+  const UP = '..';
+  const parent = $derived(ready && !pane.error ? parentPath(pane.path) : null);
+  const atParent = $derived(parent !== null && pane.current === UP);
 
   /** What the header says of the connection, as a fragment (guidelines, 12). */
   const stateText = $derived(
@@ -103,6 +110,7 @@
   // --- Selection ------------------------------------------------------------------------------
 
   const rowId = (index: number) => `pane-${pane.key}-row-${index}`;
+  const upId = $derived(`pane-${pane.key}-row-up`);
   const currentIndex = $derived(pane.current === null ? -1 : rows.findIndex((e) => e.name === pane.current));
 
   function selectOnly(name: string) {
@@ -119,6 +127,14 @@
     pane.current = to;
   }
 
+  /** The parent row becomes the current row; nothing is selected. */
+  function toParentRow(scroll = true) {
+    pane.current = UP;
+    pane.anchor = null;
+    pane.selected = [];
+    if (scroll) void scrollToCurrent();
+  }
+
   function click(e: MouseEvent, entry: Entry) {
     files.focused = pane.key;
     if (e.shiftKey) selectRange(entry.name);
@@ -131,7 +147,7 @@
 
   async function scrollToCurrent() {
     await tick();
-    listEl?.querySelector<HTMLElement>(`#${rowId(currentIndex)}`)?.scrollIntoView({ block: 'nearest' });
+    listEl?.querySelector<HTMLElement>(`#${atParent ? upId : rowId(currentIndex)}`)?.scrollIntoView({ block: 'nearest' });
   }
 
   function move(to: number, extend: boolean) {
@@ -155,6 +171,7 @@
       case 'ArrowUp':
         e.preventDefault();
         if (e.altKey) files.up(pane);
+        else if (parent !== null && !e.shiftKey && currentIndex <= 0) toParentRow();
         else move(currentIndex < 0 ? 0 : currentIndex - 1, e.shiftKey);
         return;
       case 'PageDown':
@@ -167,14 +184,18 @@
         return;
       case 'Home':
         e.preventDefault();
-        move(0, e.shiftKey);
+        if (parent !== null && !e.shiftKey) toParentRow();
+        else move(0, e.shiftKey);
         return;
       case 'End':
         e.preventDefault();
         move(rows.length - 1, e.shiftKey);
         return;
       case 'Enter':
-        if (entry?.dir) {
+        if (atParent) {
+          e.preventDefault();
+          files.up(pane);
+        } else if (entry?.dir) {
           e.preventDefault();
           files.open(pane, entry);
         }
@@ -207,7 +228,11 @@
         }
         return;
       case 'Escape':
-        if (pane.selected.length) {
+        if (band) {
+          e.preventDefault();
+          e.stopPropagation();
+          cancelBand();
+        } else if (pane.selected.length) {
           e.preventDefault();
           pane.selected = [];
         }
@@ -222,11 +247,99 @@
   /** A list that takes the focus with no current row starts on the first (guidelines, 9.6). */
   function onListFocus() {
     files.focused = pane.key;
+    // A press on the empty part takes the selection away: the focus that follows keeps it so.
+    if (band) return;
     if (pane.current === null && rows.length && !files.drag) {
       pane.current = rows[0].name;
       pane.anchor = rows[0].name;
       if (!pane.selected.length) pane.selected = [rows[0].name];
     }
+  }
+
+  // --- The rectangle that selects (guidelines, 9.24) -------------------------------------------
+
+  /** In the coordinates of the content of the list, which scrolls under it. */
+  let band = $state<{ x0: number; y0: number; x: number; y: number; moved: boolean; base: string[]; before: string[]; pointer: number } | null>(null);
+  let pointerY = 0;
+  let scrolling = 0;
+
+  function point(e: PointerEvent) {
+    const box = listEl!.getBoundingClientRect();
+    return { x: e.clientX - box.left + listEl!.scrollLeft, y: e.clientY - box.top + listEl!.scrollTop };
+  }
+
+  /** A press on the empty part takes the selection away and starts a rectangle; never on a row. */
+  function pressList(e: PointerEvent) {
+    if (e.button !== 0 || !listEl || !ready || (e.target instanceof Element && e.target.closest('.row'))) return;
+    files.focused = pane.key;
+    const at = point(e);
+    const adds = e.ctrlKey || e.metaKey || e.shiftKey;
+    band = { x0: at.x, y0: at.y, x: at.x, y: at.y, moved: false, base: adds ? [...pane.selected] : [], before: [...pane.selected], pointer: e.pointerId };
+    if (!adds) pane.selected = [];
+    pointerY = e.clientY;
+    listEl.setPointerCapture(e.pointerId);
+  }
+
+  function dragBand(e: PointerEvent) {
+    if (!band || e.pointerId !== band.pointer) return;
+    pointerY = e.clientY;
+    const at = point(e);
+    band.x = at.x;
+    band.y = at.y;
+    if (!band.moved && Math.hypot(band.x - band.x0, band.y - band.y0) < 4) return;
+    band.moved = true;
+    pick();
+    if (!scrolling) scrolling = requestAnimationFrame(follow);
+  }
+
+  /** The rows the rectangle touches, added to what was selected before it when it adds. */
+  function pick() {
+    if (!band || !listEl) return;
+    const [top, bottom] = [Math.min(band.y0, band.y), Math.max(band.y0, band.y)];
+    const [left, right] = [Math.min(band.x0, band.x), Math.max(band.x0, band.x)];
+    const hit: string[] = [];
+    for (const row of listEl.querySelectorAll<HTMLElement>('.row[data-index]')) {
+      const inside = row.offsetTop < bottom && row.offsetTop + row.offsetHeight > top && row.offsetLeft < right && row.offsetLeft + row.offsetWidth > left;
+      if (inside) hit.push(rows[Number(row.dataset.index)].name);
+    }
+    pane.selected = [...new Set([...band.base, ...hit])];
+    if (hit.length) {
+      pane.current = hit[band.y < band.y0 ? 0 : hit.length - 1];
+      pane.anchor = pane.current;
+    }
+  }
+
+  /** Near the top or the bottom of the list, it scrolls, and the rectangle follows. */
+  function follow() {
+    scrolling = 0;
+    if (!band || !listEl) return;
+    const box = listEl.getBoundingClientRect();
+    const edge = 24;
+    const step = pointerY < box.top + edge ? -Math.ceil((box.top + edge - pointerY) / 3) : pointerY > box.bottom - edge ? Math.ceil((pointerY - box.bottom + edge) / 3) : 0;
+    if (!step) return;
+    const before = listEl.scrollTop;
+    listEl.scrollTop += step;
+    band.y += listEl.scrollTop - before;
+    pick();
+    scrolling = requestAnimationFrame(follow);
+  }
+
+  function endBand(e: PointerEvent) {
+    if (!band || e.pointerId !== band.pointer) return;
+    if (listEl?.hasPointerCapture(e.pointerId)) listEl.releasePointerCapture(e.pointerId);
+    cancelAnimationFrame(scrolling);
+    scrolling = 0;
+    band = null;
+  }
+
+  /** Escape while it is drawn: the selection goes back as it was. */
+  function cancelBand() {
+    if (!band) return;
+    pane.selected = band.before;
+    if (listEl?.hasPointerCapture(band.pointer)) listEl.releasePointerCapture(band.pointer);
+    cancelAnimationFrame(scrolling);
+    scrolling = 0;
+    band = null;
   }
 
   // --- Menus ----------------------------------------------------------------------------------
@@ -269,7 +382,7 @@
   }
 
   function listMenu(e: MouseEvent) {
-    if (e.target instanceof Element && e.target.closest('.row')) return;
+    if (e.target instanceof Element && e.target.closest('.row:not(.up)')) return;
     if (!ready || !pane.location) return;
     menu.open(e, [
       { label: 'New folder…', icon: 'folder-plus', run: () => void files.mkdir(pane) },
@@ -290,8 +403,9 @@
 
   // --- Dragging -------------------------------------------------------------------------------
 
-  /** Where the pointer would drop, and what that would do. */
-  let over = $state<{ dest: string; into: string | null; refusal: string; copy: boolean } | null>(null);
+  /** Where the pointer would drop, and what that would do. `into`: the row that receives it;
+   *  `named`: the folder the foot names. */
+  let over = $state<{ dest: string; into: string | null; named: string | null; refusal: string; copy: boolean } | null>(null);
 
   function dragStart(e: DragEvent, entry: Entry) {
     if (!selected.has(entry.name)) selectOnly(entry.name);
@@ -312,11 +426,16 @@
     const dragged = files.drag;
     if (!dragged || !pane.location) return null;
     const row = e.target instanceof Element ? e.target.closest<HTMLElement>('.row') : null;
+    // The parent row receives the drop into the parent folder (guidelines, 9.24).
+    if (row?.classList.contains('up') && parent !== null) {
+      return { dragged, dest: parent, into: UP, named: nameOf(parent) || parent, refusal: files.refusal(dragged, pane, parent), copy: e.ctrlKey };
+    }
     const entry = row ? rows[Number(row.dataset.index)] : undefined;
     // A folder row receives the drop into it, unless it is one of the rows dragged.
     const intoRow = entry?.dir && !(dragged.paneKey === pane.key && dragged.names.includes(entry.name));
     const dest = intoRow && entry ? joinPath(pane.path, entry.name) : pane.path;
-    return { dragged, dest, into: intoRow && entry ? entry.name : null, refusal: files.refusal(dragged, pane, dest), copy: e.ctrlKey };
+    const into = intoRow && entry ? entry.name : null;
+    return { dragged, dest, into, named: into, refusal: files.refusal(dragged, pane, dest), copy: e.ctrlKey };
   }
 
   function dragOver(e: DragEvent) {
@@ -353,7 +472,7 @@
 
   const dragging = $derived(files.drag?.paneKey === pane.key ? new Set(files.drag.names) : null);
   const footDrop = $derived(
-    files.drag && over ? (over.refusal || files.verb(files.drag, pane, over.into, over.copy)) : '',
+    files.drag && over ? (over.refusal || files.verb(files.drag, pane, over.named, over.copy)) : '',
   );
 </script>
 
@@ -367,7 +486,7 @@
   ondragleave={dragLeave}
   ondrop={drop}
 >
-  <header>
+  <header class:tinted={!!tint} style:--c={tint}>
     {#if pane.location}
       <button
         class="where"
@@ -504,13 +623,39 @@
           tabindex="0"
           aria-label="Files of {label}"
           aria-multiselectable="true"
-          aria-activedescendant={currentIndex >= 0 ? rowId(currentIndex) : undefined}
+          aria-activedescendant={atParent ? upId : currentIndex >= 0 ? rowId(currentIndex) : undefined}
           aria-busy={pane.loading}
           inert={!ready}
           bind:this={listEl}
           onkeydown={onListKey}
           onfocus={onListFocus}
+          onpointerdown={pressList}
+          onpointermove={dragBand}
+          onpointerup={endBand}
+          onpointercancel={endBand}
         >
+          {#if parent !== null}
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_interactive_supports_focus -->
+            <div
+              class="row up"
+              class:current={atParent}
+              class:drop={over?.into === UP && !over.refusal}
+              id={upId}
+              role="option"
+              aria-selected="false"
+              aria-label="Parent folder"
+              title={parent}
+              onclick={() => {
+                files.focused = pane.key;
+                toParentRow(false);
+              }}
+              ondblclick={() => files.up(pane)}
+            >
+              <span class="kind" aria-hidden="true"><Icon name="up" size={16} /></span>
+              <span class="fname"><span class="label-text">..</span></span>
+            </div>
+          {/if}
           {#each rows as entry, i (entry.name)}
             {@const picked = selected.has(entry.name)}
             <!-- The list keeps the focus and points to its current row (guidelines, 9.6). -->
@@ -534,7 +679,7 @@
               ondragstart={(e) => dragStart(e, entry)}
               ondragend={dragEnd}
             >
-              <span class="kind" aria-hidden="true"><Icon name={entry.dir ? 'folder' : 'file'} size={16} /></span>
+              <span class="kind" class:dir={entry.dir} aria-hidden="true"><Icon name={entry.dir ? 'folder' : 'file'} size={16} /></span>
               <span class="fname">
                 <span class="label-text">{entry.name}</span>
                 {#if entry.kind === 'link'}<span class="link">link</span>{/if}
@@ -545,6 +690,16 @@
           {:else}
             {#if !pane.loading && ready}<p class="empty">{pane.entries.length ? 'Only hidden files here.' : 'This folder is empty.'}</p>{/if}
           {/each}
+          {#if band?.moved}
+            <div
+              class="band"
+              aria-hidden="true"
+              style:left="{Math.min(band.x0, band.x)}px"
+              style:top="{Math.min(band.y0, band.y)}px"
+              style:width="{Math.abs(band.x - band.x0)}px"
+              style:height="{Math.abs(band.y - band.y0)}px"
+            ></div>
+          {/if}
         </div>
       {/if}
       {#if pane.location.kind === 'host' && pane.phase.step !== 'ready'}
@@ -595,6 +750,14 @@
     gap: 4px;
     min-height: 35px;
     padding: 4px 6px 0 6px;
+    transition: background var(--t-fast) var(--ease);
+  }
+  /* The server is seen before it is read: a tint of the color of the host (guidelines, 9.24). */
+  header.tinted {
+    background: color-mix(in srgb, var(--c) var(--tint-veil), var(--panel));
+  }
+  header.tinted .address {
+    color: var(--ink);
   }
   .where {
     flex: 1;
@@ -841,11 +1004,21 @@
   .arrow.desc {
     transform: rotate(90deg);
   }
+  /* Two rows of empty part under the last row: a full folder has one too, to start a rectangle
+     or to take the selection away (guidelines, 9.24). */
   .rows {
+    position: relative;
     overflow-y: auto;
     min-height: 0;
-    padding: 4px 6px 6px;
+    padding: 4px 6px 54px;
     outline: none;
+  }
+  .band {
+    position: absolute;
+    z-index: 1;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-xs);
+    pointer-events: none;
   }
   .rows.stale {
     opacity: 0.45;
@@ -870,9 +1043,14 @@
   .rows:global(.focus-ring) .row.current {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
-  /* A folder that receives a drop: the outline of a branch label (guidelines, 9.4 and 9.24). */
+  /* A folder that receives a drop: the outline of a branch label over the tint of the foot that
+     says where it goes (guidelines, 9.4 and 9.24). */
   .row.drop {
+    background: var(--accent-soft);
     box-shadow: inset 0 0 0 2px var(--accent);
+  }
+  .row.up .fname {
+    color: var(--muted);
   }
   .row.dragged {
     opacity: 0.5;
@@ -881,6 +1059,10 @@
     display: grid;
     place-items: center;
     color: var(--muted);
+  }
+  /* What opens in place: a folder, in the accent (guidelines, 2.3 and 9.24). */
+  .kind.dir {
+    color: var(--accent);
   }
   .fname {
     min-width: 0;
