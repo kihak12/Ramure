@@ -2203,8 +2203,10 @@ first.", or "Git is working: wait for it to finish." Saving writes the file and 
   up for (below).
 - **A change that does not conflict**, a line that a side changed from the common ancestor outside
   the conflicts, takes 10% of the color of its side, as a line of a conflict at rest, and a "+"
-  in `--muted` in the gutter of the boxes, so that the color does not say it alone (11); it has
-  no checkbox and no header: git has already merged it into the result, and there is nothing to
+  in `--muted` in the gutter of the boxes, the sign of a line added in a diff (9.14) from the
+  ancestor to this side, so that the color does not say it alone (11); its tooltip says "Changed
+  from the common ancestor, merged by git". It has no checkbox and no header, and its cell does
+  not take the pointer of a box: git has already merged it into the result, and there is nothing to
   pick. Without a common ancestor, a file added on both sides, nothing is marked outside the
   conflicts; nor in a side where a conflict is not found, whose lines would pass for changes.
 - **The header of a conflict**, a row of 24 px above its first line, on each side: a checkbox,
@@ -2236,7 +2238,7 @@ lines of side 1, then those of side 2; "Keep both, reversed" puts side 2 first.
   line changed alike on both sides has no single side, and no chip. The tooltip of the chip tells
   the two apart: "Kept from side 1" for a line kept from a conflict, "Merged by git from side 1"
   for a change that did not conflict. These marks follow the lines when the text above them is
-  typed; a line typed in or deleted loses its mark, as a line typed by hand has none.
+  typed; a line typed in, split or deleted loses its mark, as a line typed by hand has none.
 - A conflict not decided yet is not shown as the markers of git: it is one band of 24 px on
   `--warn-soft`, with the letter "!" (9.6) and "Conflict 2 of 3: check the lines to keep", which
   the caret steps over. The markers stay in the file underneath, so that saving is refused while

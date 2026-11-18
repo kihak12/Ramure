@@ -181,6 +181,8 @@
     '.cm-conflict-head.current': { color: 'var(--ink)', fontWeight: 'var(--fw-strong)' },
     '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
     '.cm-side-plus': { color: 'var(--muted)', fontWeight: 'var(--fw-strong)' },
+    // The sign is not a box: nothing to click there.
+    '.cm-picks .cm-gutterElement:has(.cm-side-plus)': { cursor: 'default' },
     '.cm-side-kept': { backgroundColor: 'color-mix(in srgb, var(--c) 24%, transparent)' },
     // The line of the keyboard: an inner ring, never around the whole pane (guidelines, 9.6).
     '.cm-side-cursor': { boxShadow: 'inset 0 0 0 1.5px var(--accent)' },

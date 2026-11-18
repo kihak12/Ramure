@@ -109,8 +109,9 @@
   }
 
   /**
-   * The marks of the lines git merged, after a change: a line typed in or deleted is no longer
-   * git's and loses its mark; a line moved by what is typed above it keeps it (guidelines, 9.26).
+   * The marks of the lines git merged, after a change: a line touched by it, typed in, split or
+   * deleted, is no longer git's and loses its mark; a line moved by what is typed above it keeps it
+   * (guidelines, 9.26).
    */
   function follow<T extends RangeValue>(marks: RangeSet<T>, tr: Transaction): RangeSet<T> {
     if (!tr.docChanged) return marks;
@@ -118,8 +119,7 @@
       const line = tr.startState.doc.lineAt(from);
       let hit = false;
       tr.changes.iterChangedRanges((a, b) => {
-        // A line inserted at its start only pushes it down.
-        if (a <= line.to && b >= line.from && !(a === b && a === line.from)) hit = true;
+        if (a <= line.to && b >= line.from) hit = true;
       });
       return hit;
     };
