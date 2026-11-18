@@ -11,7 +11,7 @@ function ms(token: string): number {
 }
 
 export const motion = {
-  /** Hover, press, disappearance. */
+  /** Hover, press, disappearance; the rest of the pointer before a lane stands out. */
   get fast(): number {
     return ms('--t-fast');
   },

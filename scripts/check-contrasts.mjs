@@ -91,7 +91,7 @@ for (const palette of PALETTES.filter((p) => p !== 'slate')) {
   }
 }
 for (const [mode, values] of Object.entries(STRENGTHS)) {
-  for (const name of ['--tint-veil', '--tint-label', '--tint-label-soft', '--tint-label-hover', '--tint-letter', '--tint-added', '--tint-removed', '--tint-line-hover', '--tint-line-pick']) {
+  for (const name of ['--tint-veil', '--tint-lane', '--tint-lane-veil', '--tint-label', '--tint-label-soft', '--tint-label-hover', '--tint-letter', '--tint-added', '--tint-removed', '--tint-line-hover', '--tint-line-pick']) {
     if (!(name in values)) findings.push(`slate, ${mode}: ${name} is missing`);
   }
 }
@@ -161,6 +161,13 @@ function check(name, t, dark) {
     need(`--ink on a hovered ${lane} label`, contrast(t['--ink'], mix(c, LABEL_HOVER, t['--panel'])), 7);
     for (const bg of ['--panel', '--hover', '--sel']) {
       need(`--ink on a ${lane} capsule, row in ${bg}`, contrast(t['--ink'], mix(c, CAPSULE, t[bg])), 7);
+      // The capsule of a commit of the lane under the pointer (10.2).
+      need(`--ink on a ${lane} capsule of the lane under the pointer, row in ${bg}`, contrast(t['--ink'], mix(c, s['--tint-lane-veil'], t[bg])), 7);
+    }
+    // The 3 px line of the lane under the pointer, on its own sleeve, on a row at rest, hovered
+    // or selected (10.2).
+    for (const bg of ['--panel', '--hover', '--sel']) {
+      need(`${lane} line on its sleeve, row in ${bg}`, contrast(c, mix(c, s['--tint-lane'], t[bg])), 2);
     }
     // The header of the pane of a host, tinted with its color (9.24): --ink is the capsule's.
     need(`${lane} dot on the header of a host pane`, contrast(c, mix(c, CAPSULE, t['--panel'])), 3);

@@ -177,10 +177,11 @@ Every theme must meet them, in light and in dark.
 | Pair | Minimum |
 |---|---|
 | `--ink` on `--panel`, `--bg`, `--sel`, `--hover`, `--hover-side` | 7:1 |
-| `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
+| `--ink` in a message capsule or a branch label, at rest and on hover, the capsules of the lane under the pointer included | 7:1 |
 | `--ink` on a line of a diff, added or removed, at rest, hovered to be picked and picked (9.14) | 7:1 |
 | The letter of a file state on its tint, on a row at rest, hovered or selected (9.6) | 4.5:1 |
 | The icon of a notification on its tint (9.11), and the initials of an author in "Classic" on theirs (10.3) | 3:1 |
+| The line of a lane on its own sleeve, under the pointer, on a row at rest, hovered or selected (10.2): of the same color, the line stays apart from it; the sleeve carries no information | 2:1 |
 | `--muted` on `--bg` (the header of a hunk, 9.14) | 4.5:1 |
 | `--muted` on `--accent-soft` (a folder that receives a drop, 9.24) | 4.5:1 |
 | `--ink` on the header of the pane of a host, tinted with its color (9.24) | 7:1 |
@@ -308,6 +309,8 @@ not change them: they hold for the four, which `npm run check` checks.
 |---|---|---|---|
 | `--tint-veil` | The capsule of a message and the band that links it to its commit (10.2); the header of the pane of a host (9.24) | 24% | 18% |
 | `--tint-label` | A branch or tag label at rest, "Ribbon" rendering (9.4) | 34% | 24% |
+| `--tint-lane` | The sleeve of the lane under the pointer (10.2) | 34% | 24% |
+| `--tint-lane-veil` | The capsules and bands of the commits of the lane under the pointer (10.2): in dark, no stronger than `--tint-veil`, which keeps `--ink` at 7:1 on a hovered or selected row | 34% | 18% |
 | `--tint-label-soft` | A label at rest, "Classic" rendering | 24% | 18% |
 | `--tint-label-hover` | A hovered label; the current branch in "Classic"; the ring around the current branch in "Ribbon" | 40% | 28% |
 | `--tint-letter` | The letter of a file state (9.6), the icon of a notification (9.11), the initials of an author in "Classic" (10.3) | 24% | 20% |
@@ -516,7 +519,7 @@ The interface has four levels. Each is recognized by its background.
 | Token | Value | Use |
 |---|---|---|
 | `--ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | The only curve in the application. Only a continuous rotation or a continuous sweep is linear. |
-| `--t-fast` | 110 ms | Hover, press, focus, color change, disappearance. |
+| `--t-fast` | 110 ms | Hover, press, focus, color change, disappearance; the rest of the pointer before the lane under it stands out (10.2). |
 | `--t-med` | 200 ms | Appearance of a menu or a dialog, folding of a section. |
 | `--t-slow` | 340 ms | Long move: the rail marker, reordering of a list. |
 | `--t-step` | 14 ms | Delay between two elements of a staggered entrance. |
@@ -540,6 +543,9 @@ button: the cross and the "+" of a tab bar, the close button of a notification o
 - Branch and tag labels, list rows, tabs and menu items never change size, neither on click nor
   on hover. The copy that shows the whole name of a cut label (9.4) leaves the label as it is, and
   appears at once.
+  on hover.
+- The lane under the pointer (10.2): it stands out with no fade, once the pointer has rested
+  `--t-fast` on it, so that sweeping the rows does not make it blink; it goes back at once.
 - The scrolling of the graph, of the diff and of the terminal.
 - The move of the selection from the keyboard: it is immediate.
 - The width of a card that is hidden or shown: the graph would be laid out again at every frame.
@@ -2373,12 +2379,36 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **The current commit** carries a halo (section 8), and the label of its branch is solid.
 - **Changes in progress** take the first row: an empty circle, the words `// WIP` in the code
   font inside a dashed frame, and the number of changed files.
+- **The lane under the pointer** stands out, so that the eye can follow a branch through the
+  crossings: a sleeve of its color at `--tint-lane` (2.7), 8 px wide with round ends (6 px in
+  "Classic"), under its 3 px line, along the whole branch, its curve out of the merge that takes it
+  in and its curve into the commit it starts from included. The bands and the capsules of its
+  commits go from `--tint-veil` to `--tint-lane-veil`: stronger in light; in dark, where a stronger
+  capsule would take the contrast of its text (2.4), the sleeve alone sets the lane apart. Nothing
+  else changes: no other color, no dimming of the other lanes, no halo, which is the current
+  commit's.
+  - The lane is that of the commit of the row under the pointer. In the "Graph" column, the line
+    under the pointer, within 8 px of its axis, is taken instead: a branch can be picked where it
+    passes straight, not only at its commits; a curve is not picked, the row of its commit is.
+    This zone is not a target (11): nothing is clicked there, the click selects the row.
+  - The WIP row gives none: the lane that stands out stays, and the one that was about to stand
+    out does not.
+  - It stands out after the pointer has rested `--t-fast` on a lane, so that sweeping the rows
+    does not make the graph blink, and goes as soon as the pointer leaves the history. It does
+    not go when the history scrolls.
+  - It is an aid to the pointer only, by choice: it carries no information, and from the
+    keyboard a branch is followed through the selection and the detail of each commit.
 
 ### 10.3 Rules
 
 - The color of a commit, of its line, of its capsule and of its label is the same.
 - Hover and selection follow the rule for rows (9.6).
 - The graph is not animated on scroll.
+- A lane is a branch, not a column: a column freed by a branch that ends is taken again by
+  another one further down, which does not stand out with it (10.2). A branch goes on up as long
+  as its line comes into its column from above, and down as long as its line goes on in its
+  column; it stops at the curve that merges it into another branch, and at the merge that opens
+  it.
 - No text on the lines, no gradient, no more than eight colors.
 - The "Classic" style, offered in the settings, keeps points and more compact curves. It
   follows the same colors and the same selection rules. Its points carry no initial: those of

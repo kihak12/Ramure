@@ -5,6 +5,8 @@
   import { commitMenu, dropMenu, labelMenu, switchBranch, switchToRemote } from './actions';
   import { accepts, drag, isBranch } from './drag.svelte';
   import { bare, labelsOf, type Label } from './labels';
+  import { laneRun, onRun, passes, type LaneRun } from './lane';
+  import { motion } from '../ui/motion';
   import { revealDetail } from './layout.svelte';
   import { theme } from '../settings/theme.svelte';
   import { prefs } from './prefs.svelte';
@@ -123,6 +125,62 @@
   /** Color of an author in the classic rendering: always the same, taken from the palette of the lanes. */
   const hue = (author: string) => [...author].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 8;
 
+  // --- The lane under the pointer (guidelines, 10.2) ----------------------------------------
+  // The branch whose line is under the pointer stands out once the pointer has rested on it for
+  // --t-fast: sweeping the rows does not make the graph blink. A redraw at each change of lane,
+  // never at each move of the mouse.
+  let lit = $state<LaneRun | null>(null);
+  let aimed: { lane: number; index: number } | null = null;
+  let aimTimer = 0;
+
+  /** The line within 8 px of the pointer in the "Graph" column, else the lane of the commit. */
+  function laneAt(event: MouseEvent, row: HTMLElement, commit: CommitRow, index: number): number {
+    const x = event.clientX - row.getBoundingClientRect().left - columns.labels;
+    if (x >= 0 && x < graphW) {
+      const near = Math.round((x - metrics.pad) / metrics.lane);
+      const off = Math.abs(x - (metrics.pad + near * metrics.lane));
+      if (near >= 0 && near < shownLanes && off <= 8 && passes(commits, index, near)) return near;
+    }
+    return commit.lane;
+  }
+
+  function aim(event: MouseEvent, row: HTMLElement, commit: CommitRow, index: number) {
+    // The row of the changes gives no lane: what stands out stays, what was about to does not.
+    if (commit.wip) {
+      window.clearTimeout(aimTimer);
+      aimed = null;
+      return;
+    }
+    const lane = laneAt(event, row, commit, index);
+    if (lit && lit.lane === lane && index >= lit.top && index <= lit.bottom + 1) {
+      window.clearTimeout(aimTimer);
+      aimed = null;
+      return;
+    }
+    if (aimed?.lane === lane) {
+      aimed.index = index;
+      return;
+    }
+    aimed = { lane, index };
+    window.clearTimeout(aimTimer);
+    aimTimer = window.setTimeout(() => {
+      if (aimed) lit = laneRun(commits, aimed.index, aimed.lane);
+      aimed = null;
+    }, motion.fast);
+  }
+
+  function unaim() {
+    window.clearTimeout(aimTimer);
+    aimed = null;
+    lit = null;
+  }
+
+  // Another history (a fetch, a reload) changes the rows: what stood out goes.
+  $effect(() => {
+    void commits;
+    unaim();
+  });
+
   // --- Drawing the graph ------------------------------------------------------------------
 
   function draw() {
@@ -151,14 +209,31 @@
 
     const x = (lane: number) => pad + lane * laneW;
     const y = (index: number) => (index - winStart) * row + row / 2;
+    const veil = parseFloat(css.getPropertyValue('--tint-veil')) / 100;
+    const laneTint = parseFloat(css.getPropertyValue('--tint-lane')) / 100;
+    const laneVeil = parseFloat(css.getPropertyValue('--tint-lane-veil')) / 100;
+    const onLit = (index: number) => lit !== null && onRun(lit, commits, index);
+    /** Adds to the path the segment of row `index` toward the next row, from column `a` to `b`. */
+    const trace = (index: number, a: number, b: number) => {
+      const [x1, x2, y1] = [x(a), x(b), y(index)];
+      const y2 = y1 + row;
+      ctx.moveTo(x1, y1);
+      if (a === b) {
+        ctx.lineTo(x2, y2);
+      } else {
+        // Change of column: a soft curve, with no corner.
+        ctx.bezierCurveTo(x1, y1 + row * 0.6, x2, y2 - row * 0.6, x2, y2);
+      }
+    };
 
     // Ribbon: a band of the color of the branch leaves the commit and runs to its message.
     if (ribbon) {
-      // The same strength as the capsule that goes on in the message column (guidelines, 2.7).
-      ctx.globalAlpha = parseFloat(css.getPropertyValue('--tint-veil')) / 100;
+      // The same strength as the capsule that goes on in the message column (guidelines, 2.7),
+      // stronger on the commits of the lane under the pointer (10.2).
       for (let i = winStart; i < winEnd; i++) {
         const commit = commits[i];
         const cx = commit.lane < shownLanes ? x(commit.lane) : width - pad;
+        ctx.globalAlpha = onLit(i) ? laneVeil : veil;
         ctx.fillStyle = color(commit.lane);
         ctx.fillRect(cx, y(i) - BAND / 2, width - cx, BAND);
       }
@@ -179,25 +254,31 @@
     }
     ctx.globalAlpha = 1;
 
+    // The lane under the pointer: a sleeve of its color under its line, along the whole branch
+    // (guidelines, 10.2).
+    if (lit) {
+      ctx.globalAlpha = laneTint;
+      ctx.lineWidth = ribbon ? 8 : 6;
+      ctx.strokeStyle = color(lit.lane);
+      // One path, stroked once: the round ends of two segments do not add up where they meet.
+      ctx.beginPath();
+      for (let i = Math.max(lit.top, winStart - 1); i <= Math.min(lit.bottom, winEnd - 1); i++) {
+        for (const [from, to, lane] of commits[i].edges) if (lane === lit.lane) trace(i, from, to);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
     // Segments: from row i to row i + 1. Start one row higher to draw what enters the window
     // from the top too.
     ctx.lineWidth = line;
     for (let i = Math.max(0, winStart - 1); i < winEnd; i++) {
       const commit = commits[i];
-      const y1 = y(i);
-      const y2 = y1 + row;
       for (const [from, to, lane] of commit.edges) {
-        const [x1, x2] = [x(from), x(to)];
         ctx.strokeStyle = color(lane);
         ctx.setLineDash(commit.wip && lane === commit.lane ? [3, 3] : []);
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        if (from === to) {
-          ctx.lineTo(x2, y2);
-        } else {
-          // Change of column: a soft curve, with no corner.
-          ctx.bezierCurveTo(x1, y1 + row * 0.6, x2, y2 - row * 0.6, x2, y2);
-        }
+        trace(i, from, to);
         ctx.stroke();
       }
     }
@@ -523,6 +604,7 @@
     class:asked={!!scroller && menu.current?.origin === scroller}
     bind:clientWidth={cardW}
     onscroll={onScroll}
+    onmouseleave={unaim}
     onkeydown={onKey}
     onfocus={onFocus}
     tabindex="0"
@@ -568,6 +650,7 @@
         <div
           class="row"
           class:sel={index === repo.selected}
+          class:on-lane={lit !== null && onRun(lit, commits, index)}
           id="{uid}-commit-{index}"
           role="option"
           tabindex="-1"
@@ -576,6 +659,7 @@
           style:--i={Math.min(i, 30)}
           style:--c="var(--l{commit.lane % 8})"
           onclick={() => select(index)}
+          onmousemove={(e) => aim(e, e.currentTarget, commit, index)}
           ondblclick={revealDetail}
           oncontextmenu={(e) => openCommitMenu(e, commit, index)}
         >
@@ -977,6 +1061,10 @@
     padding-right: 14px;
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
     background: color-mix(in srgb, var(--c) var(--tint-veil), transparent);
+  }
+  /* A commit of the lane under the pointer: its capsule as strong as its band (guidelines, 10.2). */
+  .ribbon .row.on-lane .msg {
+    background: color-mix(in srgb, var(--c) var(--tint-lane-veil), transparent);
   }
   .subject {
     overflow: hidden;

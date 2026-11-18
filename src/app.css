@@ -68,6 +68,8 @@
   --tint-label-hover: 40%;
   --tint-label-soft: 24%;
   --tint-label: 34%;
+  --tint-lane: 34%;
+  --tint-lane-veil: 34%;
   --tint-veil: 24%;
 
   /* Brand colors (section 13): those of the icon. They change neither in dark nor with the color
@@ -175,6 +177,8 @@
     --tint-label-hover: 28%;
     --tint-label-soft: 18%;
     --tint-label: 24%;
+    --tint-lane: 24%;
+    --tint-lane-veil: 18%;
     --tint-veil: 18%;
     --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
     --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
@@ -239,6 +243,8 @@
   --tint-label-hover: 28%;
   --tint-label-soft: 18%;
   --tint-label: 24%;
+  --tint-lane: 24%;
+  --tint-lane-veil: 18%;
   --tint-veil: 18%;
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
