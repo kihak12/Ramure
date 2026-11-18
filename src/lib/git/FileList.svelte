@@ -49,6 +49,16 @@
     conflict: 'Conflict',
   };
 
+  const numFmt = new Intl.NumberFormat('en-US');
+  /** "+12 −3", without the side that is zero; "binary" for a binary file (guidelines, 9.6). */
+  function counted(lines: NonNullable<FileChange['lines']>) {
+    if (lines.binary) return 'binary';
+    const parts = [];
+    if (lines.added) parts.push(`+${numFmt.format(lines.added)}`);
+    if (lines.removed) parts.push(`−${numFmt.format(lines.removed)}`);
+    return parts.join(' ');
+  }
+
   function split(path: string) {
     const cut = path.lastIndexOf('/');
     return cut < 0 ? { dir: '', name: path } : { dir: path.slice(0, cut + 1), name: path.slice(cut + 1) };
@@ -64,6 +74,10 @@
         <span class="path"><span class="dir">{parts.dir}{parts.dir ? '\u200e' : ''}</span><span class="name">{parts.name}</span></span>
         {#if partial?.has(file.path)}
           <span class="part" title="Only some of the changes in this file are staged">partly</span>
+        {/if}
+        {#if file.lines}
+          {@const count = counted(file.lines)}
+          {#if count}<span class="lines">{count}</span>{/if}
         {/if}
       </button>
       {#each actions as action (action.label)}
@@ -167,6 +181,16 @@
     flex: none;
     color: var(--muted);
     font-size: var(--fs-small);
+  }
+  /* At the right of the row: the folder is cut before them (guidelines, 9.6). */
+  .lines {
+    flex: none;
+    margin-left: auto;
+    padding-left: 6px;
+    color: var(--muted);
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .act {
     flex: none;

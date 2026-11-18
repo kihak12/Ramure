@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, tick, untrack } from 'svelte';
-  import { fade } from 'svelte/transition';
   import CommitPanel from './CommitPanel.svelte';
   import ConflictEditor from './ConflictEditor.svelte';
   import DiffView from './DiffView.svelte';
@@ -17,7 +16,6 @@
   import WipStrip from './WipStrip.svelte';
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
-  import { motion } from '../ui/motion';
   import Splitter from '../ui/Splitter.svelte';
 
   /** `active`: this tab is the one being looked at. */
@@ -193,7 +191,8 @@
         {/if}
         <aside class="detail" class:working={current?.wip} bind:this={detailEl} hidden={layout.detailHidden} inert={layout.detailHidden}>
           {#key repo.currentKey}
-            <div class="pane" in:fade={{ duration: motion.med }}>
+            <!-- Another commit shows at once: the selection moves with no fade (guidelines, 8 and 9.27). -->
+            <div class="pane">
               {#if current?.wip}
                 {#if repo.status}
                   <WorkPanel {repo} />

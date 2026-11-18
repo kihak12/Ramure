@@ -5,16 +5,32 @@
   import FileList from './FileList.svelte';
   import MessageField from './MessageField.svelte';
   import WipStrip from './WipStrip.svelte';
+  import { readMessage } from './message';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
 
   let { repo, commit }: { repo: Repo; commit: CommitRow } = $props();
 
   const fullDateFmt = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' });
-  /** The full date, its time kept on one line with AM or PM. */
+  const shortDateFmt = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  /** The date, its time kept on one line with AM or PM. */
   const fullDate = (ms: number) => fullDateFmt.format(ms).replace(/ (AM|PM)$/, '\u00a0$1');
+  const shortDate = (ms: number) => shortDateFmt.format(ms).replace(/ (AM|PM)$/, '\u00a0$1');
+  const numFmt = new Intl.NumberFormat('en-US');
+
   const detail = $derived(repo.detail);
   const body = $derived(detail ? detail.message.split('\n').slice(1).join('\n').trim() : '');
+  // The description joined to the width of the panel, its trailers set apart (guidelines, 9.27).
+  const view = $derived(readMessage(body));
+  // Lines added and removed by the whole commit, when git counted them.
+  const totals = $derived.by(() => {
+    const counted = detail?.files.filter((f) => f.lines && !f.lines.binary) ?? [];
+    if (!counted.length) return null;
+    return {
+      added: counted.reduce((sum, f) => sum + f.lines!.added, 0),
+      removed: counted.reduce((sum, f) => sum + f.lines!.removed, 0),
+    };
+  });
 
   // --- Rewording (guidelines, 9.25) ---------------------------------------------------------
   const check = $derived(repo.rewordCheck(commit));
@@ -80,140 +96,208 @@
 
 <!-- The working changes stay one click away, even while another commit is shown. -->
 {#if repo.wipCount > 0}<WipStrip {repo} />{/if}
-<div class="head">
-  <span class="label">{editing ? 'Commit message' : 'Commit'}</span>
-  {#if !editing}
-    <button
-      class="btn ghost small reword-open"
-      type="button"
-      disabled={!!check.reason || repo.locked}
-      title={check.reason || 'Give this commit a new message (F2 in the graph)'}
-      aria-describedby={check.reason && !repo.locked ? 'reword-why' : undefined}
-      onclick={() => repo.startReword()}>Reword</button
-    >
-  {/if}
-</div>
-{#if draft}
-  <!-- The message edited in place: the rest of the panel stays under it (guidelines, 9.25). -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="reword" onkeydown={onFormKey}>
-    {#if draft.text === null}
-      <p class="muted">Reading the message…</p>
-    {:else}
-      <MessageField
-        bind:value={draft.text}
-        bind:field
-        label="Commit message"
-        rows={5}
-        disabled={saving}
-        describedby={check.pushed || check.replayed || (check.head && staged) ? 'reword-notes' : undefined}
+<!-- Zones read in a glance, a line between them (guidelines, 9.27). -->
+<div class="commit">
+  <div class="head">
+    <span class="label">{editing ? 'Commit message' : 'Commit'}</span>
+    <span class="mono sha" title={commit.sha}>{commit.sha.slice(0, 7)}</span>
+    <button class="copy" type="button" title="Copy SHA" aria-label="Copy SHA" onclick={copySha}><Icon name="copy" size={14} /></button>
+    {#if !editing}
+      <button
+        class="btn ghost small reword-open"
+        type="button"
+        disabled={!!check.reason || repo.locked}
+        title={check.reason || 'Give this commit a new message (F2 in the graph)'}
+        aria-describedby={check.reason && !repo.locked ? 'reword-why' : undefined}
+        onclick={() => repo.startReword()}>Reword</button
       >
-        {#snippet notes()}
-          <!-- What saving does: it describes the field and the main button (guidelines, 9.25). -->
-          <div class="notes" id="reword-notes">
-          {#if check.head && staged}
-            <p class="note">The {staged === 1 ? 'staged file is' : `${staged} staged files are`} not part of this commit.</p>
-          {/if}
-          {#if !check.head && check.replayed}
-            <p class="note">
-              {check.replayed === 1
-                ? 'The commit after this one is replayed and gets a new SHA.'
-                : `The ${check.replayed} commits after this one are replayed and get new SHAs.`} The position of
-              <span class="mono">{repo.branch}</span> is saved in <span class="mono">refs/ramure/backup</span>.
-            </p>
-          {/if}
-          {#if check.pushed}
-            <p class="warn"><Icon name="warning" size={14} /> <span>This commit is already on the remote: after rewording it, you will have to force push.</span></p>
-          {/if}
-          </div>
-        {/snippet}
-        {#snippet actions()}
-          <span class="buttons">
-            <button class="btn small" type="button" disabled={saving} onclick={() => repo.cancelReword()}>Cancel</button>
-            <button
-              class="btn primary small"
-              type="button"
-              disabled={!!unsaved || saving}
-              title={unsaved || 'Ctrl + Enter'}
-              aria-describedby={check.pushed || check.replayed || (check.head && staged) ? 'reword-notes' : undefined}
-              onclick={() => void repo.saveReword()}
-            >
-              {saving ? 'Saving…' : 'Save message'}
-            </button>
-          </span>
-        {/snippet}
-      </MessageField>
     {/if}
   </div>
-{:else}
-  <p class="title">{commit.subject}</p>
-  {#if body}<p class="message">{body}</p>{/if}
-  <!-- A disabled "Reword" says why, under the message (guidelines, 9.1 and 9.25). -->
-  {#if check.reason && !repo.locked}
-    <p class="why" class:nudged id="reword-why" aria-live="polite">
-      {#key nudged}
-        {#if nudged}<Icon name="warning" size={14} />{/if}
-        <span>{check.reason}</span>
-      {/key}
-    </p>
-  {/if}
-{/if}
-<dl>
-  <dt>SHA</dt>
-  <dd class="sha">
-    <span class="mono sha-full">{commit.sha}</span>
-    <button class="copy" type="button" title="Copy SHA" aria-label="Copy SHA" onclick={copySha}><Icon name="copy" size={14} /></button>
-  </dd>
-  <dt>Author</dt>
-  <dd>{commit.author}</dd>
-  <dt>Date</dt>
-  <dd>{fullDate(commit.time * 1000)}</dd>
-  <dt>Parent{commit.parents.length === 1 ? '' : 's'}</dt>
-  <dd>{#if commit.parents.length}<span class="mono parents">{commit.parents.map((p) => p.slice(0, 7)).join(', ')}</span>{:else}none (first commit){/if}</dd>
-  {#if repo.hasRemote}
-    <dt>Location</dt>
-    <dd>{commit.localOnly ? 'Local only, not pushed yet' : 'On the remote'}</dd>
-  {/if}
-  {#if commit.refs.length}
-    <dt>Refs</dt>
-    <dd>{commit.refs.map((r) => r.name).join(', ')}</dd>
-  {/if}
-</dl>
 
-{#if repo.detailError}
-  <p class="err" role="alert">{repo.detailError}</p>
-{:else if detail}
-  <span class="label">
-    Changed files · {detail.files.length}{commit.parents.length > 1 ? ' (against the first parent)' : ''}
-  </span>
-  {#if detail.files.length}
-    <div class="files">
-      <FileList
-        files={detail.files}
-        active={repo.openFile?.key.startsWith('c:') ? repo.openFile.key.slice(2) : null}
-        onopen={(f) => repo.openCommitDiff(f)}
-      />
+  {#if draft}
+    <!-- The message edited in place: the rest of the panel stays under it (guidelines, 9.25). -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="reword" onkeydown={onFormKey}>
+      {#if draft.text === null}
+        <p class="muted">Reading the message…</p>
+      {:else}
+        <MessageField
+          bind:value={draft.text}
+          bind:field
+          label="Commit message"
+          rows={5}
+          disabled={saving}
+          describedby={check.pushed || check.replayed || (check.head && staged) ? 'reword-notes' : undefined}
+        >
+          {#snippet notes()}
+            <!-- What saving does: it describes the field and the main button (guidelines, 9.25). -->
+            <div class="notes" id="reword-notes">
+            {#if check.head && staged}
+              <p class="note">The {staged === 1 ? 'staged file is' : `${staged} staged files are`} not part of this commit.</p>
+            {/if}
+            {#if !check.head && check.replayed}
+              <p class="note">
+                {check.replayed === 1
+                  ? 'The commit after this one is replayed and gets a new SHA.'
+                  : `The ${check.replayed} commits after this one are replayed and get new SHAs.`} The position of
+                <span class="mono">{repo.branch}</span> is saved in <span class="mono">refs/ramure/backup</span>.
+              </p>
+            {/if}
+            {#if check.pushed}
+              <p class="warn"><Icon name="warning" size={14} /> <span>This commit is already on the remote: after rewording it, you will have to force push.</span></p>
+            {/if}
+            </div>
+          {/snippet}
+          {#snippet actions()}
+            <span class="buttons">
+              <button class="btn small" type="button" disabled={saving} onclick={() => repo.cancelReword()}>Cancel</button>
+              <button
+                class="btn primary small"
+                type="button"
+                disabled={!!unsaved || saving}
+                title={unsaved || 'Ctrl + Enter'}
+                aria-describedby={check.pushed || check.replayed || (check.head && staged) ? 'reword-notes' : undefined}
+                onclick={() => void repo.saveReword()}
+              >
+                {saving ? 'Saving…' : 'Save message'}
+              </button>
+            </span>
+          {/snippet}
+        </MessageField>
+      {/if}
     </div>
+    <hr />
+    <div class="zone">{@render facts()}</div>
   {:else}
-    <p class="muted">This commit changes no files.</p>
+    <div class="zone">
+      <p class="title">{commit.subject}</p>
+      {@render facts()}
+    </div>
+    {#if view.paragraphs.length || view.trailers.length || (check.reason && !repo.locked)}
+      <hr />
+      <div class="zone message">
+        {#each view.paragraphs as paragraph, i (i)}
+          <p class:pre={paragraph.pre}>{paragraph.text}</p>
+        {/each}
+        {#if view.trailers.length}<p class="trailers">{view.trailers.join('\n')}</p>{/if}
+        <!-- A disabled "Reword" says why, under the message (guidelines, 9.1 and 9.25). -->
+        {#if check.reason && !repo.locked}
+          <p class="why" class:nudged id="reword-why" aria-live="polite">
+            {#key nudged}
+              {#if nudged}<Icon name="warning" size={14} />{/if}
+              <span>{check.reason}</span>
+            {/key}
+          </p>
+        {/if}
+      </div>
+    {/if}
   {/if}
-{:else}
-  <div class="skeleton" aria-label="Loading files">
-    <span></span><span></span><span></span>
+
+  <hr />
+  <div class="zone">
+    {#if repo.detailError}
+      <p class="err" role="alert">{repo.detailError}</p>
+    {:else if detail}
+      <div class="files-head">
+        <span class="heading">Changed files · {detail.files.length}</span>
+        {#if commit.parents.length > 1}<span class="against">(against the first parent)</span>{/if}
+        {#if totals}
+          <span class="totals">
+            {#if totals.added}<span class="plus">+{numFmt.format(totals.added)}</span>{/if}
+            {#if totals.removed}<span class="minus">−{numFmt.format(totals.removed)}</span>{/if}
+          </span>
+        {/if}
+      </div>
+      {#if detail.files.length}
+        <div class="files">
+          <FileList
+            files={detail.files}
+            active={repo.openFile?.key.startsWith('c:') ? repo.openFile.key.slice(2) : null}
+            onopen={(f) => repo.openCommitDiff(f)}
+          />
+        </div>
+      {:else}
+        <p class="muted">This commit changes no files.</p>
+      {/if}
+    {:else}
+      <div class="skeleton" aria-label="Loading files">
+        <span></span><span></span><span></span>
+      </div>
+    {/if}
   </div>
-{/if}
+</div>
+
+<!-- Who, when, where it is and what comes before it, under the subject or under the form. -->
+{#snippet facts()}
+  <div class="facts">
+    <p class="byline"><span class="author">{commit.author}</span> · <span title={fullDate(commit.time * 1000)}>{shortDate(commit.time * 1000)}</span></p>
+    {#if repo.hasRemote}
+      <p class="fact">
+        <Icon name={commit.localOnly ? 'laptop' : 'cloud'} size={14} />
+        <span>{commit.localOnly ? 'Local only, not pushed yet' : 'On the remote'}</span>
+      </p>
+    {/if}
+    {#if commit.refs.length}
+      {@const refs = commit.refs.map((r) => r.name).join(', ')}
+      <p class="fact"><span>Refs</span> <span class="mono refs" title={refs}>{refs}</span></p>
+    {/if}
+    <p class="fact parents">
+      {#if commit.parents.length}
+        <span>Parent{commit.parents.length === 1 ? '' : 's'}</span>
+        {#each commit.parents as parent (parent)}
+          <button class="btn ghost small mono parent" type="button" title="Select this commit in the graph" onclick={() => repo.selectSha(parent)}>{parent.slice(0, 7)}</button>
+        {/each}
+      {:else}
+        <span>No parent: first commit</span>
+      {/if}
+    </p>
+  </div>
+{/snippet}
 
 <style>
   p {
     margin: 0;
   }
-  .head {
+  .commit {
     width: 100%;
     display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .head {
+    display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     min-height: 24px;
+  }
+  .sha {
+    color: var(--muted);
+    font-size: var(--fs-code);
+    user-select: all;
+  }
+  .reword-open {
+    margin-left: auto;
+  }
+  /* The zone under the head starts 8 px lower (guidelines, 9.27). */
+  .head + .zone,
+  .head + .reword {
+    margin-top: 8px;
+  }
+  .zone {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  /* Between two zones, a line the whole width of the card: 16 px under a zone, 12 px above the
+     next (guidelines, 6 and 9.27). */
+  hr {
+    flex: none;
+    width: calc(100% + 24px);
+    height: 1px;
+    margin: 16px -12px 12px;
+    border: 0;
+    background: var(--line);
   }
   /* The whole width of the panel: the buttons at its right edge (guidelines, 9.25). */
   .reword {
@@ -274,34 +358,92 @@
     font-weight: var(--fw-strong);
     overflow-wrap: anywhere;
   }
-  .message {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    color: var(--muted);
-  }
-  dl {
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: 6px 12px;
-    margin: 0;
-    width: 100%;
-  }
-  dt {
+  /* Who, when, where: 12 px, in --muted, the author and the names of branches in --ink. */
+  .facts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     color: var(--muted);
     font-size: var(--fs-label);
+    font-variant-numeric: tabular-nums;
   }
-  dd {
-    margin: 0;
+  .author,
+  .refs {
+    color: var(--ink);
+  }
+  .fact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .fact :global(.icon) {
+    flex: none;
+  }
+  /* Cut on the right, the whole list in the tooltip (guidelines, 3.4). */
+  .refs {
+    min-width: 0;
+    font-size: var(--fs-code);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .parents {
+    flex-wrap: wrap;
+    gap: 2px 6px;
+  }
+  .parent {
+    font-size: var(--fs-code);
+  }
+  /* The description in --ink: the subject stands out by its size and weight (guidelines, 9.27). */
+  .message {
+    gap: 8px;
     overflow-wrap: anywhere;
   }
-  .sha {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
+  .message .pre {
+    white-space: pre-wrap;
   }
-  .sha-full {
-    font-size: var(--fs-code);
-    user-select: all;
+  .trailers {
+    margin-top: 4px;
+    white-space: pre-wrap;
+    color: var(--muted);
+    font-size: var(--fs-small);
+  }
+  .message .why {
+    margin-top: 4px;
+  }
+  /* The heading and the totals on one line; for a merge, "(against the first parent)" under them. */
+  .files-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    min-width: 0;
+  }
+  .heading {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-strong);
+    white-space: nowrap;
+  }
+  .against {
+    order: 1;
+    flex-basis: 100%;
+    color: var(--muted);
+    font-size: var(--fs-small);
+  }
+  .totals {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .plus {
+    color: var(--ok);
+  }
+  .minus {
+    color: var(--bad);
   }
   .copy {
     flex: none;
@@ -309,7 +451,6 @@
     place-items: center;
     width: 24px;
     height: 24px;
-    margin-top: -4px;
     border: 0;
     border-radius: var(--radius-s);
     background: none;
@@ -326,9 +467,11 @@
   .copy:active {
     transform: scale(0.97);
   }
+  /* The rows reach 6 px past the text on each side: their names line up with the heading. The
+     first row starts 6 px under the heading, the 4 px of the zone and 2 px (guidelines, 9.27). */
   .files {
     width: calc(100% + 12px);
-    margin: -4px -6px 0;
+    margin: 2px -6px 0;
   }
   .muted {
     color: var(--muted);
@@ -361,8 +504,5 @@
     to {
       background-position: -200% 0;
     }
-  }
-  .parents {
-    font-size: var(--fs-code);
   }
 </style>
