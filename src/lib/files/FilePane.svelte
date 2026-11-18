@@ -259,7 +259,18 @@
   // --- The rectangle that selects (guidelines, 9.24) -------------------------------------------
 
   /** In the coordinates of the content of the list, which scrolls under it. */
-  let band = $state<{ x0: number; y0: number; x: number; y: number; moved: boolean; base: string[]; before: string[]; pointer: number } | null>(null);
+  let band = $state<{
+    x0: number;
+    y0: number;
+    x: number;
+    y: number;
+    moved: boolean;
+    /** What the rectangle adds to: the selection before it with Ctrl or Shift, nothing otherwise. */
+    base: string[];
+    /** What Escape puts back. */
+    before: { selected: string[]; current: string | null; anchor: string | null };
+    pointer: number;
+  } | null>(null);
   let pointerY = 0;
   let scrolling = 0;
 
@@ -274,7 +285,16 @@
     files.focused = pane.key;
     const at = point(e);
     const adds = e.ctrlKey || e.metaKey || e.shiftKey;
-    band = { x0: at.x, y0: at.y, x: at.x, y: at.y, moved: false, base: adds ? [...pane.selected] : [], before: [...pane.selected], pointer: e.pointerId };
+    band = {
+      x0: at.x,
+      y0: at.y,
+      x: at.x,
+      y: at.y,
+      moved: false,
+      base: adds ? [...pane.selected] : [],
+      before: { selected: [...pane.selected], current: pane.current, anchor: pane.anchor },
+      pointer: e.pointerId,
+    };
     if (!adds) pane.selected = [];
     pointerY = e.clientY;
     listEl.setPointerCapture(e.pointerId);
@@ -335,7 +355,7 @@
   /** Escape while it is drawn: the selection goes back as it was. */
   function cancelBand() {
     if (!band) return;
-    pane.selected = band.before;
+    ({ selected: pane.selected, current: pane.current, anchor: pane.anchor } = band.before);
     if (listEl?.hasPointerCapture(band.pointer)) listEl.releasePointerCapture(band.pointer);
     cancelAnimationFrame(scrolling);
     scrolling = 0;
