@@ -761,6 +761,15 @@ buttons.
   weight tell them apart, never the tint.
 - **A label never changes size**: not on click, not on hover, not when a branch is dragged onto
   it.
+- **Its whole name, on hover.** A label cut by its column shows its whole name while the pointer
+  is on it: a copy of the label, as wide as its name, at the same place and with the background of
+  a hovered label, floats over the graph and the rows on its right, above the lanes. The label
+  under it keeps its size and its actions; the copy catches no pointer and goes as soon as the
+  pointer leaves the label, or the history scrolls. A label that is not cut has no copy.
+- **Its tooltip is its name**, with nothing else: the names it stands for, as git writes them,
+  "origin/fix/encoding" for a remote branch, "main, origin/main" for a local branch and its remote
+  on the same commit (3.4). What a double-click, a right-click and a drag do is said by the
+  menu of the label and by these guidelines, not by the tooltip.
 - Hover: the tint of the background gets stronger, `--tint-label-hover` (2.7): in dark, beyond
   28%, `--ink` falls under 7:1 in some themes. The solid background of the current branch moves 10% toward
   `--ink`, darker in light and lighter in dark, so that its text gains contrast in both themes.
@@ -776,7 +785,8 @@ buttons.
   background, `--line` border, `--shadow-pop` shadow, as what floats (6), but 8 px corners
   (`--radius`) and not 12: it hugs its labels, whose corners are 6 px. It stays within the
   "Branch / tag" column, 6 px from each edge, so that the graph never covers it: a long name is
-  cut with an ellipsis, and is whole in the tooltip of its label (3.4). It stays open as long as
+  cut with an ellipsis, and is whole on hover and in the tooltip of its label, as anywhere in the
+  column. It stays open as long as
   the pointer is on it, and its labels behave like the others: hover, double-click, right-click,
   drop target.
 - Double-click: switch to the branch. Right-click: the branch menu.
