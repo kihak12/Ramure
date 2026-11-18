@@ -1,6 +1,6 @@
 //! Working tree and index: status, diff, staging, commit, synchronization.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use serde::Serialize;
@@ -19,7 +19,23 @@ pub struct FileChange {
     pub old_path: Option<String>,
     /// `added`, `modified`, `deleted`, `renamed`, `copied`, `typechange`, `untracked` or `conflict`.
     pub kind: &'static str,
+    /// Lines added and removed, for a file of a commit; absent in the status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lines: Option<Lines>,
 }
+
+/// Lines that a file of a commit adds and removes.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Lines {
+    pub added: u32,
+    pub removed: u32,
+    /// A binary file: git counts no lines in it.
+    pub binary: bool,
+}
+
+/// Beyond this number of files, the lines of a commit are not counted: the list stays quick.
+const MAX_COUNTED_FILES: usize = 2000;
 
 #[derive(Debug, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -113,6 +129,7 @@ fn parse_status(raw: &[u8]) -> Status {
                         path: path.clone(),
                         old_path: if moved { old_path.clone() } else { None },
                         kind: kind_of(xy[0]),
+                        lines: None,
                     });
                 }
                 if xy[1] != b'.' {
@@ -121,17 +138,18 @@ fn parse_status(raw: &[u8]) -> Status {
                         path,
                         old_path: if moved { old_path } else { None },
                         kind: kind_of(xy[1]),
+                        lines: None,
                     });
                 }
             }
             Some(b'u') => {
                 if let Some((_, path)) = split_entry(entry, 10) {
-                    status.unstaged.push(FileChange { path: utf8(path), old_path: None, kind: "conflict" });
+                    status.unstaged.push(FileChange { path: utf8(path), old_path: None, kind: "conflict", lines: None });
                 }
             }
             Some(b'?') => {
                 if let Some(path) = entry.get(2..) {
-                    status.unstaged.push(FileChange { path: utf8(path), old_path: None, kind: "untracked" });
+                    status.unstaged.push(FileChange { path: utf8(path), old_path: None, kind: "untracked", lines: None });
                 }
             }
             _ => {}
@@ -149,12 +167,43 @@ fn parse_name_status(raw: &[u8]) -> Vec<FileChange> {
         let Some(first) = entries.next() else { break };
         if matches!(code, b'R' | b'C') {
             let Some(new) = entries.next() else { break };
-            files.push(FileChange { path: utf8(new), old_path: Some(utf8(first)), kind: kind_of(code) });
+            files.push(FileChange { path: utf8(new), old_path: Some(utf8(first)), kind: kind_of(code), lines: None });
         } else {
-            files.push(FileChange { path: utf8(first), old_path: None, kind: kind_of(code) });
+            files.push(FileChange { path: utf8(first), old_path: None, kind: kind_of(code), lines: None });
         }
     }
     files
+}
+
+/// Reads `git diff --numstat -z`: the lines added and removed, by path (the new path of a
+/// rename). A binary file gives `-` for both.
+fn parse_numstat(raw: &[u8]) -> HashMap<String, Lines> {
+    let mut counts = HashMap::new();
+    let mut entries = raw.split(|b| *b == 0);
+    while let Some(entry) = entries.next() {
+        if entry.is_empty() {
+            continue;
+        }
+        let mut parts = entry.splitn(3, |b| *b == b'\t');
+        let (Some(added), Some(removed), Some(path)) = (parts.next(), parts.next(), parts.next()) else {
+            continue;
+        };
+        // A rename: the path is empty, the old and the new paths follow.
+        let path = if path.is_empty() {
+            let _old = entries.next();
+            let Some(new) = entries.next() else { break };
+            new
+        } else {
+            path
+        };
+        let number = |field: &[u8]| std::str::from_utf8(field).ok().and_then(|f| f.parse::<u32>().ok());
+        let lines = match (number(added), number(removed)) {
+            (Some(added), Some(removed)) => Lines { added, removed, binary: false },
+            _ => Lines { added: 0, removed: 0, binary: true },
+        };
+        counts.insert(utf8(path), lines);
+    }
+    counts
 }
 
 /// A commit hash holds only hexadecimal digits: nothing that could pass for an option of git.
@@ -228,19 +277,26 @@ pub fn commit_detail(
 ) -> Result<CommitDetail, String> {
     check_sha(sha)?;
     let message = text(&step(journal, repo, &["show", "-s", "--format=%B", sha])?);
-    let raw = match parent {
-        Some(parent) => {
-            check_sha(parent)?;
-            step(journal, repo, &["diff", "--name-status", "-z", "-M", parent, sha])?
-        }
+    if let Some(parent) = parent {
+        check_sha(parent)?;
+    }
+    // The same comparison, listed by state, then counted by lines.
+    let diff = |journal: &mut Vec<CommandLog>, format: &str| match parent {
+        Some(parent) => step(journal, repo, &["diff", format, "-z", "-M", parent, sha]),
         // First commit: all of its content is an addition.
-        None => step(
-            journal,
-            repo,
-            &["diff-tree", "--root", "--no-commit-id", "-r", "--name-status", "-z", "-M", sha],
-        )?,
+        None => step(journal, repo, &["diff-tree", "--root", "--no-commit-id", "-r", format, "-z", "-M", sha]),
     };
-    Ok(CommitDetail { message, files: parse_name_status(&raw) })
+    let mut files = parse_name_status(&diff(journal, "--name-status")?);
+    // The counts are a help to read the list: without them, the files are still listed.
+    if !files.is_empty() && files.len() <= MAX_COUNTED_FILES {
+        if let Ok(raw) = diff(journal, "--numstat") {
+            let counts = parse_numstat(&raw);
+            for file in &mut files {
+                file.lines = counts.get(&file.path).copied();
+            }
+        }
+    }
+    Ok(CommitDetail { message, files })
 }
 
 pub fn diff_commit(
@@ -524,6 +580,42 @@ u UU N... 100644 100644 100644 100644 aaa bbb ccc clash.rs\0\
         assert_eq!(files[1].path, "new.rs");
         assert_eq!(files[1].old_path.as_deref(), Some("old.rs"));
         assert_eq!(files[2].kind, "deleted");
+    }
+
+    #[test]
+    fn numstat_is_parsed() {
+        let counts = parse_numstat(b"12\t3\ta.rs\0-\t-\tlogo.png\x000\t0\t\0old.rs\0new.rs\05\t0\tsp ace.md\0");
+        assert_eq!(counts.len(), 4);
+        assert_eq!(counts["a.rs"], Lines { added: 12, removed: 3, binary: false });
+        assert!(counts["logo.png"].binary, "a binary file has no count");
+        assert_eq!(counts["new.rs"], Lines { added: 0, removed: 0, binary: false }, "a rename counts under its new path");
+        assert!(!counts.contains_key("old.rs"));
+        assert_eq!(counts["sp ace.md"].added, 5);
+    }
+
+    #[test]
+    fn commit_detail_counts_the_lines_of_each_file() {
+        let repo = Scratch::new("counts");
+        let dir = repo.0.as_path();
+        repo.write("a.txt", "one\ntwo\nthree\n");
+        repo.git(&["add", "."]);
+        repo.git(&["commit", "-qm", "first"]);
+        let first = repo.git(&["rev-parse", "HEAD"]);
+        repo.write("a.txt", "one\nTWO\nthree\nfour\n");
+        repo.write("b.txt", "new\n");
+        repo.git(&["add", "."]);
+        repo.git(&["commit", "-qm", "second"]);
+        let second = repo.git(&["rev-parse", "HEAD"]);
+
+        let mut j = Vec::new();
+        let detail = commit_detail(&mut j, dir, &second, Some(&first)).unwrap();
+        let lines = |path: &str| detail.files.iter().find(|f| f.path == path).and_then(|f| f.lines);
+        assert_eq!(lines("a.txt"), Some(Lines { added: 2, removed: 1, binary: false }));
+        assert_eq!(lines("b.txt"), Some(Lines { added: 1, removed: 0, binary: false }));
+
+        // The first commit: counted against nothing.
+        let root = commit_detail(&mut j, dir, &first, None).unwrap();
+        assert_eq!(root.files[0].lines, Some(Lines { added: 3, removed: 0, binary: false }));
     }
 
     #[test]

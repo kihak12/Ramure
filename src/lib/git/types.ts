@@ -59,6 +59,8 @@ export interface FileChange {
   path: string;
   oldPath: string | null;
   kind: ChangeKind;
+  /** Lines added and removed, for a file of a commit; absent in the status. */
+  lines?: { added: number; removed: number; binary: boolean };
 }
 
 export type Operation = 'merge' | 'rebase' | 'cherry-pick' | 'revert';
