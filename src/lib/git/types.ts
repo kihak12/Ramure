@@ -27,6 +27,8 @@ export interface CommandLog {
   command: string;
   ms: number;
   ok: boolean;
+  /** Set by the interface when the command only read a diff to show it: the status bar skips it. */
+  readsDiff?: boolean;
 }
 
 export interface LogResult {

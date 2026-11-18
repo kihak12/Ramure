@@ -180,20 +180,24 @@ export class Repo {
 
   // --- Calls to the Rust core -------------------------------------------------------------
 
-  record(commands: CommandLog[]) {
+  record(commands: CommandLog[], readsDiff = false) {
+    if (readsDiff) commands = commands.map((c) => ({ ...c, readsDiff }));
     if (commands.length) this.journal = [...this.journal, ...commands].slice(-JOURNAL_MAX);
   }
 
-  /** Calls a git command of the Rust core and adds its commands to the log, success or not. */
-  async git<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
+  /**
+   * Calls a git command of the Rust core and adds its commands to the log, success or not.
+   * `readsDiff`: the command only reads a diff to show it, which the status bar does not name.
+   */
+  async git<T>(command: string, args: Record<string, unknown> = {}, readsDiff = false): Promise<T> {
     try {
       const reply = await invoke<Done<T>>(command, { repo: this.result?.repo, ...args });
-      this.record(reply.commands);
+      this.record(reply.commands, readsDiff);
       return reply.data;
     } catch (e) {
       if (e && typeof e === 'object' && 'message' in e) {
         const failed = e as { message: string; commands?: CommandLog[] };
-        this.record(failed.commands ?? []);
+        this.record(failed.commands ?? [], readsDiff);
         throw new Error(failed.message);
       }
       throw new Error(typeof e === 'string' ? e : String(e));
@@ -711,12 +715,11 @@ export class Repo {
         selectable: partial ? (staged ? 'unstage' : 'stage') : null,
       },
       () =>
-        this.git<Diff>('git_diff_file', {
-          path: file.path,
-          oldPath: file.oldPath,
-          staged,
-          untracked: file.kind === 'untracked',
-        }),
+        this.git<Diff>(
+          'git_diff_file',
+          { path: file.path, oldPath: file.oldPath, staged, untracked: file.kind === 'untracked' },
+          true,
+        ),
     );
   }
 
@@ -731,19 +734,18 @@ export class Repo {
         selectable: null,
       },
       () =>
-        this.git<Diff>('git_diff_commit', {
-          sha: commit.sha,
-          parent: commit.parents[0] ?? null,
-          path: file.path,
-          oldPath: file.oldPath,
-        }),
+        this.git<Diff>(
+          'git_diff_commit',
+          { sha: commit.sha, parent: commit.parents[0] ?? null, path: file.path, oldPath: file.oldPath },
+          true,
+        ),
     );
   }
 
   openStashDiff(index: number, message: string) {
     void this.#showDiff(
       { key: `stash:${index}`, title: `Stash ${index}`, subtitle: message, selectable: null },
-      () => this.git<Diff>('git_stash_show', { index }),
+      () => this.git<Diff>('git_stash_show', { index }, true),
     );
   }
 

@@ -14,7 +14,11 @@
   const ms = (n: number) => `${numFmt.format(Math.round(n))} ms`;
 
   const result = $derived(repo.result);
-  const last = $derived(repo.journal.at(-1) ?? null);
+  // The last command, unless it only read a diff to show it: the log lists that one (guidelines, 9.13).
+  const last = $derived.by(() => {
+    for (let i = repo.journal.length - 1; i >= 0; i--) if (!repo.journal[i].readsDiff) return repo.journal[i];
+    return null;
+  });
   const count = $derived(repo.commits.length - (repo.commits[0]?.wip ? 1 : 0));
 
   const fetchText = $derived.by(() => {
@@ -34,7 +38,15 @@
 
 <footer class="status">
   <span class="branch mono">{#if repo.branch}<Icon name="branch" size={14} /> {repo.branch}{/if}</span>
-  <button class="log-btn" type="button" aria-expanded={showLog} onclick={() => (showLog = !showLog)} disabled={!repo.journal.length}>
+  <button
+    class="log-btn"
+    class:mono={!!last}
+    type="button"
+    title={last ? `$ ${last.command}` : undefined}
+    aria-expanded={showLog}
+    onclick={() => (showLog = !showLog)}
+    disabled={!repo.journal.length}
+  >
     {last ? `$ ${last.command}` : 'Command log'}
   </button>
   <div class="stats" aria-live="polite">
