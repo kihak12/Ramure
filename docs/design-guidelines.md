@@ -173,8 +173,9 @@ Every theme must meet them, in light and in dark.
 | `--ink` on `--panel`, `--bg`, `--sel`, `--hover`, `--hover-side` | 7:1 |
 | `--ink` in a message capsule or a branch label, at rest and on hover | 7:1 |
 | `--ink` on a line of a diff, added or removed, at rest, hovered to be picked and picked (9.14) | 7:1 |
-| The letter of a file state on its tint (9.6) | 4.5:1 |
-| The icon of a notification, and the initials of a commit, on their tint | 3:1 |
+| The letter of a file state on its tint, on a row at rest, hovered or selected (9.6) | 4.5:1 |
+| The icon of a notification on its tint (9.11), and the initials of an author in "Classic" on theirs (10.3) | 3:1 |
+| `--muted` on `--accent-soft` (the header of a hunk, 9.14) | 4.5:1 |
 | `--ink` on `--accent-soft`, `--ok-soft`, `--warn-soft`, `--bad-soft` | 7:1 |
 | `--muted` on `--panel`, `--side`, `--sel`, `--raised`, `--hover`, `--hover-side`, `--warn-soft` | 4.5:1 |
 | `--on-accent` on `--accent`, `--bad` and each branch color, at rest and on hover | 4.5:1 |
@@ -295,8 +296,8 @@ not change them: they hold for the four, which `npm run check` checks.
 | `--tint-veil` | The capsule of a message and the band that links it to its commit (10.2) | 24% | 18% |
 | `--tint-label` | A branch or tag label at rest, "Ribbon" rendering (9.4) | 34% | 24% |
 | `--tint-label-soft` | A label at rest, "Classic" rendering | 24% | 18% |
-| `--tint-label-hover` | A hovered label, the current branch in "Classic", the ring of the current branch | 40% | 28% |
-| `--tint-letter` | The letter of a file state (9.6), the icon of a notification (9.11), the initials of a commit | 24% | 20% |
+| `--tint-label-hover` | A hovered label; the current branch in "Classic"; the ring around the current branch in "Ribbon" | 40% | 28% |
+| `--tint-letter` | The letter of a file state (9.6), the icon of a notification (9.11), the initials of an author in "Classic" (10.3) | 24% | 20% |
 | `--tint-added` | An added line of a diff (9.14) | 22% | 20% |
 | `--tint-removed` | A removed line of a diff | 20% | 20% |
 | `--tint-line-hover` | What a line of a diff hovered to be picked adds to its tint | 10% | 7% |
@@ -305,7 +306,8 @@ not change them: they hold for the four, which `npm run check` checks.
 - The steps of a line are shorter in dark: the picked line keeps `--ink` at 7:1, and the line at
   rest can be as strong as in light. A line, hovered or picked, stays apart from the one before
   (2.4 and `npm run check`).
-- The letter of a file state moves 20% toward `--ink`, so that it reads on its stronger tint.
+- The letter of a file state is halfway between its color and `--ink`: its tint lets the row show
+  through, and the letter reads on it at rest, hovered and selected.
 
 ## 3. Typography
 
@@ -721,7 +723,7 @@ buttons.
 | Type | Rendering |
 |---|---|
 | Local branch | Background: `--tint-label` of the branch color over `--panel`, `--tint-label-soft` in "Classic" (2.7). Border: the same color at 55%. `--ink` text, weight 650. "Computer" icon. |
-| Current branch | Solid background in the branch color, surrounded by a ring of the same color. `--on-accent` text, weight 650, preceded by a check mark. |
+| Current branch | "Ribbon": solid background in the branch color, surrounded by a 3 px ring of the same color at `--tint-label-hover`, `--on-accent` text. "Classic": the background of a hovered label, `--tint-label-hover` of the branch color, `--ink` text. Weight 650, preceded by a check mark. |
 | Remote branch | The same background as a local branch. Dashed border in the branch color, weight 400. "Cloud" icon. |
 | Tag | The same background as a local branch. Solid border in the branch color, weight 400. "Tag" icon. |
 
@@ -800,8 +802,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   repositories of the start page.
 - The state of a file is a letter on a tinted background, never a color alone: M modified, A
   added, D deleted, R renamed, C copied, T type changed, U untracked, "!" in conflict. The tint
-  is `--tint-letter` of the color of the state; the letter is that color moved 20% toward
-  `--ink`, so that it reads on the tint (2.7).
+  is `--tint-letter` of the color of the state, over the row; the letter is halfway between that
+  color and `--ink`, so that it reads on the tint whether the row is at rest, hovered or selected
+  (2.7).
 - A file that is only partly staged carries the word "partly" after its name, in `--muted`
   at 11.5 px, in both lists.
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
@@ -975,6 +978,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Added line: a background at `--tint-added` of `--ok`, a "+" sign in `--ok`. Removed line: a
   background at `--tint-removed` of `--bad`, a "−" sign in `--bad` (2.7).
 - The sign is always there: color alone never says whether a line is added or removed.
+- The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--accent-soft`, in `--muted`: it is not a
+  selection, and does not take its color.
 - A line picked to be staged on its own has a stronger tint, `--tint-line-pick` more, and its
   sign in bold; a line hovered to be picked takes `--tint-line-hover` more (2.7). No colored
   bar on its edge.

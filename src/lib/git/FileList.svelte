@@ -125,8 +125,9 @@
     font-size: var(--fs-micro);
     font-weight: var(--fw-strong);
     font-family: var(--f-mono);
-    /* The letter moves 20% toward --ink, so that it reads on its stronger tint (guidelines, 2.7). */
-    color: color-mix(in srgb, var(--c) 80%, var(--ink));
+    /* The letter is halfway between its color and --ink, so that it reads on its tint on a row at
+       rest, hovered or selected (guidelines, 2.7). */
+    color: color-mix(in srgb, var(--c) 50%, var(--ink));
     background: color-mix(in srgb, var(--c) var(--tint-letter), transparent);
     --c: var(--warn);
   }

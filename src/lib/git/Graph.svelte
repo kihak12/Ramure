@@ -154,7 +154,7 @@
     // Ribbon: a band of the color of the branch leaves the commit and runs to its message.
     if (ribbon) {
       // The same strength as the capsule that goes on in the message column (guidelines, 2.7).
-      ctx.globalAlpha = (parseFloat(css.getPropertyValue('--tint-veil')) || 15) / 100;
+      ctx.globalAlpha = parseFloat(css.getPropertyValue('--tint-veil')) / 100;
       for (let i = winStart; i < winEnd; i++) {
         const commit = commits[i];
         const cx = commit.lane < shownLanes ? x(commit.lane) : width - pad;
