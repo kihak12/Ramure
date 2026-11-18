@@ -490,8 +490,8 @@ The interface has four levels. Each is recognized by its background.
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
   leaves it, the same sheet turned over, for an export, the sheet with lines for the log of a
   session, the tunnel for an SSH tunnel, the folder for a folder and for the Files module, the
-  sheet with a folded corner for a file, the folder with a plus for a new folder, the same sheet
-  with a plus for a new file, the pencil for
+  sheet with a folded corner for a file, the folder with a plus for a new folder, the sheet with
+  a folded corner and a plus for a new file, both pluses of the same size, the pencil for
   an edit or a change, the trash for a deletion, the square for stopping or aborting, the
   circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
   connection. An icon that stands for a git
@@ -1880,7 +1880,7 @@ place: "This machine", or a host of the book.
   one and is disabled at four, its tooltip saying why ("Four panes at most. Close one first."),
   and "Close pane". Of two panes, neither is closed: the one closed becomes empty, and offers
   the locations again, the hosts of the book among them. An empty pane of two cannot be closed,
-  its tooltip saying why ("Two panes always stay.").
+  its tooltip saying why and what to do ("Two panes always stay. Choose a location instead.").
 - "Browse files", in the menu of a host in the book, shows the module with that host: in the
   empty pane if there is one, otherwise in a new pane, or in place of the last pane at four.
 
@@ -1948,7 +1948,8 @@ of 24 px (4.3, 9.6):
 - "Rename…", "New folder…", "New file…" and "Delete…" open a dialog (9.10). The rename has one
   field, its name selected up to the extension; a name that is taken is refused under the
   field, and so is it for a new folder or a new file: a new file is empty, and never replaces
-  one that is there. What is created becomes the selection. The
+  one that is there. A new folder or file goes into the folder the pane shows, whatever row the
+  menu was opened on, and becomes the selection. The
   deletion says what is lost: "Delete 3 items from staging?", "They are deleted from the server
   for good, with what the folders hold: they cannot be recovered.", or "from this machine",
   "… they do not go to the trash", with "Cancel", which has the focus, and "Delete", a danger

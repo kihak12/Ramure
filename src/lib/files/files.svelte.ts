@@ -249,7 +249,7 @@ class Files {
     return this.transfers.filter((t) => t.state === 'counting' || t.state === 'copying').length;
   }
 
-  /** "Close pane": asks first when a transfer uses it. The last pane becomes empty. */
+  /** "Close pane": asks first when a transfer uses it. Of two panes, the one closed becomes empty. */
   async close(pane: Pane) {
     const using = this.runningWith(pane);
     if (using.length) {

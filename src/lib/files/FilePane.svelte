@@ -564,7 +564,7 @@
         class="icon-btn"
         type="button"
         aria-label="Close pane"
-        title={files.panes.length <= 2 && !pane.location ? 'Two panes always stay.' : 'Close pane'}
+        title={files.panes.length <= 2 && !pane.location ? 'Two panes always stay. Choose a location instead.' : 'Close pane'}
         disabled={files.panes.length <= 2 && !pane.location}
         onclick={() => void files.close(pane)}
       >
