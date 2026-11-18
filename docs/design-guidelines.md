@@ -55,6 +55,7 @@ The two screenshots show the application as it is, on a demonstration repository
    - [9.24 Files](#924-files)
    - [9.25 Rewording a commit](#925-rewording-a-commit)
    - [9.26 Conflict editor](#926-conflict-editor)
+   - [9.27 Commit detail](#927-commit-detail)
 10. [Commit graph](#10-commit-graph)
 11. [Accessibility](#11-accessibility)
 12. [Tone of the interface text](#12-tone-of-the-interface-text)
@@ -472,7 +473,9 @@ The interface has four levels. Each is recognized by its background.
 - No card inside a card. A tinted box inside a card or a dialog (a warning, the strip of
   uncommitted changes, 9.22, the box of an update, 9.23) is not one: it has no border and no shadow, only a `-soft`
   background. Inside a card, things are separated by space or by a `--line-soft` line; inside a dialog, by space or by a `--line` line, since `--line-soft` does not show on
-  `--raised` in dark (9.6).
+  `--raised` in dark (9.6). One exception inside a card: the zones of the detail panel of a
+  commit are separated by a `--line` line the whole width of the card (9.27). The panel is read
+  in a glance, again at each commit, and a `--line-soft` line barely shows there.
 - Shadows are neutral: they do not take the tint of the theme.
 - A dialog sits on the `--scrim` veil, with a 2 px blur.
 
@@ -839,6 +842,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   (2.7).
 - A file that is only partly staged carries the word "partly" after its name, in `--muted`
   at 11.5 px, in both lists.
+- A file of a commit ends with its counts of lines, at the right of the row: "+12 −3", in
+  `--muted` at 11.5 px, tabular figures, "binary" for a binary file (9.27). The name keeps
+  priority: the folder is cut first, the counts never.
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
   rebase) is made of plain rows: no border and no background of their own, since a framed row
   inside a dialog would be a card in a card (6). The rows are separated by a `--line` line: on
@@ -2242,6 +2248,56 @@ conflict and marks it, as the sides do.
 
 **A file that cannot be merged line by line**, binary, too large, or deleted on one side, says so
 in place of the panes, with "Keep upstream" and "Keep your commit" (or their merge names).
+
+### 9.27 Commit detail
+
+The detail panel of a commit selected in the graph. The user goes from commit to commit with the
+arrow keys and reads it in a glance, each time: what the commit is about, who made it and when,
+where it is, then which files it changed. The panel says it in that order, in zones that are
+seen as such.
+
+**The head**, one line: the "Commit" label, the short SHA in the code font in `--muted`, its
+full value in the tooltip, then the button that copies the whole SHA, a 24 px ghost icon; "Reword"
+at the right (9.25).
+
+**The commit**, 8 px under the head:
+
+- The subject, `--fs-title`, `--fw-strong`, `--ink`.
+- 4 px under it, one line at 12 px: the author in `--ink`, then " · " and the date in `--muted`,
+  short ("Nov 17, 2026, 4:47 PM"), the full date in the tooltip, tabular figures.
+- Then, 4 px apart, each on a line at 12 px in `--muted`: where the commit is, with its icon
+  (7), the cloud and "On the remote", or the computer and "Local only, not pushed yet", when the
+  repository has a remote; the branches and tags on the commit, with the branch icon, their names
+  in the code font in `--ink`; "Parent" or "Parents", then each parent as a small ghost button
+  with its short SHA in the code font, which selects that commit in the graph. A first commit
+  says "No parent: first commit".
+
+**The message**, its own zone: the description in `--ink` at `--fs-body`. The hierarchy comes
+from the size and the weight of the subject, not from a grey.
+
+- The lines of a paragraph are joined to the width of the panel: git messages are cut at 72
+  characters, and kept as they are, they alternate long and short lines in a narrow panel. A
+  paragraph is kept as written when one of its lines starts with a space, a list sign ("-", "*",
+  "•", "1."), ">" or "#". Paragraphs are 8 px apart.
+- The trailers of git, the last paragraph whose lines all read "Token: value" ("Co-Authored-By:
+  …", "Signed-off-by: …"), are set apart 12 px under the description, one per line, in
+  `--muted` at 11.5 px. "Closes #182." is not one: it stays in the description.
+- The view only changes the layout: "Reword" edits the message as written.
+- Why the commit cannot be reworded comes last in this zone (9.25).
+
+**The files**, the last zone: one heading line, "Changed files · 14" at 12 px, `--fw-strong`,
+`--ink`, with "(against the first parent)" for a merge in `--muted` at 11.5 px, and at the right
+the totals of the commit, "+320" in `--ok` and "−41" in `--bad`, tabular figures. Then the list,
+6 px under it, each file with its counts of lines (9.6).
+
+**Between the zones**, a `--line` line the whole width of the card, 16 px under a zone and 12 px
+above the next (6). A commit with no description, no trailer and nothing that keeps it from
+being reworded has no message zone, and so one line less.
+
+- While the message is edited (9.25), the form takes the place of the subject and the message,
+  and the rest of the zone of the commit goes under the form, as its own zone.
+- Going to another commit shows its detail at once, with no fade (8). Its files come once git has
+  listed them.
 
 ## 10. Commit graph
 
