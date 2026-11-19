@@ -201,35 +201,45 @@ function matches(a: string[], b: string[]): [number, number][] {
 }
 
 /**
- * The blanks of each column: the rows of the result matched in both sides are the anchors; between
- * two of them, each column takes the height of the tallest, with a blank before the next anchor.
+ * The blanks of each column. Each row of the result matched in a side is an anchor: the rows it
+ * matches start at the same height, the lower setting the others, which take a blank before it. A
+ * row matched in one side only lines up with it, the third column going on freely; the ends line
+ * up the three, which keep the same height.
  */
 export function align(left: Row[], result: Row[], right: Row[]): { left: Spacer[]; result: Spacer[]; right: Spacer[] } {
   const keys = (rows: Row[]) => rows.map((r) => r.key);
   const inLeft = new Map(matches(keys(left), keys(result)).map(([l, r]) => [r, l]));
   const inRight = new Map(matches(keys(right), keys(result)).map(([s, r]) => [r, s]));
-  const anchors: [number, number, number][] = [];
+  const columns = [left, result, right];
+  const next = [0, 0, 0]; // the next row of each column
+  const top = [0, 0, 0]; // where it starts, blanks included
+  const out: Spacer[][] = [[], [], []];
+  /** Lines up row `row` of each column `c` given. */
+  const sync = (anchors: [number, number][]) => {
+    for (const [c, row] of anchors) {
+      while (next[c] < row) top[c] += columns[c][next[c]++].height;
+    }
+    const lowest = Math.max(...anchors.map(([c]) => top[c]));
+    for (const [c, row] of anchors) {
+      if (top[c] >= lowest) continue;
+      const last = out[c].at(-1);
+      if (last && last.row === row) last.height += lowest - top[c];
+      else out[c].push({ row, height: lowest - top[c] });
+      top[c] = lowest;
+    }
+  };
   for (let r = 0; r < result.length; r++) {
+    const anchors: [number, number][] = [[1, r]];
     const l = inLeft.get(r);
     const s = inRight.get(r);
-    if (l !== undefined && s !== undefined) anchors.push([l, r, s]);
+    if (l !== undefined) anchors.push([0, l]);
+    if (s !== undefined) anchors.push([2, s]);
+    if (anchors.length > 1) sync(anchors);
   }
-  anchors.push([left.length, result.length, right.length]);
-
-  const out = { left: [] as Spacer[], result: [] as Spacer[], right: [] as Spacer[] };
-  const height = (rows: Row[], from: number, to: number) => {
-    let sum = 0;
-    for (let i = from; i < to; i++) sum += rows[i].height;
-    return sum;
-  };
-  let [pl, pr, ps] = [-1, -1, -1];
-  for (const [l, r, s] of anchors) {
-    const gaps = [height(left, pl + 1, l), height(result, pr + 1, r), height(right, ps + 1, s)];
-    const tallest = Math.max(...gaps);
-    if (gaps[0] < tallest) out.left.push({ row: l, height: tallest - gaps[0] });
-    if (gaps[1] < tallest) out.result.push({ row: r, height: tallest - gaps[1] });
-    if (gaps[2] < tallest) out.right.push({ row: s, height: tallest - gaps[2] });
-    [pl, pr, ps] = [l, r, s];
-  }
-  return out;
+  sync([
+    [0, left.length],
+    [1, result.length],
+    [2, right.length],
+  ]);
+  return { left: out[0], result: out[1], right: out[2] };
 }

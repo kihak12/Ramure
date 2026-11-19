@@ -2190,11 +2190,12 @@ first.", or "Git is working: wait for it to finish." Saving writes the file and 
 1, 1.25 and 1: the result is the widest, it is what is saved. Below 240 px a column no longer
 shrinks, and the card scrolls sideways.
 
-- **The rows line up.** A line of a side faces its line in the result, and the header of a
-  conflict faces its band. Where a column has fewer rows for a change, a blank of the missing
-  height fills it, right after the change, so that the three columns keep the same height: a
-  scroll of one, by the wheel, its bar or the keyboard, moves the three. The blanks follow the
-  result as lines are kept or typed.
+- **The rows line up.** A line of a side faces its line in the result, a line kept from a side
+  faces its line there, and the header of a conflict faces its band. Where a column has fewer
+  rows, a blank of the missing height fills it, so that the three columns keep the same height:
+  a scroll of one, by the wheel, its bar or the keyboard, moves the three. The bars of the three
+  columns are as high, so that their first rows start together. The blanks follow the result as
+  lines are kept or typed.
 - **No wrapping:** a wrapped line would break the rows. A long line scrolls sideways, each column
   on its own.
 

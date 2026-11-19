@@ -621,6 +621,9 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    /* As high in the three columns, the result's included, which has no button: their rows start
+       at the same height (guidelines, 9.26). A small button, 24 px, and the padding and the line. */
+    min-height: 33px;
     padding: 4px 10px;
     border-bottom: 1px solid var(--line-soft);
     background: color-mix(in srgb, var(--c) 9%, var(--panel));

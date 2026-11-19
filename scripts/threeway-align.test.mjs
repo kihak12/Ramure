@@ -34,6 +34,17 @@ test('an open conflict: the band of the result faces the headers, and takes the 
   assert.deepEqual(out.result, [{ row: 2, height: 54 }], 'three lines short, under the band');
 });
 
+test('a line kept from side 1 faces its line there, under the header of the conflict', () => {
+  // The conflict is decided: the result holds the line kept from side 1, `x1`.
+  const left = [...lines('a'), head(0), ...lines('x1'), ...lines('z')];
+  const right = [...lines('a'), head(0), ...lines('y1'), ...lines('z')];
+  const result = lines('a', 'x1', 'z');
+  const out = align(left, result, right);
+  assert.deepEqual(out.result, [{ row: 1, height: 24 }], 'a blank of the height of the header, before x1');
+  assert.deepEqual(out.left, []);
+  assert.deepEqual(out.right, []);
+});
+
 test('the three columns always end with the same height', () => {
   const left = [...lines('a', 'b'), head(0), ...lines('p', 'q'), ...lines('c', 'd', 'e', 'f')];
   const right = [...lines('a'), head(0), ...lines('r'), ...lines('c', 'x', 'y', 'f', 'g')];
