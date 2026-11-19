@@ -175,6 +175,10 @@
     display: grid;
     grid-template-columns: 48px minmax(0, 1fr);
     height: 100%;
+    /* The window never scrolls: what scrolls is inside the cards. A content a few pixels too tall
+       let the page be scrolled by a script, CodeMirror bringing a line into view, and the top of the
+       window was cut. `clip`, unlike `hidden`, makes no box that can be scrolled. */
+    overflow: clip;
   }
   .rail {
     display: flex;
