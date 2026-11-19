@@ -276,7 +276,6 @@
     return true;
   }
 
-  /** A line clicked, or Space: kept or let go. Shift: from the last line clicked, in the same conflict. */
   /** The arrow of a side, in the header of a conflict: the side kept whole, after one already kept. */
   function keep(side: Side, block: number) {
     void apply([{ block, pick: keepSide(picks[block], side) }]);
@@ -441,7 +440,7 @@
       <div class="side result">
         <div class="bar">
           <b>Result</b>
-          <small>Keep a side of each conflict with its arrow; it stays editable.</small>
+          <small title="Keep a side of each conflict with its arrow; it stays editable.">Keep a side of each conflict with its arrow; it stays editable.</small>
         </div>
         <ConflictResult
           bind:this={result}
@@ -472,11 +471,12 @@
 
 <!-- A side, in its column: its number is its place, 1 on the left, and takes its color. -->
 {#snippet column(side: Side, n: 1 | 2)}
+  {@const commit = (side === 'ours' ? current?.oursLabel : current?.theirsLabel) ?? ''}
   <div class="side" class:first={n === 1} class:second={n === 2}>
     <div class="bar">
       <span class="side-chip" aria-hidden="true">{n}</span>
       <b>{names[side]}</b>
-      <small class="mono">{(side === 'ours' ? current?.oursLabel : current?.theirsLabel) ?? ''}</small>
+      <small class="mono" title={commit}>{commit}</small>
       <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side]}">Keep all</button>
     </div>
     {#if side === 'ours'}

@@ -123,6 +123,8 @@
       text.className = 'cm-head-text';
       const state = this.status === 'kept' ? ' · kept' : this.status === 'aside' ? ' · set aside' : '';
       text.textContent = `Conflict ${n} · ${this.count} line${this.count === 1 ? '' : 's'}${state}${this.edited ? ' · edited by hand' : ''}`;
+      // Cut in a narrow column, it is whole in its tooltip (3.4).
+      text.title = text.textContent;
       // The arrow is the closest to the result: at the right of side 1, at the left of side 2.
       if (this.place === 'left') head.append(text, button('aside'), button('keep'));
       else head.append(button('keep'), button('aside'), text);
@@ -249,10 +251,13 @@
       background: 'none',
       color: 'var(--muted)',
       cursor: 'pointer',
+      transition: 'background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease)',
     },
+    // The states of a button (9 and 9.1): hover, press at 97%, disabled at 45% with no reaction.
     '.cm-head-btn:hover:not(:disabled)': { backgroundColor: 'var(--hover)', color: 'var(--ink)' },
+    '.cm-head-btn:active:not(:disabled)': { transform: 'scale(0.97)' },
     '.cm-head-btn.keep': { color: 'var(--ink)' },
-    '.cm-head-btn:disabled': { opacity: '0.45', cursor: 'default' },
+    '.cm-head-btn:disabled': { opacity: '0.45', cursor: 'not-allowed' },
     '.cm-conflict-head.right .cm-head-btn.keep svg': { transform: 'scaleX(-1)' },
   });
 </script>

@@ -198,7 +198,7 @@ Every theme must meet them, in light and in dark.
 | `--accent` on `--side`, `--hover-side`, `--sel` and `--hover` (the dot that says an update waits, 9.23) | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | `--ink` on the tints of the two sides of the conflict editor, 10%, 24% and 30% of `--l0` and `--l1`, and on their "Keep" buttons, at rest and on hover (9.26) | 7:1 |
-| `--accent`, the ring of the keyboard, on a line kept in the conflict editor (9.26) | 3:1 |
+| `--muted`, the text of a side set aside, on its tint at rest in the conflict editor (9.26) | 4.5:1 |
 | Each terminal color (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
 A hover has to be seen, and the selection has to stand apart from its background and from the
@@ -502,7 +502,8 @@ The interface has four levels. Each is recognized by its background.
 - One notion, one icon, everywhere: the computer for "local", the cloud for "remote", the tag
   for a tag, the key for an SSH key, the arrow that enters a sheet for an import and the one that
   leaves it, the same sheet turned over, for an export, the sheet with lines for the log of a
-  session, the two chevrons toward the result for keeping a side of a conflict, the tunnel for
+  session, the two chevrons toward the result for keeping a side of a conflict, and the cross for
+  closing and for setting such a side aside, the tunnel for
   an SSH tunnel, the folder for a folder and for the Files module, the
   sheet with a folded corner for a file, the folder with a plus for a new folder, the sheet with
   a folded corner and a plus for a new file, both pluses of the same size, the pencil for
@@ -2293,8 +2294,8 @@ current conflict and marks it, as the sides do.
   the keyboard only (9.6). The tab order follows the screen: the bar, then side 1, its "Keep all"
   and its conflicts, the result, then side 2; the arrows and crosses are reached through their
   side, not one by one. In a side, ↑ and ↓ go from conflict to conflict, Home and End to the
-  first and the last, with the inner ring of 9.6 on its header; Enter keeps the side, Delete sets
-  it aside; ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes
+  first and the last, with the inner ring of 9.6 on its header; Enter keeps the side, Delete (or
+  Backspace) sets it aside; ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes
   is announced: "Conflict 1, Your commit, 4 lines, kept".
 - The two "Keep all" buttons name their side for a screen reader: "Keep all of Your commit".
 - F8 and Shift + F8 go to the next and the previous conflict, Ctrl + S saves once nothing is left
