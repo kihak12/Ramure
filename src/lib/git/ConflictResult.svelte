@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { Annotation, Prec, RangeSet, StateEffect, StateField, Transaction, type EditorState } from '@codemirror/state';
+  import { Annotation, Prec, RangeSet, StateEffect, StateField, Transaction, type EditorState, type RangeValue } from '@codemirror/state';
   import { Decoration, type DecorationSet, EditorView, GutterMarker, WidgetType, gutter } from '@codemirror/view';
 
   /** Where a conflict is in the result: from the start of its first line to the start of the line
@@ -88,20 +88,42 @@
   /** The chip of the side a line was kept from, "1" or "2". */
   class Chip extends GutterMarker {
     readonly side: 'ours' | 'theirs';
-    constructor(side: 'ours' | 'theirs') {
+    /** Merged by git, outside the conflicts, rather than kept. */
+    readonly merged: boolean;
+    constructor(side: 'ours' | 'theirs', merged = false) {
       super();
       this.side = side;
+      this.merged = merged;
     }
     eq(other: Chip) {
-      return other.side === this.side;
+      return other.side === this.side && other.merged === this.merged;
     }
     toDOM() {
       const chip = document.createElement('span');
+      const n = this.side === 'ours' ? '1' : '2';
       chip.className = `cm-chip cm-chip-${this.side}`;
-      chip.textContent = this.side === 'ours' ? '1' : '2';
-      chip.title = this.side === 'ours' ? 'Kept from side 1' : 'Kept from side 2';
+      chip.textContent = n;
+      chip.title = this.merged ? `Merged by git from side ${n}` : `Kept from side ${n}`;
       return chip;
     }
+  }
+
+  /**
+   * The marks of the lines git merged, after a change: a line touched by it, typed in, split or
+   * deleted, is no longer git's and loses its mark; a line moved by what is typed above it keeps it
+   * (guidelines, 9.26).
+   */
+  function follow<T extends RangeValue>(marks: RangeSet<T>, tr: Transaction): RangeSet<T> {
+    if (!tr.docChanged) return marks;
+    const touched = (from: number) => {
+      const line = tr.startState.doc.lineAt(from);
+      let hit = false;
+      tr.changes.iterChangedRanges((a, b) => {
+        if (a <= line.to && b >= line.from) hit = true;
+      });
+      return hit;
+    };
+    return marks.update({ filter: (from) => !touched(from) }).map(tr.changes);
   }
 
   /** The lines of a region, in the document as it is now. */
@@ -121,6 +143,7 @@
   let {
     value,
     regions: initialRegions,
+    merged = [],
     info,
     lineSeparator = '\n',
     label,
@@ -133,6 +156,8 @@
     value: string;
     /** The lines of each conflict in `value` (from 0, both included), by id. */
     regions: { id: number; start: number; end: number }[];
+    /** The lines git merged from a side outside the conflicts, in `value` (from 0). */
+    merged?: { line: number; side: 'ours' | 'theirs' }[];
     info: RegionInfo[];
     lineSeparator?: string;
     label: string;
@@ -158,6 +183,19 @@
       initial.set(r.id, { from: first.from, to: trailing ? doc.line(r.end + 2).from : doc.length, trailing });
     }
     field = regionsField(initial);
+
+    // The lines git merged from a side, outside the conflicts: their tint and their chip follow the
+    // lines when the text above them is typed (guidelines, 9.26).
+    const lines = merged.filter((m) => m.line < doc.lines);
+    const mergedTints = StateField.define<DecorationSet>({
+      create: () => Decoration.set(lines.map((m) => Decoration.line({ class: `cm-from-${m.side}` }).range(doc.line(m.line + 1).from)), true),
+      update: (tints, tr) => follow(tints, tr),
+      provide: (f) => EditorView.decorations.from(f),
+    });
+    const mergedChips = StateField.define<RangeSet<GutterMarker>>({
+      create: () => RangeSet.of(lines.map((m) => new Chip(m.side, true).range(doc.line(m.line + 1).from)), true),
+      update: (chips, tr) => follow(chips, tr),
+    });
 
     const decorations = EditorView.decorations.compute([field, infoField], (state) => {
       const regions = state.field(field);
@@ -203,7 +241,7 @@
             if (side) marks.push(new Chip(side).range(v.state.doc.line(n).from));
           }
         }
-        return RangeSet.of(marks, true);
+        return [RangeSet.of(marks, true), v.state.field(mergedChips)];
       },
     });
     // A change typed in a conflict, whether decided or not, marks it as edited by hand.
@@ -231,6 +269,8 @@
         State.lineSeparator.of(lineSeparator),
         field,
         infoField,
+        mergedTints,
+        mergedChips,
         chips,
         lineNumbers(),
         drawSelection(),

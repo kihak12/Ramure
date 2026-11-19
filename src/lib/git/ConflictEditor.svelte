@@ -25,6 +25,7 @@
     type Side,
   } from './conflicts';
   import type { Repo } from './repo.svelte';
+  import { mergedChanges } from './threeway';
   import type { ConflictFile, FileChange } from './types';
   import { motion } from '../ui/motion';
 
@@ -76,6 +77,25 @@
   const oursAt = $derived(blocks.map((b) => (b.ours.length ? locate(oursLines, b.ours, b.start) : -1)));
   const theirsAt = $derived(blocks.map((b) => (b.theirs.length ? locate(theirsLines, b.theirs, b.start) : -1)));
   const baseAt = $derived(blocks.map((b) => (b.base?.length ? locate(baseLines, b.base, b.start) : -1)));
+
+  // The changes that do not conflict, which git has already merged into the result: tinted in the
+  // sides, with their chip in the result (guidelines, 9.26).
+  const changes = $derived.by(() => {
+    if (!data || !editable) return null;
+    const span = (at: number, count: number) => ({ from: at, to: at + count });
+    // The conflicts of a side, or null when one of them is not found there.
+    const spans = (side: Side, at: number[]) =>
+      blocks.some((b, i) => b[side].length && at[i] < 0) ? null : blocks.flatMap((b, i) => (at[i] >= 0 ? [span(at[i], b[side].length)] : []));
+    return mergedChanges(
+      data.base === null ? null : baseLines,
+      oursLines,
+      theirsLines,
+      splitLines(data.merged ?? '', separator),
+      spans('ours', oursAt),
+      spans('theirs', theirsAt),
+      blocks.map((b) => span(b.start, b.end - b.start + 1)),
+    );
+  });
 
   const sideOf = (side: Side): SideConflict[] =>
     blocks.map((b, i) => ({
@@ -364,6 +384,7 @@
           value={data.ours ?? ''}
           lineSeparator={separator}
           label={names.ours}
+          changes={changes?.ours ?? []}
           conflicts={oursConflicts}
           current={index}
           lines={blocks.map((b) => b.ours)}
@@ -383,6 +404,7 @@
           value={data.theirs ?? ''}
           lineSeparator={separator}
           label={names.theirs}
+          changes={changes?.theirs ?? []}
           conflicts={theirsConflicts}
           current={index}
           lines={blocks.map((b) => b.theirs)}
@@ -421,6 +443,7 @@
           bind:this={result}
           value={data.merged ?? ''}
           regions={blocks.map((b, i) => ({ id: i, start: b.start, end: b.end }))}
+          merged={changes?.result ?? []}
           {info}
           lineSeparator={separator}
           label="Result of the resolution"
