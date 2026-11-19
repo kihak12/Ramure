@@ -160,7 +160,11 @@
     return rows;
   }
 
-  /** A blank before its row: before the header of a conflict, which comes before its first line. */
+  /**
+   * A blank before its row. Before the first line of a conflict, it goes above the header, which
+   * stays with its lines: the header is the same height wherever it is, and faces nothing once the
+   * conflict is decided.
+   */
   function blanks(state: EditorState): DecorationSet {
     const spacers = state.field(spacersField);
     if (!spacers.length) return Decoration.none;
@@ -169,9 +173,9 @@
       spacers.map((s) => {
         const row = rows[s.row];
         const widget = new Spacer(s.height);
-        return row
-          ? Decoration.widget({ widget, block: true, side: row.head ? -2 : -1 }).range(row.pos)
-          : Decoration.widget({ widget, block: true, side: 1 }).range(state.doc.length);
+        if (!row) return Decoration.widget({ widget, block: true, side: 1 }).range(state.doc.length);
+        const underHead = rows[s.row - 1]?.head === true;
+        return Decoration.widget({ widget, block: true, side: row.head || underHead ? -2 : -1 }).range(row.pos);
       }),
       true,
     );
