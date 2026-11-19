@@ -1,6 +1,7 @@
 <script lang="ts" module>
   import { RangeSet, StateEffect, StateField, type EditorState } from '@codemirror/state';
   import { Decoration, type DecorationSet, EditorView, GutterMarker, WidgetType, gutter } from '@codemirror/view';
+  import { iconMarkup } from '../ui/Icon.svelte';
   import { Spacer } from './spacer';
   import { conflictKey, type Row, type Spacer as Blank } from './threeway';
 
@@ -10,25 +11,26 @@
     index: number;
     /** First line of the conflict in this side, from 0; -1 when it is not found there. */
     at: number;
-    /** Lines of this side kept, one per line of the conflict. */
-    kept: boolean[];
-    state: 'on' | 'off' | 'mixed';
-    /** Typed in by hand in the result: the boxes step back. */
+    /** Its number of lines in this side. */
+    count: number;
+    /** This side kept, set aside, or still open. */
+    status: 'kept' | 'aside' | 'open';
+    /** Typed in by hand in the result. */
     edited: boolean;
   }
 
-  /** What the view needs to draw: the conflicts, the current one, the line of the keyboard. */
+  /** What the view needs to draw: the conflicts, the current one, the conflict of the keyboard. */
   interface Info {
     conflicts: SideConflict[];
     current: number;
-    cursor: { block: number; line: number } | null;
+    cursor: number | null;
     focused: boolean;
   }
 
-  /** What the widgets call back: replaced at each render, read when clicked. */
+  /** What the buttons of the headers call: replaced at each render, read when clicked. */
   interface Calls {
-    pick: (block: number, line: number, shift: boolean) => void;
-    group: (block: number) => void;
+    keep: (block: number) => void;
+    aside: (block: number) => void;
   }
 
   const setInfo = StateEffect.define<Info>();
@@ -40,32 +42,7 @@
     },
   });
 
-  /** The checkbox of a line, in its gutter: the mouse picks with it, the keyboard goes through the
-   *  lines. The whole cell of the gutter is the target: a click on it, box or not, keeps the line. */
-  class Box extends GutterMarker {
-    readonly block: number;
-    readonly line: number;
-    readonly kept: boolean;
-    constructor(block: number, line: number, kept: boolean) {
-      super();
-      this.block = block;
-      this.line = line;
-      this.kept = kept;
-    }
-    eq(other: Box) {
-      return other.block === this.block && other.line === this.line && other.kept === this.kept;
-    }
-    toDOM() {
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.tabIndex = -1;
-      box.checked = this.kept;
-      box.setAttribute('aria-hidden', 'true');
-      return box;
-    }
-  }
-
-  /** The sign of a change that does not conflict, in the gutter of the boxes: not the color alone (11). */
+  /** The sign of a change that does not conflict, in the gutter of the signs: not the color alone (11). */
   class Plus extends GutterMarker {
     eq() {
       return true;
@@ -80,47 +57,75 @@
   }
   const plus = new Plus();
 
-  /** The header of a conflict, above its first line: a box for the whole side. */
+  /**
+   * The header of a conflict, above its first line: its number and its lines, and the two buttons of
+   * the side, at the edge toward the result: the arrow that keeps the side whole, and the cross that
+   * sets it aside (guidelines, 9.26).
+   */
   class Head extends WidgetType {
     readonly block: number;
     readonly count: number;
-    readonly state: 'on' | 'off' | 'mixed';
+    readonly status: 'kept' | 'aside' | 'open';
     readonly edited: boolean;
     readonly current: boolean;
+    readonly cursor: boolean;
+    readonly place: 'left' | 'right';
+    readonly label: string;
     readonly calls: Calls;
-    constructor(block: number, count: number, state: 'on' | 'off' | 'mixed', edited: boolean, current: boolean, calls: Calls) {
+    constructor(c: SideConflict, current: boolean, cursor: boolean, place: 'left' | 'right', label: string, calls: Calls) {
       super();
-      this.block = block;
-      this.count = count;
-      this.state = state;
-      this.edited = edited;
+      this.block = c.index;
+      this.count = c.count;
+      this.status = c.status;
+      this.edited = c.edited;
       this.current = current;
+      this.cursor = cursor;
+      this.place = place;
+      this.label = label;
       this.calls = calls;
     }
     eq(other: Head) {
       return (
-        other.block === this.block && other.count === this.count && other.state === this.state && other.edited === this.edited && other.current === this.current
+        other.block === this.block &&
+        other.count === this.count &&
+        other.status === this.status &&
+        other.edited === this.edited &&
+        other.current === this.current &&
+        other.cursor === this.cursor &&
+        other.place === this.place &&
+        other.label === this.label
       );
     }
     toDOM() {
       const head = document.createElement('div');
       // The current conflict reads by its header, in --ink and weight 650 (guidelines, 9.26).
-      head.className = this.current ? 'cm-conflict-head current' : 'cm-conflict-head';
-      const label = document.createElement('label');
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.tabIndex = -1;
-      box.checked = this.state === 'on';
-      box.indeterminate = this.state === 'mixed';
-      box.addEventListener('mousedown', (e) => e.preventDefault());
-      box.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.calls.group(this.block);
-      });
+      head.className = ['cm-conflict-head', this.place, this.current ? 'current' : '', this.cursor ? 'cursor' : ''].filter(Boolean).join(' ');
+      const n = this.block + 1;
+      const button = (kind: 'keep' | 'aside') => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.tabIndex = -1;
+        b.className = `cm-head-btn ${kind}`;
+        const keep = kind === 'keep';
+        b.disabled = keep ? this.status === 'kept' : this.status === 'aside';
+        b.title = keep ? 'Keep this side (Enter)' : 'Set this side aside (Delete)';
+        b.setAttribute('aria-label', `${keep ? 'Keep' : 'Set aside'} ${this.label} in conflict ${n}`);
+        b.innerHTML = iconMarkup(keep ? 'keep' : 'x', 14);
+        b.addEventListener('mousedown', (e) => e.preventDefault());
+        b.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (keep) this.calls.keep(this.block);
+          else this.calls.aside(this.block);
+        });
+        return b;
+      };
       const text = document.createElement('span');
-      text.textContent = `Conflict ${this.block + 1} · ${this.count} line${this.count === 1 ? '' : 's'}${this.edited ? ' · edited by hand' : ''}`;
-      label.append(box, text);
-      head.append(label);
+      text.className = 'cm-head-text';
+      const state = this.status === 'kept' ? ' · kept' : this.status === 'aside' ? ' · set aside' : '';
+      text.textContent = `Conflict ${n} · ${this.count} line${this.count === 1 ? '' : 's'}${state}${this.edited ? ' · edited by hand' : ''}`;
+      // The arrow is the closest to the result: at the right of side 1, at the left of side 2.
+      if (this.place === 'left') head.append(text, button('aside'), button('keep'));
+      else head.append(button('keep'), button('aside'), text);
       return head;
     }
     get estimatedHeight() {
@@ -138,10 +143,13 @@
     },
   });
 
+  /** The conflicts that show in this side: found there, with lines. */
+  const shown = (info: Info) => info.conflicts.filter((c) => c.at >= 0 && c.count > 0);
+
   /** The rows of this side, as the columns line them up: the header of a conflict, then each line. */
   function rowsOf(state: EditorState): (Row & { pos: number; head: boolean })[] {
     const heads = new Map<number, number>();
-    for (const c of state.field(infoField).conflicts) if (c.at >= 0 && c.kept.length) heads.set(c.at, c.index);
+    for (const c of shown(state.field(infoField))) heads.set(c.at, c.index);
     const rows = [];
     for (let n = 1; n <= state.doc.lines; n++) {
       const line = state.doc.line(n);
@@ -173,42 +181,22 @@
     return state.doc.line(Math.max(1, Math.min(state.doc.lines, n)));
   }
 
-  /** Tints of the lines, the headers and the ring of the keyboard. */
-  function decorate(state: EditorState, calls: Calls): DecorationSet {
+  /** The headers of the conflicts, and the tints of their lines: stronger kept, faded set aside. */
+  function decorate(state: EditorState, place: 'left' | 'right', label: string, calls: Calls): DecorationSet {
     const info = state.field(infoField);
     const ranges = [];
-    for (const conflict of info.conflicts) {
-      if (conflict.at < 0 || !conflict.kept.length) continue;
+    for (const conflict of shown(info)) {
       const first = lineOf(state, conflict.at + 1);
+      const cursor = info.focused && info.cursor === conflict.index;
       ranges.push(
-        Decoration.widget({
-          widget: new Head(conflict.index, conflict.kept.length, conflict.state, conflict.edited, conflict.index === info.current, calls),
-          block: true,
-          side: -1,
-        }).range(first.from),
+        Decoration.widget({ widget: new Head(conflict, conflict.index === info.current, cursor, place, label, calls), block: true, side: -1 }).range(first.from),
       );
-      conflict.kept.forEach((kept, i) => {
-        const line = lineOf(state, conflict.at + 1 + i);
-        const cursor = info.focused && info.cursor?.block === conflict.index && info.cursor.line === i;
-        const classes = ['cm-side-line', kept ? 'cm-side-kept' : '', cursor ? 'cm-side-cursor' : '']
-          .filter(Boolean)
-          .join(' ');
-        ranges.push(Decoration.line({ class: classes }).range(line.from));
-      });
+      const classes = ['cm-side-line', conflict.status === 'kept' ? 'cm-side-kept' : '', conflict.status === 'aside' ? 'cm-side-aside' : '']
+        .filter(Boolean)
+        .join(' ');
+      for (let i = 0; i < conflict.count; i++) ranges.push(Decoration.line({ class: classes }).range(lineOf(state, conflict.at + 1 + i).from));
     }
     return Decoration.set(ranges, true);
-  }
-
-  function boxes(state: EditorState): RangeSet<GutterMarker> {
-    const info = state.field(infoField);
-    const marks = [];
-    for (const conflict of info.conflicts) {
-      if (conflict.at < 0) continue;
-      for (let i = 0; i < conflict.kept.length; i++) {
-        marks.push(new Box(conflict.index, i, conflict.kept[i]).range(lineOf(state, conflict.at + 1 + i).from));
-      }
-    }
-    return RangeSet.of(marks, true);
   }
 
   const theme = EditorView.theme({
@@ -219,30 +207,49 @@
     '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px', overflowX: 'scroll' },
     // The numbers of the lines are read: --muted, as in a diff (guidelines, 2.3 and 9.14).
     '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
-    '.cm-picks': { minWidth: '22px' },
-    '.cm-picks .cm-gutterElement': { display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
-    '.cm-picks input': { margin: '0', pointerEvents: 'none' },
-    '.cm-conflict-head input': { margin: '0' },
-    '.cm-conflict-head.current': { color: 'var(--ink)', fontWeight: 'var(--fw-strong)' },
-    '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
+    '.cm-signs': { minWidth: '14px' },
+    '.cm-signs .cm-gutterElement': { display: 'flex', alignItems: 'center', justifyContent: 'center' },
     '.cm-side-plus': { color: 'var(--muted)', fontWeight: 'var(--fw-strong)' },
-    // The sign is not a box: nothing to click there.
-    '.cm-picks .cm-gutterElement:has(.cm-side-plus)': { cursor: 'default' },
+    '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
     '.cm-side-kept': { backgroundColor: 'color-mix(in srgb, var(--c) 24%, transparent)' },
-    // The line of the keyboard: an inner ring, never around the whole pane (guidelines, 9.6).
-    '.cm-side-cursor': { boxShadow: 'inset 0 0 0 1.5px var(--accent)' },
+    // A side set aside steps back: its lines in --muted, on the tint at rest.
+    '.cm-side-aside': { color: 'var(--muted)' },
     '.cm-conflict-head': {
       display: 'flex',
       alignItems: 'center',
+      gap: '2px',
       height: '24px',
-      padding: '0 6px',
+      padding: '0 4px 0 8px',
       fontFamily: 'var(--f-ui)',
       fontSize: 'var(--fs-small)',
       color: 'var(--muted)',
       backgroundColor: 'var(--panel)',
       borderTop: '1px solid var(--line-soft)',
     },
-    '.cm-conflict-head label': { display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' },
+    '.cm-conflict-head.right': { padding: '0 8px 0 4px' },
+    '.cm-conflict-head.current': { color: 'var(--ink)', fontWeight: 'var(--fw-strong)' },
+    // The conflict of the keyboard: an inner ring on its header, never around the whole pane (9.6).
+    '.cm-conflict-head.cursor': { boxShadow: 'inset 0 0 0 1.5px var(--accent)' },
+    '.cm-head-text': { flex: '1', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    '.cm-conflict-head.right .cm-head-text': { marginLeft: '6px' },
+    '.cm-conflict-head.left .cm-head-text': { marginRight: '6px' },
+    // Two small ghost buttons made of an icon alone, 24 px (9.1); the arrow of side 2 points left.
+    '.cm-head-btn': {
+      flex: 'none',
+      display: 'grid',
+      placeItems: 'center',
+      width: '24px',
+      height: '100%',
+      border: 'none',
+      borderRadius: 'var(--radius-s)',
+      background: 'none',
+      color: 'var(--muted)',
+      cursor: 'pointer',
+    },
+    '.cm-head-btn:hover:not(:disabled)': { backgroundColor: 'var(--hover)', color: 'var(--ink)' },
+    '.cm-head-btn.keep': { color: 'var(--ink)' },
+    '.cm-head-btn:disabled': { opacity: '0.45', cursor: 'default' },
+    '.cm-conflict-head.right .cm-head-btn.keep svg': { transform: 'scaleX(-1)' },
   });
 </script>
 
@@ -255,44 +262,49 @@
     value,
     lineSeparator = '\n',
     label,
+    place,
     changes = [],
     conflicts,
     current,
-    lines,
-    onpick,
-    ongroup,
+    onkeep,
+    onaside,
   }: {
     /** Text of this side. */
     value: string;
     lineSeparator?: string;
-    /** Name of the side: "Upstream", "Your commit"… */
+    /** Name of the side: "Your commit", "Upstream"… */
     label: string;
+    /** Its column: side 1 on the left, side 2 on the right. Its arrow points toward the result. */
+    place: 'left' | 'right';
     /** Lines changed from the common ancestor outside the conflicts, from 0. */
     changes?: number[];
     conflicts: SideConflict[];
     /** The current conflict. */
     current: number;
-    /** The lines of each conflict on this side, to announce them. */
-    lines: string[][];
-    onpick: (block: number, line: number, shift: boolean) => void;
-    ongroup: (block: number) => void;
+    /** The arrow of a conflict: keep this side whole. */
+    onkeep: (block: number) => void;
+    /** The cross of a conflict: set this side aside. */
+    onaside: (block: number) => void;
   } = $props();
 
   let host = $state<HTMLDivElement>();
   let paneEl = $state<HTMLDivElement>();
   let view: EditorView | undefined;
   let focused = $state(false);
-  /** The ring of the line shows for the keyboard only: a click leaves none behind (guidelines, 9.6). */
+  /** The ring of a conflict shows for the keyboard only: a click leaves none behind (guidelines, 9.6). */
   let keyboard = $state(false);
-  let cursor = $state<{ block: number; line: number } | null>(null);
+  let cursor = $state<number | null>(null);
   let said = $state('');
-  // The widgets call through this object: it always holds the callbacks of the last render.
+  // The buttons call through this object: it always holds the callbacks of the last render.
   const calls: Calls = {
-    pick: (block, line, shift) => {
-      cursor = { block, line };
-      onpick(block, line, shift);
+    keep: (block) => {
+      cursor = block;
+      onkeep(block);
     },
-    group: (block) => ongroup(block),
+    aside: (block) => {
+      cursor = block;
+      onaside(block);
+    },
   };
 
   onMount(() => {
@@ -308,23 +320,10 @@
         EditorView.editable.of(false),
         infoField,
         spacersField,
-        gutter({
-          class: 'cm-picks',
-          // The boxes of the conflicts, and the sign of the changes that do not conflict.
-          markers: (v) => [boxes(v.state), changeSigns],
-          domEventHandlers: {
-            mousedown: (v, block, event) => {
-              const n = v.state.doc.lineAt(block.from).number - 1;
-              const hit = v.state.field(infoField).conflicts.find((c) => c.at >= 0 && n >= c.at && n < c.at + c.kept.length);
-              if (!hit) return false;
-              event.preventDefault();
-              calls.pick(hit.index, n - hit.at, (event as MouseEvent).shiftKey);
-              return true;
-            },
-          },
-        }),
+        // The sign of the changes that do not conflict.
+        gutter({ class: 'cm-signs', markers: () => changeSigns }),
         lineNumbers(),
-        EditorView.decorations.compute([infoField], (s) => decorate(s, calls)),
+        EditorView.decorations.compute([infoField], (s) => decorate(s, place, label, calls)),
         EditorView.decorations.compute([infoField, spacersField], blanks),
         // The text of a side does not change: its changes are marked once, with the tint of a line
         // of a conflict at rest (9.26).
@@ -342,55 +341,61 @@
     view?.dispatch({ effects: setInfo.of(info) });
   });
 
-  /** Every line of the conflicts of this side, in order: what the arrows go through. */
-  const stops = $derived(conflicts.filter((c) => c.at >= 0).flatMap((c) => c.kept.map((_, line) => ({ block: c.index, line }))));
+  /** The conflicts of this side, in order: what the arrows of the keyboard go through. */
+  const stops = $derived(conflicts.filter((c) => c.at >= 0 && c.count > 0));
 
-  function announce(stop: { block: number; line: number }) {
-    const conflict = conflicts.find((c) => c.index === stop.block);
-    const text = lines[stop.block]?.[stop.line] ?? '';
-    said = `Line ${stop.line + 1} of conflict ${stop.block + 1}, ${conflict?.kept[stop.line] ? 'kept' : 'not kept'}: ${text}`;
+  function announce(block: number) {
+    const c = conflicts.find((x) => x.index === block);
+    if (!c) return;
+    const state = c.status === 'kept' ? 'kept' : c.status === 'aside' ? 'set aside' : 'not kept yet';
+    said = `Conflict ${block + 1}, ${label}, ${c.count} line${c.count === 1 ? '' : 's'}, ${state}`;
   }
 
-  function moveTo(index: number, extend: boolean) {
-    const stop = stops[Math.max(0, Math.min(stops.length - 1, index))];
+  function moveTo(at: number) {
+    const stop = stops[Math.max(0, Math.min(stops.length - 1, at))];
     if (!stop) return;
-    cursor = stop;
-    scrollToStop(stop);
-    // Shift with an arrow extends from the last line picked, in the same conflict.
-    if (extend) onpick(stop.block, stop.line, true);
-    announce(stop);
+    cursor = stop.index;
+    scrollToLine(stop.at + 1, 'nearest');
+    announce(stop.index);
   }
 
   function onKey(e: KeyboardEvent) {
+    // ← and →: a long line of the side, which does not wrap, read sideways (guidelines, 9.26).
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && view) {
+      e.preventDefault();
+      view.scrollDOM.scrollLeft += e.key === 'ArrowLeft' ? -40 : 40;
+      return;
+    }
     if (!stops.length) return;
-    if (['ArrowDown', 'ArrowUp', 'Home', 'End', ' '].includes(e.key)) keyboard = true;
-    const at = cursor ? stops.findIndex((s) => s.block === cursor!.block && s.line === cursor!.line) : -1;
+    if (['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', 'Delete', 'Backspace'].includes(e.key)) keyboard = true;
+    const at = cursor === null ? -1 : stops.findIndex((s) => s.index === cursor);
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      moveTo(at < 0 ? 0 : at + (e.key === 'ArrowDown' ? 1 : -1), e.shiftKey && at >= 0);
+      moveTo(at < 0 ? 0 : at + (e.key === 'ArrowDown' ? 1 : -1));
     } else if (e.key === 'Home' || e.key === 'End') {
       e.preventDefault();
-      moveTo(e.key === 'Home' ? 0 : stops.length - 1, false);
-    } else if (e.key === ' ' && cursor) {
+      moveTo(e.key === 'Home' ? 0 : stops.length - 1);
+    } else if (e.key === 'Enter' && cursor !== null) {
       e.preventDefault();
-      onpick(cursor.block, cursor.line, false);
-      queueMicrotask(() => cursor && announce(cursor));
+      onkeep(cursor);
+      const block = cursor;
+      queueMicrotask(() => announce(block));
+    } else if ((e.key === 'Delete' || e.key === 'Backspace') && cursor !== null) {
+      e.preventDefault();
+      onaside(cursor);
+      const block = cursor;
+      queueMicrotask(() => announce(block));
     }
   }
 
   function onFocus(e: FocusEvent) {
     focused = true;
     keyboard = (e.target as HTMLElement).matches(':focus-visible');
-    // The first line of the current conflict takes the ring, if none has it yet.
-    if (!cursor && stops.length) {
-      cursor = stops.find((s) => s.block === current) ?? stops[0];
+    // The current conflict takes the ring, if none has it yet.
+    if (cursor === null && stops.length) {
+      cursor = (stops.find((s) => s.index === current) ?? stops[0]).index;
       announce(cursor);
     }
-  }
-
-  function scrollToStop(stop: { block: number; line: number }) {
-    const conflict = conflicts.find((c) => c.index === stop.block);
-    if (conflict && conflict.at >= 0) scrollToLine(conflict.at + 1 + stop.line, 'nearest');
   }
 
   /** Brings line `line` (from 1) into view, to the middle by default. */
@@ -416,34 +421,33 @@
 
   /** The ring follows the current conflict when it changes from the bar. */
   export function follow(block: number) {
-    const stop = stops.find((s) => s.block === block);
-    if (stop) cursor = stop;
+    if (stops.some((s) => s.index === block)) cursor = block;
   }
 </script>
 
-<!-- The lines of the conflicts are a list for the keyboard: the arrows go through them, Space
-     keeps one or lets it go (guidelines, 9.26). -->
+<!-- The conflicts of a side are a list for the keyboard: ↑ and ↓ go through them, Enter keeps the
+     side, Delete sets it aside (guidelines, 9.26). -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
   class="pane"
   tabindex={stops.length ? 0 : -1}
   role="group"
-  aria-label="{label}: the arrows go through the lines of the conflicts, Space keeps a line or lets it go"
+  aria-label="{label}: ↑ and ↓ go through the conflicts, Enter keeps this side, Delete sets it aside"
   bind:this={paneEl}
   onkeydown={onKey}
   onfocus={onFocus}
   onblur={() => (focused = false)}
   onpointerdown={(e) => {
-    // The text of a side cannot take the focus, nor its boxes: the pane takes it, so that its keys,
-    // and those of the editor (Ctrl + Z, Ctrl + S, F8), work after a click.
+    // The text of a side cannot take the focus: the pane takes it, so that its keys, and those of
+    // the editor (Ctrl + Z, Ctrl + S, F8), work after a click.
     keyboard = false;
     if (document.activeElement !== paneEl) paneEl?.focus({ preventScroll: true });
-    // A click on a line of a conflict makes it the line of the keyboard: the arrows go on from it.
+    // A click on a conflict makes it the conflict of the keyboard: the arrows go on from it.
     const at = view?.posAtCoords({ x: e.clientX, y: e.clientY });
     if (at === null || at === undefined || !view) return;
     const n = view.state.doc.lineAt(at).number - 1;
-    const hit = conflicts.find((c) => c.at >= 0 && n >= c.at && n < c.at + c.kept.length);
-    if (hit) cursor = { block: hit.index, line: n - hit.at };
+    const hit = stops.find((c) => n >= c.at && n < c.at + c.count);
+    if (hit) cursor = hit.index;
   }}
 >
   <div class="editor" bind:this={host}></div>

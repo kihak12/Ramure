@@ -1,6 +1,6 @@
 <script lang="ts">
-  // The conflict editor: the two sides on top, the lines to keep picked one by one, the result
-  // below (guidelines, 9.26).
+  // The conflict editor: side 1, the result and side 2 in three columns, aligned and scrolling as
+  // one; a side of a conflict is kept with its arrow toward the result (guidelines, 9.26).
   import { untrack } from 'svelte';
   import { fly } from 'svelte/transition';
   import CodeEditor, { type Mark } from '../ui/CodeEditor.svelte';
@@ -12,12 +12,12 @@
     choose,
     emptyPick,
     isDecided,
+    keepSide,
     locate,
     parseConflicts,
-    pickLines,
-    pickSide,
     resolved,
-    sideState,
+    setAside,
+    sideStatus,
     splitLines,
     type Choice,
     type ConflictBlock,
@@ -42,8 +42,6 @@
   let blocks = $state.raw<ConflictBlock[]>([]);
   let picks = $state.raw<Pick[]>([]);
   let edited = $state.raw<boolean[]>([]);
-  /** The last line clicked on each side, where Shift extends from. */
-  let anchors: Record<Side, { block: number; line: number } | null> = { ours: null, theirs: null };
   /** What each choice changed, to undo it: the state of each conflict before it. */
   let undo: { block: number; pick: Pick; edited: boolean; text: string }[][] = [];
   let lastPickAt = 0;
@@ -108,8 +106,8 @@
     blocks.map((b, i) => ({
       index: i,
       at: (side === 'ours' ? oursAt : theirsAt)[i],
-      kept: picks[i]?.[side] ?? [],
-      state: picks[i] ? sideState(picks[i], side) : 'off',
+      count: b[side].length,
+      status: picks[i] ? sideStatus(picks[i], side) : 'open',
       edited: !!edited[i],
     }));
   const oursConflicts = $derived(sideOf('ours'));
@@ -119,8 +117,8 @@
     blocks.map((b, i) => ({
       id: i,
       state: edited[i] ? 'edited' : isDecided(picks[i]) ? 'kept' : 'open',
-      origins: resolved(b, picks[i], first).map((r) => r.side),
-      band: `Conflict ${i + 1} of ${blocks.length}: check the lines to keep`,
+      origins: resolved(b, picks[i]).map((r) => r.side),
+      band: `Conflict ${i + 1} of ${blocks.length}: keep a side with its arrow`,
     })),
   );
   const baseMarks = $derived<Mark[]>(current && baseAt[index] >= 0 ? [{ from: baseAt[index] + 1, to: baseAt[index] + (current.base?.length ?? 0), kind: 'focus' }] : []);
@@ -137,10 +135,9 @@
         const sep = loaded.merged?.includes('\r\n') ? '\r\n' : '\n';
         const parsed = parseConflicts(splitLines(loaded.merged ?? '', sep));
         blocks = parsed;
-        picks = parsed.map(emptyPick);
+        picks = parsed.map(() => emptyPick());
         edited = parsed.map(() => false);
         undo = [];
-        anchors = { ours: null, theirs: null };
         text = loaded.merged ?? '';
         index = 0;
         data = loaded;
@@ -221,7 +218,7 @@
   function regionOf(i: number, pick: Pick): { text: string; empty: boolean } {
     const brk = separator;
     if (!isDecided(pick)) return { text: splitLines(data?.merged ?? '', brk).slice(blocks[i].start, blocks[i].end + 1).join(brk), empty: false };
-    const lines = resolved(blocks[i], pick, first).map((r) => r.line);
+    const lines = resolved(blocks[i], pick).map((r) => r.line);
     return { text: lines.join(brk), empty: lines.length === 0 };
   }
 
@@ -280,41 +277,33 @@
   }
 
   /** A line clicked, or Space: kept or let go. Shift: from the last line clicked, in the same conflict. */
-  function pick(side: Side, block: number, line: number, shift: boolean) {
-    const current = picks[block];
-    const anchor = anchors[side];
-    if (shift && anchor && anchor.block === block) {
-      const on = current[side][anchor.line];
-      void apply([{ block, pick: pickLines(current, side, anchor.line, line, on) }]);
-    } else {
-      anchors[side] = { block, line };
-      void apply([{ block, pick: pickLines(current, side, line, line, !current[side][line]) }]);
-    }
+  /** The arrow of a side, in the header of a conflict: the side kept whole, after one already kept. */
+  function keep(side: Side, block: number) {
+    void apply([{ block, pick: keepSide(picks[block], side) }]);
     index = block;
   }
 
-  /** The checkbox of a header: the whole side, kept or let go. */
-  function group(side: Side, block: number) {
-    const state = sideState(picks[block], side);
-    void apply([{ block, pick: pickSide(picks[block], side, state !== 'on') }]);
+  /** The cross of a side: its lines go; both set aside, the conflict is decided with no line. */
+  function aside(side: Side, block: number) {
+    void apply([{ block, pick: setAside(picks[block], side) }]);
     index = block;
   }
 
   /** A button of the bar, on the current conflict. */
   function take(choice: Choice) {
     const i = Math.min(index, blocks.length - 1);
-    if (i >= 0) void apply([{ block: i, pick: choose(blocks[i], choice) }]);
+    if (i >= 0) void apply([{ block: i, pick: choose(choice, first) }]);
   }
 
   /** "Start over": the current conflict as it opened, its markers back. */
   function startOver() {
     const i = Math.min(index, blocks.length - 1);
-    if (i >= 0) void apply([{ block: i, pick: emptyPick(blocks[i]) }]);
+    if (i >= 0) void apply([{ block: i, pick: emptyPick() }]);
   }
 
   /** "Keep all": a side in every conflict left to decide. */
   function keepAll(side: Side) {
-    void apply(blocks.flatMap((b, i) => (!edited[i] && !isDecided(picks[i]) ? [{ block: i, pick: choose(b, side) }] : [])));
+    void apply(blocks.flatMap((_, i) => (!edited[i] && !isDecided(picks[i]) ? [{ block: i, pick: choose(side, first) }] : [])));
   }
 
   /** Typing in a conflict: edited by hand from now on. */
@@ -452,7 +441,7 @@
       <div class="side result">
         <div class="bar">
           <b>Result</b>
-          <small>Check lines on both sides to fill it; it stays editable.</small>
+          <small>Keep a side of each conflict with its arrow; it stays editable.</small>
         </div>
         <ConflictResult
           bind:this={result}
@@ -488,7 +477,7 @@
       <span class="side-chip" aria-hidden="true">{n}</span>
       <b>{names[side]}</b>
       <small class="mono">{(side === 'ours' ? current?.oursLabel : current?.theirsLabel) ?? ''}</small>
-      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left">Keep all</button>
+      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side]}">Keep all</button>
     </div>
     {#if side === 'ours'}
       <ConflictSide
@@ -496,12 +485,12 @@
         value={data?.ours ?? ''}
         lineSeparator={separator}
         label={names.ours}
+        place={n === 1 ? 'left' : 'right'}
         changes={changes?.ours ?? []}
         conflicts={oursConflicts}
         current={index}
-        lines={blocks.map((b) => b.ours)}
-        onpick={(block, line, shift) => pick('ours', block, line, shift)}
-        ongroup={(block) => group('ours', block)}
+        onkeep={(block) => keep('ours', block)}
+        onaside={(block) => aside('ours', block)}
       />
     {:else}
       <ConflictSide
@@ -509,12 +498,12 @@
         value={data?.theirs ?? ''}
         lineSeparator={separator}
         label={names.theirs}
+        place={n === 1 ? 'left' : 'right'}
         changes={changes?.theirs ?? []}
         conflicts={theirsConflicts}
         current={index}
-        lines={blocks.map((b) => b.theirs)}
-        onpick={(block, line, shift) => pick('theirs', block, line, shift)}
-        ongroup={(block) => group('theirs', block)}
+        onkeep={(block) => keep('theirs', block)}
+        onaside={(block) => aside('theirs', block)}
       />
     {/if}
   </div>
@@ -594,13 +583,10 @@
     flex: 0 0 30%;
     border-top: 1px solid var(--line-soft);
   }
-  @media (max-height: 700px) {
-    .bar small {
-      display: none;
-    }
-  }
   .side {
     display: grid;
+    /* One column of the width given: the content does not widen it. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
@@ -626,7 +612,7 @@
     min-height: 33px;
     padding: 4px 10px;
     border-bottom: 1px solid var(--line-soft);
-    background: color-mix(in srgb, var(--c) 9%, var(--panel));
+    background: color-mix(in srgb, var(--c) 10%, var(--panel));
     min-width: 0;
   }
   .result .bar,

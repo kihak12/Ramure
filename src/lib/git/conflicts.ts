@@ -91,82 +91,67 @@ export function locate(haystack: string[], needle: string[], near: number): numb
   return best;
 }
 
-// --- Picking lines (guidelines, 9.26) -----------------------------------------------------
+// --- Keeping the sides of a conflict (guidelines, 9.26) -------------------------------------
+// A side of a conflict is kept whole, with the arrow of its header toward the result, or set aside
+// with its cross: the arrows of the merge tools of the IDEs.
 
 export type Side = 'ours' | 'theirs';
 
-/** The lines of each side of a conflict: what a pick is about. */
+/** The lines of each side of a conflict. */
 export interface Sides {
   ours: string[];
   theirs: string[];
 }
 
-/** Which lines of each side of a conflict are kept. */
+/** What is decided of a conflict. */
 export interface Pick {
-  ours: boolean[];
-  theirs: boolean[];
-  /** "Keep both, reversed": the lines of the second side come first. */
-  reversed: boolean;
-  /** "Keep neither": the conflict is decided, with no line kept. */
-  neither: boolean;
+  /** The sides kept, in the order they were kept: the result takes their lines in that order. */
+  kept: Side[];
+  /** The sides set aside. Both set aside: the conflict is decided, with no line. */
+  aside: Side[];
 }
 
 export type Choice = 'ours' | 'theirs' | 'both' | 'both-reversed' | 'neither';
 
-/** Nothing kept yet: the conflict is still to decide. */
-export const emptyPick = (block: Sides): Pick => ({
-  ours: block.ours.map(() => false),
-  theirs: block.theirs.map(() => false),
-  reversed: false,
-  neither: false,
-});
+/** Nothing kept, nothing set aside: the conflict is still to decide. */
+export const emptyPick = (): Pick => ({ kept: [], aside: [] });
 
-/** A conflict is decided once a line is kept, or once "Keep neither" was chosen. */
-export const isDecided = (pick: Pick) => pick.neither || pick.ours.some(Boolean) || pick.theirs.some(Boolean);
+/** A conflict is decided once a side is kept, or once both are set aside. */
+export const isDecided = (pick: Pick) => pick.kept.length > 0 || pick.aside.length === 2;
 
-/** The buttons of the bar: they set the lines, which can then be picked one by one. */
-export function choose(block: Sides, choice: Choice): Pick {
-  const all = (lines: string[], on: boolean) => lines.map(() => on);
-  return {
-    ours: all(block.ours, choice === 'ours' || choice === 'both' || choice === 'both-reversed'),
-    theirs: all(block.theirs, choice === 'theirs' || choice === 'both' || choice === 'both-reversed'),
-    reversed: choice === 'both-reversed',
-    neither: choice === 'neither',
-  };
+/** What a side is in a conflict: kept, set aside, or still open. */
+export function sideStatus(pick: Pick, side: Side): 'kept' | 'aside' | 'open' {
+  return pick.kept.includes(side) ? 'kept' : pick.aside.includes(side) ? 'aside' : 'open';
 }
 
-/** Lines `from` to `to` of one side, both included, kept or let go: a click, or Shift + click. */
-export function pickLines(pick: Pick, side: Side, from: number, to: number, on: boolean): Pick {
-  const [low, high] = from <= to ? [from, to] : [to, from];
-  const lines = pick[side].map((kept, i) => (i >= low && i <= high ? on : kept));
-  // Letting go of the last line leaves the conflict to decide again, not decided with nothing.
-  return { ...pick, [side]: lines, neither: false };
+/** The arrow of a side: kept whole, after a side already kept. */
+export function keepSide(pick: Pick, side: Side): Pick {
+  if (pick.kept.includes(side)) return pick;
+  return { kept: [...pick.kept, side], aside: pick.aside.filter((s) => s !== side) };
 }
 
-/** Every line of one side kept, or let go: the checkbox of the header of a conflict. */
-export const pickSide = (pick: Pick, side: Side, on: boolean): Pick => pickLines(pick, side, 0, pick[side].length - 1, on);
-
-/** The state of the checkbox of a side in the header of a conflict. */
-export function sideState(pick: Pick, side: Side): 'on' | 'off' | 'mixed' {
-  const kept = pick[side].filter(Boolean).length;
-  return kept === 0 ? 'off' : kept === pick[side].length ? 'on' : 'mixed';
+/** The cross of a side: its lines go, kept or not. */
+export function setAside(pick: Pick, side: Side): Pick {
+  if (pick.aside.includes(side)) return pick;
+  return { kept: pick.kept.filter((s) => s !== side), aside: [...pick.aside, side] };
 }
 
-/**
- * The lines kept, in the order of the result, with the side each comes from. The order is fixed,
- * never that of the clicks. When both sides have as many lines and no row keeps both, it goes row
- * by row: the value of each line from the side it was taken from. Otherwise, the lines of side 1,
- * the one on the left (`first`), then those of side 2 ("reversed": side 2 first).
- */
-export function resolved(block: Sides, pick: Pick, first: Side = 'ours'): { line: string; side: Side }[] {
-  if (pick.neither) return [];
-  const rows = block.ours.length === block.theirs.length && !block.ours.some((_, i) => pick.ours[i] && pick.theirs[i]);
-  if (rows) {
-    return block.ours.flatMap((line, i) =>
-      pick.ours[i] ? [{ line, side: 'ours' as Side }] : pick.theirs[i] ? [{ line: block.theirs[i], side: 'theirs' as Side }] : [],
-    );
-  }
-  const of = (side: Side) => block[side].flatMap((line, i) => (pick[side][i] ? [{ line, side }] : []));
+/** The buttons of the bar. "Keep both" puts side 1, the one on the left (`first`), first. */
+export function choose(choice: Choice, first: Side = 'ours'): Pick {
   const second: Side = first === 'ours' ? 'theirs' : 'ours';
-  return pick.reversed ? [...of(second), ...of(first)] : [...of(first), ...of(second)];
+  switch (choice) {
+    case 'both':
+      return { kept: [first, second], aside: [] };
+    case 'both-reversed':
+      return { kept: [second, first], aside: [] };
+    case 'neither':
+      return { kept: [], aside: [first, second] };
+    default:
+      return { kept: [choice], aside: [] };
+  }
+}
+
+/** The lines kept, in the order of the result, with the side each comes from. */
+export function resolved(block: Sides, pick: Pick): { line: string; side: Side }[] {
+  return pick.kept.flatMap((side) => block[side].map((line) => ({ line, side })));
 }

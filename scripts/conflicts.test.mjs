@@ -2,60 +2,55 @@
 // `npm test`: Node reads the TypeScript file as it is.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { choose, emptyPick, isDecided, parseConflicts, pickLines, pickSide, resolved, sideState } from '../src/lib/git/conflicts.ts';
+import { choose, emptyPick, isDecided, keepSide, parseConflicts, resolved, setAside, sideStatus } from '../src/lib/git/conflicts.ts';
 
 const settings = {
-  ours: ['port = 8443', 'workers = 8', 'timeout = 45', 'log_level = "info"', 'max_body = "10MB"'],
-  theirs: ['port = 9090', 'workers = 16', 'timeout = 60', 'log_level = "debug"', 'max_body = "1MB"'],
+  ours: ['port = 8443', 'workers = 8'],
+  theirs: ['port = 9090', 'workers = 16', 'timeout = 60'],
 };
 const lines = (block, pick) => resolved(block, pick).map((r) => r.line);
 
-test('lines picked one by one from both sides go row by row', () => {
-  let pick = emptyPick(settings);
-  pick = pickLines(pick, 'ours', 0, 0, true);
-  pick = pickLines(pick, 'theirs', 1, 3, true);
-  pick = pickLines(pick, 'ours', 4, 4, true);
-  assert.deepEqual(lines(settings, pick), ['port = 8443', 'workers = 16', 'timeout = 60', 'log_level = "debug"', 'max_body = "10MB"']);
-  assert.deepEqual(resolved(settings, pick).map((r) => r.side), ['ours', 'theirs', 'theirs', 'theirs', 'ours']);
+test('a side kept with its arrow gives all its lines', () => {
+  const pick = keepSide(emptyPick(), 'theirs');
+  assert.deepEqual(lines(settings, pick), settings.theirs);
+  assert.deepEqual(resolved(settings, pick).map((r) => r.side), ['theirs', 'theirs', 'theirs']);
+  assert.equal(sideStatus(pick, 'theirs'), 'kept');
+  assert.equal(sideStatus(pick, 'ours'), 'open');
 });
 
-test('the order does not depend on the order of the clicks', () => {
-  const a = pickLines(pickLines(emptyPick(settings), 'theirs', 1, 1, true), 'ours', 0, 0, true);
-  const b = pickLines(pickLines(emptyPick(settings), 'ours', 0, 0, true), 'theirs', 1, 1, true);
-  assert.deepEqual(lines(settings, a), lines(settings, b));
+test('both sides kept come in the order of the arrows', () => {
+  assert.deepEqual(lines(settings, keepSide(keepSide(emptyPick(), 'ours'), 'theirs')), [...settings.ours, ...settings.theirs]);
+  assert.deepEqual(lines(settings, keepSide(keepSide(emptyPick(), 'theirs'), 'ours')), [...settings.theirs, ...settings.ours]);
+  // A second arrow on a side already kept changes nothing.
+  const once = keepSide(emptyPick(), 'ours');
+  assert.equal(keepSide(once, 'ours'), once);
 });
 
-test('keeping both gives one side then the other, or the reverse', () => {
-  assert.deepEqual(lines(settings, choose(settings, 'both')), [...settings.ours, ...settings.theirs]);
-  assert.deepEqual(lines(settings, choose(settings, 'both-reversed')), [...settings.theirs, ...settings.ours]);
-  // A row that keeps both sides breaks the row order: side by side.
-  const pick = pickLines(pickLines(emptyPick(settings), 'ours', 0, 1, true), 'theirs', 1, 1, true);
-  assert.deepEqual(lines(settings, pick), ['port = 8443', 'workers = 8', 'workers = 16']);
+test('the cross lets a kept side go, or sets an open one aside', () => {
+  const kept = keepSide(emptyPick(), 'ours');
+  const gone = setAside(kept, 'ours');
+  assert.deepEqual(lines(settings, gone), []);
+  assert.equal(sideStatus(gone, 'ours'), 'aside');
+  assert.equal(isDecided(gone), false, 'one side aside, the other open: still to decide');
+  // The arrow takes a side back from aside.
+  assert.equal(sideStatus(keepSide(gone, 'ours'), 'ours'), 'kept');
 });
 
-test('sides of different lengths keep the order of the sides', () => {
-  const block = { ours: ['a', 'b'], theirs: ['x', 'y', 'z'] };
-  const pick = pickLines(pickLines(emptyPick(block), 'theirs', 2, 2, true), 'ours', 1, 1, true);
-  assert.deepEqual(lines(block, pick), ['b', 'z']);
+test('a conflict is decided once a side is kept, or both are set aside', () => {
+  assert.equal(isDecided(emptyPick()), false);
+  assert.equal(isDecided(keepSide(emptyPick(), 'theirs')), true);
+  const neither = setAside(setAside(emptyPick(), 'ours'), 'theirs');
+  assert.equal(isDecided(neither), true);
+  assert.deepEqual(lines(settings, neither), []);
 });
 
-test('a conflict is decided once a line is kept, or neither is', () => {
-  const pick = emptyPick(settings);
-  assert.equal(isDecided(pick), false);
-  assert.equal(isDecided(choose(settings, 'neither')), true);
-  assert.deepEqual(lines(settings, choose(settings, 'neither')), []);
-  const one = pickLines(pick, 'theirs', 2, 2, true);
-  assert.equal(isDecided(one), true);
-  // Letting go of the last line leaves it to decide again.
-  assert.equal(isDecided(pickLines(one, 'theirs', 2, 2, false)), false);
-});
-
-test('the checkbox of a side says all, some or none', () => {
-  const pick = pickLines(emptyPick(settings), 'ours', 1, 2, true);
-  assert.equal(sideState(pick, 'ours'), 'mixed');
-  assert.equal(sideState(pick, 'theirs'), 'off');
-  assert.equal(sideState(pickSide(pick, 'ours', true), 'ours'), 'on');
-  assert.equal(sideState(pickSide(pick, 'ours', false), 'ours'), 'off');
+test('the buttons of the bar: side 1, the one on the left, first in "Keep both"', () => {
+  assert.deepEqual(lines(settings, choose('both')), [...settings.ours, ...settings.theirs]);
+  assert.deepEqual(lines(settings, choose('both', 'theirs')), [...settings.theirs, ...settings.ours], 'in a rebase, side 1 is theirs');
+  assert.deepEqual(lines(settings, choose('both-reversed', 'theirs')), [...settings.ours, ...settings.theirs]);
+  assert.deepEqual(lines(settings, choose('ours')), settings.ours);
+  assert.equal(isDecided(choose('neither')), true);
+  assert.deepEqual(lines(settings, choose('neither')), []);
 });
 
 test('the markers of git are read, with or without the common ancestor', () => {

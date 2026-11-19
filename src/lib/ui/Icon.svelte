@@ -30,6 +30,8 @@
     check: '<path d="m3.5 8.5 3 3 6-7"/>',
     x: '<path d="m4 4 8 8M12 4l-8 8"/>',
     chevron: '<path d="m6 3.5 4.5 4.5L6 12.5"/>',
+    // Two chevrons toward the result: keep a side of a conflict (turned over on the right side).
+    keep: '<path d="m3.5 3.5 4.5 4.5-4.5 4.5M8.5 3.5 13 8l-4.5 4.5"/>',
     settings:
       '<path d="M2.5 4.5h7M12 4.5h1.5M2.5 11.5H4M6.5 11.5h7"/><circle cx="10.5" cy="4.5" r="1.5"/><circle cx="5.2" cy="11.5" r="1.5"/>',
     folder: '<path d="M2 4.5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/>',
@@ -62,6 +64,11 @@
   } as const;
 
   export type IconName = keyof typeof PATHS;
+
+  /** The same icon as markup, for a widget drawn outside Svelte, in an editor. */
+  export function iconMarkup(name: IconName, size = 16): string {
+    return `<svg class="icon" viewBox="0 0 16 16" width="${size}" height="${size}" aria-hidden="true">${PATHS[name]}</svg>`;
+  }
 </script>
 
 <script lang="ts">
