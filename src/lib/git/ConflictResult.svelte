@@ -1,6 +1,8 @@
 <script lang="ts" module>
   import { Annotation, Prec, RangeSet, StateEffect, StateField, Transaction, type EditorState, type RangeValue } from '@codemirror/state';
   import { Decoration, type DecorationSet, EditorView, GutterMarker, WidgetType, gutter } from '@codemirror/view';
+  import { Spacer } from './spacer';
+  import { conflictKey, type Row, type Spacer as Blank } from './threeway';
 
   /** Where a conflict is in the result: from the start of its first line to the start of the line
    *  after it (`trailing`), or to the end of the file. */
@@ -85,28 +87,37 @@
     }
   }
 
-  /** The chip of the side a line was kept from, "1" or "2". */
+  /** The chip of the side a line comes from, "1" or "2": its number is its place, 1 on the left. */
   class Chip extends GutterMarker {
-    readonly side: 'ours' | 'theirs';
+    readonly n: 1 | 2;
     /** Merged by git, outside the conflicts, rather than kept. */
     readonly merged: boolean;
-    constructor(side: 'ours' | 'theirs', merged = false) {
+    constructor(n: 1 | 2, merged = false) {
       super();
-      this.side = side;
+      this.n = n;
       this.merged = merged;
     }
     eq(other: Chip) {
-      return other.side === this.side && other.merged === this.merged;
+      return other.n === this.n && other.merged === this.merged;
     }
     toDOM() {
       const chip = document.createElement('span');
-      const n = this.side === 'ours' ? '1' : '2';
-      chip.className = `cm-chip cm-chip-${this.side}`;
-      chip.textContent = n;
-      chip.title = this.merged ? `Merged by git from side ${n}` : `Kept from side ${n}`;
+      chip.className = `cm-chip cm-chip-${this.n}`;
+      chip.textContent = String(this.n);
+      chip.title = this.merged ? `Merged by git from side ${this.n}` : `Kept from side ${this.n}`;
       return chip;
     }
   }
+
+  /** The blanks that keep the three columns aligned (guidelines, 9.26). */
+  const spacersEffect = StateEffect.define<Blank[]>();
+  const spacersField = StateField.define<Blank[]>({
+    create: () => [],
+    update(value, tr) {
+      for (const fx of tr.effects) if (fx.is(spacersEffect)) return fx.value;
+      return value;
+    },
+  });
 
   /**
    * The marks of the lines git merged, after a change: a line touched by it, typed in, split or
@@ -144,6 +155,7 @@
     value,
     regions: initialRegions,
     merged = [],
+    first = 'ours',
     info,
     lineSeparator = '\n',
     label,
@@ -158,6 +170,8 @@
     regions: { id: number; start: number; end: number }[];
     /** The lines git merged from a side outside the conflicts, in `value` (from 0). */
     merged?: { line: number; side: 'ours' | 'theirs' }[];
+    /** The side shown on the left, side 1: its chips read "1" and take its color. */
+    first?: 'ours' | 'theirs';
     info: RegionInfo[];
     lineSeparator?: string;
     label: string;
@@ -183,17 +197,18 @@
       initial.set(r.id, { from: first.from, to: trailing ? doc.line(r.end + 2).from : doc.length, trailing });
     }
     field = regionsField(initial);
+    const num = (side: 'ours' | 'theirs'): 1 | 2 => (side === first ? 1 : 2);
 
     // The lines git merged from a side, outside the conflicts: their tint and their chip follow the
     // lines when the text above them is typed (guidelines, 9.26).
     const lines = merged.filter((m) => m.line < doc.lines);
     const mergedTints = StateField.define<DecorationSet>({
-      create: () => Decoration.set(lines.map((m) => Decoration.line({ class: `cm-from-${m.side}` }).range(doc.line(m.line + 1).from)), true),
+      create: () => Decoration.set(lines.map((m) => Decoration.line({ class: `cm-from-${num(m.side)}` }).range(doc.line(m.line + 1).from)), true),
       update: (tints, tr) => follow(tints, tr),
       provide: (f) => EditorView.decorations.from(f),
     });
     const mergedChips = StateField.define<RangeSet<GutterMarker>>({
-      create: () => RangeSet.of(lines.map((m) => new Chip(m.side, true).range(doc.line(m.line + 1).from)), true),
+      create: () => RangeSet.of(lines.map((m) => new Chip(num(m.side), true).range(doc.line(m.line + 1).from)), true),
       update: (chips, tr) => follow(chips, tr),
     });
 
@@ -209,11 +224,27 @@
         } else if (item.state === 'kept') {
           for (let n = at.first.number, i = 0; n <= at.last.number; n++, i++) {
             const side = item.origins[i];
-            if (side) ranges.push(Decoration.line({ class: `cm-from-${side}` }).range(state.doc.line(n).from));
+            if (side) ranges.push(Decoration.line({ class: `cm-from-${num(side)}` }).range(state.doc.line(n).from));
           }
         }
       }
       return Decoration.set(ranges, true);
+    });
+    // The blanks of the alignment: before a band, or before a line, or at the end.
+    const blanks = EditorView.decorations.compute([field, infoField, spacersField, 'doc'], (state) => {
+      const spacers = state.field(spacersField);
+      if (!spacers.length) return Decoration.none;
+      const rows = rowsOf(state);
+      return Decoration.set(
+        spacers.map((s) => {
+          const row = rows[s.row];
+          const widget = new Spacer(s.height);
+          return row
+            ? Decoration.widget({ widget, block: true, side: -1 }).range(row.pos)
+            : Decoration.widget({ widget, block: true, side: 1 }).range(state.doc.length);
+        }),
+        true,
+      );
     });
     // The caret steps over a band: the markers under it cannot be typed into.
     const atomic = EditorView.atomicRanges.of((v) => {
@@ -238,7 +269,7 @@
           if (item.state !== 'kept' || !at) continue;
           for (let n = at.first.number, i = 0; n <= at.last.number; n++, i++) {
             const side = item.origins[i];
-            if (side) marks.push(new Chip(side).range(v.state.doc.line(n).from));
+            if (side) marks.push(new Chip(num(side)).range(v.state.doc.line(n).from));
           }
         }
         return [RangeSet.of(marks, true), v.state.field(mergedChips)];
@@ -274,8 +305,9 @@
         chips,
         lineNumbers(),
         drawSelection(),
-        EditorView.lineWrapping,
+        spacersField,
         decorations,
+        blanks,
         atomic,
         history(),
         highlightActiveLine(),
@@ -296,6 +328,42 @@
     const next = info;
     view?.dispatch({ effects: setInfo.of(next) });
   });
+
+  /** The rows of the result, as the columns line them up: a band for a conflict to decide, a row per line. */
+  function rowsOf(state: EditorState): (Row & { pos: number })[] {
+    const regions = state.field(field);
+    const bands = new Map<number, { id: number; last: number }>();
+    for (const item of state.field(infoField)) {
+      const region = regions.get(item.id);
+      const at = region && linesOf(state, region);
+      if (item.state === 'open' && at) bands.set(at.first.number, { id: item.id, last: at.last.number });
+    }
+    const rows = [];
+    for (let n = 1; n <= state.doc.lines; n++) {
+      const line = state.doc.line(n);
+      const band = bands.get(n);
+      if (band) {
+        rows.push({ key: conflictKey(band.id), height: 24, pos: line.from });
+        n = band.last;
+      } else {
+        rows.push({ key: line.text, height: 18, pos: line.from });
+      }
+    }
+    return rows;
+  }
+
+  export function rows(): Row[] {
+    return view ? rowsOf(view.state).map(({ key, height }) => ({ key, height })) : [];
+  }
+
+  export function setSpacers(spacers: Blank[]) {
+    view?.dispatch({ effects: spacersEffect.of(spacers) });
+  }
+
+  /** What scrolls: the three columns scroll as one. */
+  export function scroller(): HTMLElement | undefined {
+    return view?.scrollDOM;
+  }
 
   /** The text of a conflict in the result, its lines joined, without the break after them. */
   export function regionText(id: number): string {
@@ -338,7 +406,9 @@
   const theme = EditorView.theme({
     '&': { height: '100%', fontSize: 'var(--fs-code)', backgroundColor: 'var(--bg)', color: 'var(--ink)' },
     '&.cm-focused': { outline: 'none' },
-    '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px' },
+    // No wrapping: a column scrolls sideways on its own, and its rows stay aligned (9.26). Every
+    // column keeps the room of its sideways bar, so that the three have the same height.
+    '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px', overflowX: 'scroll' },
     '.cm-content': { caretColor: 'var(--ink)' },
     '.cm-cursor': { borderLeftColor: 'var(--ink)' },
     '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
@@ -361,10 +431,11 @@
       fontWeight: 'var(--fw-strong)',
       color: 'var(--ink)',
     },
-    '.cm-chip-ours': { backgroundColor: 'color-mix(in srgb, var(--l0) 30%, var(--bg))' },
-    '.cm-chip-theirs': { backgroundColor: 'color-mix(in srgb, var(--l1) 30%, var(--bg))' },
-    '.cm-from-ours': { backgroundColor: 'color-mix(in srgb, var(--l0) 10%, transparent)' },
-    '.cm-from-theirs': { backgroundColor: 'color-mix(in srgb, var(--l1) 10%, transparent)' },
+    // Side 1, on the left, takes the first color of the graph, side 2 the second (2.2, 9.26).
+    '.cm-chip-1': { backgroundColor: 'color-mix(in srgb, var(--l0) 30%, var(--bg))' },
+    '.cm-chip-2': { backgroundColor: 'color-mix(in srgb, var(--l1) 30%, var(--bg))' },
+    '.cm-from-1': { backgroundColor: 'color-mix(in srgb, var(--l0) 10%, transparent)' },
+    '.cm-from-2': { backgroundColor: 'color-mix(in srgb, var(--l1) 10%, transparent)' },
     '.cm-conflict-band': {
       display: 'flex',
       alignItems: 'center',

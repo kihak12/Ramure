@@ -155,10 +155,10 @@ export function sideState(pick: Pick, side: Side): 'on' | 'off' | 'mixed' {
 /**
  * The lines kept, in the order of the result, with the side each comes from. The order is fixed,
  * never that of the clicks. When both sides have as many lines and no row keeps both, it goes row
- * by row: the value of each line from the side it was taken from. Otherwise, the lines of the first
- * side, then those of the second ("reversed": the second first).
+ * by row: the value of each line from the side it was taken from. Otherwise, the lines of side 1,
+ * the one on the left (`first`), then those of side 2 ("reversed": side 2 first).
  */
-export function resolved(block: Sides, pick: Pick): { line: string; side: Side }[] {
+export function resolved(block: Sides, pick: Pick, first: Side = 'ours'): { line: string; side: Side }[] {
   if (pick.neither) return [];
   const rows = block.ours.length === block.theirs.length && !block.ours.some((_, i) => pick.ours[i] && pick.theirs[i]);
   if (rows) {
@@ -167,5 +167,6 @@ export function resolved(block: Sides, pick: Pick): { line: string; side: Side }
     );
   }
   const of = (side: Side) => block[side].flatMap((line, i) => (pick[side][i] ? [{ line, side }] : []));
-  return pick.reversed ? [...of('theirs'), ...of('ours')] : [...of('ours'), ...of('theirs')];
+  const second: Side = first === 'ours' ? 'theirs' : 'ours';
+  return pick.reversed ? [...of(second), ...of(first)] : [...of(first), ...of(second)];
 }

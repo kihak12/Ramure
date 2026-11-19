@@ -165,3 +165,71 @@ export function mergedChanges(
   const merged = [...origin].filter((e): e is [number, Side] => e[1] !== null).map(([line, side]) => ({ line, side }));
   return { ...lines, result: merged.sort((a, b) => a.line - b.line) };
 }
+
+// --- Aligning the three columns -----------------------------------------------------------------
+// The two sides and the result face one another, row by row (guidelines, 9.26). A row is a line of
+// text, or the header of a conflict in a side and its band in the result, which share a key. Where
+// a column has fewer rows for a change, a blank of the missing height fills it: the three columns
+// keep the same height and scroll as one.
+
+/** The key of the header of conflict `i` in a side, and of its band in the result. */
+export const conflictKey = (i: number) => `\u0000conflict ${i}`;
+
+/** A row of a column: its key, matched across the columns, and its height in pixels. */
+export interface Row {
+  key: string;
+  height: number;
+}
+
+/** A blank of `height` pixels before row `row` of a column (`row` = its number of rows: at the end). */
+export interface Spacer {
+  row: number;
+  height: number;
+}
+
+/** The pairs of indexes of `a` and `b` whose rows stay the same, in order. */
+function matches(a: string[], b: string[]): [number, number][] {
+  const pairs: [number, number][] = [];
+  let i = 0;
+  let j = 0;
+  for (const h of [...diffLines(a, b), { fromA: a.length, toA: a.length, fromB: b.length, toB: b.length }]) {
+    while (i < h.fromA && j < h.fromB) pairs.push([i++, j++]);
+    i = h.toA;
+    j = h.toB;
+  }
+  return pairs;
+}
+
+/**
+ * The blanks of each column: the rows of the result matched in both sides are the anchors; between
+ * two of them, each column takes the height of the tallest, with a blank before the next anchor.
+ */
+export function align(left: Row[], result: Row[], right: Row[]): { left: Spacer[]; result: Spacer[]; right: Spacer[] } {
+  const keys = (rows: Row[]) => rows.map((r) => r.key);
+  const inLeft = new Map(matches(keys(left), keys(result)).map(([l, r]) => [r, l]));
+  const inRight = new Map(matches(keys(right), keys(result)).map(([s, r]) => [r, s]));
+  const anchors: [number, number, number][] = [];
+  for (let r = 0; r < result.length; r++) {
+    const l = inLeft.get(r);
+    const s = inRight.get(r);
+    if (l !== undefined && s !== undefined) anchors.push([l, r, s]);
+  }
+  anchors.push([left.length, result.length, right.length]);
+
+  const out = { left: [] as Spacer[], result: [] as Spacer[], right: [] as Spacer[] };
+  const height = (rows: Row[], from: number, to: number) => {
+    let sum = 0;
+    for (let i = from; i < to; i++) sum += rows[i].height;
+    return sum;
+  };
+  let [pl, pr, ps] = [-1, -1, -1];
+  for (const [l, r, s] of anchors) {
+    const gaps = [height(left, pl + 1, l), height(result, pr + 1, r), height(right, ps + 1, s)];
+    const tallest = Math.max(...gaps);
+    if (gaps[0] < tallest) out.left.push({ row: l, height: tallest - gaps[0] });
+    if (gaps[1] < tallest) out.result.push({ row: r, height: tallest - gaps[1] });
+    if (gaps[2] < tallest) out.right.push({ row: s, height: tallest - gaps[2] });
+    [pl, pr, ps] = [l, r, s];
+  }
+  return out;
+}

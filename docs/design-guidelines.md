@@ -2170,8 +2170,8 @@ the draft.
 ### 9.26 Conflict editor
 
 Where a conflict of a merge, a rebase, a cherry-pick or a revert is resolved, file by file: the
-two sides on top, the result below, and the lines to keep picked one by one, as the lines of a
-diff are (9.14).
+two sides and the result in three columns, side 1, the result, side 2, aligned row by row and
+scrolling as one, and the lines to keep picked one by one, as the lines of a diff are (9.14).
 
 **Place.** One card in place of the three of the view, under the banner of the operation (9.1),
 whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a file of the list
@@ -2186,15 +2186,26 @@ is left; the line under the path says why, and its tooltip repeats it: "Decide e
 first.", or "Git is working: wait for it to finish." Saving writes the file and marks it resolved
 (`git add`).
 
-**The two sides**, side by side, read only, each with its line numbers in `--muted`, as in a diff
-(9.14); long lines wrap.
+**Three columns.** Side 1 on the left, the result in the middle, side 2 on the right, in widths of
+1, 1.25 and 1: the result is the widest, it is what is saved. Below 240 px a column no longer
+shrinks, and the card scrolls sideways.
 
-- Their names follow the operation, since git swaps the roles in a rebase: in a rebase, "Upstream",
-  the commits already applied, and "Your commit", the commit being replayed; in a merge, a
-  cherry-pick or a revert, "Your version" and "The incoming version". The bar of each side gives
-  its number in a chip, "1" or "2", then its name in weight 650, then the commit it comes from in
-  the code font and `--muted`, cut first, then "Keep all", a small standard button that keeps
-  this side in every conflict left.
+- **The rows line up.** A line of a side faces its line in the result, and the header of a
+  conflict faces its band. Where a column has fewer rows for a change, a blank of the missing
+  height fills it, right after the change, so that the three columns keep the same height: a
+  scroll of one, by the wheel, its bar or the keyboard, moves the three. The blanks follow the
+  result as lines are kept or typed.
+- **No wrapping:** a wrapped line would break the rows. A long line scrolls sideways, each column
+  on its own.
+
+**The two sides**, read only, each with its line numbers in `--muted`, as in a diff (9.14).
+
+- **Side 1, on the left, is the user's** in every operation, whatever git calls it: in a rebase,
+  "Your commit", the commit being replayed, which git calls "theirs"; in a merge, a cherry-pick or
+  a revert, "Your version". Side 2, on the right, is the other: "Upstream", the commits already
+  applied, or "The incoming version". The bar of each side gives its number in a chip, "1" or
+  "2", then its name in weight 650, then the commit it comes from in the code font and `--muted`,
+  cut first, then "Keep all", a small standard button that keeps this side in every conflict left.
 - The two sides take the first two colors of the graph, `--l0` for side 1 and `--l1` for side 2,
   as the preview of the graph does (2.2): the one other place they are allowed. Their tints are
   checked against `--ink` in every theme (2.4). The result has no color of its own: its lines take
@@ -2223,11 +2234,11 @@ first.", or "Git is working: wait for it to finish." Saving writes the file and 
   go every line of that side in that conflict; it is partly checked when only some are kept
   (9.3). A conflict that has no line on one side has no header there.
 
-**The bar**, between the sides and the result, from left to right: "Conflict 1 of 3" between two
+**The bar**, between the header and the columns, from left to right: "Conflict 1 of 3" between two
 small buttons made of an icon alone, "Previous conflict" and "Next conflict" (Shift + F8, F8); then
 small standard buttons that set the lines of the current conflict, which can then be picked one by
-one: "Keep upstream" and "Keep your commit" (or "Keep your version" and "Keep the incoming
-version"), each with 12% of the color of its side, 24% on hover in place of `--hover`, "Keep both", "Keep both, reversed", "Keep neither";
+one: "Keep your commit" and "Keep upstream" (or "Keep your version" and "Keep the incoming
+version"), side 1 first, each with 12% of the color of its side, 24% on hover in place of `--hover`, "Keep both", "Keep both, reversed", "Keep neither";
 then "Start over", a small ghost button, which puts the conflict back as it was; at the right, the
 checkbox "Show the common ancestor". The verb is "Keep", everywhere, in the list of the files too.
 
@@ -2236,7 +2247,8 @@ lines in a conflict and no row keeps both, it goes row by row: each line from th
 kept from, so that a value can be taken from one side and the next from the other. Otherwise, the
 lines of side 1, then those of side 2; "Keep both, reversed" puts side 2 first.
 
-**The result**, editable, takes the larger share of the height.
+**The result**, editable, in the middle column. The caption of its bar: "Check lines on both sides
+to fill it; it stays editable."
 
 - A line kept from a side carries, in a gutter, the chip of its side, "1" or "2", the letter of a
   file state (9.6) on the tint of its side: the number says where the line comes from, not the
@@ -2262,15 +2274,15 @@ lines of side 1, then those of side 2; "Keep both, reversed" puts side 2 first.
 - **Ctrl + Z** undoes the last choice, a line, a header, a button, wherever the focus is in the
   editor; in the result, it undoes what was typed when that came last.
 
-**The common ancestor**, shown under the result at the right, read only, follows the current
-conflict and marks it, as the sides do.
+**The common ancestor**, shown under the three columns, across their width, read only, follows the
+current conflict and marks it, as the sides do.
 
 **Keyboard.**
 
 - The two sides are stops of the tab order, a side with no line to go through excepted, and a click
   on a side, its text or a box, gives it the keyboard; the ring of its line shows for the keyboard
-  only (9.6). The tab order goes down each side, its "Keep all", then its lines, then the other
-  side, then the bar. In a side, ↑ and ↓ go from line to line of the
+  only (9.6). The tab order follows the screen: the bar, then side 1, its "Keep all" and its
+  lines, the result, then side 2. In a side, ↑ and ↓ go from line to line of the
   conflicts, Home and End to the first and the last, with the inner ring of 9.6 on the line; Space
   keeps the line or lets it go; Shift with an arrow extends, in the same conflict. What the line
   becomes is announced: "Line 4 of conflict 1, kept: port = 8443".
@@ -2278,11 +2290,12 @@ conflict and marks it, as the sides do.
   to decide, Escape closes, after "Close without saving?" when something was changed: "The
   choices and corrections made in this editor will be lost for good. The file keeps its conflict
   markers."
-- The captions of the bars of the result and of the ancestor are sentences: "Check lines above to
-  fill it; it stays editable.", "Before both changes."
+- The captions of the bars of the result and of the ancestor are sentences: "Check lines on both
+  sides to fill it; it stays editable.", "Before both changes."
 
 **A file that cannot be merged line by line**, binary, too large, or deleted on one side, says so
-in place of the panes, with "Keep upstream" and "Keep your commit" (or their merge names).
+in place of the panes, with "Keep your commit" and "Keep upstream" (or their merge names), side 1
+first.
 
 ### 9.27 Commit detail
 

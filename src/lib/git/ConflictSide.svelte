@@ -1,6 +1,8 @@
 <script lang="ts" module>
   import { RangeSet, StateEffect, StateField, type EditorState } from '@codemirror/state';
   import { Decoration, type DecorationSet, EditorView, GutterMarker, WidgetType, gutter } from '@codemirror/view';
+  import { Spacer } from './spacer';
+  import { conflictKey, type Row, type Spacer as Blank } from './threeway';
 
   /** A conflict as one side shows it (guidelines, 9.26). */
   export interface SideConflict {
@@ -126,6 +128,47 @@
     }
   }
 
+  /** The blanks that keep the three columns aligned (guidelines, 9.26). */
+  const spacersEffect = StateEffect.define<Blank[]>();
+  const spacersField = StateField.define<Blank[]>({
+    create: () => [],
+    update(value, tr) {
+      for (const fx of tr.effects) if (fx.is(spacersEffect)) return fx.value;
+      return value;
+    },
+  });
+
+  /** The rows of this side, as the columns line them up: the header of a conflict, then each line. */
+  function rowsOf(state: EditorState): (Row & { pos: number; head: boolean })[] {
+    const heads = new Map<number, number>();
+    for (const c of state.field(infoField).conflicts) if (c.at >= 0 && c.kept.length) heads.set(c.at, c.index);
+    const rows = [];
+    for (let n = 1; n <= state.doc.lines; n++) {
+      const line = state.doc.line(n);
+      const head = heads.get(n - 1);
+      if (head !== undefined) rows.push({ key: conflictKey(head), height: 24, pos: line.from, head: true });
+      rows.push({ key: line.text, height: 18, pos: line.from, head: false });
+    }
+    return rows;
+  }
+
+  /** A blank before its row: before the header of a conflict, which comes before its first line. */
+  function blanks(state: EditorState): DecorationSet {
+    const spacers = state.field(spacersField);
+    if (!spacers.length) return Decoration.none;
+    const rows = rowsOf(state);
+    return Decoration.set(
+      spacers.map((s) => {
+        const row = rows[s.row];
+        const widget = new Spacer(s.height);
+        return row
+          ? Decoration.widget({ widget, block: true, side: row.head ? -2 : -1 }).range(row.pos)
+          : Decoration.widget({ widget, block: true, side: 1 }).range(state.doc.length);
+      }),
+      true,
+    );
+  }
+
   function lineOf(state: EditorState, n: number) {
     return state.doc.line(Math.max(1, Math.min(state.doc.lines, n)));
   }
@@ -171,7 +214,9 @@
   const theme = EditorView.theme({
     '&': { height: '100%', fontSize: 'var(--fs-code)', backgroundColor: 'var(--bg)', color: 'var(--ink)' },
     '&.cm-focused': { outline: 'none' },
-    '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px' },
+    // No wrapping: a column scrolls sideways on its own, and its rows stay aligned (9.26). Every
+    // column keeps the room of its sideways bar, so that the three have the same height.
+    '.cm-scroller': { fontFamily: 'var(--f-mono)', lineHeight: '18px', overflowX: 'scroll' },
     // The numbers of the lines are read: --muted, as in a diff (guidelines, 2.3 and 9.14).
     '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
     '.cm-picks': { minWidth: '22px' },
@@ -261,8 +306,8 @@
         State.lineSeparator.of(lineSeparator),
         State.readOnly.of(true),
         EditorView.editable.of(false),
-        EditorView.lineWrapping,
         infoField,
+        spacersField,
         gutter({
           class: 'cm-picks',
           // The boxes of the conflicts, and the sign of the changes that do not conflict.
@@ -280,6 +325,7 @@
         }),
         lineNumbers(),
         EditorView.decorations.compute([infoField], (s) => decorate(s, calls)),
+        EditorView.decorations.compute([infoField, spacersField], blanks),
         // The text of a side does not change: its changes are marked once, with the tint of a line
         // of a conflict at rest (9.26).
         EditorView.decorations.of(Decoration.set(changeLines.map((from) => Decoration.line({ class: 'cm-side-line cm-side-change' }).range(from)), true)),
@@ -352,6 +398,20 @@
     if (!view) return;
     const target = view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, line)));
     view.dispatch({ effects: EditorView.scrollIntoView(target.from, { y: where }) });
+  }
+
+  /** The rows of this side, for the alignment of the three columns. */
+  export function rows(): Row[] {
+    return view ? rowsOf(view.state).map(({ key, height }) => ({ key, height })) : [];
+  }
+
+  export function setSpacers(spacers: Blank[]) {
+    view?.dispatch({ effects: spacersEffect.of(spacers) });
+  }
+
+  /** What scrolls: the three columns scroll as one. */
+  export function scroller(): HTMLElement | undefined {
+    return view?.scrollDOM;
   }
 
   /** The ring follows the current conflict when it changes from the bar. */
