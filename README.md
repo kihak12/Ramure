@@ -86,12 +86,13 @@ Everything goes through a right-click on a commit or on a label, and through the
 - **Tags**: lightweight or annotated, push, delete locally and on the remote.
 - **Merge, rebase, cherry-pick, revert, reset** (soft, mixed, hard).
 - **Conflicts**: when an operation stops, a banner offers to continue, skip or abort. Clicking a
-  conflicted file opens the **conflict editor**: both sides at the top, the result at the bottom.
-  Check the lines to keep, one by one, on either side, or a whole side of a conflict at once; the
-  result fills as you check them, in a fixed order (row by row when both sides have as many
-  lines), each line marked with the side it comes from. A conflict not decided yet is a band, not
-  git's markers. Ctrl + Z undoes the last choice, F8 goes to the next conflict, Ctrl + S saves.
-  The result stays editable, and the common ancestor is shown on demand. A file deleted on one
+  conflicted file opens the **conflict editor**: your side on the left, the result in the
+  middle, the other side on the right, aligned line by line and scrolling together. The changes
+  git merged on its own are marked, on their side and in the result. Keep a side of a conflict
+  with the arrow of its header, set it aside with its cross: the result takes the sides kept in
+  the order of their arrows, each line marked with the side it comes from. A conflict not decided yet is a band, not git's markers. Ctrl + Z
+  undoes the last choice, F8 goes to the next conflict, Ctrl + S saves. The result stays
+  editable, and the common ancestor is shown on demand. A file deleted on one
   side, or a binary file, is resolved by keeping one side.
 - **Dragging a branch onto another** (in the graph or the sidebar) offers to merge or rebase it.
 - **Interactive rebase**: reorder with the mouse, reword, squash, drop commits. git launches

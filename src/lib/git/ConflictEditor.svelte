@@ -1,6 +1,6 @@
 <script lang="ts">
-  // The conflict editor: the two sides on top, the lines to keep picked one by one, the result
-  // below (guidelines, 9.26).
+  // The conflict editor: side 1, the result and side 2 in three columns, aligned and scrolling as
+  // one; a side of a conflict is kept with its arrow toward the result (guidelines, 9.26).
   import { untrack } from 'svelte';
   import { fly } from 'svelte/transition';
   import CodeEditor, { type Mark } from '../ui/CodeEditor.svelte';
@@ -12,12 +12,12 @@
     choose,
     emptyPick,
     isDecided,
+    keepSide,
     locate,
     parseConflicts,
-    pickLines,
-    pickSide,
     resolved,
-    sideState,
+    setAside,
+    sideStatus,
     splitLines,
     type Choice,
     type ConflictBlock,
@@ -25,7 +25,7 @@
     type Side,
   } from './conflicts';
   import type { Repo } from './repo.svelte';
-  import { mergedChanges } from './threeway';
+  import { align, mergedChanges } from './threeway';
   import type { ConflictFile, FileChange } from './types';
   import { motion } from '../ui/motion';
 
@@ -42,8 +42,6 @@
   let blocks = $state.raw<ConflictBlock[]>([]);
   let picks = $state.raw<Pick[]>([]);
   let edited = $state.raw<boolean[]>([]);
-  /** The last line clicked on each side, where Shift extends from. */
-  let anchors: Record<Side, { block: number; line: number } | null> = { ours: null, theirs: null };
   /** What each choice changed, to undo it: the state of each conflict before it. */
   let undo: { block: number; pick: Pick; edited: boolean; text: string }[][] = [];
   let lastPickAt = 0;
@@ -61,6 +59,13 @@
       ? { ours: 'Upstream', theirs: 'Your commit', keepOurs: 'Keep upstream', keepTheirs: 'Keep your commit' }
       : { ours: 'Your version', theirs: 'The incoming version', keepOurs: 'Keep your version', keepTheirs: 'Keep the incoming version' },
   );
+
+  // Side 1, on the left, is the user's in every operation: in a rebase, the commit being replayed,
+  // which git calls "theirs" (guidelines, 9.26). Its chip, its color and the order of "Keep both"
+  // follow its place.
+  const first = $derived<Side>(rebase ? 'theirs' : 'ours');
+  const second = $derived<Side>(rebase ? 'ours' : 'theirs');
+  const keepName = (side: Side) => (side === 'ours' ? names.keepOurs : names.keepTheirs);
 
   const separator = $derived(data?.merged?.includes('\r\n') ? '\r\n' : '\n');
   const editable = $derived(!!data && !data.binary && data.merged !== null && data.ours !== null && data.theirs !== null);
@@ -101,8 +106,8 @@
     blocks.map((b, i) => ({
       index: i,
       at: (side === 'ours' ? oursAt : theirsAt)[i],
-      kept: picks[i]?.[side] ?? [],
-      state: picks[i] ? sideState(picks[i], side) : 'off',
+      count: b[side].length,
+      status: picks[i] ? sideStatus(picks[i], side) : 'open',
       edited: !!edited[i],
     }));
   const oursConflicts = $derived(sideOf('ours'));
@@ -113,7 +118,7 @@
       id: i,
       state: edited[i] ? 'edited' : isDecided(picks[i]) ? 'kept' : 'open',
       origins: resolved(b, picks[i]).map((r) => r.side),
-      band: `Conflict ${i + 1} of ${blocks.length}: check the lines to keep`,
+      band: `Conflict ${i + 1} of ${blocks.length}: keep a side with its arrow`,
     })),
   );
   const baseMarks = $derived<Mark[]>(current && baseAt[index] >= 0 ? [{ from: baseAt[index] + 1, to: baseAt[index] + (current.base?.length ?? 0), kind: 'focus' }] : []);
@@ -130,10 +135,9 @@
         const sep = loaded.merged?.includes('\r\n') ? '\r\n' : '\n';
         const parsed = parseConflicts(splitLines(loaded.merged ?? '', sep));
         blocks = parsed;
-        picks = parsed.map(emptyPick);
+        picks = parsed.map(() => emptyPick());
         edited = parsed.map(() => false);
         undo = [];
-        anchors = { ours: null, theirs: null };
         text = loaded.merged ?? '';
         index = 0;
         data = loaded;
@@ -151,14 +155,63 @@
       const i = Math.min(index, blocks.length - 1);
       if (i < 0) return;
       queueMicrotask(() => {
+        // The sides follow the result: the three columns scroll as one.
         result?.scrollToRegion(i);
-        if (oursAt[i] >= 0) oursView?.scrollToLine(oursAt[i] + 1);
-        if (theirsAt[i] >= 0) theirsView?.scrollToLine(theirsAt[i] + 1);
         if (baseAt[i] >= 0) baseView?.scrollToLine(baseAt[i] + 1);
         oursView?.follow(i);
         theirsView?.follow(i);
       });
     });
+  });
+
+  // --- The three columns, aligned and scrolling as one (guidelines, 9.26) ----------------------
+
+  /** Lines up the rows of the three columns: blanks where a column has fewer rows for a change. */
+  function realign() {
+    const [left, right] = first === 'ours' ? [oursView, theirsView] : [theirsView, oursView];
+    if (!result || !left || !right) return;
+    const out = align(left.rows(), result.rows(), right.rows());
+    left.setSpacers(out.left);
+    result.setSpacers(out.result);
+    right.setSpacers(out.right);
+  }
+
+  // Again after each change of the result, a pick or typing, once the panes have drawn it.
+  let alignFrame = 0;
+  $effect(() => {
+    void text;
+    void info;
+    void oursConflicts;
+    void theirsConflicts;
+    if (!result || !oursView || !theirsView) return;
+    cancelAnimationFrame(alignFrame);
+    alignFrame = requestAnimationFrame(realign);
+    return () => cancelAnimationFrame(alignFrame);
+  });
+
+  // A scroll of one column moves the three. The others' scrolls that this sets are not followed in
+  // turn: the column that leads keeps the lead until the next frame.
+  $effect(() => {
+    const panes = [oursView?.scroller(), result?.scroller(), theirsView?.scroller()];
+    if (panes.some((p) => !p)) return;
+    const scrollers = panes as HTMLElement[];
+    let leader: HTMLElement | null = null;
+    let release = 0;
+    const offs = scrollers.map((pane) => {
+      const onScroll = () => {
+        if (leader && leader !== pane) return;
+        leader = pane;
+        cancelAnimationFrame(release);
+        release = requestAnimationFrame(() => (leader = null));
+        for (const other of scrollers) if (other !== pane && other.scrollTop !== pane.scrollTop) other.scrollTop = pane.scrollTop;
+      };
+      pane.addEventListener('scroll', onScroll, { passive: true });
+      return () => pane.removeEventListener('scroll', onScroll);
+    });
+    return () => {
+      cancelAnimationFrame(release);
+      for (const off of offs) off();
+    };
   });
 
   /** The text a conflict takes in the result: the lines kept, or, still to decide, its markers. */
@@ -223,42 +276,33 @@
     return true;
   }
 
-  /** A line clicked, or Space: kept or let go. Shift: from the last line clicked, in the same conflict. */
-  function pick(side: Side, block: number, line: number, shift: boolean) {
-    const current = picks[block];
-    const anchor = anchors[side];
-    if (shift && anchor && anchor.block === block) {
-      const on = current[side][anchor.line];
-      void apply([{ block, pick: pickLines(current, side, anchor.line, line, on) }]);
-    } else {
-      anchors[side] = { block, line };
-      void apply([{ block, pick: pickLines(current, side, line, line, !current[side][line]) }]);
-    }
+  /** The arrow of a side, in the header of a conflict: the side kept whole, after one already kept. */
+  function keep(side: Side, block: number) {
+    void apply([{ block, pick: keepSide(picks[block], side) }]);
     index = block;
   }
 
-  /** The checkbox of a header: the whole side, kept or let go. */
-  function group(side: Side, block: number) {
-    const state = sideState(picks[block], side);
-    void apply([{ block, pick: pickSide(picks[block], side, state !== 'on') }]);
+  /** The cross of a side: its lines go; both set aside, the conflict is decided with no line. */
+  function aside(side: Side, block: number) {
+    void apply([{ block, pick: setAside(picks[block], side) }]);
     index = block;
   }
 
   /** A button of the bar, on the current conflict. */
   function take(choice: Choice) {
     const i = Math.min(index, blocks.length - 1);
-    if (i >= 0) void apply([{ block: i, pick: choose(blocks[i], choice) }]);
+    if (i >= 0) void apply([{ block: i, pick: choose(choice, first) }]);
   }
 
   /** "Start over": the current conflict as it opened, its markers back. */
   function startOver() {
     const i = Math.min(index, blocks.length - 1);
-    if (i >= 0) void apply([{ block: i, pick: emptyPick(blocks[i]) }]);
+    if (i >= 0) void apply([{ block: i, pick: emptyPick() }]);
   }
 
   /** "Keep all": a side in every conflict left to decide. */
   function keepAll(side: Side) {
-    void apply(blocks.flatMap((b, i) => (!edited[i] && !isDecided(picks[i]) ? [{ block: i, pick: choose(b, side) }] : [])));
+    void apply(blocks.flatMap((_, i) => (!edited[i] && !isDecided(picks[i]) ? [{ block: i, pick: choose(side, first) }] : [])));
   }
 
   /** Typing in a conflict: edited by hand from now on. */
@@ -366,54 +410,11 @@
         Resolve it by keeping one side.
       </p>
       <div class="pick">
-        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'ours')}>{names.keepOurs}</button>
-        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, 'theirs')}>{names.keepTheirs}</button>
+        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, first)}>{keepName(first)}</button>
+        <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.resolve(file, second)}>{keepName(second)}</button>
       </div>
     </div>
   {:else}
-    <div class="sides">
-      <div class="side ours">
-        <div class="bar">
-          <span class="side-chip" aria-hidden="true">1</span>
-          <b>{names.ours}</b>
-          <small class="mono">{current?.oursLabel ?? ''}</small>
-          <button class="btn small" type="button" disabled={!open} onclick={() => keepAll('ours')} title="Keep this side in every conflict left">Keep all</button>
-        </div>
-        <ConflictSide
-          bind:this={oursView}
-          value={data.ours ?? ''}
-          lineSeparator={separator}
-          label={names.ours}
-          changes={changes?.ours ?? []}
-          conflicts={oursConflicts}
-          current={index}
-          lines={blocks.map((b) => b.ours)}
-          onpick={(block, line, shift) => pick('ours', block, line, shift)}
-          ongroup={(block) => group('ours', block)}
-        />
-      </div>
-      <div class="side theirs">
-        <div class="bar">
-          <span class="side-chip" aria-hidden="true">2</span>
-          <b>{names.theirs}</b>
-          <small class="mono">{current?.theirsLabel ?? ''}</small>
-          <button class="btn small" type="button" disabled={!open} onclick={() => keepAll('theirs')} title="Keep this side in every conflict left">Keep all</button>
-        </div>
-        <ConflictSide
-          bind:this={theirsView}
-          value={data.theirs ?? ''}
-          lineSeparator={separator}
-          label={names.theirs}
-          changes={changes?.theirs ?? []}
-          conflicts={theirsConflicts}
-          current={index}
-          lines={blocks.map((b) => b.theirs)}
-          onpick={(block, line, shift) => pick('theirs', block, line, shift)}
-          ongroup={(block) => group('theirs', block)}
-        />
-      </div>
-    </div>
-
     <div class="choose">
       {#if current}
         <div class="nav">
@@ -421,10 +422,10 @@
           <span class="count">Conflict <b>{Math.min(index, blocks.length - 1) + 1}</b> of {blocks.length}</span>
           <button class="btn small square" type="button" aria-label="Next conflict" title="Next conflict (F8)" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
         </div>
-        <button class="btn small take ours" type="button" onclick={() => take('ours')}>{names.keepOurs}</button>
-        <button class="btn small take theirs" type="button" onclick={() => take('theirs')}>{names.keepTheirs}</button>
-        <button class="btn small" type="button" onclick={() => take('both')} title="{names.ours}, then {names.theirs.toLowerCase()}">Keep both</button>
-        <button class="btn small" type="button" onclick={() => take('both-reversed')} title="{names.theirs}, then {names.ours.toLowerCase()}">Keep both, reversed</button>
+        <button class="btn small take first" type="button" onclick={() => take(first)}>{keepName(first)}</button>
+        <button class="btn small take second" type="button" onclick={() => take(second)}>{keepName(second)}</button>
+        <button class="btn small" type="button" onclick={() => take('both')} title="{names[first]}, then {names[second].toLowerCase()}">Keep both</button>
+        <button class="btn small" type="button" onclick={() => take('both-reversed')} title="{names[second]}, then {names[first].toLowerCase()}">Keep both, reversed</button>
         <button class="btn small" type="button" onclick={() => take('neither')} title="Keep no line of this conflict">Keep neither</button>
         <button class="btn ghost small" type="button" onclick={startOver} title="Put this conflict back as it was">Start over</button>
       {/if}
@@ -433,17 +434,20 @@
       {/if}
     </div>
 
-    <div class="bottom" class:split={showBase && data.base !== null}>
+    <!-- Side 1, the result, side 2: three columns, aligned row by row, that scroll as one. -->
+    <div class="columns">
+      {@render column(first, 1)}
       <div class="side result">
         <div class="bar">
           <b>Result</b>
-          <small>Check lines above to fill it; it stays editable.</small>
+          <small title="Keep a side of each conflict with its arrow; it stays editable.">Keep a side of each conflict with its arrow; it stays editable.</small>
         </div>
         <ConflictResult
           bind:this={result}
           value={data.merged ?? ''}
           regions={blocks.map((b, i) => ({ id: i, start: b.start, end: b.end }))}
           merged={changes?.result ?? []}
+          {first}
           {info}
           lineSeparator={separator}
           label="Result of the resolution"
@@ -453,15 +457,57 @@
           onundo={undoPick}
         />
       </div>
-      {#if showBase && data.base !== null}
-        <div class="side base">
-          <div class="bar"><b>Common ancestor</b><small>Before both changes.</small></div>
-          <CodeEditor bind:this={baseView} value={data.base} readonly marks={baseMarks} lineSeparator={separator} label="Common ancestor, read-only" />
-        </div>
-      {/if}
+      {@render column(second, 2)}
     </div>
+
+    {#if showBase && data.base !== null}
+      <div class="side base">
+        <div class="bar"><b>Common ancestor</b><small>Before both changes.</small></div>
+        <CodeEditor bind:this={baseView} value={data.base} readonly marks={baseMarks} lineSeparator={separator} label="Common ancestor, read-only" />
+      </div>
+    {/if}
   {/if}
 </section>
+
+<!-- A side, in its column: its number is its place, 1 on the left, and takes its color. -->
+{#snippet column(side: Side, n: 1 | 2)}
+  {@const commit = (side === 'ours' ? current?.oursLabel : current?.theirsLabel) ?? ''}
+  <div class="side" class:first={n === 1} class:second={n === 2}>
+    <div class="bar">
+      <span class="side-chip" aria-hidden="true">{n}</span>
+      <b>{names[side]}</b>
+      <small class="mono" title={commit}>{commit}</small>
+      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side]}">Keep all</button>
+    </div>
+    {#if side === 'ours'}
+      <ConflictSide
+        bind:this={oursView}
+        value={data?.ours ?? ''}
+        lineSeparator={separator}
+        label={names.ours}
+        place={n === 1 ? 'left' : 'right'}
+        changes={changes?.ours ?? []}
+        conflicts={oursConflicts}
+        current={index}
+        onkeep={(block) => keep('ours', block)}
+        onaside={(block) => aside('ours', block)}
+      />
+    {:else}
+      <ConflictSide
+        bind:this={theirsView}
+        value={data?.theirs ?? ''}
+        lineSeparator={separator}
+        label={names.theirs}
+        place={n === 1 ? 'left' : 'right'}
+        changes={changes?.theirs ?? []}
+        conflicts={theirsConflicts}
+        current={index}
+        onkeep={(block) => keep('theirs', block)}
+        onaside={(block) => aside('theirs', block)}
+      />
+    {/if}
+  </div>
+{/snippet}
 
 <style>
   /* One card, in place of the three of the view. */
@@ -523,32 +569,24 @@
     gap: 8px;
   }
 
-  .sides {
+  /* Side 1, the result, side 2: the result is the widest, it is what is saved. Below 240 px a
+     column no longer shrinks, and the card scrolls sideways (guidelines, 9.26). */
+  .columns {
     flex: 1 1 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(240px, 1fr) minmax(240px, 1.25fr) minmax(240px, 1fr);
     min-height: 0;
+    overflow-x: auto;
   }
-  /* The result takes the larger share: it is what is saved (guidelines, 9.26). */
-  .bottom {
-    flex: 1.5 1 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    min-height: 0;
-  }
-  .bottom.split {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  }
-  @media (max-height: 700px) {
-    .bottom {
-      flex-grow: 1.2;
-    }
-    .bar small {
-      display: none;
-    }
+  /* The common ancestor, under the three columns, across their width. */
+  .base {
+    flex: 0 0 30%;
+    border-top: 1px solid var(--line-soft);
   }
   .side {
     display: grid;
+    /* One column of the width given: the content does not widen it. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
@@ -557,20 +595,24 @@
   .side + .side {
     border-left: 1px solid var(--line-soft);
   }
-  /* The two sides take the first two colors of the graph (guidelines, 2.2 and 9.26). */
-  .ours {
+  /* Side 1, on the left, and side 2 take the first two colors of the graph (guidelines, 2.2 and
+     9.26), whichever version of git each is. */
+  .first {
     --c: var(--l0);
   }
-  .theirs {
+  .second {
     --c: var(--l1);
   }
   .bar {
     display: flex;
     align-items: center;
     gap: 8px;
+    /* As high in the three columns, the result's included, which has no button: their rows start
+       at the same height (guidelines, 9.26). A small button, 24 px, and the padding and the line. */
+    min-height: 33px;
     padding: 4px 10px;
     border-bottom: 1px solid var(--line-soft);
-    background: color-mix(in srgb, var(--c) 9%, var(--panel));
+    background: color-mix(in srgb, var(--c) 10%, var(--panel));
     min-width: 0;
   }
   .result .bar,
@@ -610,7 +652,6 @@
     flex-wrap: wrap;
     gap: 8px;
     padding: 6px 12px;
-    border-top: 1px solid var(--line-soft);
     border-bottom: 1px solid var(--line-soft);
   }
   .nav {
@@ -635,10 +676,10 @@
     background: color-mix(in srgb, var(--c) 24%, var(--raised));
     border-color: var(--c);
   }
-  .take.ours {
+  .take.first {
     --c: var(--l0);
   }
-  .take.theirs {
+  .take.second {
     --c: var(--l1);
   }
   .base-toggle {

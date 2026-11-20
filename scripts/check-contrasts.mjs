@@ -197,7 +197,7 @@ function check(name, t, dark) {
     need(`a ${state} icon on its tint`, contrast(t[state], mix(t[state], s['--tint-letter'], t['--raised'])), 3);
   }
   // The two sides of the conflict editor take --l0 and --l1 (guidelines, 2.2 and 9.26): the text on
-  // their tints, and the ring of the keyboard on a line kept.
+  // their tints, and the text of a side set aside, in --muted on the tint at rest.
   for (const side of ['--l0', '--l1']) {
     const c = t[side];
     const tints = [
@@ -209,7 +209,7 @@ function check(name, t, dark) {
       ['a hovered Keep button', SIDE_BUTTON_HOVER, '--raised'],
     ];
     for (const [what, p, bg] of tints) need(`--ink on ${what} of ${side}`, contrast(t['--ink'], mix(c, p, t[bg])), 7);
-    need(`--accent ring on a kept line of ${side}`, contrast(t['--accent'], mix(c, SIDE_KEPT, t['--bg'])), 3);
+    need(`--muted on a line set aside of ${side}`, contrast(t['--muted'], mix(c, SIDE_LINE, t['--bg'])), 4.5);
   }
 }
 

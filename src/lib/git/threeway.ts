@@ -165,3 +165,81 @@ export function mergedChanges(
   const merged = [...origin].filter((e): e is [number, Side] => e[1] !== null).map(([line, side]) => ({ line, side }));
   return { ...lines, result: merged.sort((a, b) => a.line - b.line) };
 }
+
+// --- Aligning the three columns -----------------------------------------------------------------
+// The two sides and the result face one another, row by row (guidelines, 9.26). A row is a line of
+// text, or the header of a conflict in a side and its band in the result, which share a key. Where
+// a column has fewer rows for a change, a blank of the missing height fills it: the three columns
+// keep the same height and scroll as one.
+
+/** The key of the header of conflict `i` in a side, and of its band in the result. */
+export const conflictKey = (i: number) => `\u0000conflict ${i}`;
+
+/** A row of a column: its key, matched across the columns, and its height in pixels. */
+export interface Row {
+  key: string;
+  height: number;
+}
+
+/** A blank of `height` pixels before row `row` of a column (`row` = its number of rows: at the end). */
+export interface Spacer {
+  row: number;
+  height: number;
+}
+
+/** The pairs of indexes of `a` and `b` whose rows stay the same, in order. */
+function matches(a: string[], b: string[]): [number, number][] {
+  const pairs: [number, number][] = [];
+  let i = 0;
+  let j = 0;
+  for (const h of [...diffLines(a, b), { fromA: a.length, toA: a.length, fromB: b.length, toB: b.length }]) {
+    while (i < h.fromA && j < h.fromB) pairs.push([i++, j++]);
+    i = h.toA;
+    j = h.toB;
+  }
+  return pairs;
+}
+
+/**
+ * The blanks of each column. Each row of the result matched in a side is an anchor: the rows it
+ * matches start at the same height, the lower setting the others, which take a blank before it. A
+ * row matched in one side only lines up with it, the third column going on freely; the ends line
+ * up the three, which keep the same height.
+ */
+export function align(left: Row[], result: Row[], right: Row[]): { left: Spacer[]; result: Spacer[]; right: Spacer[] } {
+  const keys = (rows: Row[]) => rows.map((r) => r.key);
+  const inLeft = new Map(matches(keys(left), keys(result)).map(([l, r]) => [r, l]));
+  const inRight = new Map(matches(keys(right), keys(result)).map(([s, r]) => [r, s]));
+  const columns = [left, result, right];
+  const next = [0, 0, 0]; // the next row of each column
+  const top = [0, 0, 0]; // where it starts, blanks included
+  const out: Spacer[][] = [[], [], []];
+  /** Lines up row `row` of each column `c` given. */
+  const sync = (anchors: [number, number][]) => {
+    for (const [c, row] of anchors) {
+      while (next[c] < row) top[c] += columns[c][next[c]++].height;
+    }
+    const lowest = Math.max(...anchors.map(([c]) => top[c]));
+    for (const [c, row] of anchors) {
+      if (top[c] >= lowest) continue;
+      const last = out[c].at(-1);
+      if (last && last.row === row) last.height += lowest - top[c];
+      else out[c].push({ row, height: lowest - top[c] });
+      top[c] = lowest;
+    }
+  };
+  for (let r = 0; r < result.length; r++) {
+    const anchors: [number, number][] = [[1, r]];
+    const l = inLeft.get(r);
+    const s = inRight.get(r);
+    if (l !== undefined) anchors.push([0, l]);
+    if (s !== undefined) anchors.push([2, s]);
+    if (anchors.length > 1) sync(anchors);
+  }
+  sync([
+    [0, left.length],
+    [1, result.length],
+    [2, right.length],
+  ]);
+  return { left: out[0], result: out[1], right: out[2] };
+}
