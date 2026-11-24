@@ -1284,9 +1284,12 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
   "1 key not converted", the host and the reason in its detail. A password that
   FileZilla kept in clear is kept only if asked: "Remember the passwords found in the file in the
   system keyring", a checkbox under the list, unchecked at first, is the only way a password found
-<<<<<<< HEAD
-  in a file is kept, and only in the keyring (Secrets, above). A password kept under the master
-  password of FileZilla cannot be read: it is asked when connecting.
+  in a file is kept, and only in the keyring (Secrets, above); unchecked, it is asked when
+  connecting. A password the keyring refuses gives the warning of Secrets, "The secret could not be
+  kept", with "The system keyring refused 1 password: Ramure will ask for it when connecting.". A
+  password kept under the master password of FileZilla cannot be read: it is asked when
+  connecting. A file that is not a FileZilla export says, in place of the list, "This is not a
+  FileZilla export: in FileZilla, use File, then Export, and choose the file it writes."
 - **From PuTTY**, an SSH session becomes a host, in the group "Imported from PuTTY", its name as
   PuTTY shows it ("Web prod" for `Web%20prod`); its "Default Settings" are not a server. A Telnet,
   serial, raw or rlogin session is "Not imported", "A telnet session: Ramure opens SSH only.", as is
@@ -1296,14 +1299,6 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
   of the list, "This is not an export of the sessions of PuTTY: in regedit, export
   HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions, then choose that file."; a folder with
   none, "No sessions of PuTTY in this folder: choose ~/.putty/sessions."
-=======
-  in a file is kept, and only in the keyring (Secrets, above); unchecked, it is asked when
-  connecting. A password the keyring refuses gives the warning of Secrets, "The secret could not be
-  kept", with "The system keyring refused 1 password: Ramure will ask for it when connecting.". A
-  password kept under the master password of FileZilla cannot be read: it is asked when
-  connecting. A file that is not a FileZilla export says, in place of the list, "This is not a
-  FileZilla export: in FileZilla, use File, then Export, and choose the file it writes."
->>>>>>> 7af8d518cc9a6c28b18e0ca465738d5b1b62dad8
 - **Its last line**: "Cancel", then the main button, which counts what it adds, "Import 12
   hosts", disabled with nothing checked, the left of the line saying why, "Check at least one
   host.", as in the export. A file that is not one of Ramure says so in place of the list, "This is
