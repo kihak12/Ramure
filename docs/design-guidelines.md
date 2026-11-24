@@ -2577,7 +2577,9 @@ Typography:
 - no space before ":", ";", "?" and "!";
 - plurals agree: "1 commit", "10 commits";
 - dates and numbers in the American format, whatever the language of the system: a short date
-  "Nov 9, 2026", a full date "Monday, November 9, 2026 at 11:35 PM", a number "10,000";
+  "Nov 9, 2026", with its time where two moments of a day must be told apart "Nov 9, 2026, 11:35
+  PM", a full date "Monday, November 9, 2026 at 11:35 PM", with the seconds where they matter
+  "at 11:35:12 PM" (9.24), a number "10,000";
 - keys are named as on the keyboard: "Ctrl + Shift + N", "Enter", "Escape".
 
 ## 13. Logo

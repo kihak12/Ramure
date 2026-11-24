@@ -1119,6 +1119,7 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
   .size {
     text-align: right;
