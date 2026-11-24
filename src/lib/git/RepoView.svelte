@@ -142,8 +142,10 @@
     <div class="progress" class:on={repo.locked} aria-hidden="true"><span></span></div>
     <OperationBanner {repo} />
 
+    <!-- data-repo-view: where the keyboard is given back inside this repository (guidelines, 9.14). -->
     <div
       class="body"
+      data-repo-view
       class:bare={!repo.result}
       bind:clientWidth={bodyWidth}
       style:grid-template-columns={repo.result ? columns : undefined}

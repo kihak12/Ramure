@@ -3,6 +3,8 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
+import { focusBack } from '../ui/focus';
+import { besideList } from './fileLists';
 import { focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
 import { revealDetail } from './layout.svelte';
@@ -75,6 +77,12 @@ export interface RewordCheck {
   /** It is on a remote: a force push will be needed. */
   pushed: boolean;
 }
+
+/** What opened a diff: the row, its list and its place in it, and the view of the repository. */
+type Opener = { element: HTMLElement; list: HTMLElement | null; at: number; view: Element | null; panel: Element | null };
+
+/** The rows of a list of files, in order: where a row that left it is replaced. */
+const rowsOf = (list: HTMLElement | null) => (list?.matches('ul.files') ? [...list.querySelectorAll<HTMLElement>('button.open')] : []);
 
 export class Repo {
   // `$state.raw`: 50,000 rows must not be wrapped in reactive proxies.
@@ -685,8 +693,28 @@ export class Repo {
 
   // --- Diff -------------------------------------------------------------------------------
 
+  /**
+   * The element that opened the diff, a file row most of the time, and the list it is in: closing
+   * the diff gives one of them the keyboard back (guidelines, 9.14).
+   */
+  #opener: Opener | null = null;
+
   async #showDiff(file: OpenFile, fetch: () => Promise<Diff>) {
     const token = ++this.#diffToken;
+    const focused = typeof document === 'undefined' ? null : document.activeElement;
+    // A diff opened from another diff keeps its opener; one opened with no focus has none.
+    if (focused instanceof HTMLElement && focused !== document.body && !focused.closest('.diff')) {
+      const list = focused.closest<HTMLElement>('ul.files, [role="listbox"], [role="tree"]');
+      this.#opener = {
+        element: focused,
+        list,
+        at: rowsOf(list).indexOf(focused),
+        view: focused.closest('[data-repo-view]'),
+        panel: focused.closest('[data-file-lists]'),
+      };
+    } else if (!focused || focused === document.body) {
+      this.#opener = null;
+    }
     if (this.openFile?.key !== file.key) this.diff = null;
     this.openFile = file;
     // The diff opens on the card of the graph: asking for it brings the card back if it was hidden.
@@ -707,11 +735,39 @@ export class Repo {
   }
 
   closeDiff() {
+    const open = !!this.openFile;
+    const opener = this.#opener;
+    this.#opener = null;
     this.#diffToken++;
     this.openFile = null;
     this.diff = null;
     this.diffError = '';
     this.diffLoading = false;
+    if (open && typeof document !== 'undefined') void tick().then(() => this.#giveKeyboardBack(opener));
+  }
+
+  /**
+   * However the diff closed (Escape, "Close", or by itself when its file left its list), the
+   * keyboard it took away goes back: to the row that opened the diff, otherwise to the current
+   * row of its list, otherwise to the list of the graph that takes its place (guidelines, 9.14).
+   */
+  #giveKeyboardBack(opener: Opener | null) {
+    // Still in the diff that leaves (its animation keeps it on the page for a moment), on the body
+    // after a click, or gone with its file: the keyboard is lost. Elsewhere, it was taken: it stays.
+    const now = document.activeElement;
+    const leaving = !!now?.closest('.diff') && !this.openFile;
+    if (now && now !== document.body && now.isConnected && !leaving) return;
+    if (!opener) return;
+    const view = opener.view;
+    const usable = (el: Element | null | undefined): el is HTMLElement =>
+      el instanceof HTMLElement && el.isConnected && el !== document.body && !el.closest('[inert], [hidden]');
+    // The row gone with its file: the row that takes its place in the list; the list left empty,
+    // the next list of the changes, as for a key in the list (9.6).
+    const rows = rowsOf(opener.list);
+    const instead = opener.at >= 0 ? rows[Math.min(opener.at, rows.length - 1)] : undefined;
+    const emptied = opener.list && !opener.list.isConnected && opener.panel ? besideList(opener.panel, Number(opener.list.dataset.order ?? 0)) : null;
+    const target = [opener.element, instead, opener.list?.querySelector('[tabindex="0"]'), emptied, view?.querySelector('.center [role="listbox"]')].find(usable);
+    focusBack(target);
   }
 
   openWorkDiff(file: FileChange, staged: boolean) {
