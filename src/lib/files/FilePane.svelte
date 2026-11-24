@@ -29,6 +29,22 @@
   const parent = $derived(ready && !pane.error ? parentPath(pane.path) : null);
   const atParent = $derived(parent !== null && pane.current === UP);
 
+  /**
+   * Under 464 px of pane, the date gives way to the eye only: it stays spoken (guidelines, 9.24 and
+   * 11). The width is that of the pane, not of the window: two panes of a window at its minimum
+   * keep their dates.
+   */
+  const NARROW = 464;
+  let paneWidth = $state(0);
+  const narrow = $derived(paneWidth > 0 && paneWidth < NARROW);
+
+  /** The order of a column, in words: the chevron never says it alone (guidelines, 7 and 9.24). */
+  const ORDER: Record<SortBy, [string, string]> = {
+    name: ['A to Z', 'Z to A'],
+    modified: ['oldest first', 'newest first'],
+    size: ['smallest first', 'largest first'],
+  };
+
   /** What the header says of the connection, as a fragment (guidelines, 12). */
   const stateText = $derived(
     pane.location?.kind !== 'host'
@@ -543,6 +559,8 @@
 
 <section
   class="pane"
+  class:narrow
+  bind:clientWidth={paneWidth}
   data-pane={pane.key}
   aria-label={label}
   onfocusin={() => (files.focused = pane.key)}
@@ -672,7 +690,14 @@
     >
       <div class="cols" role="presentation">
         {#each [['name', 'Name'], ['modified', 'Modified'], ['size', 'Size']] as [by, title] (by)}
-          <button class="col {by}" type="button" onclick={() => sortBy(by as SortBy)} aria-label="Sort by {title.toLowerCase()}">
+          {@const order = pane.sort.by === by ? ORDER[by as SortBy][pane.sort.desc ? 1 : 0] : ''}
+          <button
+            class="col {by}"
+            type="button"
+            onclick={() => sortBy(by as SortBy)}
+            aria-label={order ? `Sort by ${title.toLowerCase()}, sorted ${order}` : `Sort by ${title.toLowerCase()}`}
+            title={order ? `Sorted ${order}: click to reverse` : `Sort by ${title.toLowerCase()}`}
+          >
             <span>{title}</span>
             {#if pane.sort.by === by}<span class="arrow" class:desc={pane.sort.desc} aria-hidden="true"><Icon name="chevron" size={14} /></span>{/if}
           </button>
@@ -753,7 +778,7 @@
                 <span class="label-text">{entry.name}</span>
                 {#if entry.kind === 'link'}<span class="link">link</span>{/if}
               </span>
-              <span class="modified" title={fullDate(entry.modified)}>{shortDate(entry.modified)}</span>
+              <span class="modified" class:spoken={narrow} title={fullDate(entry.modified)}>{shortDate(entry.modified)}</span>
               <span class="size">{entry.dir ? '' : size(entry.size)}</span>
             </div>
           {:else}
@@ -805,7 +830,6 @@
     overflow: hidden;
     border-radius: var(--radius-card);
     background: var(--panel);
-    container-type: inline-size;
   }
   header,
   .pathbar,
@@ -1031,11 +1055,15 @@
     align-items: center;
     gap: 6px;
   }
+  /* The header keeps the room of the scrollbar of the rows, shown or not: its columns stay over
+     theirs (guidelines, 9.24). */
   .cols {
     height: 26px;
     margin: 0 6px;
     padding: 0 6px;
     border-bottom: 1px solid var(--line-soft);
+    overflow: hidden;
+    scrollbar-gutter: stable;
   }
   .col {
     display: flex;
@@ -1059,12 +1087,22 @@
     background: var(--hover);
     color: var(--ink);
   }
+  /* The header clips what goes past it: the ring is drawn inside the button (11). */
+  .col:focus-visible {
+    outline-offset: -2px;
+  }
+  /* The words of the header start where the text of their column starts: past the icon for the
+     name, and the 4 px of the button given back for the date and the size (guidelines, 9.24). */
   .col.name {
     grid-column: 1 / 3;
-    padding-left: 24px;
+    padding-left: 28px;
+  }
+  .col.modified {
+    margin-left: -4px;
   }
   .col.size {
     justify-content: flex-end;
+    margin-right: -4px;
   }
   .arrow {
     display: grid;
@@ -1078,6 +1116,7 @@
   .rows {
     position: relative;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     min-height: 0;
     padding: 4px 6px 48px;
     outline: none;
@@ -1165,16 +1204,14 @@
     white-space: nowrap;
   }
   /* A narrow pane gives up the date first (guidelines, 9.24): the name keeps the same room as
-     before the time was added to the date. */
-  @container (max-width: 464px) {
-    .cols,
-    .row {
-      grid-template-columns: 22px minmax(0, 1fr) 72px;
-    }
-    .modified,
-    .col.modified {
-      display: none;
-    }
+     before the time was added to the date. The date of a row stays spoken (.spoken), its sort
+     button goes: a stop of the tab order is never hidden from the eye. */
+  .narrow .cols,
+  .narrow .row {
+    grid-template-columns: 22px minmax(0, 1fr) 72px;
+  }
+  .narrow .col.modified {
+    display: none;
   }
   .empty {
     margin: 0;
