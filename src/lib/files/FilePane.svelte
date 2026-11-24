@@ -198,6 +198,12 @@
         } else if (entry?.dir) {
           e.preventDefault();
           files.open(pane, entry);
+        } else if (entry) {
+          // A file goes to the pane next to this one, with the selection when it is part of it.
+          // Enter held down copies once.
+          e.preventDefault();
+          if (e.repeat) return;
+          files.send(pane, selected.has(entry.name) ? [...pane.selected] : [entry.name]);
         }
         return;
       case 'Backspace':
@@ -737,7 +743,7 @@
               title={entry.name}
               draggable="true"
               onclick={(e) => click(e, entry)}
-              ondblclick={() => files.open(pane, entry)}
+              ondblclick={() => (entry.dir ? files.open(pane, entry) : files.send(pane, [entry.name]))}
               oncontextmenu={(e) => rowMenu(e, entry)}
               ondragstart={(e) => dragStart(e, entry)}
               ondragend={dragEnd}
