@@ -32,7 +32,7 @@ export interface DialogSpec {
   /** Destructive action: the confirmation button turns red. */
   danger?: boolean;
   /** Secondary actions, between "Cancel" and the main button, in this order: the dialog closes,
-   *  then the action runs. Four buttons at most on the last line (guidelines, 9.10). */
+   *  then the action runs. Four buttons at most on the last line (guidelines, 9.1). */
   extra?: Extra | Extra[];
   /**
    * Runs the action when the main button is pressed, before the dialog closes: the reason it

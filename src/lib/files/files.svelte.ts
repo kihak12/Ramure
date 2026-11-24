@@ -656,12 +656,17 @@ class Files {
         // The free name of the first one, as an example, among the names the destination pane
         // shows when it shows that folder: the core finds the real ones as it copies.
         const isDir = source.entries.find((e) => e.name === taken[0])?.dir ?? false;
-        const there = new Set(target.path === dest ? target.entries.map((e) => e.name) : [...taken]);
+        const visible = target.path === dest;
+        const there = new Set(visible ? target.entries.map((e) => e.name) : [...taken]);
         for (const name of names) there.add(name);
         let n = 1;
         while (there.has(numbered(taken[0], isDir, n))) n++;
         const example = numbered(taken[0], isDir, n);
-        const both = taken.length === 1 ? `“Keep both” copies it as ${example}.` : `“Keep both” copies them under a free name, such as ${example}.`;
+        // The name is promised only when the pane shows the folder it goes into.
+        const both =
+          taken.length === 1 && visible
+            ? `“Keep both” copies it as ${example}.`
+            : `“Keep both” copies ${taken.length === 1 ? 'it' : 'them'} under a free name, such as ${example}.`;
         const confirmed = await dialogs.confirm({
           title: `Replace ${taken.length === 1 ? taken[0] : count(taken.length, 'item')} in ${nameOf(dest)}?`,
           body: `${taken.length === 1 ? 'This name already exists' : `These names already exist`} there: ${shown}. A replaced file cannot be recovered. A folder is merged: only the files of the same name inside it are replaced. ${both}`,

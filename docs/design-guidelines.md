@@ -646,8 +646,8 @@ its own buttons.
   "Delete host…", or "Abort…" in the banner of a rebase, a merge, a cherry-pick or a revert that
   has stopped, whose dialog says what is lost and that git keeps it nowhere: "The conflicts
   already resolved will be lost for good."
-- **The last line of a dialog**, from left to right: the way out, then a secondary action if
-  there is one, then the primary or the danger button, last, all at the right. A destructive
+- **The last line of a dialog**, from left to right: the way out, then a secondary action, or
+  two, if there are, then the primary or the danger button, last, all at the right. A destructive
   entry stands alone at the far left. Four buttons at most: what does not fit goes into the
   body, on its own line above the last one ("Test connection"). When the buttons do not fit
   on one line, the first ones go up a line, 8 px apart, each line aligned to the right: the
@@ -2043,8 +2043,10 @@ at half opacity (9.6).
   items in releases?", the names, "A replaced file cannot be recovered. A folder is merged: only
   the files of the same name inside it are replaced. “Keep both” copies them under a free name,
   such as report (1).pdf.", then "Cancel", which has the focus, "Skip them", "Keep both", and
-  "Replace", a danger button: four buttons, the most a last line holds. With one name, "Skip it"
-  and the free name of that file in the sentence.
+  "Replace", a danger button: four buttons, the most a last line holds (9.1). With one name, "Skip
+  it", and the free name of that file in the sentence when the pane shows that folder, "copies it
+  as report (1).pdf."; otherwise "under a free name, such as report (1).pdf.", the core choosing it
+  as it copies.
 - **Keeping both** copies each item whose name is taken under the first free name: the number
   in parentheses before the extension of a file, "report (1).pdf", then "(2)", after the whole
   name of a folder or of a file whose only dot leads, "releases (1)", ".bashrc (1)". The name is
