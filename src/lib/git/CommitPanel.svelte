@@ -8,7 +8,7 @@
   import { readMessage } from './message';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
-  import { focusWithRing } from '../ui/focus';
+  import { focusBack } from '../ui/focus';
 
   let { repo, commit }: { repo: Repo; commit: CommitRow } = $props();
 
@@ -104,11 +104,12 @@
     const loaded = repo.commits.some((c) => c.sha === sha);
     const view = (e.currentTarget as HTMLElement).closest('[data-repo-view]');
     repo.selectSha(sha);
-    if (!loaded || e.detail !== 0) return;
+    if (!loaded) return;
+    // After a key with its ring, after the mouse without it (9.9, 11).
     void tick().then(() => {
       const graph = view?.querySelector<HTMLElement>('.center [role="listbox"]');
       const shown = graph && !graph.closest('[inert], [hidden]');
-      focusWithRing(shown ? graph : view?.querySelector<HTMLElement>('.detail .parent, .detail button'));
+      focusBack(shown ? graph : (view?.querySelector<HTMLElement>('.detail .parent') ?? view?.querySelector<HTMLElement>('.detail button')));
     });
   }
 </script>

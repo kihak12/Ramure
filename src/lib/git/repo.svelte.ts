@@ -4,6 +4,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
 import { focusBack } from '../ui/focus';
+import { besideList } from './fileLists';
 import { focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
 import { revealDetail } from './layout.svelte';
@@ -78,7 +79,7 @@ export interface RewordCheck {
 }
 
 /** What opened a diff: the row, its list and its place in it, and the view of the repository. */
-type Opener = { element: HTMLElement; list: HTMLElement | null; at: number; view: Element | null };
+type Opener = { element: HTMLElement; list: HTMLElement | null; at: number; view: Element | null; panel: Element | null };
 
 /** The rows of a list of files, in order: where a row that left it is replaced. */
 const rowsOf = (list: HTMLElement | null) => (list?.matches('ul.files') ? [...list.querySelectorAll<HTMLElement>('button.open')] : []);
@@ -694,7 +695,13 @@ export class Repo {
     // A diff opened from another diff keeps its opener; one opened with no focus has none.
     if (focused instanceof HTMLElement && focused !== document.body && !focused.closest('.diff')) {
       const list = focused.closest<HTMLElement>('ul.files, [role="listbox"], [role="tree"]');
-      this.#opener = { element: focused, list, at: rowsOf(list).indexOf(focused), view: focused.closest('[data-repo-view]') };
+      this.#opener = {
+        element: focused,
+        list,
+        at: rowsOf(list).indexOf(focused),
+        view: focused.closest('[data-repo-view]'),
+        panel: focused.closest('[data-file-lists]'),
+      };
     } else if (!focused || focused === document.body) {
       this.#opener = null;
     }
@@ -744,10 +751,12 @@ export class Repo {
     const view = opener.view;
     const usable = (el: Element | null | undefined): el is HTMLElement =>
       el instanceof HTMLElement && el.isConnected && el !== document.body && !el.closest('[inert], [hidden]');
-    // The row gone with its file: the row that takes its place in the list (9.6).
+    // The row gone with its file: the row that takes its place in the list; the list left empty,
+    // the next list of the changes, as for a key in the list (9.6).
     const rows = rowsOf(opener.list);
     const instead = opener.at >= 0 ? rows[Math.min(opener.at, rows.length - 1)] : undefined;
-    const target = [opener.element, instead, opener.list?.querySelector('[tabindex="0"]'), view?.querySelector('.center [role="listbox"]')].find(usable);
+    const emptied = opener.list && !opener.list.isConnected && opener.panel ? besideList(opener.panel, Number(opener.list.dataset.order ?? 0)) : null;
+    const target = [opener.element, instead, opener.list?.querySelector('[tabindex="0"]'), emptied, view?.querySelector('.center [role="listbox"]')].find(usable);
     focusBack(target);
   }
 
