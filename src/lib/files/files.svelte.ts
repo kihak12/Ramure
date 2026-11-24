@@ -5,6 +5,7 @@ import { Channel, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { tick } from 'svelte';
 import { dialogs } from '../ui/dialogs.svelte';
+import { focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
 import { explain } from '../ssh/reasons';
 import { ssh } from '../ssh/ssh.svelte';
@@ -263,8 +264,9 @@ class Files {
     return this.transfers.filter((t) => t.state === 'counting' || t.state === 'copying').length;
   }
 
-  /** "Close pane": asks first when a transfer uses it. Of two panes, the one closed becomes empty. */
-  async close(pane: Pane) {
+  /** "Close pane": asks first when a transfer uses it. Of two panes, the one closed becomes empty.
+   *  False when it was canceled. */
+  async close(pane: Pane): Promise<boolean> {
     const using = this.runningWith(pane);
     if (using.length) {
       const way = using[0].to.paneKey === pane.key ? 'to' : 'from';
@@ -275,7 +277,7 @@ class Files {
         confirmLabel: 'Close pane',
         danger: true,
       });
-      if (!confirmed) return;
+      if (!confirmed) return false;
       for (const t of using) void invoke('transfer_cancel', { id: t.id });
     }
     this.#disconnect(pane);
@@ -288,6 +290,7 @@ class Files {
       if (this.focused === pane.key) this.focused = this.panes[Math.min(at, this.panes.length - 1)].key;
     }
     this.save();
+    return true;
   }
 
   #disconnect(pane: Pane) {
@@ -803,11 +806,30 @@ class Files {
     this.transfers = this.transfers.filter((t) => t.state === 'counting' || t.state === 'copying');
   }
 
-  /** Gives the keyboard to the list of a pane. */
-  async focus(pane: Pane) {
+  /**
+   * Gives the keyboard to a pane: its list, or, when it has none that can take it (an empty pane, a
+   * host not connected, whose list is inert under its panel), the main button of its panel
+   * ("Connect"), the filter of an empty pane, or else its first control. `ring`: from the keyboard,
+   * the arrival shows its ring (guidelines, 11).
+   */
+  async focus(pane: Pane, ring = false) {
     this.focused = pane.key;
     await tick();
-    document.querySelector<HTMLElement>(`[data-pane="${pane.key}"] .rows`)?.focus();
+    const root = document.querySelector<HTMLElement>(`[data-pane="${pane.key}"]`);
+    const target =
+      root?.querySelector<HTMLElement>('.rows:not([inert])') ??
+      root?.querySelector<HTMLElement>('.veil .btn.primary:not(:disabled)') ??
+      root?.querySelector<HTMLElement>('input[type="search"]:not(:disabled)') ??
+      root?.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled)');
+    if (ring) focusWithRing(target);
+    else target?.focus();
+  }
+
+  /** Ctrl + Tab, Ctrl + Shift + Tab: the keyboard goes to the next or the previous pane, in turn. */
+  cycle(by: 1 | -1) {
+    if (this.panes.length < 2) return;
+    const at = Math.max(0, this.panes.findIndex((p) => p.key === this.focused));
+    void this.focus(this.panes[(at + by + this.panes.length) % this.panes.length], true);
   }
 }
 

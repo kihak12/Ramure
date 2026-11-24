@@ -43,6 +43,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'files-add-pane', group: 'Panes', title: 'Add pane', keys: '', scope: 'files' },
   { id: 'files-hidden', group: 'Panes', title: 'Show or hide hidden files', keys: '', scope: 'files' },
   { id: 'files-mkdir', group: 'Panes', title: 'New folder…', keys: '', scope: 'files' },
+  { id: 'files-pane-next', group: 'Panes', title: 'Next pane', keys: 'Ctrl+Tab', scope: 'files' },
+  { id: 'files-pane-prev', group: 'Panes', title: 'Previous pane', keys: 'Ctrl+Shift+Tab', scope: 'files' },
   { id: 'tab-new', group: 'Tabs', title: 'New tab', keys: 'Ctrl+T', scope: 'git' },
   { id: 'tab-close', group: 'Tabs', title: 'Close tab', keys: 'Ctrl+W', scope: 'git' },
   { id: 'tab-next', group: 'Tabs', title: 'Next tab', keys: 'Ctrl+Tab', scope: 'git' },
@@ -73,6 +75,9 @@ const RESERVED = new Set(['Ctrl+C', 'Ctrl+V', 'Ctrl+X', 'Ctrl+A', 'Ctrl+Z', 'Ctr
 /** Combination of a keyboard event, such as `Ctrl+Shift+F`; empty for a modifier key alone. */
 export function comboOf(event: KeyboardEvent): string {
   let key = event.key;
+  // With Shift, the X11 keysym of Tab is ISO_Left_Tab, which WebKitGTK may not name: the key is
+  // known by its place.
+  if (event.code === 'Tab') key = 'Tab';
   if (['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'Dead', 'Unidentified'].includes(key)) return '';
   if (key === ' ') key = 'Space';
   if (key.length === 1) key = key.toUpperCase();

@@ -91,7 +91,7 @@ for (const palette of PALETTES.filter((p) => p !== 'slate')) {
   }
 }
 for (const [mode, values] of Object.entries(STRENGTHS)) {
-  for (const name of ['--tint-veil', '--tint-lane', '--tint-lane-veil', '--tint-label', '--tint-label-soft', '--tint-label-hover', '--tint-letter', '--tint-added', '--tint-removed', '--tint-line-hover', '--tint-line-pick']) {
+  for (const name of ['--tint-veil', '--tint-sel-quiet', '--tint-lane', '--tint-lane-veil', '--tint-label', '--tint-label-soft', '--tint-label-hover', '--tint-letter', '--tint-added', '--tint-removed', '--tint-line-hover', '--tint-line-pick']) {
     if (!(name in values)) findings.push(`slate, ${mode}: ${name} is missing`);
   }
 }
@@ -133,6 +133,17 @@ function check(name, t, dark) {
   // The date of a folder row that receives a drop (9.24).
   need('--muted on --accent-soft', contrast(t['--muted'], t['--accent-soft']), 4.5);
   need('--accent on --panel', contrast(t['--accent'], t['--panel']), 3);
+  // The selection of a pane that is not the active one (9.24): the text, the date and the folder
+  // icon read on it, and it stands apart from the row at rest, the hovered row and the selection.
+  const quiet = mix(t['--muted'], s['--tint-sel-quiet'], t['--panel']);
+  need('--ink on the selection of a pane not active', contrast(t['--ink'], quiet), 7);
+  need('--muted on the selection of a pane not active', contrast(t['--muted'], quiet), 4.5);
+  need('--accent on the selection of a pane not active', contrast(t['--accent'], quiet), 3);
+  for (const [b, day, night] of [['--panel', 8, 12], ['--hover', 5, 8], ['--sel', 10, 10]]) {
+    const minimum = dark ? night : day;
+    const value = distance(quiet, t[b]);
+    if (value < minimum) findings.push(`${name}: distance between the selection of a pane not active and ${b} at ${value.toFixed(1)}, needs ${minimum}`);
+  }
   for (const [a, b, day, night] of DISTANCES) {
     const minimum = dark ? night : day;
     const value = distance(t[a], t[b]);
