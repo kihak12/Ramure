@@ -101,7 +101,8 @@
       extensions: [
         State.lineSeparator.of(lineSeparator),
         lineNumbers({ formatNumber: (n) => String(n + firstLine - 1) }),
-        drawSelection(),
+        // Read only, it has no caret to draw.
+        ...(readonly ? [] : [drawSelection()]),
         markField,
         theme,
         EditorView.contentAttributes.of({ 'aria-label': label }),
@@ -154,13 +155,22 @@
 
 <style>
   .editor {
+    position: relative;
     height: 100%;
     min-height: 0;
     overflow: hidden;
   }
-  /* The ring of the keyboard, drawn inside the area, which clips (guidelines, 11). */
-  .editor:has(:global(.cm-content:focus-visible)) {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
+  /* The layers of the editor stay inside it, under the ring. */
+  .editor :global(.cm-editor) {
+    isolation: isolate;
+  }
+  /* The ring of the keyboard, over the area, which clips: the 2 px of section 9, inside
+     (guidelines, 11). */
+  .editor:has(:global(.cm-content:focus-visible))::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--accent);
+    pointer-events: none;
   }
 </style>
