@@ -109,7 +109,7 @@
         const keep = kind === 'keep';
         b.disabled = keep ? this.status === 'kept' : this.status === 'aside';
         b.title = keep ? 'Keep this side (Enter)' : 'Set this side aside (Delete)';
-        b.setAttribute('aria-label', `${keep ? 'Keep' : 'Set aside'} ${this.label} in conflict ${n}`);
+        b.setAttribute('aria-label', `${keep ? 'Keep' : 'Set aside'} ${this.label.toLowerCase()} in conflict ${n}`);
         b.innerHTML = iconMarkup(keep ? 'keep' : 'x', 14);
         b.addEventListener('mousedown', (e) => e.preventDefault());
         b.addEventListener('click', (e) => {
@@ -131,7 +131,7 @@
       return head;
     }
     get estimatedHeight() {
-      return 24;
+      return 28;
     }
   }
 
@@ -156,7 +156,7 @@
     for (let n = 1; n <= state.doc.lines; n++) {
       const line = state.doc.line(n);
       const head = heads.get(n - 1);
-      if (head !== undefined) rows.push({ key: conflictKey(head), height: 24, pos: line.from, head: true });
+      if (head !== undefined) rows.push({ key: conflictKey(head), height: 28, pos: line.from, head: true });
       rows.push({ key: line.text, height: 18, pos: line.from, head: false });
     }
     return rows;
@@ -224,7 +224,7 @@
       display: 'flex',
       alignItems: 'center',
       gap: '2px',
-      height: '24px',
+      height: '28px',
       padding: '0 4px 0 8px',
       fontFamily: 'var(--f-ui)',
       fontSize: 'var(--fs-small)',
@@ -266,6 +266,7 @@
   import { EditorState as State } from '@codemirror/state';
   import { lineNumbers } from '@codemirror/view';
   import { onMount } from 'svelte';
+  import { focusBack } from '../ui/focus';
 
   let {
     value,
@@ -405,6 +406,17 @@
       cursor = (stops.find((s) => s.index === current) ?? stops[0]).index;
       announce(cursor);
     }
+  }
+
+  /**
+   * Gives this side the keyboard, on the current conflict, its ring shown after a key (guidelines,
+   * 9.26). False when the side has no conflict to go through.
+   */
+  export function focus(): boolean {
+    if (!paneEl || !stops.length) return false;
+    focusBack(paneEl);
+    keyboard = paneEl.classList.contains('focus-ring');
+    return true;
   }
 
   /** Brings line `line` (from 1) into view, to the middle by default. */

@@ -511,7 +511,7 @@ The interface has four levels. Each is recognized by its background.
   a folded corner and a plus for a new file, both pluses of the same size, the pencil for
   an edit or a change, the trash for a deletion, the square for stopping or aborting, the
   circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
-  connection. An icon that stands for a git
+  connection, the arrows up and down for the previous and the next, or for moving up and down. An icon that stands for a git
   command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
@@ -583,7 +583,7 @@ States are the same everywhere:
 | State | Rendering |
 |---|---|
 | Hover | `--hover` background, in `--t-fast`; `--hover-side` on the window background (rail, toolbar, tabs, status bar). |
-| Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists and menus. |
+| Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists, menus and the resize handle (9.16). |
 | Selection | `--sel` background. |
 | Disabled | 45% opacity, "not allowed" cursor, no reaction on hover. |
 
@@ -601,6 +601,8 @@ States are the same everywhere:
 
 - 6 px corners, the large button included. Inner margins: 5 px at the top and bottom, 12 px on
   the sides; 12 px all around for the large button.
+- A button that opens a menu (9.9) says so with a 14 px chevron turned down after its label, in
+  `--muted`, and its label takes no "…", since it opens a menu and not a dialog: "Import hosts".
 - A toggle is a small ghost button that keeps a state (`aria-pressed`). Pressed: an
   `--accent-soft` background and an `--accent` border, the text staying in `--ink`.
 - Hover: `--hover` background and a stronger border. A primary or danger button moves 10%
@@ -646,8 +648,8 @@ its own buttons.
   "Delete host…", or "Abort…" in the banner of a rebase, a merge, a cherry-pick or a revert that
   has stopped, whose dialog says what is lost and that git keeps it nowhere: "The conflicts
   already resolved will be lost for good."
-- **The last line of a dialog**, from left to right: the way out, then a secondary action if
-  there is one, then the primary or the danger button, last, all at the right. A destructive
+- **The last line of a dialog**, from left to right: the way out, then a secondary action, or
+  two, if there are, then the primary or the danger button, last, all at the right. A destructive
   entry stands alone at the far left. Four buttons at most: what does not fit goes into the
   body, on its own line above the last one ("Test connection"). When the buttons do not fit
   on one line, the first ones go up a line, 8 px apart, each line aligned to the right: the
@@ -839,17 +841,19 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   list of files, which takes the selection away (9.24).
 - **A list in sections**, such as the branch list, is a tree: the title of a section is a row too,
   which folds and unfolds it, inset 6 px from the edges of the card like the rows. ↑ and ↓ go from
-  row to row, titles included, Home and End to the ends; → unfolds a title, or goes down to its
-  first row; ← goes back up to the title, or folds it (during a search, every section stays
-  unfolded, and its title folds nothing); Enter and Space act as a click: a title folds or
-  unfolds, a row shows its commit; the Menu key opens the menu of the row, and a title, which has
-  none, opens nothing, nor does a right click on it (9.9). The text of an empty section starts at
-  28 px, where the name of a row starts: a derived value, not a gap of 4.1. The current row shows
-  the ring, and `--sel` still marks the current branch; for a screen reader, the current row is
-  the selected one (`aria-selected`), and `aria-current` names the current branch. When the
-  current row goes away (deleted, renamed, filtered out), the next row of its section takes its
-  place, or else the one before it, or else its title, and the focus stays on the list. From the
-  filter above it, ↓ goes to the list, and during a search to the first row found.
+  row to row, titles included, Home and End to the ends, Page Down and Page Up by a page of rows,
+  from the first row when none is current yet, as in the graph, the current row staying in view
+  with its ring; → unfolds a title, or goes down to its first row; ← goes back up to the title, or
+  folds it (during a search, every section stays unfolded, and its title folds nothing); Enter and
+  Space act as a click: a title folds or unfolds, a row shows its commit; the Menu key opens the
+  menu of the row, and a title, which has none, opens nothing, nor does a right click on it (9.9).
+  The text of an empty section starts at 28 px, where the name of a row starts: a derived value,
+  not a gap of 4.1. The current row shows the ring, and `--sel` still marks the current branch;
+  for a screen reader, the current row is the selected one (`aria-selected`), and `aria-current`
+  names the current branch. When the current row goes away (deleted, renamed, filtered out), the
+  next row of its section takes its place, or else the one before it, or else its title, and the
+  focus stays on the list. From the filter above it, ↓ goes to the list, and during a search to
+  the first row found.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
 - An area that scrolls (a list, a card, a dialog) has the thin scrollbar of `src/app.css`, its
   thumb in `--muted` at 45%. On Linux it is always visible and takes its room from the area: the
@@ -871,6 +875,22 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A file of a commit ends with its counts of lines, at the right of the row: "+12 −3", in
   `--muted` at 11.5 px, tabular figures, "binary" for a binary file (9.27). The name keeps
   priority: the folder is cut first, the counts never.
+- **The keyboard in a list of files** (the changes, the files of a commit): each list is one stop
+  of the tab order, so the lists of the changes (in conflict, unstaged, staged) are one stop each;
+  ↑ and ↓ move the current row, Home and End to the first and the last, Enter opens its diff.
+  Space stages a file, or unstages it in the staged list; Delete discards its changes, after the
+  confirmation (9.10). While the changes are being written, these two keys do nothing. Where no
+  action has the key (the files in conflict, the files of a commit), Space opens the row, as Enter
+  does.
+- The keyboard stays in the list when the file leaves it, on the row that takes its place. When
+  the list is left empty, it goes to the next list of the changes, otherwise the previous one,
+  otherwise to the commit message.
+- The current row carries the inner ring on the whole row, its buttons included, never cut by the
+  list that scrolls. A button whose action has a key is for the mouse, out of the tab order, its
+  tooltip saying the key ("Stage (Space)"). The others, those of the files in conflict, follow the
+  current row in the tab order, so that every action has a way from the keyboard (11): that list
+  is one stop for its rows, then one per button of its current row. The list scrolls and would
+  cut the ring of such a button: it is drawn inside it.
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
   rebase) is made of plain rows: no border and no background of their own, since a framed row
   inside a dialog would be a card in a card (6). The rows are separated by a `--line` line: on
@@ -940,7 +960,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Appears in `--t-fast`, from the point of the click.
 - No scrollbar is drawn over an open menu (9.6).
 - A menu may also open under a button, such as "View" in the toolbar (9.2): 4 px below it,
-  its right edge on the right edge of the button, and it appears from that corner. Escape, or a
+  its right edge on the right edge of the button, and it appears from that corner. Where there is
+  no room for it below, as in the foot of the host book (9.15), it opens above, 4 px from it; where
+  it would leave the window on the left, its left edge goes on the left edge of the button. It
+  always appears from the corner nearest the button. While it is open, the button keeps its hover
+  and says so (`aria-expanded`), as "View" does (9.2). Escape, or a
   click outside, closes it and gives the focus back to the button; after Escape, the button
   shows its focus ring.
 - While a menu is open, the tooltip of the element that opened it, a row or a button, keeps
@@ -963,7 +987,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
   takes the width it needs, up to 760 px: the clone 560 px, the form of a host 600 px (9.21),
-  "Manage keys…" and the export to `~/.ssh/config` 640 px, the interactive rebase 760 px.
+  "Manage keys…", the export to `~/.ssh/config`, the preview of an import of hosts and the export
+  to a Ramure file 640 px, the interactive rebase 760 px.
 - **Place.** Centered across the window, and anchored 11% from its top, as the command palette
   (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
@@ -981,6 +1006,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
   What was typed in the dialog is lost, without a question.
 - On opening, focus goes to the first field. For a destructive action, it goes to "Cancel".
+- Tab and Shift + Tab go round the controls of the dialog, from the last to the first and back,
+  each with its ring: the focus never leaves it, nor stops on what cannot be seen. This holds for
+  every modal dialog, the command palette included, where Tab stays in its field.
 - **An action done in the dialog.** A rename, a new folder or a deletion runs when its button is
   pressed, before the dialog closes, so that what went wrong is said where the user looks
   (9.11). The button says it in "-ing" ("Renaming…", "Deleting…") and cannot be pressed again; it
@@ -999,8 +1027,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - **Never for an action done in a dialog.** A modal dialog lays its veil over the notifications
   and makes them unreachable: a click on one falls on the veil and closes the dialog. The dialog
   says the result itself, in its body or on the left of its last line (9.15, "Keys"; 9.21). One
-  exception: a dialog that closes once its action is done, to offer undoing it (the export to
-  `~/.ssh/config`, 9.15).
+  exception: a dialog that closes once its action is done, which the notification then says, and
+  offers to undo when it can (the export to `~/.ssh/config`; the import and the export of hosts,
+  9.15).
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
   colored bar on the edge. The circle takes `--tint-letter` of the color of the state (2.7).
@@ -1054,6 +1083,14 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Added line: a background at `--tint-added` of `--ok`, a "+" sign in `--ok`. Removed line: a
   background at `--tint-removed` of `--bad`, a "−" sign in `--bad` (2.7).
 - The sign is always there: color alone never says whether a line is added or removed.
+- **The keyboard.** A diff opens in the center, to the left of the list of files that opened it:
+  in the order of the screen, Shift + Tab reaches it from that list. However it closes, by
+  Escape, by "Close", or by itself when its file leaves its list, the keyboard it took away goes
+  back to the row that opened it. That row gone, it goes to the row that takes its place in its
+  list, otherwise to the current row of that list; the list left empty, to the next list of the
+  changes, as for a key in the list (9.6); otherwise to the list of the graph that takes the place
+  of the diff. The ring comes with it
+  after a key, not after the mouse (9.9, 11).
 - The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--bg`, the recessed background, in
   `--muted`: it separates the hunks, and takes neither the color of the selection nor that of
   the accent, which would make it look selected in dark.
@@ -1112,10 +1149,12 @@ own, under its graph (9.20).
   repository, asks as soon as a shell is open: "A terminal is open…".
 - A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
   gray dot; its tooltip and accessible name then say "Local terminal stopped".
-- Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus goes
-  to its main button: the terminal keeps the Tab key for the shell. A panel that asks for a
-  secret gives it to its field. Under a repository, where the state of the shell is a strip, the
-  rule is that of 9.20.
+- Whenever a panel appears over a terminal, connection lost or ended, shell stopped, unknown server
+  or changed fingerprint, the focus goes to its main button, or to its first one: the terminal
+  under it is out of the reach of the keyboard as of the mouse. A panel that asks for a secret
+  gives it to its field. A panel is not a dialog: Tab leaves it for the tabs, the rail and the
+  book, which stay at hand while a connection is down. Under a repository, where the state of
+  the shell is a strip and the terminal stays usable, the rule is that of 9.20.
 
 **Search.** Ctrl + Shift + F, or "Search the terminal" in the palette, opens a search bar
 in the terminal of the current tab.
@@ -1222,10 +1261,99 @@ all standard, since no action is expected more than the others (9.1).
   imported or generated takes its row in the list, in the order of the names: the list grows by
   one row and pushes the last line down with it, since what the action produced is that row.
 
+**Importing and exporting hosts.** So that a list of servers can be handed to someone, or brought
+from another tool. Two small standard buttons in the foot of the book, "Import hosts" and "Export
+hosts", each open a menu (9.9), above them since the foot is at the bottom of the window; "Manage
+keys…" follows them. A button that opens a menu ends with a 14 px chevron turned down, in
+`--muted`, not with "…" (9.1).
+
+- **"Import hosts"**: "From ~/.ssh/config", which adds at once the hosts of that file whose name
+  the book does not have, in the group "Imported from ~/.ssh/config", a notification counting
+  them; "From a Ramure file…", "From FileZilla…" and "From PuTTY…", which open the picker of the
+  system, "Choose a file of hosts", "Choose a FileZilla export" (its File, Export, or its
+  `sitemanager.xml`), and for PuTTY "Choose an export of the sessions of PuTTY" on Windows (a
+  `.reg` export of `HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions`), "Choose the folder
+  of the sessions of PuTTY" on Linux (`~/.putty/sessions`, a file per session); then the preview. **"Export hosts"**: "To ~/.ssh/config…" and "To a Ramure file…". The
+  menu of a host has "Export to a Ramure file…" too, for that host. An empty book offers "Import
+  hosts" beside "Add host…", with the same menu: "No hosts. Add one, or import them from
+  ~/.ssh/config, a Ramure file, FileZilla or PuTTY."
+- **A file of Ramure** holds what the book keeps of each host: its name, address, port, user, the
+  way it signs in and its key, group, tags, color, startup command, bastion, log and tunnels.
+  Never a secret: no password, no passphrase. A key under `~/.ssh` is written `~/.ssh/name`, which
+  means the same on another machine. It is a JSON file.
+- **The preview of an import**, a dialog of 640 px: its list and its last line show once the file
+  is read, so that its buttons never change under the pointer. Its title names the source, "Import from a Ramure file";
+  its sentence says what Ramure does: "Ramure adds the hosts you check to the book. A host of the
+  book is never changed or deleted." Then a list inside a dialog (9.6), as in the export below,
+  "Check all" heading it when more than one row can be checked: a row per host, a checkbox, the
+  name it takes, its state in words, and under them a line in 11.5 px. "Added", checked, with what
+  it is in the code font, `deploy@10.0.0.9 · port 2222 · key ~/.ssh/id_ed25519`, the key said "not
+  found on this machine" when it is not there, "SSH agent and default keys" without a key,
+  "password asked when you connect" for a password. "Added as web (2)", checked: its name is taken by
+  another server, in the book or earlier in the file, and its line says by which, `web is
+  deploy@10.0.0.9 in the book · this one is root@10.0.0.1`, or `web comes twice in the file · this
+  one is root@10.0.0.1`; both are kept, since replacing a host
+  would lose its color, its tunnels and its startup command. "Same server", unchecked: the book
+  reaches the same user, address and port under another name, "Already in the book as
+  “staging”.". "Not imported", the warning icon in `--warn` in place of the checkbox, with why in
+  `--muted`. The hosts already in the book under the same name and at the same address are not
+  listed: a line in `--muted` under the list counts them, "3 hosts are already in the book."
+- **From FileZilla**, an SFTP site becomes a host, in the group "Imported from FileZilla"; an FTP
+  or FTPS site is "Not imported", "FTP is not supported: Ramure opens SSH and SFTP.". A key file
+  of PuTTY (`.ppk`) without a passphrase is converted into `~/.ssh` as its host is added, as
+  "Import key…" does (Keys, below), its line saying so, "key id_prod.ppk, converted to
+  ~/.ssh/id_prod", and a line under the list counting those of the rows checked, "2 keys are
+  converted into ~/.ssh, as their hosts are added."; nothing is overwritten. A key with a
+  passphrase, a key not on this machine, or whose name `~/.ssh` already has, does not come: its
+  host is added without it, on the SSH agent and the default keys, its line saying why and what to
+  do, a label quoted as in a sentence (12): "without its key: id_prod.ppk has a passphrase; export
+  it from PuTTYgen, then import it in “Manage keys…”", "without its key: C:\keys\id.ppk is not on
+  this machine; SSH agent and default keys", "without its key: ~/.ssh/id_prod already exists;
+  import id_prod.ppk in “Manage keys…” under another name". A site whose password is read says
+  "password found in the file". Once added, the notification says the keys converted in its
+  detail, "1 key converted into ~/.ssh."; a key the conversion refused, a warning notification,
+  "1 key not converted", the host and the reason in its detail. A password that
+  FileZilla kept in clear is kept only if asked: "Remember the passwords found in the file in the
+  system keyring", a checkbox under the list, unchecked at first, is the only way a password found
+  in a file is kept, and only in the keyring (Secrets, above); unchecked, it is asked when
+  connecting. A password the keyring refuses gives the warning of Secrets, "The secret could not be
+  kept", with "The system keyring refused 1 password: Ramure will ask for it when connecting.". A
+  password kept under the master password of FileZilla cannot be read: it is asked when
+  connecting. A file that is not a FileZilla export says, in place of the list, "This is not a
+  FileZilla export: in FileZilla, use File, then Export, and choose the file it writes."
+- **From PuTTY**, an SSH session becomes a host, in the group "Imported from PuTTY", its name as
+  PuTTY shows it ("Web prod" for `Web%20prod`); its "Default Settings" are not a server. A Telnet,
+  serial, raw or rlogin session is "Not imported", "A telnet session: Ramure opens SSH only.", as is
+  one reached through a proxy, "Reached through a proxy: Ramure cannot connect through one yet.".
+  Its key goes as a key of FileZilla does. PuTTY keeps no password. On Linux, the folder picker
+  opens in `~/.putty/sessions` when it exists. A file that is not an export of PuTTY says, in place
+  of the list, "This is not an export of the sessions of PuTTY: in regedit, export
+  HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions, then choose that file."; a folder with
+  none, "No sessions of PuTTY in this folder: choose ~/.putty/sessions."
+- **Its last line**: "Cancel", then the main button, which counts what it adds, "Import 12
+  hosts", disabled with nothing checked, the left of the line saying why, "Check at least one
+  host.", as in the export. A file that is not one of Ramure says so in place of the list, "This is
+  not a file of hosts exported by Ramure.", and one whose hosts are all in the book, "All these
+  hosts are already in the book.", a file with none, "No hosts found in this file.", with "Close";
+  rows that cannot be imported only, "None of these hosts can be imported." on the left of the
+  last line. Once added, the dialog closes and a notification counts them, "12 hosts imported".
+- **Exporting to a Ramure file**, a dialog of 640 px, "Export to a Ramure file": "Ramure writes the
+  hosts you check into a file you can hand to someone. Passwords and passphrases are never
+  written.", then "The file holds names, addresses, users, key paths, groups, tags, colors, startup
+  commands and tunnels." The rows, in the order of the book, under the headers of their groups: a
+  checkbox, the name in weight 650 and the address under it in the code font (9.21); the header of
+  a group has a checkbox that checks its hosts, partly checked when some are (9.3), and "Check all"
+  heads the list; both act on the hosts the filter shows, the button counting all those checked.
+  The header of a group is as in the book: its name in `--muted`, 12 px, weight 650. All are checked at first; opened from the menu of a host, that host only. A
+  filter field (9.3) heads the list from 9 hosts on. The last line: "Cancel", then "Export 12
+  hosts…", which opens the "Save" picker of the system with a name proposed after what is
+  exported, `ramure-hosts_2026-11-24.json`, or `web-prod_2026-11-24.json` for one host. Once
+  written, a notification says "12 hosts exported", with the path of the file in its detail.
+
 **Exporting to `~/.ssh/config`.** So that a host of the book opens with `ssh <name>` too, in a
-terminal or in any tool that reads that file. "Export to ~/.ssh/config…", a small standard
-button in the foot of the book under "Import from ~/.ssh/config", opens a dialog for every host; the
-same entry in the menu of a host opens it for that host alone. It is an export done when asked,
+terminal or in any tool that reads that file. "To ~/.ssh/config…", in the menu "Export hosts" of
+the foot of the book, opens a dialog for every host; "Export to ~/.ssh/config…" in the menu of a
+host opens it for that host alone. It is an export done when asked,
 never a synchronization: nothing is written before the dialog has shown what will change.
 
 - **The dialog**, "Export to ~/.ssh/config", says what Ramure does: "Ramure adds or updates these
@@ -1387,8 +1515,8 @@ reconnection" is on in the settings.
   one failed, and offers "Reconnect now" (main button) and "Stop".
   The line of the reason keeps its place, so that the buttons do not move from one try to the
   next.
-- When the panel appears, the focus goes to "Reconnect now": the terminal keeps the
-  Tab key for the shell, and the keyboard could not reach the panel otherwise.
+- When the panel appears, the focus goes to "Reconnect now": the terminal under it is out of
+  the reach of the keyboard.
 - The countdown changes every second and is not read; a screen reader hears one sentence per
   try ("Connection lost. Attempt 2 of 5 in 5 seconds.").
 - The dot of the tab and of the header blinks in `--warn` while it waits and tries; its tooltip
@@ -1427,6 +1555,8 @@ arrows, a horizontal marker and the vertical resize cursor.
   chosen widths are restored at the next launch.
 - The handle is only 8 px wide: it is one of the two exceptions to the 24 px target, with the
   overview strip of the conflict editor (9.26), and the keyboard makes up for it.
+- A screen reader announces its name, its value in pixels ("280 pixels wide", "high" for the
+  horizontal handle) and its bounds.
 - A hidden card has no handle (9.17).
 
 ### 9.17 Showing and hiding cards
@@ -1752,7 +1882,18 @@ need the room.
   grows to 112%, in `--t-fast`; the color itself says what it is, so no `--hover` background.
   Chosen: a 2 px ring of its own color (of `--muted` for "None"), 2 px away from it, drawn
   with a flat shadow, not an elevation. Keyboard focus: the ring of the application, 2 px of
-  `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Color 3".
+  `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Color 3". The
+  group is one stop of the tab order: the arrows go from swatch to swatch, Home and End to "None"
+  and to the last color, each choosing as it goes, as a group of radio buttons does.
+- **The keyboard in the host book.** The book is one stop of the tab order, a list (9.6): ↑ and ↓
+  move the current host, Home and End to the first and the last, across the groups; Enter opens a
+  terminal, F2 edits the host, Delete deletes it after its confirmation, the Menu key opens its
+  menu, the row keeping its ring while the menu is open (9.9). A deletion canceled gives the row
+  its ring back. The current host carries the inner ring of 9.6 on the whole row, its buttons
+  included.
+  The two buttons of a row, "Open terminal (Enter)" and "Edit (F2)", are for the mouse and are not
+  stops of the tab order; their tooltips say the keys, and for a host behind a bastion, why "Open
+  terminal" is disabled ("Jump through a bastion: not supported yet").
 - **In the host book**, the chosen color is a 4 px bar with round ends on the left of the row, as
   high as the row. It names the host and never says its state, which is why it is the one colored
   bar allowed on the edge of a row (1): the selection is the background of the row (9.6), and the
@@ -1987,7 +2128,15 @@ of 24 px (4.3, 9.6):
   which goes to the stop before the list. After any gesture of the mouse, the ring of the current
   row waits for a key other than Shift, Ctrl or Alt alone (11). The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
-  folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
+  folder. On a file, it copies the file to the pane next to this one, on its right, or on its left
+  for the last pane: into the folder that pane shows, as a drag does, after asking about a name
+  already there (9.10), never a move, even between two folders of the same place, where the menu
+  offers "Move to …" and Ctrl + drop copies. Enter copies the selection when the current row is
+  part of it, the current file otherwise, once however long it is held; a double-click copies the
+  file clicked, with Ctrl or Shift too. When it cannot go, a warning notification says why and
+  what to do (9.11): "report.pdf was not copied", with "Choose a place in the pane next to this one
+  first.", "The pane next to this one is not connected yet." or "Already in this folder." F2
+  renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
   Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
   folder has an empty part too, once scrolled to the end.
@@ -1996,8 +2145,12 @@ of 24 px (4.3, 9.6):
   touches are selected as it grows and let go as it shrinks; with Ctrl or Shift held at the
   start, they add to the selection that was there. A press on the scrollbar scrolls, and never
   starts one. Near the top or the bottom of the list, the
-  list scrolls and the rectangle follows. Escape, while it is drawn, puts the selection back as
-  it was. A row is dragged from the row itself: the rectangle never starts on a row.
+  list scrolls and the rectangle follows. The rectangle stays inside the list: a pointer that
+  leaves it, toward the other pane, the path or the foot, draws it to the edge of the list, which
+  neither scrolls sideways nor past its end, its empty part included. Nothing of the window is
+  selected as text while it is drawn, and a text selected before lets go as it starts, as a click
+  does. Escape, while it is drawn, puts the selection back as it was. A row is dragged from the
+  row itself: the rectangle never starts on a row.
 - **The menu of a row**: "Open" for a folder, "Copy to …" (copy icon) for each other pane on
   another place and "Move to …" (folder icon) for each other pane on the same place, naming the
   pane and its folder ("Copy to staging · /var/www"): the keyboard way to do what dragging does.
@@ -2044,9 +2197,19 @@ at half opacity (9.6).
   connected."
 - **A name already there.** A copy that would replace something first asks (9.10): "Replace 2
   items in releases?", the names, "A replaced file cannot be recovered. A folder is merged: only
-  the files of the same name inside it are replaced.", then "Cancel", which has the focus, "Skip
-  them", and "Replace", a danger button. A move never replaces: what is taken stays where it is,
-  and a warning notification says so ("2 items were not moved", the names in its detail).
+  the files of the same name inside it are replaced. “Keep both” copies them under a free name,
+  such as report (1).pdf.", then "Cancel", which has the focus, "Skip them", "Keep both", and
+  "Replace", a danger button: four buttons, the most a last line holds (9.1). With one name, "Skip
+  it", and the free name of that file in the sentence when the pane shows that folder, "copies it
+  as report (1).pdf."; otherwise "under a free name, such as report (1).pdf.", the core choosing it
+  as it copies.
+- **Keeping both** copies each item whose name is taken under the first free name: the number
+  in parentheses before the extension of a file, "report (1).pdf", then "(2)", after the whole
+  name of a folder or of a file whose only dot leads, "releases (1)", ".bashrc (1)". The name is
+  free in the folder and among the names the same copy brings. A folder is copied whole beside
+  the one there, never merged. The copied items become the selection under their new names.
+- A move never replaces: what is taken stays where it is, and a warning notification says so ("2
+  items were not moved", the names in its detail).
 - A file is written under a name of its own, then takes its name once whole: a file already
   there is only replaced by a whole one, and a transfer that stops leaves no half file.
 
@@ -2183,20 +2346,22 @@ aside with its cross, as in the merge tools of the IDEs.
 
 **Place.** One card in place of the three of the view, under the banner of the operation (9.1),
 whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a file of the list
-"In conflict" of the changes panel.
+"In conflict" of the changes panel, or Enter or Space on it.
 
 **The header**, one line: the merge icon in `--warn`, the path of the file in the code font, and
-under it what is left, "2 conflicts to decide", or "No conflict left: the file can be saved".
-Then "Close" and "Save and mark resolved", small buttons as the actions of a card are (9.1), in
+under it what is left, then what git did on its own: "2 conflicts to decide · 4 changes merged by
+git", or "No conflict left: the file can be saved · 4 changes merged by git"; with no change
+merged by git, the first part alone; a conflict typed by hand that keeps the markers of git, "1
+conflict still has the markers of git". Its figures are tabular (3.4). Then "Close" and "Save and mark resolved", small buttons as the actions of a card are (9.1), in
 the order of the last line of a dialog: the way out, then the main button, at the right, since
 the editor is a step that ends with saving. "Save and mark resolved" is disabled while a conflict
-is left; the line under the path says why, and its tooltip repeats it: "Decide every conflict
-first.", or "Git is working: wait for it to finish." Saving writes the file and marks it resolved
+is left; the line under the path says what is left, and its tooltip says why: "Decide every
+conflict first.", or "Git is working: wait for it to finish." Saving writes the file and marks it resolved
 (`git add`).
 
 **Three columns.** Side 1 on the left, the result in the middle, side 2 on the right, in widths of
 1, 1.25 and 1: the result is the widest, it is what is saved. Below 240 px a column no longer
-shrinks, and the columns scroll sideways, as one; the header, the bar and the ancestor stay.
+shrinks, and the columns scroll sideways, as one; the header, the toolbar and the ancestor stay.
 
 - **The rows line up.** A line of a side faces its line in the result, a line kept from a side
   faces its line there, and the header of a conflict faces its band. Where a column has fewer
@@ -2233,16 +2398,16 @@ shrinks, and the columns scroll sideways, as one; the header, the bar and the an
   (11); its tooltip says "Changed from the common ancestor, merged by git". It has no header and no
   arrow: git has already merged it into the result, and there is nothing to keep. Without a common ancestor, a file added on both sides, nothing is marked outside the
   conflicts; nor in a side where a conflict is not found, whose lines would pass for changes.
-- **The header of a conflict**, a row of 24 px above its first line, on each side: "Conflict 1 ·
+- **The header of a conflict**, a row of 28 px above its first line, on each side: "Conflict 1 ·
   5 lines" in 11.5 px and `--muted`, then "· kept" or "· set aside" when it is; the header of the
   current conflict is in `--ink` and weight 650, the one mark of the current conflict in the
   sides. A conflict that has no line on one side has no header there.
 - **The arrow and the cross**, at the edge of the header toward the result: two small ghost
-  buttons made of an icon alone, 24 px wide and as high as the header. The arrow, two chevrons
+  buttons made of an icon alone, 24 px wide and as high as the header, 28 px. The arrow, two chevrons
   toward the result, is the closest to it: at the right of side 1, at the left of side 2, turned
   over; it keeps the side whole ("Keep this side (Enter)"). The cross sets the side aside ("Set
   this side aside (Delete)"). The arrow of a side kept and the cross of a side set aside are
-  disabled. Their accessible names say the side and the conflict: "Keep Your commit in conflict
+  disabled. Their accessible names say the side and the conflict: "Keep your commit in conflict
   2".
 - **What they do.** The arrow keeps the side after a side already kept: the result takes the
   lines of the sides in the order of their arrows, so that both can be kept, in either order. The
@@ -2250,20 +2415,32 @@ shrinks, and the columns scroll sideways, as one; the header, the bar and the an
   or once both are set aside, with no line; one side set aside and the other open, it is still to
   decide. The arrow takes back a side set aside.
 
-**The bar**, between the header and the columns, from left to right: "Conflict 1 of 3" between two
-small buttons made of an icon alone, "Previous conflict" and "Next conflict" (Shift + F8, F8); then
-small standard buttons that decide the current conflict, as the arrows do: "Keep your commit" and
-"Keep upstream" (or "Keep your version" and "Keep the incoming
-version"), side 1 first, each with 12% of the color of its side, 24% on hover in place of `--hover`, "Keep both", "Keep both, reversed", "Keep neither";
-then "Start over", a small ghost button, which puts the conflict back as it was; at the right, the
-checkbox "Show the common ancestor". The verb is "Keep", everywhere, in the list of the files too.
+**The toolbar**, one line between the header and the columns, with a `--line-soft` line under it,
+from left to right:
+
+- "Conflict 1 of 3" between two small buttons made of an icon alone, `up` and `down`, "Previous
+  conflict" and "Next conflict" (Shift + F8, F8). The number of the current one is in weight 650,
+  the current element (3.3); the figures are tabular.
+- The changes merged by git, the same way: "Change 2 of 4" between "Previous change merged by git"
+  and "Next change merged by git" (Shift + F7, F7). A change is a run of lines that git merged from one side, a mark of
+  the overview strip. Until one is reached, the count alone, "4 changes"; with none, "No change
+  merged by git", the two buttons disabled. The next change is the one after the last reached, by
+  these buttons or by the strip; it comes to the middle of the three columns, at once (8).
+- At the right, "Common ancestor", a toggle (9.1) with the icon of a panel at the bottom, which
+  shows the common ancestor under the columns. A file added on both sides has none, and no toggle.
+
+The actions that decide a conflict are on its band, in the result, where the eye is. The verb is
+"Keep", everywhere, in the list of the files too.
+
+**The current conflict** is the one last reached: by the toolbar, F8, the strip, an arrow, a cross,
+a button of its band, or the caret put in it in the result. A scroll alone does not change it.
 
 **The order of the lines kept** is that of the sides kept: the order of their arrows; "Keep both"
 puts side 1 first, "Keep both, reversed" side 2. A side is kept whole: a line is chosen alone by
 typing in the result.
 
 **The result**, editable, in the middle column. The caption of its bar: "Keep a side of each
-conflict with its arrow; it stays editable."
+conflict with its arrow or on its band; it stays editable."
 
 - A line kept from a side carries, in a gutter, the chip of its side, "1" or "2", the letter of a
   file state (9.6) on the tint of its side: the number says where the line comes from, not the
@@ -2274,11 +2451,31 @@ conflict with its arrow; it stays editable."
   the two apart: "Kept from side 1" for a line kept from a conflict, "Merged by git from side 1"
   for a change that did not conflict. These marks follow the lines when the text above them is
   typed; a line typed in, split or deleted loses its mark, as a line typed by hand has none.
-- A conflict not decided yet is not shown as the markers of git: it is one band of 24 px on
-  `--warn-soft`, with the letter "!" (9.6) and "Conflict 2 of 3: keep a side with its arrow", which
-  the caret steps over. The markers stay in the file underneath, so that saving is refused while
-  one is left. The numbers of the lines it hides are skipped: the result counts the lines of the
-  file, markers included, until the conflict is decided.
+- **The band of a conflict**, a row of 28 px, faces its headers in the sides. A conflict not
+  decided yet is not shown as the markers of git: its band stands in their place, on
+  `--warn-soft`, with the letter "!" (9.6), "Conflict 2 of 3", then what decides it, small
+  buttons: "Keep" with the chip "1", "Keep" with the chip "2", the chip at 14 px as in the gutter,
+  standard, each with 12% of the color of its side, 24% on hover in place of `--hover`, and a border
+  of 55% of that color, all of it on hover; their tooltips name the side ("Keep your commit",
+  "Keep upstream"). Then "More", a small ghost button with a 14 px chevron, whose menu (9.9) holds
+  "Keep both", "Keep both, reversed" and "Keep neither", their hints naming the order; "More" is
+  the one label that is not a verb, as the menu "View" of the toolbar (9.2). After a choice in
+  that menu, the band it opened from gives way to the band of the conflict decided: the keyboard
+  goes to the result. The caret steps over
+  the band. The markers stay in the file underneath, so that saving is refused while one is left.
+  The numbers of the lines it hides are skipped: the result counts the lines of the file, markers
+  included, until the conflict is decided.
+- Decided, the band stays, above its lines, as the headers of the sides are: on `--panel`, with a
+  `--line-soft` line above it, "Conflict 2 of 3 · kept from your commit · 4 lines" (in the middle
+  of a sentence, a side is named in lower case, 12), "kept from both", "no line kept" or "edited by
+  hand", in 11.5 px and `--muted`, then "Start over", a small
+  ghost button, which puts the conflict back as it was. The band of the current conflict is in
+  `--ink` and weight 650, as its headers.
+- The buttons of a band follow its text, at its left: a band is as wide as the longest line of
+  the result, which may run past the view. The text is cut first, whole in its tooltip (3.4); the
+  buttons stay, in `--ink`. The buttons of
+  the bands are not stops of the tab order: from the keyboard, a conflict is decided in the sides
+  (Enter, Delete), as with the arrows, and Ctrl + Z takes a choice back.
 - A conflict is decided once a side is kept, or both are set aside ("Keep neither"). The cross on
   its last side kept leaves it to decide again.
 - Typing stays free. Typing in a conflict already decided marks it "edited by hand", said in its
@@ -2299,19 +2496,19 @@ strip carries no mark, and a click there goes to the end of the file.
   `--radius-xs`; in `--warn` while it is to decide, in `--ok` once decided; edited by hand, a
   dashed `--ok` edge on `--ok-soft`. The current conflict is ringed in `--accent`, 1.5 px, as the
   ring of the keyboard (9.6). The strip is a map of the conflicts: their state is said in words by
-  their band in the result and by the counter of the bar, the color repeats it here (11).
+  their band in the result and by the header, the color repeats it here (11).
 - A change merged by git is a thin line, 2 px high at least, square, too thin to round, in the half
   of the strip of its side, the left half in `--l0` for side 1, the right one in `--l1` for side
   2: the place says it, not the color alone (11).
 - A click goes to the nearest mark within 12 px, a 24 px target around the thin ones, or else to
   the place clicked: it comes to the middle of the three columns, at once, as a scroll does (8); a
-  conflict becomes the current one. The tooltip of a mark says what and where: "Conflict 2 · lines
+  conflict becomes the current one, a change the last one reached (F7). The tooltip of a mark says what and where: "Conflict 2 · lines
   112 to 115 · decided", "to decide" or "edited by hand" in the other states, "Change merged by
   git from Upstream · line 40".
 - The strip has no hover of its own: the pointer is a hand over it, and a mark shows its tooltip.
   It has no disabled state either: a click only moves through the file, which nothing locks.
-- The strip is not a stop of the tab order and is hidden from screen readers: the counter of the
-  bar and F8 give the same from the keyboard. Only 12 px wide, it is the second exception to the
+- The strip is not a stop of the tab order and is hidden from screen readers: the counters of the
+  toolbar, F8 and F7 give the same from the keyboard. Only 12 px wide, it is the second exception to the
   24 px target, after the handle of a card (9.16), and the keyboard makes up for it.
 
 **The common ancestor**, shown under the three columns, across their width, read only, follows the
@@ -2321,19 +2518,29 @@ current conflict and marks it, as the sides do.
 
 - The two sides are stops of the tab order, a side with no conflict to go through excepted, and a
   click on a side, its text or a button, gives it the keyboard; the ring of its conflict shows for
-  the keyboard only (9.6). The tab order follows the screen: the bar, then side 1, its "Keep all"
+  the keyboard only (9.6). The tab order follows the screen: the header, the toolbar, then side 1,
+  its "Keep all"
   and its conflicts, the result, then side 2; the arrows and crosses are reached through their
   side, not one by one. In a side, ↑ and ↓ go from conflict to conflict, Home and End to the
   first and the last, with the inner ring of 9.6 on its header; Enter keeps the side, Delete (or
   Backspace) sets it aside; ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes
   is announced: "Conflict 1, Your commit, 4 lines, kept".
-- The two "Keep all" buttons name their side for a screen reader: "Keep all of Your commit".
-- F8 and Shift + F8 go to the next and the previous conflict, Ctrl + S saves once nothing is left
+- The two "Keep all" buttons name their side for a screen reader: "Keep all of your commit".
+- F8 and Shift + F8 go to the next and the previous conflict, F7 and Shift + F7 to the next and
+  the previous change merged by git, Ctrl + S saves once nothing is left
   to decide, Escape closes, after "Close without saving?" when something was changed: "The
   choices and corrections made in this editor will be lost for good. The file keeps its conflict
   markers."
+- **Opening and closing.** The editor takes the keyboard as it opens, from a click as from a key:
+  side 1, on its first conflict to decide, otherwise the result. A file that cannot be merged line
+  by line, or that could not be read, gives it to "Close": keeping a side of it is a choice to
+  make, not a default. While it is open, the cards it covers, and their handles, are out of the tab
+  order; the toolbar and the bar of the operation stay at hand. Closed, by Escape, "Close" or
+  saving, it gives the keyboard back to the row of its file, otherwise to the row that takes its
+  place in its list, otherwise to the first list of the changes, otherwise to the commit message.
+  The ring comes with it after a key, not after the mouse (9.9, 11).
 - The captions of the bars of the result and of the ancestor are sentences: "Keep a side of each
-  conflict with its arrow; it stays editable.", "Before both changes."
+  conflict with its arrow or on its band; it stays editable.", "Before both changes."
 
 **A file that cannot be merged line by line**, binary, too large, or deleted on one side, says so
 in place of the panes, with "Keep your commit" and "Keep upstream" (or their merge names), side 1
@@ -2360,7 +2567,11 @@ at the right (9.25).
   repository has a remote; "Refs", then the branches and tags on the commit, their names in the
   code font in `--ink`, cut on the right with the whole list in the tooltip (3.4); "Parent" or
   "Parents", then each parent as a small ghost button with its short SHA in the code font, which
-  selects that commit in the graph. A first commit says "No parent: first commit".
+  selects that commit in the graph. Since the detail is drawn again, the row of that commit in the
+  graph takes the keyboard, with its ring after a key, without it after the mouse (9.9, 11); the
+  graph hidden, the first parent link of the detail drawn again takes it, or its first button for
+  a first commit. A parent that is not loaded changes nothing but its warning: the keyboard stays
+  on its link. A first commit says "No parent: first commit".
 
 **The message**, its own zone: the description in `--ink` at `--fs-body`. The hierarchy comes
 from the size and the weight of the subject, not from a grey.
@@ -2492,7 +2703,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Visible focus.** Every element that takes keyboard focus shows it. An outline is never
   removed without another marker replacing it. A focus given by the application, to the main
   button of a panel or back to the button of a menu, shows the same ring as one reached with
-  Tab, until the next click.
+  Tab, until the next click. A focus given back after a gesture of the mouse, a click on "Close"
+  for instance, comes without the ring, as the browser does for a click.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element. The labels of the graph are reached through
   the branch list (9.4).

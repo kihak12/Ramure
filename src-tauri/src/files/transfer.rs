@@ -32,10 +32,32 @@ pub struct TransferParams {
     sources: Vec<String>,
     /// The folder of `to` they are copied into.
     dest: String,
-    /// What to do with an item whose name `dest` already has: replace it, a folder being merged
-    /// into the one there, or leave it out.
+    /// What to do with an item whose name `dest` already has.
     #[serde(default)]
-    replace: bool,
+    taken: Taken,
+}
+
+/// What a copy does with an item whose name the folder it goes into already has.
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum Taken {
+    /// It is left out.
+    #[default]
+    Skip,
+    /// It replaces what is there; a folder is merged into the one there.
+    Replace,
+    /// It is copied under a free name, "report (1).pdf", and both are kept.
+    KeepBoth,
+}
+
+/// `name` with the number `n`: "report (1).pdf", the number before the extension of a file, after
+/// the whole name of a folder or of a file whose only dot leads (".bashrc (1)").
+pub fn numbered(name: &str, is_dir: bool, n: u32) -> String {
+    let (stem, ext) = match name.rfind('.') {
+        Some(dot) if !is_dir && dot > 0 => name.split_at(dot),
+        _ => (name, ""),
+    };
+    format!("{stem} ({n}){ext}")
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -66,6 +88,8 @@ pub struct Summary {
     pub bytes: u64,
     /// Names left out because the folder already had them.
     pub skipped: Vec<String>,
+    /// Names copied under another one because the folder already had them: [name, new name].
+    pub renamed: Vec<(String, String)>,
     /// Links to folders, which are not followed: what they lead to is not copied.
     pub links: Vec<String>,
     /// What could not be copied, and why. The rest was.
@@ -116,17 +140,20 @@ pub struct Job<'a> {
     pub same: bool,
     pub sources: &'a [String],
     pub dest: &'a str,
-    pub replace: bool,
+    pub taken: Taken,
 }
 
 /// Lists everything to copy, folders before what they hold.
 async fn count(job: &Job<'_>, cancel: &AtomicBool, summary: &mut Summary) -> Result<Vec<Item>, FsError> {
-    let Job { from, to, same, sources, dest, replace } = *job;
+    let Job { from, to, same, sources, dest, taken } = *job;
     let mut items = Vec::new();
+    // The names this copy brings, and the free names it chose: none is given twice.
+    let mut claimed: std::collections::HashSet<String> = sources.iter().map(|source| from.name_of(source)).collect();
     for source in sources {
         stop_if_canceled(cancel)?;
         let name = from.name_of(source);
-        let target = to.join(dest, &name);
+        let mut target = to.join(dest, &name);
+        let mut rel = name.clone();
         if same && target == *source {
             summary.failed.push(Failure { path: name, reason: "It is already in this folder.".into() });
             continue;
@@ -146,11 +173,25 @@ async fn count(job: &Job<'_>, cancel: &AtomicBool, summary: &mut Summary) -> Res
             continue;
         }
         if let Some(there) = to.lstat(&target).await? {
-            if !replace {
+            if taken == Taken::Skip {
                 summary.skipped.push(name);
                 continue;
             }
-            if there.is_dir() != is_dir {
+            if taken == Taken::KeepBoth {
+                // The first numbered name that neither the folder nor this copy has.
+                let mut n = 1;
+                let fresh = loop {
+                    let candidate = numbered(&name, is_dir, n);
+                    n += 1;
+                    if !claimed.contains(&candidate) && to.lstat(&to.join(dest, &candidate)).await?.is_none() {
+                        break candidate;
+                    }
+                };
+                claimed.insert(fresh.clone());
+                target = to.join(dest, &fresh);
+                summary.renamed.push((name.clone(), fresh.clone()));
+                rel = fresh;
+            } else if there.is_dir() != is_dir {
                 let reason = if is_dir {
                     "The folder has a file of that name: rename one of them first."
                 } else {
@@ -161,13 +202,13 @@ async fn count(job: &Job<'_>, cancel: &AtomicBool, summary: &mut Summary) -> Res
             }
         }
         match followed {
-            Followed::File(meta) => items.push(Item { src: source.clone(), dst: target, rel: name, meta }),
+            Followed::File(meta) => items.push(Item { src: source.clone(), dst: target, rel, meta }),
             Followed::Nothing => {
-                summary.failed.push(Failure { path: name, reason: "It is neither a file nor a folder.".into() });
+                summary.failed.push(Failure { path: rel, reason: "It is neither a file nor a folder.".into() });
             }
             Followed::Folder => {
                 // Depth first, without recursion; a folder is listed before what it holds.
-                let mut pending = vec![(source.clone(), target, name)];
+                let mut pending = vec![(source.clone(), target, rel)];
                 while let Some((src, dst, rel)) = pending.pop() {
                     stop_if_canceled(cancel)?;
                     items.push(Item { src: src.clone(), dst: dst.clone(), rel: rel.clone(), meta });
@@ -377,7 +418,7 @@ pub async fn transfer_start(state: State<'_, FilesState>, params: TransferParams
         same: params.from == params.to,
         sources: &params.sources,
         dest: &params.dest,
-        replace: params.replace,
+        taken: params.taken,
     };
     let result = run(&job, &cancel, |progress, now| {
         if now || last.elapsed() >= REPORT_EVERY {
@@ -416,10 +457,14 @@ mod tests {
     }
 
     async fn copy(sources: &[PathBuf], dest: &std::path::Path, replace: bool) -> Result<Summary, FsError> {
+        copy_as(sources, dest, if replace { Taken::Replace } else { Taken::Skip }).await
+    }
+
+    async fn copy_as(sources: &[PathBuf], dest: &std::path::Path, taken: Taken) -> Result<Summary, FsError> {
         let sources: Vec<String> = sources.iter().map(|p| s(p)).collect();
         let cancel = AtomicBool::new(false);
         let dest = s(dest);
-        let job = Job { from: &Fs::Local, to: &Fs::Local, same: true, sources: &sources, dest: &dest, replace };
+        let job = Job { from: &Fs::Local, to: &Fs::Local, same: true, sources: &sources, dest: &dest, taken };
         run(&job, &cancel, |_, _| {}).await
     }
 
@@ -478,6 +523,41 @@ mod tests {
         std::fs::remove_dir_all(&dest).unwrap();
     }
 
+    #[test]
+    fn a_number_goes_before_the_extension_of_a_file() {
+        assert_eq!(numbered("report.pdf", false, 1), "report (1).pdf");
+        assert_eq!(numbered("archive.tar.gz", false, 2), "archive.tar (2).gz");
+        assert_eq!(numbered(".bashrc", false, 1), ".bashrc (1)");
+        assert_eq!(numbered("notes", false, 1), "notes (1)");
+        assert_eq!(numbered("site.v2", true, 1), "site.v2 (1)");
+    }
+
+    #[tokio::test]
+    async fn keeping_both_copies_under_the_first_free_name() {
+        let src = scratch("src");
+        let dest = scratch("dest");
+        std::fs::write(src.join("a.txt"), b"new").unwrap();
+        std::fs::write(src.join("a (1).txt"), b"other").unwrap();
+        std::fs::create_dir_all(src.join("conf")).unwrap();
+        std::fs::write(src.join("conf/x"), b"x").unwrap();
+        std::fs::write(dest.join("a.txt"), b"old").unwrap();
+        std::fs::write(dest.join("a (2).txt"), b"older").unwrap();
+        std::fs::create_dir_all(dest.join("conf")).unwrap();
+
+        let summary = copy_as(&[src.join("a.txt"), src.join("a (1).txt"), src.join("conf")], &dest, Taken::KeepBoth).await.unwrap();
+        // "a (1).txt" is a name this copy brings, "a (2).txt" one the folder has: "a (3).txt" is free.
+        assert_eq!(summary.renamed, vec![("a.txt".to_string(), "a (3).txt".to_string()), ("conf".to_string(), "conf (1)".to_string())]);
+        assert_eq!(std::fs::read(dest.join("a.txt")).unwrap(), b"old");
+        assert_eq!(std::fs::read(dest.join("a (3).txt")).unwrap(), b"new");
+        assert_eq!(std::fs::read(dest.join("a (1).txt")).unwrap(), b"other");
+        assert_eq!(std::fs::read(dest.join("a (2).txt")).unwrap(), b"older");
+        // A folder is copied whole beside the one there, never merged.
+        assert_eq!(std::fs::read(dest.join("conf (1)/x")).unwrap(), b"x");
+        assert!(!dest.join("conf/x").exists());
+        std::fs::remove_dir_all(&src).unwrap();
+        std::fs::remove_dir_all(&dest).unwrap();
+    }
+
     #[tokio::test]
     async fn a_folder_replaces_a_folder_by_merging_but_never_a_file() {
         let src = scratch("src");
@@ -523,7 +603,7 @@ mod tests {
         std::fs::write(src.join("a.txt"), b"x").unwrap();
         let cancel = AtomicBool::new(true);
         let (sources, dest_path) = ([s(&src.join("a.txt"))], s(&dest));
-        let job = Job { from: &Fs::Local, to: &Fs::Local, same: true, sources: &sources, dest: &dest_path, replace: false };
+        let job = Job { from: &Fs::Local, to: &Fs::Local, same: true, sources: &sources, dest: &dest_path, taken: Taken::Skip };
         let result = run(&job, &cancel, |_, _| {}).await;
         assert_eq!(result.unwrap_err(), FsError::Canceled);
         assert!(!dest.join("a.txt").exists());
@@ -540,7 +620,7 @@ mod tests {
         let cancel = AtomicBool::new(false);
         let mut last = Progress::default();
         let (sources, dest_path) = ([s(&src.join("a")), s(&src.join("b"))], s(&dest));
-        let job = Job { from: &Fs::Local, to: &Fs::Local, same: true, sources: &sources, dest: &dest_path, replace: false };
+        let job = Job { from: &Fs::Local, to: &Fs::Local, same: true, sources: &sources, dest: &dest_path, taken: Taken::Skip };
         run(&job, &cancel, |p, _| last = p.clone()).await.unwrap();
         assert_eq!((last.files_done, last.files_total, last.bytes_done, last.bytes_total), (2, 2, 1500, 1500));
         assert!(!last.counting);
