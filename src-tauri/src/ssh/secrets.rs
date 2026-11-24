@@ -129,6 +129,7 @@ pub fn keep_now(account: &str, secret: &str) -> Result<(), String> {
 }
 
 /// The secret kept under `account`, read now.
+#[cfg(test)]
 pub fn held_now(account: &str) -> Option<String> {
     backend::get(account).ok().flatten()
 }
