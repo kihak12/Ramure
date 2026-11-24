@@ -6,6 +6,7 @@
   import CodeEditor, { type Mark } from '../ui/CodeEditor.svelte';
   import { dialogs } from '../ui/dialogs.svelte';
   import Icon from '../ui/Icon.svelte';
+  import { menu } from '../ui/menu.svelte';
   import ConflictResult, { type OverviewMark, type RegionInfo } from './ConflictResult.svelte';
   import ConflictSide, { type SideConflict } from './ConflictSide.svelte';
   import {
@@ -36,6 +37,9 @@
   /** Text of the result, kept up to date by the result. */
   let text = $state('');
   let index = $state(0);
+  /** The next change of the current conflict brings it to the middle of the columns: the toolbar and
+   *  F8 do, a click on the conflict itself does not (guidelines, 9.26). */
+  let reveal = true;
   let showBase = $state(false);
 
   /** The conflicts of the file as it opened, and what is kept of each. */
@@ -113,13 +117,27 @@
   const oursConflicts = $derived(sideOf('ours'));
   const theirsConflicts = $derived(sideOf('theirs'));
 
+  const lineCount = (n: number) => (n === 0 ? 'no line' : `${n} line${n === 1 ? '' : 's'}`);
+  /** What the band of a conflict says once it is decided (guidelines, 9.26). */
+  function decision(b: ConflictBlock, pick: Pick): string {
+    const lines = resolved(b, pick).length;
+    if (!pick.kept.length) return 'no line kept';
+    if (pick.kept.length === 2) return `kept from both · ${lineCount(lines)}`;
+    // In the middle of a sentence, a side is named in lower case (guidelines, 12).
+    return `kept from ${names[pick.kept[0]].toLowerCase()} · ${lineCount(lines)}`;
+  }
   const info = $derived<RegionInfo[]>(
-    blocks.map((b, i) => ({
-      id: i,
-      state: edited[i] ? 'edited' : isDecided(picks[i]) ? 'kept' : 'open',
-      origins: resolved(b, picks[i]).map((r) => r.side),
-      band: `Conflict ${i + 1} of ${blocks.length}: keep a side with its arrow`,
-    })),
+    blocks.map((b, i) => {
+      const state = edited[i] ? 'edited' : isDecided(picks[i]) ? 'kept' : 'open';
+      const name = `Conflict ${i + 1} of ${blocks.length}`;
+      return {
+        id: i,
+        state,
+        origins: resolved(b, picks[i]).map((r) => r.side),
+        band: state === 'open' ? name : `${name} · ${state === 'edited' ? 'edited by hand' : decision(b, picks[i])}`,
+        current: i === Math.min(index, blocks.length - 1),
+      };
+    }),
   );
   const baseMarks = $derived<Mark[]>(current && baseAt[index] >= 0 ? [{ from: baseAt[index] + 1, to: baseAt[index] + (current.base?.length ?? 0), kind: 'focus' }] : []);
 
@@ -139,7 +157,9 @@
         edited = parsed.map(() => false);
         undo = [];
         text = loaded.merged ?? '';
+        reveal = true;
         index = 0;
+        changeAt = -1;
         data = loaded;
       })
       .catch((e: unknown) => {
@@ -147,16 +167,19 @@
       });
   });
 
-  // The current conflict comes into view in every pane, when it changes. Never while typing.
+  // The current conflict, when it changes: the ring of the sides follows it, and, reached from the
+  // toolbar or F8, it comes to the middle of the columns. Never while typing, nor on a click on it.
   $effect(() => {
     void index;
     void data;
     untrack(() => {
       const i = Math.min(index, blocks.length - 1);
+      const show = reveal;
+      reveal = false;
       if (i < 0) return;
       queueMicrotask(() => {
         // The sides follow the result: the three columns scroll as one.
-        result?.scrollToRegion(i);
+        if (show) result?.scrollToRegion(i);
         if (baseAt[i] >= 0) baseView?.scrollToLine(baseAt[i] + 1);
         oursView?.follow(i);
         theirsView?.follow(i);
@@ -184,6 +207,23 @@
 
   /** The marks, and the height of the result they are placed in. */
   let overview = $state.raw<{ marks: OverviewMark[]; height: number; bar: number }>({ marks: [], height: 0, bar: 0 });
+  /** The changes merged by git, the marks of the strip that are not conflicts. */
+  const merges = $derived(overview.marks.filter((m) => m.kind === 'change'));
+  /** The last change reached, by the toolbar, F7 or the strip; -1 before any. */
+  let changeAt = $state(-1);
+  /** The line under the path: what is left, then what git did on its own (guidelines, 9.26). */
+  const summary = $derived(
+    [
+      open
+        ? `${open} conflict${open === 1 ? '' : 's'} to decide`
+        : markersLeft
+          ? `${markersLeft} conflict${markersLeft === 1 ? '' : 's'} still ${markersLeft === 1 ? 'has' : 'have'} the markers of git`
+          : 'No conflict left: the file can be saved',
+      merges.length ? `${merges.length} change${merges.length === 1 ? '' : 's'} merged by git` : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  );
 
   /** The tooltip of a mark: what it is, and where. */
   function markTitle(m: OverviewMark): string {
@@ -218,6 +258,16 @@
     }
     result.scrollToY(best ? (best.top + best.bottom) / 2 : y / scale);
     if (best?.kind === 'conflict') index = best.id;
+    else if (best) changeAt = merges.indexOf(best);
+  }
+
+  /** Previous or next change merged by git: to the middle of the three columns, at once (9.26). */
+  function stepChange(by: number) {
+    if (!merges.length || !result) return;
+    const from = Math.min(changeAt, merges.length - 1);
+    const at = from < 0 ? (by > 0 ? 0 : merges.length - 1) : (from + by + merges.length) % merges.length;
+    changeAt = at;
+    result.scrollToY((merges[at].top + merges[at].bottom) / 2);
   }
 
   // Again after each change of the result, a pick or typing, once the panes have drawn it.
@@ -332,16 +382,34 @@
     index = block;
   }
 
-  /** A button of the bar, on the current conflict. */
-  function take(choice: Choice) {
-    const i = Math.min(index, blocks.length - 1);
-    if (i >= 0) void apply([{ block: i, pick: choose(choice, first) }]);
+  /** A button of the band of a conflict, or an item of its menu "More". */
+  function take(choice: Choice, block: number) {
+    index = block;
+    return apply([{ block, pick: choose(choice, first) }]);
   }
 
-  /** "Start over": the current conflict as it opened, its markers back. */
-  function startOver() {
-    const i = Math.min(index, blocks.length - 1);
-    if (i >= 0) void apply([{ block: i, pick: emptyPick() }]);
+  /** "Start over", on the band of a conflict decided: the conflict as it opened, its markers back. */
+  function startOver(block: number) {
+    index = block;
+    void apply([{ block, pick: emptyPick() }]);
+  }
+
+  /** A choice of the menu "More": its band gives way to the band of the conflict decided, and the
+   *  keyboard goes to the result, where the band is (guidelines, 9.26). */
+  function takeFromMenu(choice: Choice, block: number) {
+    void take(choice, block).then(() => setTimeout(() => result?.focus()));
+  }
+
+  /** "More", on the band of a conflict: the other choices, in a menu under the button (9.9). */
+  function moreChoices(block: number, anchor: HTMLElement) {
+    index = block;
+    const one = names[first];
+    const two = names[second];
+    menu.openUnder(anchor, () => [
+      { label: 'Keep both', hint: `${one}, then ${two.toLowerCase()}`, run: () => takeFromMenu('both', block) },
+      { label: 'Keep both, reversed', hint: `${two}, then ${one.toLowerCase()}`, run: () => takeFromMenu('both-reversed', block) },
+      { label: 'Keep neither', hint: 'Keep no line of this conflict', run: () => takeFromMenu('neither', block) },
+    ]);
   }
 
   /** "Keep all": a side in every conflict left to decide. */
@@ -359,6 +427,7 @@
 
   const step = (by: number) => {
     if (!blocks.length) return;
+    reveal = true;
     index = (Math.min(index, blocks.length - 1) + by + blocks.length) % blocks.length;
   };
 
@@ -386,6 +455,9 @@
     if (e.key === 'F8') {
       e.preventDefault();
       step(e.shiftKey ? -1 : 1);
+    } else if (e.key === 'F7') {
+      e.preventDefault();
+      stepChange(e.shiftKey ? -1 : 1);
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
       save();
@@ -414,10 +486,8 @@
       <small>
         {#if !data && !error}
           Reading the versions…
-        {:else if editable && open}
-          {open} conflict{open === 1 ? '' : 's'} to decide
-        {:else if editable && markersLeft === 0}
-          No conflict left: the file can be saved
+        {:else if editable}
+          {summary}
         {/if}
       </small>
     </div>
@@ -459,22 +529,32 @@
       </div>
     </div>
   {:else}
-    <div class="choose">
+    <!-- The toolbar: from conflict to conflict, from change to change; the ancestor (guidelines, 9.26). -->
+    <div class="toolbar">
       {#if current}
         <div class="nav">
           <button class="btn small square" type="button" aria-label="Previous conflict" title="Previous conflict (Shift + F8)" disabled={blocks.length < 2} onclick={() => step(-1)}><Icon name="up" size={14} /></button>
           <span class="count">Conflict <b>{Math.min(index, blocks.length - 1) + 1}</b> of {blocks.length}</span>
           <button class="btn small square" type="button" aria-label="Next conflict" title="Next conflict (F8)" disabled={blocks.length < 2} onclick={() => step(1)}><Icon name="down" size={14} /></button>
         </div>
-        <button class="btn small take first" type="button" onclick={() => take(first)}>{keepName(first)}</button>
-        <button class="btn small take second" type="button" onclick={() => take(second)}>{keepName(second)}</button>
-        <button class="btn small" type="button" onclick={() => take('both')} title="{names[first]}, then {names[second].toLowerCase()}">Keep both</button>
-        <button class="btn small" type="button" onclick={() => take('both-reversed')} title="{names[second]}, then {names[first].toLowerCase()}">Keep both, reversed</button>
-        <button class="btn small" type="button" onclick={() => take('neither')} title="Keep no line of this conflict">Keep neither</button>
-        <button class="btn ghost small" type="button" onclick={startOver} title="Put this conflict back as it was">Start over</button>
       {/if}
+      <div class="nav">
+        <button class="btn small square" type="button" aria-label="Previous change merged by git" title="Previous change merged by git (Shift + F7)" disabled={!merges.length} onclick={() => stepChange(-1)}><Icon name="up" size={14} /></button>
+        <span class="count">
+          {#if !merges.length}
+            No change merged by git
+          {:else if changeAt < 0}
+            {merges.length} change{merges.length === 1 ? '' : 's'}
+          {:else}
+            Change <b>{Math.min(changeAt, merges.length - 1) + 1}</b> of {merges.length}
+          {/if}
+        </span>
+        <button class="btn small square" type="button" aria-label="Next change merged by git" title="Next change merged by git (F7)" disabled={!merges.length} onclick={() => stepChange(1)}><Icon name="down" size={14} /></button>
+      </div>
       {#if data.base !== null}
-        <label class="base-toggle"><input type="checkbox" bind:checked={showBase} /> Show the common ancestor</label>
+        <button class="btn ghost small toggle" type="button" aria-pressed={showBase} onclick={() => (showBase = !showBase)} title={showBase ? 'Hide the common ancestor' : 'Show the common ancestor, under the columns'}>
+          <Icon name="panel-bottom" size={14} /> Common ancestor
+        </button>
       {/if}
     </div>
 
@@ -484,7 +564,7 @@
       <div class="side result">
         <div class="bar">
           <b>Result</b>
-          <small title="Keep a side of each conflict with its arrow; it stays editable.">Keep a side of each conflict with its arrow; it stays editable.</small>
+          <small title="Keep a side of each conflict with its arrow or on its band; it stays editable.">Keep a side of each conflict with its arrow or on its band; it stays editable.</small>
         </div>
         <div class="result-body">
           <ConflictResult
@@ -500,6 +580,11 @@
             onedit={onEdit}
             ontype={() => (lastTypeAt = performance.now())}
             onundo={undoPick}
+            oncaret={(id) => (index = id)}
+            onkeep={(id, n) => void take(n === 1 ? first : second, id)}
+            onmore={moreChoices}
+            onstartover={startOver}
+            keepLabel={(n) => keepName(n === 1 ? first : second)}
           />
           <!-- Where the conflicts and the changes are, in the whole file: a click goes there. The
                counter and F8 say the same from the keyboard (guidelines, 9.26). -->
@@ -543,7 +628,7 @@
       <span class="side-chip" aria-hidden="true">{n}</span>
       <b>{names[side]}</b>
       <small class="mono" title={commit}>{commit}</small>
-      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side]}">Keep all</button>
+      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side].toLowerCase()}">Keep all</button>
     </div>
     {#if side === 'ours'}
       <ConflictSide
@@ -616,6 +701,7 @@
   .names small {
     color: var(--muted);
     font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
   }
   .note {
     margin: 0;
@@ -765,20 +851,20 @@
     font-weight: var(--fw-strong);
   }
 
-  .choose {
+  /* The toolbar, one line between the header and the columns (guidelines, 9.26). */
+  .toolbar {
     flex: none;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 16px;
     padding: 6px 12px;
     border-bottom: 1px solid var(--line-soft);
+    min-width: 0;
   }
   .nav {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-right: 6px;
   }
   .btn.square {
     min-width: 24px;
@@ -788,25 +874,13 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  .take {
-    border-color: color-mix(in srgb, var(--c) 55%, var(--line));
-    background: color-mix(in srgb, var(--c) 12%, var(--raised));
-  }
-  .take:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--c) 24%, var(--raised));
-    border-color: var(--c);
-  }
-  .take.first {
-    --c: var(--l0);
-  }
-  .take.second {
-    --c: var(--l1);
-  }
-  .base-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+  /* A toggle (9.1): pressed, on --accent-soft with an --accent border. */
+  .toggle {
     margin-left: auto;
-    color: var(--muted);
+  }
+  .toggle[aria-pressed='true'],
+  .toggle[aria-pressed='true']:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
   }
 </style>
