@@ -902,9 +902,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling. It
   shows no scrollbar: it scrolls to the tab that matters (below).
   The ring of a tab follows its 8 px corners.
-- The tabs of the terminals are a tab list: the active tab alone is a stop of the tab order, ←
-  and → go to the previous and the next tab, Home and End to the first and the last, each
-  opening as it takes the keyboard (11).
+- The tabs of the terminals are a tab list: the active tab and its cross alone are stops of the tab
+  order, ← and → go to the previous and the next tab, Home and End to the first and the last, each
+  opening as it takes the keyboard, which stays on the tabs so that the arrows go on (11); Enter
+  or a click gives it to the terminal.
 - When the tabs overflow, the bar scrolls to the active tab, and to a tab that takes the focus,
   so that it stays whole to the left of the "+": the bar keeps 40 px of scroll room on its right,
   the width of the "+" and its margins (a derived value, not a gap of 4.1). The "+" covers the

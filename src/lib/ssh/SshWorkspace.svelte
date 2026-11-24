@@ -76,6 +76,12 @@
   function tabKey(e: KeyboardEvent) {
     const tabs = ssh.sessions;
     const at = tabs.findIndex((s) => s.key === ssh.activeKey);
+    // Enter: the keyboard goes to the terminal of the tab.
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.querySelector<HTMLElement>(`.session[data-session="${ssh.activeKey}"] .xterm-helper-textarea`)?.focus();
+      return;
+    }
     const to =
       e.key === 'ArrowRight' ? at + 1 : e.key === 'ArrowLeft' ? at - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
     if (to === null || !tabs.length) return;
@@ -254,7 +260,14 @@
                 </span>
               {/if}
             </button>
-            <button class="close" type="button" aria-label="Close terminal {session.title}" title="Close terminal" onclick={() => void closeTab(session)}>
+            <button
+              class="close"
+              type="button"
+              tabindex={current ? 0 : -1}
+              aria-label="Close terminal {session.title}"
+              title="Close terminal (Ctrl + Shift + W)"
+              onclick={() => void closeTab(session)}
+            >
               <Icon name="x" size={14} />
             </button>
           </div>
