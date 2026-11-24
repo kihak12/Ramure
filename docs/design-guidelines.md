@@ -2479,7 +2479,12 @@ shrinks, and the columns scroll sideways, as one; the header, the toolbar and th
   a scroll of one, by the wheel, its bar or the keyboard, moves the three. The bars of the three
   columns are as high, 33 px, a small button and the padding of a bar, so that their first rows
   start together. The blanks follow the result as
-  lines are kept or typed.
+  lines are kept or typed. A line typed over still faces the line it was: where the rows changed,
+  inside a conflict or outside them, the lines alike face one another, the ones sharing the most,
+  and the others face in the same place, from the first. Two lines are alike when what they share
+  at their start and their end, spaces around left out, makes at least half of the shorter; past
+  200 rows changed on each side, the rows face in the same place only. A blank stays where it
+  lines up the rows, under the band of a conflict to decide while the line below is typed.
 - **No wrapping:** a wrapped line would break the rows. A long line scrolls sideways, each column
   on its own.
 
@@ -2594,8 +2599,9 @@ conflict with its arrow or on its band; it stays editable."
   first (9.10): "Replace your edits?", "The lines typed in conflict 2 give way to the lines kept.
   Ctrl + Z brings them back.", with "Cancel" and "Replace edits", the main button, which has the
   focus: nothing is lost that Ctrl + Z does not bring back, so it is not a destructive action.
-- **Ctrl + Z** undoes the last choice, an arrow, a cross, a button, wherever the focus is in the
-  editor; in the result, it undoes what was typed when that came last.
+- **Ctrl + Z** goes back through the choices, an arrow, a cross, a button, and the typing, in the
+  order they were made, wherever the focus is in the editor: what was typed since the last choice
+  first, then that choice, then what was typed before it.
 
 **The overview strip**, 12 px wide, at the right of the result, beside its scrollbar, on `--panel`
 with a `--line-soft` line on its left: the whole file at a glance, the three columns having the

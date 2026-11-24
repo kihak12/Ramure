@@ -11,7 +11,8 @@ export interface EditorSnapshot {
   path: string;
   picks: Pick[];
   edited: boolean[];
-  undo: { block: number; pick: Pick; edited: boolean; text: string }[][];
+  /** Each choice, with what it changed and the depth of the typing history when it was made. */
+  undo: { depth: number; items: { block: number; pick: Pick; edited: boolean; text: string }[] }[];
   index: number;
   showBase: boolean;
   text: string;

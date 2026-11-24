@@ -45,6 +45,57 @@ test('a line kept from side 1 faces its line there, under the header of the conf
   assert.deepEqual(out.right, []);
 });
 
+/** Lines of conflict `n`: under its header in a side, or kept in the result. */
+const inside = (n, ...keys) => keys.map((key) => ({ key, height: 18, part: n }));
+
+test('a line typed under the band of a conflict to decide: the blank stays above it', () => {
+  // 'z' was typed over into 'zy': it still faces 'z', and the blank stays under the band (#269).
+  const left = [...lines('a'), head(0), ...inside(0, 'x1', 'x2', 'x3'), ...lines('z', 'w')];
+  const right = [...lines('a'), head(0), ...inside(0, 'y1'), ...lines('z', 'w')];
+  const result = [...lines('a'), head(0), ...lines('zy', 'w')];
+  const out = align(left, result, right);
+  assert.deepEqual(out.result, [{ row: 2, height: 54 }], 'under the band, above the typed line');
+  assert.deepEqual(out.right, [{ row: 3, height: 36 }], 'before z, which faces the typed line');
+  assert.deepEqual(out.left, []);
+});
+
+test('a line typed over an empty line under the band: it faces the empty line', () => {
+  const left = [...lines('a'), head(0), ...inside(0, 'x1', 'x2'), ...lines('', 'w')];
+  const right = [...lines('a'), head(0), ...inside(0, 'y1'), ...lines('', 'w')];
+  const result = [...lines('a'), head(0), ...lines('typed', 'w')];
+  const out = align(left, result, right);
+  assert.deepEqual(out.result, [{ row: 2, height: 36 }]);
+  assert.deepEqual(out.right, [{ row: 3, height: 18 }]);
+});
+
+test('a line typed in the lines kept from both sides: it faces its line in its side', () => {
+  // Kept both, side 1 then side 2: 'y1', typed over into 'y1 typed', still faces 'y1' in side 2.
+  const left = [head(0), ...inside(0, 'x1'), ...lines('z')];
+  const right = [head(0), ...inside(0, 'y1'), ...lines('z')];
+  const result = [head(0), ...inside(0, 'x1', 'y1 typed'), ...lines('z')];
+  const out = align(left, result, right);
+  assert.deepEqual(out.right, [{ row: 1, height: 18 }], 'a blank above y1, under the header');
+  assert.deepEqual(out.left, [{ row: 2, height: 18 }], 'a blank under x1');
+  assert.deepEqual(out.result, []);
+});
+
+test('a line typed under a decided conflict: the lines of the conflict face the lines kept', () => {
+  const left = [...lines('a'), head(0), ...inside(0, 'x1', 'x2', 'x3'), ...lines('z')];
+  const right = [...lines('a'), head(0), ...inside(0, 'y1'), ...lines('z')];
+  const result = [...lines('a'), head(0), ...inside(0, 'x1', 'x2', 'x3'), ...lines('zy')];
+  const out = align(left, result, right);
+  assert.deepEqual(out.right, [{ row: 3, height: 36 }], 'y1 faces x1, the blank before z');
+  assert.deepEqual(out.left, []);
+  assert.deepEqual(out.result, []);
+});
+
+test('lines changed by one side, more of them: the shorter side takes its blank after', () => {
+  const left = lines('a', 'p1', 'p2', 'c');
+  const result = lines('a', 'q1', 'q2', 'q3', 'c');
+  const out = align(left, result, result);
+  assert.deepEqual(out, { left: [{ row: 3, height: 18 }], result: [], right: [] });
+});
+
 test('the three columns always end with the same height', () => {
   const left = [...lines('a', 'b'), head(0), ...lines('p', 'q'), ...lines('c', 'd', 'e', 'f')];
   const right = [...lines('a'), head(0), ...lines('r'), ...lines('c', 'x', 'y', 'f', 'g')];
@@ -57,7 +108,12 @@ test('the three columns always end with the same height', () => {
 test('random columns: the heights are always equal, and every blank is positive', () => {
   let seed = 11;
   const rand = (n) => ((seed = (seed * 1103515245 + 12345) % 2147483648) % n);
-  const column = () => Array.from({ length: rand(25) }, () => (rand(6) === 0 ? head(rand(3)) : { key: 'abcd'[rand(4)], height: 18 }));
+  const column = () =>
+    Array.from({ length: rand(25) }, () => {
+      if (rand(6) === 0) return head(rand(3));
+      const part = rand(3) === 0 ? rand(3) : undefined;
+      return { key: ['a', 'b', 'ab', 'abc', ''][rand(5)], height: 18, part };
+    });
   for (let t = 0; t < 300; t++) {
     const [left, result, right] = [column(), column(), column()];
     const out = align(left, result, right);

@@ -40,6 +40,8 @@
     regions: [number, Region][];
     merged: { line: number; side: 'ours' | 'theirs' }[];
     scrollTop: number;
+    /** The typings the history let go of, the oldest: see `historyDepth`. */
+    dropped?: number;
   }
 
   export interface RegionInfo {
@@ -299,7 +301,7 @@
 </script>
 
 <script lang="ts">
-  import { defaultKeymap, history, historyField, historyKeymap } from '@codemirror/commands';
+  import { defaultKeymap, history, historyField, historyKeymap, isolateHistory, undo, undoDepth } from '@codemirror/commands';
   import { EditorState as State } from '@codemirror/state';
   import { drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
   import { onMount } from 'svelte';
@@ -315,7 +317,6 @@
     label,
     onchange,
     onedit,
-    ontype,
     onundo,
     oncaret,
     onkeep,
@@ -340,8 +341,6 @@
     onchange?: (text: string) => void;
     /** Conflicts typed in by hand. */
     onedit?: (ids: number[]) => void;
-    /** Anything typed, in a conflict or not: Ctrl + Z then undoes the typing first. */
-    ontype?: () => void;
     /** Ctrl + Z: true when it undid a pick, which then comes before the typing. */
     onundo?: () => boolean;
     /** The caret put in a conflict, by a click or the keys: it becomes the current one. */
@@ -364,6 +363,9 @@
 
   let host = $state<HTMLDivElement>();
   let view: EditorView | undefined;
+  /** The typings the history let go of, the oldest, past its depth: `historyDepth` counts them
+   *  still, so that the depth a choice remembers stays its place among the typings. */
+  let dropped = 0;
   let field: StateField<Map<number, Region>>;
   let chipsField: StateField<RangeSet<GutterMarker>>;
   let tintsField: StateField<DecorationSet>;
@@ -481,12 +483,17 @@
           }
         }
       }
+      // The history lets go of its oldest typings once deep: the depth then falls by them.
+      for (const tr of update.transactions) {
+        const was = undoDepth(tr.startState);
+        const is = undoDepth(tr.state);
+        if (!tr.isUserEvent('undo') && is < was) dropped += was + 1 - is;
+      }
       if (!update.docChanged) return;
       onchange?.(update.state.sliceDoc());
       const touched = new Set<number>();
       for (const tr of update.transactions) {
         if (!tr.docChanged || tr.annotation(picked)) continue;
-        ontype?.();
         const before = tr.startState.field(field);
         tr.changes.iterChangedRanges((fromA, toA) => {
           for (const [id, r] of before) {
@@ -524,6 +531,7 @@
     };
     // Carried from the other window: the text, its history and its caret as they were.
     const state = restore ? State.fromJSON(restore.state, config, { history: historyField }) : State.create({ doc: value, ...config });
+    dropped = restore?.dropped ?? 0;
     view = new EditorView({ state, parent: host! });
     view.dispatch({ effects: setInfo.of(info) });
     // Its scroll, once the columns are lined up.
@@ -610,6 +618,8 @@
     const regions = state.field(field);
     const open = new Map<number, { id: number; last: number }>();
     const decided = new Map<number, { id: number; empty: boolean }[]>();
+    /** The lines of the decided conflicts, by number: the conflict they are. */
+    const parts = new Map<number, number>();
     for (const item of state.field(infoField)) {
       const region = regions.get(item.id);
       if (!region) continue;
@@ -619,6 +629,7 @@
       } else {
         const pos = at ? at.first.from : region.from;
         decided.set(pos, [...(decided.get(pos) ?? []), { id: item.id, empty: !at }]);
+        if (at) for (let n = at.first.number; n <= at.last.number; n++) parts.set(n, item.id);
       }
     }
     const rows: (Row & { pos: number; band?: 'lines' | 'empty' })[] = [];
@@ -630,7 +641,7 @@
         rows.push({ key: conflictKey(band.id), height: 28, pos: line.from });
         n = band.last;
       } else {
-        rows.push({ key: line.text, height: 18, pos: line.from });
+        rows.push({ key: line.text, height: 18, pos: line.from, part: parts.get(n) });
       }
     }
     return rows;
@@ -650,11 +661,28 @@
       regions: [...state.field(field)],
       merged: lines,
       scrollTop: view.scrollDOM.scrollTop,
+      dropped,
     };
   }
 
+  /** Where the typing stands in its history, as a count: a choice remembers it, to be undone
+   *  after the typing done since (guidelines, 9.26). */
+  export function historyDepth(): number {
+    return view ? dropped + undoDepth(view.state) : 0;
+  }
+
+  /** Whether Ctrl + Z still has typing to undo, done after the choice made at `depth`. */
+  export function typedSince(depth: number): boolean {
+    return !!view && undoDepth(view.state) > 0 && historyDepth() > depth;
+  }
+
+  /** Undoes the last typing in the result, wherever the keyboard is in the editor. */
+  export function undoTyping(): boolean {
+    return view ? undo(view) : false;
+  }
+
   export function rows(): Row[] {
-    return view ? rowsOf(view.state).map(({ key, height }) => ({ key, height })) : [];
+    return view ? rowsOf(view.state).map(({ key, height, part }) => ({ key, height, part })) : [];
   }
 
   export function setSpacers(spacers: Blank[]) {
@@ -689,7 +717,9 @@
     view.dispatch({
       changes: { from: region.from, to: region.to, insert },
       effects: setRegion.of({ id, region: { from: region.from, to: region.from + insert.length, trailing: region.trailing } }),
-      annotations: [picked.of(true), Transaction.addToHistory.of(false)],
+      // Not in the history of the typing: its own comes first. Typing just before and just after
+      // it stay two steps.
+      annotations: [picked.of(true), Transaction.addToHistory.of(false), isolateHistory.of('full')],
     });
   }
 

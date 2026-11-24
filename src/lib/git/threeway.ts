@@ -210,12 +210,16 @@ export function ancestorSpans(base: string[], ours: string[], theirs: string[], 
 // keep the same height and scroll as one.
 
 /** The key of the header of conflict `i` in a side, and of its band in the result. */
-export const conflictKey = (i: number) => `\u0000conflict ${i}`;
+const CONFLICT = '\u0000conflict ';
+export const conflictKey = (i: number) => `${CONFLICT}${i}`;
 
 /** A row of a column: its key, matched across the columns, and its height in pixels. */
 export interface Row {
   key: string;
   height: number;
+  /** The conflict whose lines it is: in a side, the lines under its header; in the result, the
+   *  lines of a decided conflict. None for the lines outside the conflicts, and the headers. */
+  part?: number;
 }
 
 /** A blank of `height` pixels before row `row` of a column (`row` = its number of rows: at the end). */
@@ -224,17 +228,117 @@ export interface Spacer {
   height: number;
 }
 
-/** The pairs of indexes of `a` and `b` whose rows stay the same, in order. */
-function matches(a: string[], b: string[]): [number, number][] {
+/**
+ * The pairs of indexes of `a` and `b` that face one another, in order: the rows that stay the
+ * same; and, in what changed, inside one conflict or outside the conflicts, the rows alike, then
+ * the others in the same place. A line typed over faces the line it was, and the blanks stay in
+ * their place.
+ */
+function matches(a: Row[], b: Row[]): [number, number][] {
+  const keys = (rows: Row[]) => rows.map((r) => r.key);
   const pairs: [number, number][] = [];
   let i = 0;
   let j = 0;
-  for (const h of [...diffLines(a, b), { fromA: a.length, toA: a.length, fromB: b.length, toB: b.length }]) {
+  for (const h of [...diffLines(keys(a), keys(b)), { fromA: a.length, toA: a.length, fromB: b.length, toB: b.length }]) {
     while (i < h.fromA && j < h.fromB) pairs.push([i++, j++]);
+    const ra = runs(a, h.fromA, h.toA);
+    const rb = runs(b, h.fromB, h.toB);
+    let p = 0;
+    let q = 0;
+    while (p < ra.length && q < rb.length) {
+      const x = ra[p];
+      const y = rb[q];
+      if (x.part === y.part) {
+        pairs.push(...alike(a, x.rows, b, y.rows));
+        p++;
+        q++;
+      } else if (y.part === undefined || (x.part !== undefined && x.part < y.part)) {
+        // The lines of a conflict that the other column does not show here face nothing.
+        p++;
+      } else {
+        q++;
+      }
+    }
     i = h.toA;
     j = h.toB;
   }
   return pairs;
+}
+
+/**
+ * What two lines share as one typed over: the characters alike at their start and at their end,
+ * spaces around left out; 0 when that is less than half of the shorter, or nothing.
+ */
+function shared(a: string, b: string): number {
+  const x = a.trim();
+  const y = b.trim();
+  let start = 0;
+  while (start < x.length && start < y.length && x[start] === y[start]) start++;
+  let end = 0;
+  while (end < x.length - start && end < y.length - start && x[x.length - 1 - end] === y[y.length - 1 - end]) end++;
+  const kept = start + end;
+  return kept * 2 >= Math.min(x.length, y.length) ? kept : 0;
+}
+
+/**
+ * The rows `xs` of `a` and `ys` of `b` that face one another: the rows alike, in order, those
+ * sharing the most; the others in between, in the same place from the first. Past 200 rows on a
+ * side, in the same place only.
+ */
+function alike(a: Row[], xs: number[], b: Row[], ys: number[]): [number, number][] {
+  const n = xs.length;
+  const m = ys.length;
+  const pairs: [number, number][] = [];
+  /** The rows left between the last pair and `i`, `j`, in the same place. */
+  let gi = 0;
+  let gj = 0;
+  const between = (i: number, j: number) => {
+    for (let k = 0; gi + k < i && gj + k < j; k++) pairs.push([xs[gi + k], ys[gj + k]]);
+  };
+  if (n <= 200 && m <= 200) {
+    const score = new Int32Array(n * m);
+    for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) score[i * m + j] = shared(a[xs[i]].key, b[ys[j]].key);
+    // best[i][j]: the most characters shared by rows alike, in order, from row i of xs and j of ys.
+    const best = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) {
+      for (let j = m - 1; j >= 0; j--) {
+        const s = score[i * m + j];
+        best[i][j] = Math.max(best[i + 1][j], best[i][j + 1], s ? s + best[i + 1][j + 1] : 0);
+      }
+    }
+    let i = 0;
+    let j = 0;
+    while (i < n && j < m) {
+      const s = score[i * m + j];
+      if (s && best[i][j] === s + best[i + 1][j + 1]) {
+        between(i, j);
+        pairs.push([xs[i], ys[j]]);
+        gi = ++i;
+        gj = ++j;
+      } else if (best[i + 1][j] >= best[i][j + 1]) i++;
+      else j++;
+    }
+  }
+  between(n, m);
+  return pairs;
+}
+
+/** The rows from `from` to `to` (excluded), in runs of one part. A header or a band faces only itself. */
+function runs(rows: Row[], from: number, to: number): { part: number | undefined; rows: number[] }[] {
+  const out: { part: number | undefined; rows: number[] }[] = [];
+  let open = false;
+  for (let k = from; k < to; k++) {
+    const row = rows[k];
+    if (row.key.startsWith(CONFLICT)) {
+      open = false;
+      continue;
+    }
+    const last = out.at(-1);
+    if (open && last && last.part === row.part) last.rows.push(k);
+    else out.push({ part: row.part, rows: [k] });
+    open = true;
+  }
+  return out;
 }
 
 /**
@@ -244,9 +348,8 @@ function matches(a: string[], b: string[]): [number, number][] {
  * up the three, which keep the same height.
  */
 export function align(left: Row[], result: Row[], right: Row[]): { left: Spacer[]; result: Spacer[]; right: Spacer[] } {
-  const keys = (rows: Row[]) => rows.map((r) => r.key);
-  const inLeft = new Map(matches(keys(left), keys(result)).map(([l, r]) => [r, l]));
-  const inRight = new Map(matches(keys(right), keys(result)).map(([s, r]) => [r, s]));
+  const inLeft = new Map(matches(left, result).map(([l, r]) => [r, l]));
+  const inRight = new Map(matches(right, result).map(([s, r]) => [r, s]));
   const columns = [left, result, right];
   const next = [0, 0, 0]; // the next row of each column
   const top = [0, 0, 0]; // where it starts, blanks included
