@@ -21,6 +21,7 @@
   const window = getCurrentWindow();
   const label = window.label;
   const repo = new Repo();
+  repo.holdConflictFile = true;
 
   let editor = $state<ReturnType<typeof ConflictEditor>>();
   /** What the editor carries from the main window, for the file it opens. */
@@ -159,6 +160,13 @@
       if (!operation) {
         if (modified && open) orphaned = true;
         else if (!orphaned) void close();
+        return;
+      }
+      // The file left the conflicts another way, kept whole or written from elsewhere: its choices
+      // not saved, the strip keeps them; otherwise the next file opens.
+      if (open && !list.includes(open.path)) {
+        if (modified) orphaned = true;
+        else repo.conflictFile = null;
         return;
       }
       if (open) {

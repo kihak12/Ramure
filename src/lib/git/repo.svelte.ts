@@ -127,6 +127,9 @@ export class Repo {
   preferWindow = false;
   /** What the editor carries back from its window, read once as it opens in the main window. */
   restoreEditor: EditorSnapshot | null = null;
+  /** In the window of the editor, the page decides what follows a file that left the conflicts:
+   *  the next file, or the strip that keeps its choices (guidelines, 9.26, "Its ends"). */
+  holdConflictFile = false;
   /** Moves the editor open in the main window to its window: set by the view while it is open. */
   moveEditor: (() => void) | null = null;
   /** Plan of an interactive rebase being prepared; the dialog opens when it exists. */
@@ -298,7 +301,7 @@ export class Repo {
     if (ended) operationEnded(this);
     // The file open in the conflict editor may have been resolved or discarded in the meantime.
     const editing = this.conflictFile?.path;
-    if (editing && !next.unstaged.some((f) => f.kind === 'conflict' && f.path === editing)) this.conflictFile = null;
+    if (editing && !this.holdConflictFile && !next.unstaged.some((f) => f.kind === 'conflict' && f.path === editing)) this.conflictFile = null;
     if (fromLoad || this.#logHead === undefined) {
       this.#logHead = next.head;
       return;
