@@ -653,9 +653,14 @@ class Files {
         // What the buttons answered; set from their callbacks, which TypeScript does not follow.
         const chosen: { answer: Taken | null } = { answer: null };
         const shown = taken.length > 6 ? `${taken.slice(0, 6).join(', ')} and ${taken.length - 6} more` : taken.join(', ');
-        // The free name of the first one, as an example: the core finds the real ones as it copies.
+        // The free name of the first one, as an example, among the names the destination pane
+        // shows when it shows that folder: the core finds the real ones as it copies.
         const isDir = source.entries.find((e) => e.name === taken[0])?.dir ?? false;
-        const example = numbered(taken[0], isDir);
+        const there = new Set(target.path === dest ? target.entries.map((e) => e.name) : [...taken]);
+        for (const name of names) there.add(name);
+        let n = 1;
+        while (there.has(numbered(taken[0], isDir, n))) n++;
+        const example = numbered(taken[0], isDir, n);
         const both = taken.length === 1 ? `“Keep both” copies it as ${example}.` : `“Keep both” copies them under a free name, such as ${example}.`;
         const confirmed = await dialogs.confirm({
           title: `Replace ${taken.length === 1 ? taken[0] : count(taken.length, 'item')} in ${nameOf(dest)}?`,
