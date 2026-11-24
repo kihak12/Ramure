@@ -120,11 +120,12 @@
       await emitTo('main', EVENT.closed, { label, path: repo.conflictFile?.path ?? lastPath });
     });
     const trap = keepFocusInDialogs();
+    // Its page is mounted, on the color of the window: it shows now, with no flash of an empty
+    // page, before the repository is read (guidelines, 4.2). Not in a frame: a hidden view gets none.
+    void window.show();
     void (async () => {
       if (asked) await repo.open(asked.repo);
       loaded = true;
-      // Painted: the window shows, with no flash of an empty page (guidelines, 4.2).
-      requestAnimationFrame(() => void window.show());
       // Listening: the main window sends the file, with its choices.
       await Promise.all(stops);
       await emitTo('main', EVENT.ready, { label });
