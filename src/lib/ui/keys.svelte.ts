@@ -75,6 +75,9 @@ const RESERVED = new Set(['Ctrl+C', 'Ctrl+V', 'Ctrl+X', 'Ctrl+A', 'Ctrl+Z', 'Ctr
 /** Combination of a keyboard event, such as `Ctrl+Shift+F`; empty for a modifier key alone. */
 export function comboOf(event: KeyboardEvent): string {
   let key = event.key;
+  // With Shift, the X11 keysym of Tab is ISO_Left_Tab, which WebKitGTK may not name: the key is
+  // known by its place.
+  if (event.code === 'Tab') key = 'Tab';
   if (['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'Dead', 'Unidentified'].includes(key)) return '';
   if (key === ' ') key = 'Space';
   if (key.length === 1) key = key.toUpperCase();
