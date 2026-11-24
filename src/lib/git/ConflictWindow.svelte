@@ -89,11 +89,9 @@
       listen<{ label: string }>(EVENT.recall, (event) => {
         if (event.payload.label === label) void back();
       }),
-      listen<{ label: string }>(EVENT.ended, async (event) => {
-        if (event.payload.label !== label) return;
-        await repo.refreshStatus();
-        if (modified) orphaned = true;
-        else void close();
+      // The status read again says the operation is over: the window closes, or keeps its strip.
+      listen<{ label: string }>(EVENT.ended, (event) => {
+        if (event.payload.label === label) void repo.refreshStatus();
       }),
       listen<{ label: string }>(EVENT.quit, (event) => {
         if (event.payload.label !== label) return;
@@ -122,7 +120,7 @@
     const trap = keepFocusInDialogs();
     // Its page is mounted, on the color of the window: it shows now, with no flash of an empty
     // page, before the repository is read (guidelines, 4.2). Not in a frame: a hidden view gets none.
-    void window.show();
+    void window.show().then(() => window.setFocus());
     void (async () => {
       if (asked) await repo.open(asked.repo);
       loaded = true;
@@ -156,8 +154,11 @@
     const operation = repo.status?.operation;
     untrack(() => {
       if (!loaded || !repo.status || leaving) return;
+      // The operation is over: with choices not saved, the strip says they cannot be saved;
+      // otherwise the window closes (9.26, "Its ends").
       if (!operation) {
-        if (!orphaned) void close();
+        if (modified && open) orphaned = true;
+        else if (!orphaned) void close();
         return;
       }
       if (open) {
