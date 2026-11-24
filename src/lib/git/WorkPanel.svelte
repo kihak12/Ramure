@@ -68,6 +68,7 @@
       <div class="list">
         <FileList
           files={conflicts}
+          order={1}
           active={repo.conflictFile?.path ?? null}
           disabled={busy}
           onopen={(f) => repo.openConflict(f)}
@@ -93,6 +94,7 @@
       <div class="list">
         <FileList
           files={unstaged}
+          order={2}
           {partial}
           active={activeIn('u:')}
           disabled={busy}
@@ -119,6 +121,7 @@
       <div class="list">
         <FileList
           files={status.staged}
+          order={3}
           {partial}
           active={activeIn('s:')}
           disabled={busy}

@@ -883,8 +883,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   otherwise to the commit message.
 - The current row carries the inner ring on the whole row, its buttons included, never cut by the
   list that scrolls. A button whose action has a key is for the mouse, out of the tab order, its
-  tooltip saying the key ("Stage (Space)"). The others, those of the files in conflict, stay stops
-  of the tab order: every action has a way from the keyboard (11).
+  tooltip saying the key ("Stage (Space)"). The others, those of the files in conflict, follow the
+  current row in the tab order, so that every action has a way from the keyboard (11): that list
+  is one stop for its rows, then one per button of its current row. The list scrolls and would
+  cut the ring of such a button: it is drawn inside it.
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
   rebase) is made of plain rows: no border and no background of their own, since a framed row
   inside a dialog would be a card in a card (6). The rows are separated by a `--line` line: on

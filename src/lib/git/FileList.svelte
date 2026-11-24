@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import { focusWithRing } from '../ui/focus';
+  import { besideList } from './fileLists';
   import type { ChangeKind, FileChange } from './types';
 
   interface Action {
@@ -21,6 +22,7 @@
     active = null,
     actions = [],
     disabled = false,
+    order,
     onopen,
   }: {
     files: FileChange[];
@@ -30,6 +32,8 @@
     active?: string | null;
     actions?: Action[];
     disabled?: boolean;
+    /** Its place among the lists of the changes, in the order of the screen (./fileLists.ts). */
+    order?: number;
     onopen: (file: FileChange) => void;
   } = $props();
 
@@ -87,8 +91,6 @@
    */
   async function runKey(action: Action, file: FileChange, at: number) {
     const scope = listEl?.closest<HTMLElement>('[data-file-lists]');
-    const lists = scope ? [...scope.querySelectorAll<HTMLElement>('ul.files')] : [];
-    const mine = listEl ? lists.indexOf(listEl) : -1;
     running = true;
     try {
       await action.run(file);
@@ -99,10 +101,7 @@
     const now = document.activeElement;
     if (now && now !== document.body && now.isConnected) return;
     if (listEl?.isConnected && files.length) return focusRow(Math.min(at, files.length - 1));
-    const next = [...lists.slice(mine + 1), ...lists.slice(0, Math.max(0, mine)).reverse()].find(
-      (list) => list.isConnected && list.querySelector('button.open'),
-    );
-    focusWithRing(next?.querySelector<HTMLElement>('button.open[tabindex="0"]') ?? scope?.querySelector<HTMLElement>('textarea'));
+    focusWithRing(besideList(scope, order ?? 0));
   }
   let running = false;
 
@@ -135,7 +134,7 @@
   }
 </script>
 
-<ul class="files" bind:this={listEl}>
+<ul class="files" data-order={order} bind:this={listEl}>
   {#each files as file (file.path)}
     {@const parts = split(file.path)}
     <li class:active={file.path === active}>
@@ -168,7 +167,7 @@
           class="act"
           class:danger={action.danger}
           type="button"
-          tabindex={action.key ? -1 : 0}
+          tabindex={action.key || file.path !== focusable ? -1 : 0}
           title={action.key ? `${action.label} (${action.key})` : action.label}
           aria-label="{action.label}: {file.path}"
           {disabled}
@@ -199,9 +198,13 @@
   li:has(.open:global(.focus-ring)) {
     background: var(--hover);
   }
-  li.active {
+  /* The row whose diff is open keeps its selection whatever the focus (9.6). */
+  li.active,
+  li.active:has(:focus-visible),
+  li.active:has(.open:global(.focus-ring)) {
     background: var(--sel);
   }
+
   /* The row of the keyboard: an inner ring on the whole row, its buttons included, never cut by
      the list that scrolls (guidelines, 9.6). */
   .open:focus-visible,
