@@ -679,7 +679,7 @@
     background: var(--ok);
   }
   .mark.conflict.edited {
-    background: color-mix(in srgb, var(--ok) 40%, var(--panel));
+    background: var(--ok-soft);
     border: 1px dashed var(--ok);
   }
   .mark.current {
