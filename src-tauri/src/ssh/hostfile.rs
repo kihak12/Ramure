@@ -236,7 +236,8 @@ pub fn plan(found: &[Found], book: &[Host]) -> Preview {
         taken.insert(row.alias.to_lowercase());
         rows.push(row);
     }
-    let passwords = found.iter().filter(|f| f.refused.is_none() && f.password.is_some()).count();
+    // What the rows that can be checked carry: a host already in the book is not one of them.
+    let passwords = rows.iter().filter(|r| r.status != "refused" && found[r.index].password.is_some()).count();
     Preview { rows, up_to_date, passwords }
 }
 
@@ -390,6 +391,10 @@ mod tests {
         let source = vec![Found { password: Some("s3cret".into()), ..found(sftp) }];
         let preview = plan(&source, &[]);
         assert_eq!(preview.passwords, 1);
+        // Already in the book: no row, and no password to remember.
+        let mut there = host("files", "alice", "files.example", 22);
+        there.auth = "password".into();
+        assert_eq!(plan(&source, &[there]).passwords, 0);
         assert_eq!(preview.rows[0].detail, "alice@files.example · password found in the file");
         apply(&store, &source, &preview.rows, &[0], false).unwrap();
         let saved = store.list().unwrap().remove(0);
