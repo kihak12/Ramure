@@ -227,8 +227,9 @@
     error = '';
     // Another file in the same editor, in its window: it is an opening, the editor takes the keyboard.
     placed = false;
-    repo
-      .readConflict(target)
+    // Read once per file: the history read again (a commit, a fetch) must not read the file again
+    // and lose the choices made (guidelines, 9.26).
+    untrack(() => repo.readConflict(target))
       .then((loaded) => {
         if (target !== file) return;
         const sep = loaded.merged?.includes('\r\n') ? '\r\n' : '\n';
