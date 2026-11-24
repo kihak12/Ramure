@@ -10,6 +10,7 @@
   import LocationPicker from './LocationPicker.svelte';
   import { files, MAX_PANES, visible, type Pane, type SortBy } from './files.svelte';
   import { fullDate, joinPath, nameOf, parentPath, segments, shortDate, size, type Entry } from './types';
+  import { focusWithRing } from '../ui/focus';
 
   let { pane }: { pane: Pane } = $props();
 
@@ -57,6 +58,8 @@
   let pathField = $state<HTMLInputElement>();
   let editing = $state(false);
   let typed = $state('');
+  /** The pencil that opens the path field: Escape gives it the keyboard back (guidelines, 9.24). */
+  let pencilEl = $state<HTMLButtonElement>();
   let pathError = $state('');
 
   // --- The location ---------------------------------------------------------------------------
@@ -95,16 +98,32 @@
       return;
     }
     editing = false;
-    void files.focus(pane);
+    // The folder typed is shown: the list takes the keyboard, with its ring (11).
+    void files.focus(pane, true);
   }
 
-  function pathKey(e: KeyboardEvent) {
+  async function pathKey(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       editing = false;
-      void files.focus(pane);
+      // Nothing changed: the keyboard goes back to the pencil that opened the field, with its ring.
+      await tick();
+      focusWithRing(pencilEl);
     }
+  }
+
+  /** "Add pane": the new pane takes the keyboard, its ring shown when the key came from it. */
+  function addPane(keyboard: boolean) {
+    const added = files.add(pane);
+    if (added) void files.focus(added, keyboard);
+  }
+
+  /** "Close pane": the keyboard goes to the pane that takes its place, as the focus would be lost. */
+  async function closePane(keyboard: boolean) {
+    await files.close(pane);
+    const next = files.pane(files.focused);
+    if (next) void files.focus(next, keyboard);
   }
 
   // --- Selection ------------------------------------------------------------------------------
@@ -557,7 +576,7 @@
         aria-label="Add pane"
         title={files.panes.length >= MAX_PANES ? 'Four panes at most. Close one first.' : 'Add pane'}
         disabled={files.panes.length >= MAX_PANES}
-        onclick={() => files.add(pane)}
+        onclick={(e) => addPane(e.detail === 0)}
       >
         <Icon name="plus" size={16} />
       </button>
@@ -567,7 +586,7 @@
         aria-label="Close pane"
         title={files.panes.length <= 2 && !pane.location ? 'Two panes always stay. Choose a location instead.' : 'Close pane'}
         disabled={files.panes.length <= 2 && !pane.location}
-        onclick={() => void files.close(pane)}
+        onclick={(e) => void closePane(e.detail === 0)}
       >
         <Icon name="x" size={16} />
       </button>
@@ -612,7 +631,7 @@
           {/each}
         </div>
       {/if}
-      <button class="icon-btn" type="button" aria-label="Type a path" title="Type a path" disabled={!ready} onclick={() => void editPath()}>
+      <button class="icon-btn" type="button" aria-label="Type a path" title="Type a path" disabled={!ready} bind:this={pencilEl} onclick={() => void editPath()}>
         <Icon name="pencil" size={16} />
       </button>
       <button class="icon-btn" type="button" aria-label="Refresh" title="Refresh (F5)" disabled={!ready} onclick={() => void files.refresh(pane)}>

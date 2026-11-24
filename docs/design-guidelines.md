@@ -2004,7 +2004,8 @@ of 24 px (4.3, 9.6):
   row.
 - **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
   selects up to it, Ctrl + A selects them all. The arrows move the current row, with the inner
-  ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
+  ring of 9.6; Shift with an arrow extends the selection; from the parent row, which is never
+  selected, it starts at the first item. A double-click, or Enter, opens a
   folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
   Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
