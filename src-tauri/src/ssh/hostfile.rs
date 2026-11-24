@@ -190,6 +190,8 @@ pub struct Row {
     pub detail: String,
     /// Checked at first.
     pub checked: bool,
+    /// Its key, a PuTTY key, is converted into `~/.ssh` when it is added.
+    pub converts: bool,
 }
 
 /// The preview of an import.
@@ -231,10 +233,10 @@ fn summary(found: &Found) -> String {
             format!("key {name}, converted to {into}")
         }
         (Some(KeyPlan::Protected { name }), _) => {
-            format!("without its key: {name} has a passphrase; export it from PuTTYgen, then import it in Manage keys…")
+            format!("without its key: {name} has a passphrase; export it from PuTTYgen, then import it in “Manage keys…”")
         }
         (Some(KeyPlan::Missing { path }), _) => format!("without its key: {path} is not on this machine; SSH agent and default keys"),
-        (Some(KeyPlan::Taken { name, into }), _) => format!("without its key: {into} already exists; import {name} in Manage keys… under another name"),
+        (Some(KeyPlan::Taken { name, into }), _) => format!("without its key: {into} already exists; import {name} in “Manage keys…” under another name"),
         (None, "keyFile") if !host.key_path.trim().is_empty() => {
             let key = host.key_path.trim();
             if config::expand(key).exists() { format!("key {key}") } else { format!("key {key}, not found on this machine") }
@@ -262,7 +264,7 @@ pub fn plan(found: &[Found], book: &[Host]) -> Preview {
         let host = &item.host;
         let alias = host.alias.trim().to_string();
         if let Some(reason) = &item.refused {
-            rows.push(Row { index, status: "refused", alias, detail: reason.clone(), checked: false });
+            rows.push(Row { index, status: "refused", alias, detail: reason.clone(), checked: false, converts: false });
             continue;
         }
         let named = book.iter().find(|h| h.alias.trim().eq_ignore_ascii_case(&alias));
@@ -278,14 +280,15 @@ pub fn plan(found: &[Found], book: &[Host]) -> Preview {
             } else {
                 format!("{alias} comes twice in the file · this one is {}", address(host))
             };
-            Row { index, status: "renamed", alias: fresh, detail, checked: true }
+            Row { index, status: "renamed", alias: fresh, detail, checked: true, converts: false }
         } else if let Some(same) = book.iter().find(|h| server(h) == server(host)) {
-            Row { index, status: "same", alias: alias.clone(), detail: format!("Already in the book as “{}”.", same.alias.trim()), checked: false }
+            Row { index, status: "same", alias: alias.clone(), detail: format!("Already in the book as “{}”.", same.alias.trim()), checked: false, converts: false }
         } else {
-            Row { index, status: "added", alias: alias.clone(), detail: summary(item), checked: true }
+            Row { index, status: "added", alias: alias.clone(), detail: summary(item), checked: true, converts: false }
         };
         taken.insert(row.alias.to_lowercase());
-        rows.push(row);
+        let converts = row.status != "refused" && matches!(item.key, Some(KeyPlan::Convert { .. }));
+        rows.push(Row { converts, ..row });
     }
     // What the rows that can be checked carry: a host already in the book is not one of them.
     let listed: Vec<&Found> = rows.iter().filter(|r| r.status != "refused").map(|r| &found[r.index]).collect();
