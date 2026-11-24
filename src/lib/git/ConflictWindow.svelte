@@ -35,8 +35,6 @@
   let lastPath: string | null = null;
   let lastList: string[] = [];
 
-  const name = (path: string) => path.split('/').pop() ?? path;
-
   /** The main window is told which file is open, and whether its choices are not saved. */
   function report() {
     void emitTo('main', EVENT.state, { label, path: repo.conflictFile?.path ?? null, modified });
@@ -53,7 +51,7 @@
     if (open && open.path !== file.path && modified) {
       await window.setFocus();
       const sure = await dialogs.confirm({
-        title: `Leave ${name(open.path)} without saving?`,
+        title: `Leave ${open.path} without saving?`,
         body: 'The choices and corrections made in this editor will be lost for good. The file keeps its conflict markers.',
         confirmLabel: 'Leave without saving',
         danger: true,
@@ -125,6 +123,8 @@
     void (async () => {
       if (asked) await repo.open(asked.repo);
       loaded = true;
+      // Painted: the window shows, with no flash of an empty page (guidelines, 4.2).
+      requestAnimationFrame(() => void window.show());
       // Listening: the main window sends the file, with its choices.
       await Promise.all(stops);
       await emitTo('main', EVENT.ready, { label });
@@ -206,25 +206,28 @@
     </section>
     <div class="editor">
       {#if repo.conflictFile}
-        <ConflictEditor
-          bind:this={editor}
-          {repo}
-          file={repo.conflictFile}
-          place="window"
-          {restore}
-          onmove={() => void back()}
-          onclose={() => void close()}
-          onmodified={(value) => {
-            modified = value;
-            report();
-          }}
-        />
+        <!-- First in the order of the keyboard, as on the screen: the editor under it waits. -->
         {#if orphaned}
           <div class="orphaned" role="alert">
             <span>This file is no longer in conflict. The choices made here cannot be saved.</span>
             <button class="btn small" type="button" onclick={() => void close()}>Close</button>
           </div>
         {/if}
+        <div class="host" inert={orphaned}>
+          <ConflictEditor
+            bind:this={editor}
+            {repo}
+            file={repo.conflictFile}
+            place="window"
+            {restore}
+            onmove={() => void back()}
+            onclose={() => void close()}
+            onmodified={(value) => {
+              modified = value;
+              report();
+            }}
+          />
+        </div>
       {:else if loaded && operation && !repo.conflicts.length}
         <div class="done">
           <p><b>All conflicts are resolved.</b></p>
@@ -279,6 +282,10 @@
     position: relative;
     min-width: 0;
     min-height: 0;
+  }
+  /* The editor keeps its own place in the cell. */
+  .host {
+    display: contents;
   }
   .done {
     position: absolute;

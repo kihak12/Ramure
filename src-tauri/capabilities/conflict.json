@@ -11,6 +11,7 @@
     "core:window:allow-destroy",
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
-    "dialog:default"
+    "dialog:default",
+    "core:window:allow-show"
   ]
 }

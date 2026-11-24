@@ -21,8 +21,10 @@
       <!-- “Show files” follows the sentence it acts on: a ghost button (guidelines, 9.1). -->
       <span class="line">
         <span>
-          {#if conflicts && place === 'window'}
-            {conflicts} file{conflicts === 1 ? '' : 's'} in conflict: pick one in the list, then continue.
+          {#if conflicts === 1 && place === 'window'}
+            1 file in conflict: resolve it, then continue.
+          {:else if conflicts && place === 'window'}
+            {conflicts} files in conflict: pick one in the list, then continue.
           {:else if conflicts}
             {conflicts} file{conflicts === 1 ? '' : 's'} in conflict: resolve {conflicts === 1 ? 'it' : 'them'} in the changes panel, then continue.
           {:else}

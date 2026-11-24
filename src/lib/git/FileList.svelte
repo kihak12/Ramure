@@ -333,8 +333,7 @@
   }
   li:hover .act:disabled,
   li:has(:focus-visible) .act:disabled,
-  li:has(.open:global(.focus-ring)) .act:disabled,
-  .act:disabled {
+  li:has(.open:global(.focus-ring)) .act:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }

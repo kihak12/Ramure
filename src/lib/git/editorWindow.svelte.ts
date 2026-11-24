@@ -39,6 +39,8 @@ export async function openInWindow(repo: Repo, file: FileChange, snapshot: Edito
     height: 880,
     minWidth: 1000,
     minHeight: 600,
+    // It shows once its page has painted (guidelines, 4.2).
+    visible: false,
   });
   void window.once('tauri://error', (event) => {
     // The window could not open: the editor stays in the main window, with its choices.

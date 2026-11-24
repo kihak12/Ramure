@@ -225,6 +225,8 @@
     const target = file;
     data = null;
     error = '';
+    // Another file in the same editor, in its window: it is an opening, the editor takes the keyboard.
+    placed = false;
     repo
       .readConflict(target)
       .then((loaded) => {
@@ -592,10 +594,10 @@
         class="btn ghost small"
         type="button"
         onclick={onmove}
-        title={place === 'main' ? 'Open the editor in its own window (Ctrl + Shift + W)' : 'Bring the editor back to the main window (Ctrl + Shift + W)'}
+        title={place === 'main' ? 'Open the editor in its own window (Ctrl + Shift + W)' : 'Return the editor to the main window (Ctrl + Shift + W)'}
       >
         <Icon name="window" size={14} />
-        {place === 'main' ? 'Open in window' : 'Back to main window'}
+        {place === 'main' ? 'Open in window' : 'Return to main window'}
       </button>
     {/if}
     <button class="btn small" type="button" onclick={close} title="Close (Escape)"><Icon name="x" size={14} /> Close</button>

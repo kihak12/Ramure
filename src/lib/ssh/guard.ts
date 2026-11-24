@@ -78,7 +78,7 @@ export async function mayQuit(sessions: Session[], transfers = 0, editors: strin
         ? `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`
         : '';
   // The window of the conflict editor closes with the main one (guidelines, 9.26, "Its ends").
-  const choices = editors.length ? `Unsaved choices in the conflict editor will be lost: ${editors.join(', ')}.` : '';
+  const choices = editors.length ? `The choices not saved in the conflict editor will be lost for good: ${editors.join(', ')}.` : '';
   const body = [terminals, transfers ? transfersStopped(transfers) : '', choices].filter(Boolean).join(' ');
   return dialogs.confirm({ title: 'Quit Ramure?', body, confirmLabel: 'Quit', danger: true });
 }
