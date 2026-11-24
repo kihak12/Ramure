@@ -49,6 +49,40 @@
     return out;
   });
 
+  // The book is one stop of the tab order: the arrows go through its hosts (guidelines, 9.21).
+  // The current host is the one the keyboard is on; the first host shown when it is not shown.
+  let currentId = $state('');
+  const ordered = $derived(sections.flatMap((s) => s.hosts));
+  const current = $derived(ordered.some((h) => h.id === currentId) ? currentId : (ordered[0]?.id ?? ''));
+
+  function moveHost(to: number) {
+    const host = ordered[Math.max(0, Math.min(ordered.length - 1, to))];
+    if (!host) return;
+    currentId = host.id;
+    void tick().then(() => document.querySelector<HTMLElement>(`.book .host[data-id="${CSS.escape(host.id)}"]`)?.focus());
+  }
+
+  /** The keys of a host: ↑ ↓ Home End move, Enter opens a terminal, F2 edits, Delete deletes. */
+  function hostKey(e: KeyboardEvent, host: Host) {
+    const at = ordered.findIndex((h) => h.id === host.id);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveHost(at + (e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      moveHost(e.key === 'Home' ? 0 : ordered.length - 1);
+    } else if (e.key === 'Enter' && !host.proxyJump) {
+      e.preventDefault();
+      ssh.open(host);
+    } else if (e.key === 'F2') {
+      e.preventDefault();
+      ssh.editing = host;
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      void removeHost(host);
+    }
+  }
+
   // The hosts whose session is opening: their row says so at once, where the user has just acted
   // (guidelines, section 9.15). The state comes from the session, not from the terminal: it does
   // not wait for the terminal to mount.
@@ -122,15 +156,17 @@
         <ul>
           {#each section.hosts as host (host.id)}
             {@const wait = waiting.get(host.id)}
-            <li>
+            <!-- The row whose menu was asked for from the keyboard keeps its ring while it is open (9.9). -->
+            <li class:asked={menu.current?.origin?.dataset.id === host.id}>
               <button
                 class="host"
                 type="button"
+                data-id={host.id}
+                tabindex={host.id === current ? 0 : -1}
                 title="{host.alias} — double-click to open a terminal, right-click for actions"
                 ondblclick={() => !host.proxyJump && ssh.open(host)}
-                onkeydown={(e) => {
-                  if (e.key === 'Enter' && !host.proxyJump) ssh.open(host);
-                }}
+                onfocus={() => (currentId = host.id)}
+                onkeydown={(e) => hostKey(e, host)}
                 oncontextmenu={(e) => hostMenu(e, host)}
               >
                 <!-- The chosen color names the host; without a color, the place stays empty (guidelines, 9.21). -->
@@ -151,9 +187,10 @@
                   {/if}
                 </span>
               </button>
+              <!-- For the mouse: the keyboard has Enter and F2 on the row (9.21). -->
               <span class="acts">
-                <button type="button" aria-label="Open terminal on {host.alias}" title="Open terminal" disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
-                <button type="button" aria-label="Edit {host.alias}" title="Edit" onclick={() => (ssh.editing = host)}><Icon name="pencil" size={14} /></button>
+                <button type="button" tabindex="-1" aria-label="Open terminal on {host.alias}" title={host.proxyJump ? 'Jump through a bastion: not supported yet' : 'Open terminal (Enter)'} disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
+                <button type="button" tabindex="-1" aria-label="Edit {host.alias}" title="Edit (F2)" onclick={() => (ssh.editing = host)}><Icon name="pencil" size={14} /></button>
               </span>
             </li>
           {/each}
@@ -429,8 +466,22 @@
     transition: opacity var(--t-fast) var(--ease);
   }
   li:hover .acts,
-  li:has(:focus-visible) .acts {
+  li:has(:focus-visible) .acts,
+  li:has(:global(.focus-ring)) .acts {
     opacity: 1;
+  }
+  /* The host of the keyboard: an inner ring on the whole row, its buttons included (9.6). */
+  .host:focus-visible,
+  .host:global(.focus-ring) {
+    outline: none;
+  }
+  li:has(.host:focus-visible),
+  li:has(.host:global(.focus-ring)),
+  li.asked {
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+  li.asked {
+    background: var(--hover);
   }
   .acts button {
     display: grid;
