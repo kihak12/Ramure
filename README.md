@@ -88,10 +88,12 @@ Everything goes through a right-click on a commit or on a label, and through the
 - **Conflicts**: when an operation stops, a banner offers to continue, skip or abort. Clicking a
   conflicted file opens the **conflict editor**: your side on the left, the result in the
   middle, the other side on the right, aligned line by line and scrolling together. The changes
-  git merged on its own are marked, on their side and in the result. Keep a side of a conflict
-  with the arrow of its header, set it aside with its cross: the result takes the sides kept in
-  the order of their arrows, each line marked with the side it comes from. A conflict not decided yet is a band, not git's markers. Ctrl + Z
-  undoes the last choice, F8 goes to the next conflict, Ctrl + S saves. The result stays
+  git merged on its own are marked, on their side and in the result, and counted. Keep a side of
+  a conflict with the arrow of its header, set it aside with its cross, or decide it on its band
+  in the result (keep a side, both, or neither, and start over): the result takes the sides kept
+  in the order of their arrows, each line marked with the side it comes from. A conflict not
+  decided yet is a band, not git's markers. Ctrl + Z undoes the last choice, F8 goes to the next
+  conflict, F7 to the next change git merged, Ctrl + S saves. The result stays
   editable, and the common ancestor is shown on demand. A file deleted on one
   side, or a binary file, is resolved by keeping one side.
 - **Dragging a branch onto another** (in the graph or the sidebar) offers to merge or rebase it.

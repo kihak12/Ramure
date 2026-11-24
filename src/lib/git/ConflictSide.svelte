@@ -131,7 +131,7 @@
       return head;
     }
     get estimatedHeight() {
-      return 24;
+      return 28;
     }
   }
 
@@ -156,7 +156,7 @@
     for (let n = 1; n <= state.doc.lines; n++) {
       const line = state.doc.line(n);
       const head = heads.get(n - 1);
-      if (head !== undefined) rows.push({ key: conflictKey(head), height: 24, pos: line.from, head: true });
+      if (head !== undefined) rows.push({ key: conflictKey(head), height: 28, pos: line.from, head: true });
       rows.push({ key: line.text, height: 18, pos: line.from, head: false });
     }
     return rows;
@@ -224,7 +224,7 @@
       display: 'flex',
       alignItems: 'center',
       gap: '2px',
-      height: '24px',
+      height: '28px',
       padding: '0 4px 0 8px',
       fontFamily: 'var(--f-ui)',
       fontSize: 'var(--fs-small)',
