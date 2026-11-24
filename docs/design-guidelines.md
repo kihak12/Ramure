@@ -168,7 +168,8 @@ Eight colors, reserved for the graph. A branch takes the color of its column: co
   and `--sel`, more saturated, so that the selection stays apart from the hover. Every theme
   makes them so, in the hue of its accent; their lightness is kept where `--ink` and `--muted`
   stay readable, the hover far enough from its background to be seen, and the selection far
-  enough from its background and from the hover (2.4).
+  enough from its background and from the hover (2.4). One exception: the selection of a pane of the Files module that is not the active one is
+  neutral, `--muted` over the card, since a lighter `--sel` would be the hover (2.7, 9.24).
 
 ### 2.4 Minimum contrasts and color distances
 
