@@ -583,7 +583,7 @@ States are the same everywhere:
 | State | Rendering |
 |---|---|
 | Hover | `--hover` background, in `--t-fast`; `--hover-side` on the window background (rail, toolbar, tabs, status bar). |
-| Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists and menus. |
+| Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists, menus and the resize handle (9.16). |
 | Selection | `--sel` background. |
 | Disabled | 45% opacity, "not allowed" cursor, no reaction on hover. |
 
@@ -840,17 +840,18 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - **A list in sections**, such as the branch list, is a tree: the title of a section is a row too,
   which folds and unfolds it, inset 6 px from the edges of the card like the rows. ↑ and ↓ go from
   row to row, titles included, Home and End to the ends, Page Down and Page Up by a page of rows,
-  as in the graph, the current row staying in view with its ring; → unfolds a title, or goes down
-  to its first row; ← goes back up to the title, or folds it (during a search, every section stays
-  unfolded, and its title folds nothing); Enter and Space act as a click: a title folds or
-  unfolds, a row shows its commit; the Menu key opens the menu of the row, and a title, which has
-  none, opens nothing, nor does a right click on it (9.9). The text of an empty section starts at
-  28 px, where the name of a row starts: a derived value, not a gap of 4.1. The current row shows
-  the ring, and `--sel` still marks the current branch; for a screen reader, the current row is
-  the selected one (`aria-selected`), and `aria-current` names the current branch. When the
-  current row goes away (deleted, renamed, filtered out), the next row of its section takes its
-  place, or else the one before it, or else its title, and the focus stays on the list. From the
-  filter above it, ↓ goes to the list, and during a search to the first row found.
+  from the first row when none is current yet, as in the graph, the current row staying in view
+  with its ring; → unfolds a title, or goes down to its first row; ← goes back up to the title, or
+  folds it (during a search, every section stays unfolded, and its title folds nothing); Enter and
+  Space act as a click: a title folds or unfolds, a row shows its commit; the Menu key opens the
+  menu of the row, and a title, which has none, opens nothing, nor does a right click on it (9.9).
+  The text of an empty section starts at 28 px, where the name of a row starts: a derived value,
+  not a gap of 4.1. The current row shows the ring, and `--sel` still marks the current branch;
+  for a screen reader, the current row is the selected one (`aria-selected`), and `aria-current`
+  names the current branch. When the current row goes away (deleted, renamed, filtered out), the
+  next row of its section takes its place, or else the one before it, or else its title, and the
+  focus stays on the list. From the filter above it, ↓ goes to the list, and during a search to
+  the first row found.
 - The actions of a row (stage, discard) appear on hover and on keyboard focus, on the right.
 - An area that scrolls (a list, a card, a dialog) has the thin scrollbar of `src/app.css`, its
   thumb in `--muted` at 45%. On Linux it is always visible and takes its room from the area: the
@@ -1428,6 +1429,8 @@ arrows, a horizontal marker and the vertical resize cursor.
   chosen widths are restored at the next launch.
 - The handle is only 8 px wide: it is one of the two exceptions to the 24 px target, with the
   overview strip of the conflict editor (9.26), and the keyboard makes up for it.
+- A screen reader announces its name, its value in pixels ("280 pixels wide", "high" for the
+  horizontal handle) and its bounds.
 - A hidden card has no handle (9.17).
 
 ### 9.17 Showing and hiding cards
