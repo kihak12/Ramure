@@ -99,12 +99,17 @@ export function refusal(combo: string): string {
 }
 
 /** Readable form: `Ctrl+Shift+F` → `Ctrl + Shift + F`. A final `+` is the key itself: `Ctrl++` → `Ctrl + +`. */
-export const display = (combo: string) => combo.split(/\+(?!$)/).join(' + ');
+/** A combination as the keyboard names it: `Ctrl+PageDown` reads "Ctrl + Page Down" (guidelines, 12). */
+export const display = (combo: string) =>
+  combo
+    .split(/\+(?!$)/)
+    .map((key) => (key === 'PageDown' ? 'Page Down' : key === 'PageUp' ? 'Page Up' : key))
+    .join(' + ');
 
 /**
  * In a terminal, the Ctrl + letter combinations belong to the shell (Ctrl + K deletes the end of
  * the line, Ctrl + W the previous word). Only those a shell does not use go through: with Shift
- * or Alt, or a function key.
+ * or Alt, a function key, and Ctrl + Page Up / Page Down, the tabs of the terminals of the system.
  */
 export const allowedInTerminal = (combo: string) => /Shift\+|Alt\+|(^|\+)F\d{1,2}$|^Ctrl\+Page(Up|Down)$/.test(combo);
 

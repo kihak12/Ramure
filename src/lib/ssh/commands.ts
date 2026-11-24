@@ -53,7 +53,7 @@ export function sshCommands(): Command[] {
     {
       id: 'ssh-book',
       group: 'Terminal',
-      icon: 'list',
+      icon: 'search',
       title: 'Go to the host book',
       keywords: 'hosts book filter leave terminal',
       run: () => void ssh.focusBook(true),

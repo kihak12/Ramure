@@ -904,8 +904,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   The ring of a tab follows its 8 px corners.
 - The tabs of the terminals are a tab list: the active tab and its cross alone are stops of the tab
   order, ← and → go to the previous and the next tab, Home and End to the first and the last, each
-  opening as it takes the keyboard, which stays on the tabs so that the arrows go on (11); Enter
-  or a click gives it to the terminal.
+  opening as it takes the keyboard, which stays on the tabs so that the arrows go on (9.15);
+  Enter or a click gives it to the terminal.
 - When the tabs overflow, the bar scrolls to the active tab, and to a tab that takes the focus,
   so that it stays whole to the left of the "+": the bar keeps 40 px of scroll room on its right,
   the width of the "+" and its margins (a derived value, not a gap of 4.1). The "+" covers the
@@ -1116,18 +1116,20 @@ own, under its graph (9.20).
   repository, asks as soon as a shell is open: "A terminal is open…".
 - A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
   gray dot; its tooltip and accessible name then say "Local terminal stopped".
-- **Leaving a terminal from the keyboard.** A terminal keeps most keys for the shell, Tab,
-  Ctrl + K and Ctrl + , included; it lets through the shortcuts with Shift or Alt and the
-  function keys, and four of its own: Ctrl + Page Down and Ctrl + Page Up go to the next and the
-  previous tab, as in the terminals of the system, Ctrl + Shift + W closes the tab (as its cross:
-  a program that runs asks first), and Ctrl + Shift + H gives the keyboard to the filter of the
-  host book, with its ring. They are the commands "Next terminal tab", "Previous terminal tab",
-  "Close terminal tab" and "Go to the host book" of the palette, which Ctrl + Shift + P opens from
-  a terminal.
 - Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus goes
   to its main button: the terminal keeps the Tab key for the shell. A panel that asks for a
   secret gives it to its field. Under a repository, where the state of the shell is a strip, the
   rule is that of 9.20.
+
+**Leaving a terminal from the keyboard.** A terminal keeps most keys for the shell, Tab,
+Ctrl + K and Ctrl + , included; it lets through the shortcuts with Shift or Alt and the
+function keys (11), and two more, Ctrl + Page Down and Ctrl + Page Up. Four shortcuts of the
+SSH module serve to leave it: Ctrl + Page Down and Ctrl + Page Up go to the next and the
+previous tab, as in the terminals of the system, Ctrl + Shift + W closes the tab, as its cross
+does (a program that runs in a local terminal asks first; a session is closed at once), and
+Ctrl + Shift + H gives the keyboard to the filter of the host book, with its ring. They are the commands "Next terminal tab", "Previous terminal tab",
+"Close terminal tab" and "Go to the host book" of the palette, which Ctrl + Shift + P opens from
+a terminal.
 
 **Search.** Ctrl + Shift + F, or "Search the terminal" in the palette, opens a search bar
 in the terminal of the current tab.
@@ -1637,7 +1639,8 @@ A local terminal under the graph, opened in the folder of the repository, to run
   repository is shown again, not when it is shown by the button, even when that opens its first
   shell. It takes it on the shortcut, on "+", on "New terminal in this repository" and on
   "Restart". In it, as in every terminal, only the shortcuts with Shift, Alt or a function key
-  act (11). No search bar here for now: Ctrl + Shift + F stays "Fetch".
+  act (11); Ctrl + Page Up / Page Down, which go from tab to tab in the SSH module, do nothing
+  here. No search bar here for now: Ctrl + Shift + F stays "Fetch".
 - **What it does not cover.** The editor of a conflict covers the view, the terminal with it.
   While it is open, the "Terminal" action, its shortcut and its commands are disabled, and so
   is the "View" button: nothing opens under it.
@@ -2508,7 +2511,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Shortcuts.** A shortcut belongs to the whole application or to one module, Git, SSH or Files. A
   combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
   searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
-  function key are active: the others belong to the shell.
+  function key are active, and Ctrl + Page Up / Page Down, which go from tab to tab in the SSH
+  module as in the terminals of the system (9.15): the others belong to the shell.
 - **Targets.** 24 × 24 px at least; two exceptions, the handle of a card and the overview strip of
   the conflict editor, for which the keyboard makes up (9.16, 9.26).
 - **Never color alone.** A state is backed by an icon, a sign or text: "+" and "−" in a diff, a

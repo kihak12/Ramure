@@ -265,7 +265,7 @@
               type="button"
               tabindex={current ? 0 : -1}
               aria-label="Close terminal {session.title}"
-              title="Close terminal (Ctrl + Shift + W)"
+              title={current && keys.binding('terminal-tab-close') ? `Close terminal (${display(keys.binding('terminal-tab-close'))})` : 'Close terminal'}
               onclick={() => void closeTab(session)}
             >
               <Icon name="x" size={14} />
