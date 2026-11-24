@@ -31,8 +31,9 @@ export interface DialogSpec {
   cancelLabel?: string;
   /** Destructive action: the confirmation button turns red. */
   danger?: boolean;
-  /** Secondary action, between "Cancel" and the main button: the dialog closes, then the action runs. */
-  extra?: { label: string; run: () => void };
+  /** Secondary actions, between "Cancel" and the main button, in this order: the dialog closes,
+   *  then the action runs. Four buttons at most on the last line (guidelines, 9.10). */
+  extra?: Extra | Extra[];
   /**
    * Runs the action when the main button is pressed, before the dialog closes: the reason it
    * failed is said under the first field, and the dialog stays open with what was typed
@@ -47,6 +48,12 @@ export interface DialogSpec {
 }
 
 export type Answers = Record<string, FieldValue>;
+
+/** A secondary action of a dialog. */
+export interface Extra {
+  label: string;
+  run: () => void;
+}
 
 class Dialogs {
   current = $state.raw<{ spec: DialogSpec; resolve: (answers: Answers | null) => void } | null>(null);

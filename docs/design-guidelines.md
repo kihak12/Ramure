@@ -2041,9 +2041,17 @@ at half opacity (9.6).
   connected."
 - **A name already there.** A copy that would replace something first asks (9.10): "Replace 2
   items in releases?", the names, "A replaced file cannot be recovered. A folder is merged: only
-  the files of the same name inside it are replaced.", then "Cancel", which has the focus, "Skip
-  them", and "Replace", a danger button. A move never replaces: what is taken stays where it is,
-  and a warning notification says so ("2 items were not moved", the names in its detail).
+  the files of the same name inside it are replaced. “Keep both” copies them under a free name,
+  such as report (1).pdf.", then "Cancel", which has the focus, "Skip them", "Keep both", and
+  "Replace", a danger button: four buttons, the most a last line holds. With one name, "Skip it"
+  and the free name of that file in the sentence.
+- **Keeping both** copies each item whose name is taken under the first free name: the number
+  in parentheses before the extension of a file, "report (1).pdf", then "(2)", after the whole
+  name of a folder or of a file whose only dot leads, "releases (1)", ".bashrc (1)". The name is
+  free in the folder and among the names the same copy brings. A folder is copied whole beside
+  the one there, never merged. The copied items become the selection under their new names.
+- A move never replaces: what is taken stays where it is, and a warning notification says so ("2
+  items were not moved", the names in its detail).
 - A file is written under a name of its own, then takes its name once whole: a file already
   there is only replaced by a whole one, and a transfer that stops leaves no half file.
 
