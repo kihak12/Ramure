@@ -35,7 +35,9 @@ function tabbables(root: HTMLElement): HTMLElement[] {
  */
 export function keepFocusInDialogs(): () => void {
   const onKey = (event: KeyboardEvent) => {
-    if (event.key !== 'Tab' || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
+    // With Shift, WebKitGTK may not name Tab (ISO_Left_Tab): it is known by its place.
+    const tab = event.key === 'Tab' || event.code === 'Tab';
+    if (!tab || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
     const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const open = [...document.querySelectorAll<HTMLDialogElement>('dialog[open]')];
     const dialog = focused?.closest<HTMLDialogElement>('dialog[open]') ?? open.at(-1);
