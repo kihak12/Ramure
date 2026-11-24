@@ -2408,6 +2408,40 @@ aside with its cross, as in the merge tools of the IDEs.
 whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a file of the list
 "In conflict" of the changes panel, or Enter or Space on it.
 
+**Its own window.** The editor moves to a window of its own, for more room, on a second screen for
+instance, and comes back: a small ghost button of the header, with the icon of a window, before
+"Close": "Open in window", its tooltip "Open the editor in its own window (Ctrl + Shift + W)"; in
+the window, "Back to main window". The same shortcut does both, in the Git module, and the palette
+has "Open conflict editor in a window", "Bring conflict editor back to main window" and "Show
+conflict editor window". The editor moves with its choices, its corrections, its current conflict
+and its ancestor shown or not: a move is not a close, and nothing is asked. Once it is in its
+window, the other files of the same operation open there too, until the operation ends.
+
+- **The window** holds what the work needs and nothing else. At the top, the banner of the
+  operation, whose sentence becomes "2 files in conflict: pick one in the list, then continue.",
+  with no "Show files". Under it, on the left, a card "In conflict · 2", 240 px wide, with the
+  rows of the list (9.6), their click and their keys, without their buttons; on the right, the
+  editor. No toolbar, no tabs, no rail, no status bar. Its title is "Conflict editor".
+- **Saved, it goes on**: the file leaves the list, and the editor opens the next one, the row that
+  took its place, or the first. With no file left, the card of the editor says "All conflicts are
+  resolved." and "Continue the merge to finish." (the rebase, the cherry-pick, the revert), and
+  the keyboard goes to "Continue", with its ring. A rebase that stops again after "Continue" fills
+  the list again and opens its first file.
+- **One editor.** A click on a file of "In conflict", in either window, goes where the editor is:
+  the same file brings the window forward; another file opens in it at once, or, with choices not
+  saved, after "Leave settings.txt without saving?", "The choices and corrections made in this
+  editor will be lost for good. The file keeps its conflict markers.", "Cancel" focused (9.10) and
+  "Leave without saving". While a file is open in the editor, wherever it is, the buttons of its
+  row are disabled, their tooltip saying "This file is open in the conflict editor."
+- **Its ends.** Closed with choices not saved, by "Close", Escape or the button of the system, the
+  window asks "Close without saving?" as the editor does; closed, it gives the keyboard back to
+  the main window, on the row of its file. The operation ended from the main window (Continue,
+  Skip, Abort…) closes it, or, with choices not saved, leaves it with a strip in `--warn-soft`
+  over the editor, "This file is no longer in conflict. The choices made here cannot be saved.",
+  and its "Close", which asks nothing more; "Abort…" says it then: "The choices not saved in the
+  conflict editor are lost too." Closing the main window closes the editor's, after the question
+  of the quit, which names its choices not saved.
+
 **The header**, one line: the merge icon in `--warn`, the path of the file in the code font, and
 under it what is left, then what git did on its own: "2 conflicts to decide · 4 changes merged by
 git", or "No conflict left: the file can be saved · 4 changes merged by git"; with no change
