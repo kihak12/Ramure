@@ -816,7 +816,9 @@
   {/if}
 
   <div class="stage">
-    <div class="term" bind:this={termEl}></div>
+    <!-- Under a panel, the terminal is not a stop of the keyboard: its hidden input would be one
+         that cannot be seen (guidelines, 11). -->
+    <div class="term" bind:this={termEl} inert={phase.step !== 'connected' && !strip}></div>
 
     {#if phase.step !== 'connected' && !strip}
       <div class="veil">

@@ -981,6 +981,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
   What was typed in the dialog is lost, without a question.
 - On opening, focus goes to the first field. For a destructive action, it goes to "Cancel".
+- Tab and Shift + Tab go round the controls of the dialog, from the last to the first and back,
+  each with its ring: the focus never leaves it, nor stops on what cannot be seen. A panel laid
+  over a terminal makes the terminal under it out of reach of the keyboard as of the mouse.
 - **An action done in the dialog.** A rename, a new folder or a deletion runs when its button is
   pressed, before the dialog closes, so that what went wrong is said where the user looks
   (9.11). The button says it in "-ing" ("Renaming…", "Deleting…") and cannot be pressed again; it
