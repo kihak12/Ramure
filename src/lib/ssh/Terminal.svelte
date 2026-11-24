@@ -726,12 +726,15 @@
     const connected = phase.step === 'connected';
     requestAnimationFrame(() => {
       fit?.fit();
-      if (connected && autofocus) term?.focus();
+      // A tab reached with the arrows of the tab list keeps the keyboard, so that the arrows go on
+      // from tab to tab (guidelines, 9.7); a click on a tab gives it to its terminal.
+      const browsing = document.activeElement?.matches('[role="tab"]:focus-visible');
+      if (connected && autofocus && !browsing) term?.focus();
     });
   });
 </script>
 
-<div class="session" bind:this={rootEl}>
+<div class="session" data-session={session.key} bind:this={rootEl}>
   {#if !bare}
   <header>
     {#if local}
