@@ -1967,7 +1967,8 @@ place: "This machine", or a host of the book.
   the locations again, the hosts of the book among them. An empty pane of two cannot be closed,
   its tooltip saying why and what to do ("Two panes always stay. Choose a location instead.").
   The pane added takes the keyboard, as does, once a pane is closed, the pane that takes its
-  place, with the ring when the key came from the keyboard (11): the focus is never lost.
+  place, with the ring when the key came from the keyboard (11): the focus is never lost. A close
+  canceled in its dialog leaves the keyboard where it was.
 - "Browse files", in the menu of a host in the book, shows the module with that host: in the
   empty pane if there is one, otherwise in a new pane, or in place of the last pane at four.
 
@@ -1978,8 +1979,8 @@ after the root, "/" or "C:\", which ends with its own). A short path starts on t
 too long for the pane gives way on the left, the bar scrolling to its last segments, with no
 scrollbar. The ring of a segment is drawn inside it, so that the bar does not cut it. A click on the bar, past the segments, turns it into a
 field (9.3) with the path selected: Enter opens what is typed, `~` being the home folder, and
-Escape gives the segments back, and the keyboard to the pencil that opened the field, with its
-ring; Enter gives it to the list of the folder opened. A folder that cannot be opened turns the
+Escape gives the segments back, and the keyboard to the pencil, whatever opened the field, with
+its ring; Enter gives it to the list of the folder opened. A folder that cannot be opened turns the
 field to its error state, with the reason under it. Then five ghost buttons made of an icon alone: "Type a path",
 the pencil, which does the same from the keyboard, "Refresh" (F5 from the list), "Show hidden
 files", a toggle (9.1) with the eye icon, pressed while the files whose name starts with a dot,
@@ -2008,7 +2009,7 @@ of 24 px (4.3, 9.6):
 - **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
   selects up to it, Ctrl + A selects them all. The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection; from the parent row, which is never
-  selected, it starts at the first item. A double-click, or Enter, opens a
+  selected, the range starts at the first item, with Shift + click too. A double-click, or Enter, opens a
   folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
   Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full

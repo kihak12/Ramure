@@ -107,7 +107,7 @@
       e.preventDefault();
       e.stopPropagation();
       editing = false;
-      // Nothing changed: the keyboard goes back to the pencil that opened the field, with its ring.
+      // Nothing changed: the keyboard goes to the pencil, whatever opened the field, with its ring.
       await tick();
       focusWithRing(pencilEl);
     }
@@ -121,7 +121,8 @@
 
   /** "Close pane": the keyboard goes to the pane that takes its place, as the focus would be lost. */
   async function closePane(keyboard: boolean) {
-    await files.close(pane);
+    // Canceled in its dialog, nothing closed: the keyboard stays where it was.
+    if (!(await files.close(pane))) return;
     const next = files.pane(files.focused);
     if (next) void files.focus(next, keyboard);
   }
@@ -139,8 +140,8 @@
   }
 
   function selectRange(to: string) {
-    // From the parent row, which has no anchor, the range starts where it lands.
-    if (pane.anchor === null) pane.anchor = to;
+    // From the parent row, which is never selected, the range starts at the first item (9.24).
+    if (pane.anchor === null) pane.anchor = rows[0]?.name ?? to;
     const from = rows.findIndex((e) => e.name === pane.anchor);
     const end = rows.findIndex((e) => e.name === to);
     const [a, b] = from < end ? [from, end] : [end, from];

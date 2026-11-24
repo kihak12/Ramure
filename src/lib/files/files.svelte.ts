@@ -250,8 +250,9 @@ class Files {
     return this.transfers.filter((t) => t.state === 'counting' || t.state === 'copying').length;
   }
 
-  /** "Close pane": asks first when a transfer uses it. Of two panes, the one closed becomes empty. */
-  async close(pane: Pane) {
+  /** "Close pane": asks first when a transfer uses it. Of two panes, the one closed becomes empty.
+   *  False when it was canceled. */
+  async close(pane: Pane): Promise<boolean> {
     const using = this.runningWith(pane);
     if (using.length) {
       const way = using[0].to.paneKey === pane.key ? 'to' : 'from';
@@ -262,7 +263,7 @@ class Files {
         confirmLabel: 'Close pane',
         danger: true,
       });
-      if (!confirmed) return;
+      if (!confirmed) return false;
       for (const t of using) void invoke('transfer_cancel', { id: t.id });
     }
     this.#disconnect(pane);
@@ -275,6 +276,7 @@ class Files {
       if (this.focused === pane.key) this.focused = this.panes[Math.min(at, this.panes.length - 1)].key;
     }
     this.save();
+    return true;
   }
 
   #disconnect(pane: Pane) {
