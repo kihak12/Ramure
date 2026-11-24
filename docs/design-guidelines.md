@@ -936,7 +936,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   paste.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
-- Keyboard: arrows to move, Enter to choose, Escape to close.
+- Keyboard: arrows to move, Home and End to the first and the last item that can be chosen,
+  Enter to choose, Escape to close. Tab closes it too, as Escape does, the focus going back to
+  whoever had it, with its ring: a menu is not a stop of the tab order.
 - Appears in `--t-fast`, from the point of the click.
 - No scrollbar is drawn over an open menu (9.6).
 - A menu may also open under a button, such as "View" in the toolbar (9.2): 4 px below it,

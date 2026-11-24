@@ -68,10 +68,22 @@
       menu.close(true);
       return;
     }
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    // Tab leaves the menu, as Escape does: the focus goes back to whoever had it, with its ring
+    // (guidelines, 9.9).
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      menu.close(true);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
     keyboard = true;
     const buttons = [...element.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+    // Home and End: the first and the last item that can be chosen.
+    if (event.key === 'Home' || event.key === 'End') {
+      buttons[event.key === 'Home' ? 0 : buttons.length - 1]?.focus();
+      return;
+    }
     const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
     // No current item: ↓ goes to the first, ↑ to the last.
     const from = at < 0 && event.key === 'ArrowUp' ? 0 : at;
