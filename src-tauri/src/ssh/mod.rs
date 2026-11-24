@@ -10,6 +10,7 @@ pub mod filezilla;
 pub mod hostfile;
 pub mod keyfiles;
 pub mod known_hosts;
+pub mod putty;
 pub mod secrets;
 pub mod socks;
 pub mod store;

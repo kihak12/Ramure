@@ -159,6 +159,9 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   export or its `sitemanager.xml`: the SFTP sites become hosts, the FTP ones are left out and
   listed, a PuTTY key without a passphrase is converted into `~/.ssh`, and the passwords FileZilla
   kept in clear go to the system keyring only if you check it.
+- **Moving over from PuTTY**: "Import hosts", then "From PuTTY…", reads a `.reg` export of the
+  sessions of PuTTY on Windows, or the folder `~/.putty/sessions` on Linux: the SSH sessions
+  become hosts, the others are listed, and their keys go as those of FileZilla.
 - **Export to `~/.ssh/config`**: "Export hosts", then "To ~/.ssh/config…", shows, host by host, what will be
   added or changed, then writes HostName, User, Port and IdentityFile, so that `ssh <name>`
   works in any terminal. The rest of the file is left as it is, the old file is kept in

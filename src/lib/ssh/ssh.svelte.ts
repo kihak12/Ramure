@@ -8,14 +8,19 @@ import { toasts } from '../ui/toasts.svelte';
 import { secretsHeld } from './secrets';
 import { addressOf, count, listenOf, type Host, type KeyInfo, type Tunnel, type TunnelState } from './types';
 import { open as openFile } from '@tauri-apps/plugin-dialog';
+import { homeDir } from '@tauri-apps/api/path';
 
 /** Where an import of hosts comes from (src-tauri/src/ssh/hostfile.rs). */
-export type ImportSource = 'ramure' | 'filezilla';
+export type ImportSource = 'ramure' | 'filezilla' | 'putty';
+
+/** PuTTY keeps its sessions in the registry on Windows, in files on Linux. */
+const onWindows = typeof navigator !== 'undefined' && /Windows/.test(navigator.userAgent);
 
 /** The file picker of each source: its title and the kind of file. */
 const PICKER: Record<ImportSource, { title: string; name: string; extensions: string[] }> = {
   ramure: { title: 'Choose a file of hosts', name: 'Hosts of Ramure', extensions: ['json'] },
   filezilla: { title: 'Choose a FileZilla export', name: 'FileZilla export', extensions: ['xml'] },
+  putty: { title: 'Choose an export of the sessions of PuTTY', name: 'Registry export', extensions: ['reg'] },
 };
 
 /** The error notification of each tunnel that could not start, by group and tunnel: it goes away
@@ -261,17 +266,19 @@ class Ssh {
     document.querySelector<HTMLElement>('.book input[type="search"]')?.focus();
   }
 
-  /** "From a Ramure file…", "From FileZilla…": the file picker, then the preview of the import. */
+  /** "From a Ramure file…", "From FileZilla…", "From PuTTY…": the file picker, then the preview of the import. */
   async pickImport(source: ImportSource) {
     let path: string | null;
     const picker = PICKER[source];
     try {
-      const picked = await openFile({
-        title: picker.title,
-        multiple: false,
-        directory: false,
-        filters: [{ name: picker.name, extensions: picker.extensions }],
-      });
+      // On Linux, PuTTY keeps a file per session in ~/.putty/sessions: the folder is chosen.
+      const folder = source === 'putty' && !onWindows;
+      const home = folder ? await homeDir().catch(() => '') : '';
+      const picked = await openFile(
+        folder
+          ? { title: 'Choose the folder of the sessions of PuTTY', multiple: false, directory: true, defaultPath: home ? `${home}/.putty/sessions` : undefined }
+          : { title: picker.title, multiple: false, directory: false, filters: [{ name: picker.name, extensions: picker.extensions }] },
+      );
       path = typeof picked === 'string' ? picked : null;
     } catch (e) {
       toasts.err('The file picker could not open', message(e));

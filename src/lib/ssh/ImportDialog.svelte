@@ -15,7 +15,7 @@
   type Preview = { rows: Row[]; upToDate: number; passwords: number; keys: number };
   type Imported = { added: number; passwordsRefused: number; keysConverted: number; keysFailed: string[] };
 
-  const TITLE: Record<ImportSource, string> = { ramure: 'Import from a Ramure file', filezilla: 'Import from FileZilla' };
+  const TITLE: Record<ImportSource, string> = { ramure: 'Import from a Ramure file', filezilla: 'Import from FileZilla', putty: 'Import from PuTTY' };
 
   let element = $state<HTMLDialogElement>();
   let preview = $state<Preview | null>(null);

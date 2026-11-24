@@ -361,7 +361,7 @@ pub fn hosts_file_export(store: State<'_, Store>, ids: Vec<String>, path: String
     Ok(hosts.len())
 }
 
-/// Reads a source of hosts and says what its import would do. `source`: `ramure` or `filezilla`.
+/// Reads a source of hosts and says what its import would do. `source`: `ramure`, `filezilla` or `putty`.
 #[tauri::command]
 pub fn hosts_import_preview(store: State<'_, Store>, pending: State<'_, Pending>, source: String, path: String) -> Result<Preview, String> {
     let read_text = || {
@@ -374,6 +374,9 @@ pub fn hosts_import_preview(store: State<'_, Store>, pending: State<'_, Pending>
     let found = match source.as_str() {
         "ramure" => read(&read_text()?)?,
         "filezilla" => super::filezilla::read(&read_text()?)?,
+        // A folder of session files on Linux, a .reg export on Windows.
+        "putty" if Path::new(&path).is_dir() => super::putty::read_dir(Path::new(&path))?,
+        "putty" => super::putty::read_reg(&std::fs::read(&path).map_err(|e| format!("This file could not be read: {e}."))?)?,
         _ => return Err(format!("Unknown source: {source}.")),
     };
     let preview = plan(&found, &store.list()?);

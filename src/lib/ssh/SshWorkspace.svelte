@@ -149,6 +149,7 @@
     { label: 'From ~/.ssh/config', icon: 'import', run: () => void ssh.importConfig() },
     { label: 'From a Ramure file…', icon: 'import', run: () => void ssh.pickImport('ramure') },
     { label: 'From FileZilla…', icon: 'import', run: () => void ssh.pickImport('filezilla') },
+    { label: 'From PuTTY…', icon: 'import', run: () => void ssh.pickImport('putty') },
   ];
   const exportItems = (): MenuItem[] => [
     { label: 'To ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = 'all') },
@@ -221,7 +222,7 @@
           {:else if ssh.hosts.length}
             No host matches “{filter}”.
           {:else}
-            No hosts. Add one, or import them from ~/.ssh/config, a Ramure file or FileZilla.
+            No hosts. Add one, or import them from ~/.ssh/config, a Ramure file, FileZilla or PuTTY.
           {/if}
         </p>
       {/each}

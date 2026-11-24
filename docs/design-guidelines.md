@@ -1269,12 +1269,14 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
 
 - **"Import hosts"**: "From ~/.ssh/config", which adds at once the hosts of that file whose name
   the book does not have, in the group "Imported from ~/.ssh/config", a notification counting
-  them; "From a Ramure file…" and "From FileZilla…", which open the file picker of the system,
-  "Choose a file of hosts", "Choose a FileZilla export" (its File, Export, or its
-  `sitemanager.xml`), then the preview. **"Export hosts"**: "To ~/.ssh/config…" and "To a Ramure file…". The
+  them; "From a Ramure file…", "From FileZilla…" and "From PuTTY…", which open the picker of the
+  system, "Choose a file of hosts", "Choose a FileZilla export" (its File, Export, or its
+  `sitemanager.xml`), and for PuTTY "Choose an export of the sessions of PuTTY" on Windows (a
+  `.reg` export of `HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions`), "Choose the folder
+  of the sessions of PuTTY" on Linux (`~/.putty/sessions`, a file per session); then the preview. **"Export hosts"**: "To ~/.ssh/config…" and "To a Ramure file…". The
   menu of a host has "Export to a Ramure file…" too, for that host. An empty book offers "Import
   hosts" beside "Add host…", with the same menu: "No hosts. Add one, or import them from
-  ~/.ssh/config, a Ramure file or FileZilla."
+  ~/.ssh/config, a Ramure file, FileZilla or PuTTY."
 - **A file of Ramure** holds what the book keeps of each host: its name, address, port, user, the
   way it signs in and its key, group, tags, color, startup command, bastion, log and tunnels.
   Never a secret: no password, no passphrase. A key under `~/.ssh` is written `~/.ssh/name`, which
@@ -1319,6 +1321,15 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
   password kept under the master password of FileZilla cannot be read: it is asked when
   connecting. A file that is not a FileZilla export says, in place of the list, "This is not a
   FileZilla export: in FileZilla, use File, then Export, and choose the file it writes."
+- **From PuTTY**, an SSH session becomes a host, in the group "Imported from PuTTY", its name as
+  PuTTY shows it ("Web prod" for `Web%20prod`); its "Default Settings" are not a server. A Telnet,
+  serial, raw or rlogin session is "Not imported", "A telnet session: Ramure opens SSH only.", as is
+  one reached through a proxy, "Reached through a proxy: Ramure cannot connect through one yet.".
+  Its key goes as a key of FileZilla does. PuTTY keeps no password. On Linux, the folder picker
+  opens in `~/.putty/sessions` when it exists. A file that is not an export of PuTTY says, in place
+  of the list, "This is not an export of the sessions of PuTTY: in regedit, export
+  HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions, then choose that file."; a folder with
+  none, "No sessions of PuTTY in this folder: choose ~/.putty/sessions."
 - **Its last line**: "Cancel", then the main button, which counts what it adds, "Import 12
   hosts", disabled with nothing checked, the left of the line saying why, "Check at least one
   host.", as in the export. A file that is not one of Ramure says so in place of the list, "This is
