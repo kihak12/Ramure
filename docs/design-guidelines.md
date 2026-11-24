@@ -2570,8 +2570,16 @@ strip carries no mark, and a click there goes to the end of the file.
   toolbar, F8 and F7 give the same from the keyboard. Only 12 px wide, it is the second exception to the
   24 px target, after the handle of a card (9.16), and the keyboard makes up for it.
 
-**The common ancestor**, shown under the three columns, across their width, read only, follows the
-current conflict and marks it, as the sides do.
+**The common ancestor**, under the three columns, across their width, 160 px high, read only,
+shows the current conflict as it was before both changes, with the 3 lines around it, numbered as
+in the file. Its lines are marked, as the sides mark the conflict, and the panel follows the
+current conflict. Its place in the ancestor comes from the diffs of the ancestor against each side,
+so that it shows whatever the style of the conflict markers (the ancestor written between them,
+with `merge.conflictStyle diff3`, is the way left when neither side gives it). The caption of its
+bar says "Before both changes."; when the ancestor had no line there, "Before both changes. It had
+no line here: both sides added theirs.", the 3 lines around the place shown; when the conflict is
+not found in it, "Before both changes. This conflict was not found in it.", the whole ancestor
+shown.
 
 **Keyboard.**
 

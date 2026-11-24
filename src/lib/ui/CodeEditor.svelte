@@ -74,6 +74,7 @@
     readonly = false,
     marks = [],
     lineSeparator = '\n',
+    firstLine = 1,
     label,
     onchange,
   }: {
@@ -83,6 +84,8 @@
     marks?: Mark[];
     /** Line ending of the file: `\r\n` is kept as it is when the file uses it. */
     lineSeparator?: string;
+    /** The number of the first line: a part of a file keeps the numbers of the file. */
+    firstLine?: number;
     label: string;
     onchange?: (text: string) => void;
   } = $props();
@@ -90,13 +93,14 @@
   let host = $state<HTMLDivElement>();
   let view: EditorView | undefined;
   let loaded = '';
+  let loadedFirst = 1;
 
   function makeState(text: string) {
     return State.create({
       doc: text,
       extensions: [
         State.lineSeparator.of(lineSeparator),
-        lineNumbers(),
+        lineNumbers({ formatNumber: (n) => String(n + firstLine - 1) }),
         drawSelection(),
         markField,
         theme,
@@ -118,16 +122,19 @@
 
   onMount(() => {
     loaded = value;
+    loadedFirst = firstLine;
     view = new EditorView({ state: makeState(value), parent: host! });
     view.dispatch({ effects: setMarks.of(marks) });
     return () => view?.destroy();
   });
 
-  // Another file: start again from a new document (and an empty undo history).
+  // Another file, or another part of it: start again from a new document (and an empty undo history).
   $effect(() => {
-    if (view && value !== loaded) {
+    if (view && (value !== loaded || firstLine !== loadedFirst)) {
       loaded = value;
+      loadedFirst = firstLine;
       view.setState(makeState(value));
+      view.dispatch({ effects: setMarks.of(marks) });
     }
   });
 

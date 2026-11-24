@@ -166,6 +166,43 @@ export function mergedChanges(
   return { ...lines, result: merged.sort((a, b) => a.line - b.line) };
 }
 
+// --- The conflict in the common ancestor ---------------------------------------------------
+// Where the lines of a conflict were in the ancestor, found from the diffs of the ancestor against
+// each side: git writes the ancestor between the markers only with `merge.conflictStyle diff3`.
+
+/** Where lines `span` of a side were in the ancestor: an unchanged line on its line, a changed one
+ *  on the whole hunk it is in. A line added by the side gives an empty span, at its place. */
+function toBase(hunks: Hunk[], span: Span): Span {
+  const at = (line: number, end: boolean) => {
+    let shift = 0;
+    for (const h of hunks) {
+      if (line < h.fromB) break;
+      if (line < h.toB) return end ? h.toA : h.fromA;
+      shift = h.toA - h.toB;
+    }
+    return line + shift + (end ? 1 : 0);
+  };
+  return { from: at(span.from, false), to: at(span.to - 1, true) };
+}
+
+/**
+ * The lines of the ancestor where each conflict was, end excluded, from its lines in each side
+ * (null where it was not found in that side). Both sides give a span: the conflict covers the two.
+ * Null when it was found in neither side; an empty span when the ancestor had no line there, both
+ * sides having added theirs.
+ */
+export function ancestorSpans(base: string[], ours: string[], theirs: string[], conflicts: { ours: Span | null; theirs: Span | null }[]): (Span | null)[] {
+  const hunks = { ours: diffLines(base, ours), theirs: diffLines(base, theirs) };
+  return conflicts.map((c) => {
+    const spans = (['ours', 'theirs'] as const).flatMap((side) => {
+      const span = c[side];
+      return span && span.to > span.from ? [toBase(hunks[side], span)] : [];
+    });
+    if (!spans.length) return null;
+    return { from: Math.min(...spans.map((s) => s.from)), to: Math.max(...spans.map((s) => s.to)) };
+  });
+}
+
 // --- Aligning the three columns -----------------------------------------------------------------
 // The two sides and the result face one another, row by row (guidelines, 9.26). A row is a line of
 // text, or the header of a conflict in a side and its band in the result, which share a key. Where
