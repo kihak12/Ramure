@@ -2179,8 +2179,8 @@ scrolling as one, and a side of a conflict kept whole with its arrow toward the 
 aside with its cross, as in the merge tools of the IDEs.
 
 **Place.** One card in place of the three of the view, under the banner of the operation (9.1),
-whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a file of the list, or Enter or Space on it,
-"In conflict" of the changes panel.
+whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a file of the list
+"In conflict" of the changes panel, or Enter or Space on it.
 
 **The header**, one line: the merge icon in `--warn`, the path of the file in the code font, and
 under it what is left, then what git did on its own: "2 conflicts to decide · 4 changes merged by
