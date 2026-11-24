@@ -1988,7 +1988,7 @@ of 24 px (4.3, 9.6):
   for the last pane: a copy into the folder that pane shows, as a drag does, after asking about a
   name already there (9.10), never a move, even between two folders of the same place. Enter sends
   the selection when the current row is part of it. When it cannot go, the pane next to it not
-  connected or showing the same folder, a warning toast says why (9.12): "report.pdf was not
+  connected or showing the same folder, a warning toast says why (9.11): "report.pdf was not
   sent", "Not connected." F2 renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
   Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
