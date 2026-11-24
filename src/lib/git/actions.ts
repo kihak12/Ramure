@@ -296,7 +296,9 @@ export async function abortOperation(repo: Repo) {
   const confirmed = await dialogs.confirm({
     title: `Abort ${what}?`,
     body: `The repository goes back to its state before the ${what} (git ${operation} --abort).`,
-    warning: 'The conflicts already resolved will be lost for good.',
+    warning: repo.editorWindow?.modified
+      ? 'The conflicts already resolved will be lost for good. The choices not saved in the conflict editor are lost too.'
+      : 'The conflicts already resolved will be lost for good.',
     confirmLabel: `Abort ${what}`,
     danger: true,
   });

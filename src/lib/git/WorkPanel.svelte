@@ -56,6 +56,10 @@
     if (canCommit) void repo.commit();
     else if (blocker) nudged = true;
   }
+
+  /** The file open in the conflict editor, wherever it is: the buttons of its row wait (9.26, "One editor"). */
+  const inEditor = (f: FileChange) =>
+    f.path === (repo.conflictFile?.path ?? repo.editorWindow?.file) ? 'This file is open in the conflict editor.' : null;
 </script>
 
 <!-- data-file-lists: where the keyboard goes when a list of files empties (guidelines, 9.6). -->
@@ -73,9 +77,9 @@
           disabled={busy}
           onopen={(f) => repo.openConflict(f)}
           actions={[
-            { label: sides.ours, icon: 'laptop', run: (f: FileChange) => void repo.resolve(f, 'ours') },
-            { label: sides.theirs, icon: 'cloud', run: (f: FileChange) => void repo.resolve(f, 'theirs') },
-            { label: 'Mark as resolved (after fixing it in your editor)', icon: 'check', run: (f: FileChange) => void repo.stage([f]) },
+            { label: sides.ours, icon: 'laptop', unavailable: inEditor, run: (f: FileChange) => void repo.resolve(f, 'ours') },
+            { label: sides.theirs, icon: 'cloud', unavailable: inEditor, run: (f: FileChange) => void repo.resolve(f, 'theirs') },
+            { label: 'Mark as resolved (after fixing it in your editor)', icon: 'check', unavailable: inEditor, run: (f: FileChange) => void repo.stage([f]) },
           ]}
         />
       </div>

@@ -4,6 +4,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { mayCloseRepo } from '../ssh/guard';
+import { closeEditorWindows } from './editorWindow.svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { Repo } from './repo.svelte';
 import type { CommandLog, Done } from './types';
@@ -137,6 +138,8 @@ class Workspace {
     // The question may have taken a while: the tab is looked up again.
     const at = this.tabs.findIndex((tab) => tab.id === id);
     if (at < 0) return;
+    // Its conflict editor, in its own window, goes with it (guidelines, 9.26, "Its ends").
+    void closeEditorWindows([closing.repo]);
     const rest = this.tabs.filter((tab) => tab.id !== id);
     // There is always a tab left: closing the last one leaves room for the start page.
     if (!rest.length) rest.push(this.#create());

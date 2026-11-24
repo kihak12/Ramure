@@ -65,9 +65,9 @@ const transfersStopped = (n: number) =>
 
 /** Quitting the application stops every local terminal, those of the repositories and those of
  *  the SSH module, and the transfers of the Files module. */
-export async function mayQuit(sessions: Session[], transfers = 0): Promise<boolean> {
+export async function mayQuit(sessions: Session[], transfers = 0, editors: string[] = []): Promise<boolean> {
   const { programs, unknown } = await running(sessions);
-  if (!programs && !unknown && !transfers) return true;
+  if (!programs && !unknown && !transfers && !editors.length) return true;
   const terminals = programs
     ? programs === 1
       ? `A program is running in a terminal. It will be stopped ${LOST}.`
@@ -77,7 +77,9 @@ export async function mayQuit(sessions: Session[], transfers = 0): Promise<boole
       : unknown
         ? `${unknown} terminals are open. Whatever runs in them will be stopped and its output lost.`
         : '';
-  const body = [terminals, transfers ? transfersStopped(transfers) : ''].filter(Boolean).join(' ');
+  // The window of the conflict editor closes with the main one (guidelines, 9.26, "Its ends").
+  const choices = editors.length ? `Unsaved choices in the conflict editor will be lost: ${editors.join(', ')}.` : '';
+  const body = [terminals, transfers ? transfersStopped(transfers) : '', choices].filter(Boolean).join(' ');
   return dialogs.confirm({ title: 'Quit Ramure?', body, confirmLabel: 'Quit', danger: true });
 }
 

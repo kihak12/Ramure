@@ -68,6 +68,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'reword', group: 'Work in progress', title: 'Reword message', keys: '', scope: 'git' },
   { id: 'pop', group: 'Work in progress', title: 'Pop latest stash', keys: '', scope: 'git' },
   { id: 'op-continue', group: 'Work in progress', title: 'Continue operation in progress', keys: '', scope: 'git' },
+  { id: 'conflict-window', group: 'Work in progress', title: 'Open conflict editor in a window', keys: 'Ctrl+Shift+W', scope: 'git' },
   { id: 'op-abort', group: 'Work in progress', title: 'Abort operation in progress…', keys: '', scope: 'git' },
 ];
 

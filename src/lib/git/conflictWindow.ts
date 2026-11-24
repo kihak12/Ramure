@@ -38,6 +38,8 @@ export const EVENT = {
   state: 'conflict-window:state',
   /** Window → main: the window wrote in the repository: read its status again. */
   changed: 'conflict-window:changed',
+  /** Main → window: give the editor back to the main window (the shortcut or the palette). */
+  recall: 'conflict-window:recall',
   /** Main → window: the operation is over (continued, skipped or aborted from the main window). */
   ended: 'conflict-window:ended',
   /** Main → window: close now, the main window is closing. */

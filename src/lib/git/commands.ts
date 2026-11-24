@@ -5,6 +5,7 @@ import type { Command } from '../ui/palette.svelte';
 import { abortOperation, createBranch, forcePush, push, stashChanges, switchBranch, switchToRemote } from './actions';
 import { bare } from './labels';
 import { layout, toggleSide, toggleSides } from './layout.svelte';
+import { recallEditor, showEditorWindow } from './editorWindow.svelte';
 import { OPERATION } from './repo.svelte';
 import { workspace } from './workspace.svelte';
 
@@ -26,6 +27,14 @@ export function gitCommands(): Command[] {
       const name = OPERATION[operation].toLowerCase();
       add({ id: 'op-continue', group: 'Actions', icon: 'play', title: `Continue ${name}`, disabled: !idle || repo.conflicts.length > 0, hint: repo.conflicts.length ? 'conflicts to resolve' : undefined, run: () => void repo.operate('continue') });
       add({ id: 'op-abort', group: 'Actions', icon: 'stop', title: `Abort ${name}…`, disabled: !idle, run: () => void abortOperation(repo) });
+    }
+    // The conflict editor, in its own window or back (guidelines, 9.26, "Its own window"): one
+    // shortcut does both, under one id.
+    if (repo.conflictFile) {
+      add({ id: 'conflict-window', group: 'View', icon: 'window', title: 'Open conflict editor in a window', keywords: 'detach separate second screen', run: () => repo.moveEditor?.() });
+    } else if (repo.editorWindow) {
+      add({ id: 'conflict-window', group: 'View', icon: 'window', title: 'Bring conflict editor back to main window', keywords: 'attach return', run: () => recallEditor(repo) });
+      add({ id: 'conflict-window-show', group: 'View', icon: 'window', title: 'Show conflict editor window', keywords: 'focus bring forward', run: () => void showEditorWindow(repo) });
     }
     add({ id: 'fetch', group: 'Actions', icon: 'fetch', title: 'Fetch', keywords: 'remote download update', hint: 'git fetch --all --prune', disabled: !idle, run: () => void repo.sync('fetch') });
     add({ id: 'pull', group: 'Actions', icon: 'pull', title: 'Pull', keywords: 'remote update', hint: status?.upstream ?? 'no remote branch', disabled: !idle || !status?.upstream, run: () => void repo.sync('pull') });

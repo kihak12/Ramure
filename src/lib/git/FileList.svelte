@@ -14,6 +14,8 @@
     danger?: boolean;
     /** The key that runs it on the current row, from the keyboard (guidelines, 9.6). */
     key?: 'Space' | 'Delete';
+    /** Why it cannot run on `file`, said in its tooltip; null when it can (guidelines, 9.1). */
+    unavailable?: (file: FileChange) => string | null;
   }
 
   let {
@@ -124,7 +126,7 @@
     if (!action) return;
     e.preventDefault();
     // While the changes are being written, the key does nothing: it neither runs twice nor opens.
-    if (disabled || running || e.repeat) return;
+    if (disabled || running || e.repeat || action.unavailable?.(file)) return;
     void runKey(action, file, at);
   }
 
@@ -168,9 +170,9 @@
           class:danger={action.danger}
           type="button"
           tabindex={action.key || file.path !== focusable ? -1 : 0}
-          title={action.key ? `${action.label} (${action.key})` : action.label}
+          title={action.unavailable?.(file) ?? (action.key ? `${action.label} (${action.key})` : action.label)}
           aria-label="{action.label}: {file.path}"
-          {disabled}
+          disabled={disabled || !!action.unavailable?.(file)}
           onclick={() => action.run(file)}><Icon name={action.icon} size={14} /></button
         >
       {/each}
