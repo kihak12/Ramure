@@ -1752,7 +1752,15 @@ need the room.
   grows to 112%, in `--t-fast`; the color itself says what it is, so no `--hover` background.
   Chosen: a 2 px ring of its own color (of `--muted` for "None"), 2 px away from it, drawn
   with a flat shadow, not an elevation. Keyboard focus: the ring of the application, 2 px of
-  `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Color 3".
+  `--accent` offset by 1 px. Each swatch has a tooltip and an accessible name, "Color 3". The
+  group is one stop of the tab order: the arrows go from swatch to swatch, Home and End to "None"
+  and to the last color, each choosing as it goes, as a group of radio buttons does.
+- **The keyboard in the host book.** The book is one stop of the tab order, a list (9.6): ↑ and ↓
+  move the current host, Home and End to the first and the last, across the groups; Enter opens a
+  terminal, F2 edits the host, Delete deletes it after its confirmation, the Menu key opens its
+  menu. The current host carries the inner ring of 9.6 on the whole row, its buttons included.
+  The two buttons of a row, "Open terminal (Enter)" and "Edit (F2)", are for the mouse and are not
+  stops of the tab order; their tooltips say the keys.
 - **In the host book**, the chosen color is a 4 px bar with round ends on the left of the row, as
   high as the row. It names the host and never says its state, which is why it is the one colored
   bar allowed on the edge of a row (1): the selection is the background of the row (9.6), and the

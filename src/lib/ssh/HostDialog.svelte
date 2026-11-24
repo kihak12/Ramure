@@ -366,6 +366,14 @@
     if (test.kind === 'passphrase') void startTest({ keyPath: test.path, passphrase: secret });
     else void startTest({ password: secret });
   }
+
+  /** Home and End: the first and the last swatch, as the arrows of the group go from one to the next (9.21). */
+  function swatchKey(e: KeyboardEvent) {
+    if ((e.key !== 'Home' && e.key !== 'End') || !form) return;
+    e.preventDefault();
+    form.color = e.key === 'Home' ? '' : COLORS[COLORS.length - 1];
+    void tick().then(() => document.querySelector<HTMLInputElement>('input[name="host-color"]:checked')?.focus());
+  }
 </script>
 
 <dialog
@@ -556,11 +564,11 @@
         <fieldset class="full">
           <legend class="label">Color</legend>
           <label class="swatch none" class:on={form.color === ''} title="None">
-            <input type="radio" name="host-color" value="" bind:group={form.color} /><span class="spoken">None</span>
+            <input type="radio" name="host-color" value="" bind:group={form.color} onkeydown={swatchKey} /><span class="spoken">None</span>
           </label>
           {#each COLORS as color (color)}
             <label class="swatch" class:on={form.color === color} style:--c="var(--l{color})" title="Color {Number(color) + 1}">
-              <input type="radio" name="host-color" value={color} bind:group={form.color} /><span class="spoken">Color {Number(color) + 1}</span>
+              <input type="radio" name="host-color" value={color} bind:group={form.color} onkeydown={swatchKey} /><span class="spoken">Color {Number(color) + 1}</span>
             </label>
           {/each}
         </fieldset>
