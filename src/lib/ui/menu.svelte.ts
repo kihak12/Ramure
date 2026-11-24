@@ -1,6 +1,6 @@
 // Floating menu: one at a time. It opens where the right-click was, or under the button that
 // drops it down (guidelines, section 9.9).
-import { focusWithRing } from './focus';
+import { focusBack, focusWithRing } from './focus';
 import type { IconName } from './Icon.svelte';
 
 export type MenuItem =
@@ -146,8 +146,10 @@ class Menu {
     const anchor = this.current?.anchor;
     const origin = this.current?.origin ?? this.current?.back;
     this.current = null;
-    if (origin && !outside) focusWithRing(origin);
-    else if (origin) origin.focus();
+    // Closed by the window (its focus lost, its size changed): the ring follows the last gesture.
+    if (origin && keyboard) focusWithRing(origin);
+    else if (origin && outside) origin.focus();
+    else if (origin) focusBack(origin);
     else if (keyboard) focusWithRing(anchor);
     else anchor?.focus();
   }

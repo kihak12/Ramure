@@ -609,10 +609,11 @@
     e.preventDefault();
     const aimed = aim(e);
     over = null;
+    // The keyboard follows the files, into the pane that receives them; while the drag lasts, the
+    // focus it gives selects no first row (9.24).
+    if (aimed && !aimed.refusal) takeKeyboard();
     files.drag = null;
     if (!aimed || aimed.refusal) return;
-    // The keyboard follows the files, into the pane that receives them.
-    takeKeyboard();
     void files.drop(aimed.dragged, pane, aimed.dest, e.ctrlKey);
   }
 

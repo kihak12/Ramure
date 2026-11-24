@@ -958,10 +958,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   list), when that row is in view: 4 px under that element, on its left edge, its first enabled
   item focused. Escape, or an item chosen from the keyboard, gives the focus back to the element
   that had it, with its ring (11); the mouse (a click outside, the wheel, an item chosen with a
-  click) gives it back without the ring, as for the button of a menu. Opened with a right click, it
-  gives the focus back the same way to the list that had it, the one holding the row clicked.
-  While the menu is open, the row it was asked for keeps its ring. A text field keeps the menu of the system, to cut, copy and
-  paste.
+  click) gives it back without the ring, as for the button of a menu. Opened with a right click,
+  it gives the focus back the same way to the list that had it, the one holding the row clicked.
+  Closed by the window, its focus lost or its size changed, it gives it back as after the last
+  gesture. Asked for from the keyboard, the row keeps its ring while the menu is open. A text
+  field keeps the menu of the system, to cut, copy and paste.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Enter to choose, Escape to close.
@@ -2163,19 +2164,20 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   selects up to it, Ctrl + A selects them all. A click gives the list the keyboard, as a right
   click and a drag do (a drop gives it to the pane that receives the files), so that its keys act
   on the row clicked at once, Shift + Tab included, which goes to the stop before the list. After
-  any gesture of the mouse, the ring of the current row waits for a key other than Shift, Ctrl or
-  Alt alone (11). The arrows move the current row, with the inner ring of 9.6; Shift with an arrow
-  extends the selection; from the parent row, which is never selected, the range starts at the
-  first item, with Shift + click too. A double-click, or Enter, opens a folder. On a file, it
-  copies the file to the pane next to this one, on its right, or on its left for the last pane:
-  into the folder that pane shows, as a drag does, after asking about a name already there (9.10),
-  never a move, even between two folders of the same place, where the menu offers "Move to …" and
-  Ctrl + drop copies. Enter copies the selection when the current row is part of it, the current
-  file otherwise, once however long it is held; a double-click copies the file clicked, with Ctrl
-  or Shift too. When it cannot go, a warning notification says why and what to do (9.11):
-  "report.pdf was not copied", with "Choose a place in the pane next to this one first.", "The
-  pane next to this one is not connected yet." or "Already in this folder." F2 renames, Delete
-  deletes, the Menu key opens the menu.
+  any gesture of the mouse, the ring of the current row waits for a key other than Shift, Ctrl,
+  Alt or Meta alone (11). A drop selects no first row in the pane that receives the files. The
+  arrows move the current row, with the inner ring of 9.6; Shift with an arrow extends the
+  selection; from the parent row, which is never selected, the range starts at the first item,
+  with Shift + click too. A double-click, or Enter, opens a folder. On a file, it copies the file
+  to the pane next to this one, on its right, or on its left for the last pane: into the folder
+  that pane shows, as a drag does, after asking about a name already there (9.10), never a move,
+  even between two folders of the same place, where the menu offers "Move to …" and Ctrl + drop
+  copies. Enter copies the selection when the current row is part of it, the current file
+  otherwise, once however long it is held; a double-click copies the file clicked, with Ctrl or
+  Shift too. When it cannot go, a warning notification says why and what to do (9.11): "report.pdf
+  was not copied", with "Choose a place in the pane next to this one first.", "The pane next to
+  this one is not connected yet." or "Already in this folder." F2 renames, Delete deletes, the
+  Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
   Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
   folder has an empty part too, once scrolled to the end.
