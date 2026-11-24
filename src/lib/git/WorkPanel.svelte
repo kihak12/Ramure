@@ -97,8 +97,8 @@
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, false)}
           actions={[
-            { label: 'Discard changes…', icon: 'undo', danger: true, run: (f: FileChange) => void discardFiles(repo, [f]) },
-            { label: 'Stage', icon: 'plus', run: (f: FileChange) => void repo.stage([f]) },
+            { label: 'Discard changes…', icon: 'undo', danger: true, key: 'Delete', run: (f: FileChange) => void discardFiles(repo, [f]) },
+            { label: 'Stage', icon: 'plus', key: 'Space', run: (f: FileChange) => void repo.stage([f]) },
           ]}
         />
       </div>
@@ -122,7 +122,7 @@
           active={activeIn('s:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, true)}
-          actions={[{ label: 'Unstage', icon: 'minus', run: (f: FileChange) => void repo.unstage([f]) }]}
+          actions={[{ label: 'Unstage', icon: 'minus', key: 'Space', run: (f: FileChange) => void repo.unstage([f]) }]}
         />
       </div>
     {:else}

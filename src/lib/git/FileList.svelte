@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import Icon, { type IconName } from '../ui/Icon.svelte';
   import type { ChangeKind, FileChange } from './types';
 
@@ -8,6 +9,8 @@
     icon: IconName;
     run: (file: FileChange) => void;
     danger?: boolean;
+    /** The key that runs it on the current row, from the keyboard (guidelines, 9.22). */
+    key?: 'Space' | 'Delete';
   }
 
   let {
@@ -59,17 +62,65 @@
     return parts.join(' ');
   }
 
+  // The list is one stop of the tab order: the arrows go through its rows (guidelines, 9.6).
+  let listEl = $state<HTMLUListElement>();
+  let current = $state<string | null>(null);
+  const focusable = $derived(
+    files.some((f) => f.path === current) ? current : files.some((f) => f.path === active) ? active : (files[0]?.path ?? null),
+  );
+
+  function focusRow(index: number) {
+    const rows = listEl?.querySelectorAll<HTMLElement>('button.open');
+    const row = rows?.[Math.max(0, Math.min(rows.length - 1, index))];
+    if (!row) return;
+    current = files[Math.max(0, Math.min(files.length - 1, index))]?.path ?? null;
+    row.focus();
+  }
+
+  /** ↑ ↓ Home End move; Space and Delete run the action that has that key, the keyboard staying in the list. */
+  function rowKey(e: KeyboardEvent, file: FileChange) {
+    const at = files.findIndex((f) => f.path === file.path);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusRow(at + (e.key === 'ArrowDown' ? 1 : -1));
+      return;
+    }
+    if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      focusRow(e.key === 'Home' ? 0 : files.length - 1);
+      return;
+    }
+    const key = e.key === ' ' ? 'Space' : e.key === 'Delete' ? 'Delete' : null;
+    const action = key && actions.find((a) => a.key === key);
+    if (!action || disabled) return;
+    e.preventDefault();
+    action.run(file);
+    // The file may leave the list (staged, unstaged): the row that takes its place gets the keyboard.
+    void tick().then(() => {
+      if (listEl?.contains(document.activeElement)) return;
+      if (files.length) focusRow(at);
+    });
+  }
+
   function split(path: string) {
     const cut = path.lastIndexOf('/');
     return cut < 0 ? { dir: '', name: path } : { dir: path.slice(0, cut + 1), name: path.slice(cut + 1) };
   }
 </script>
 
-<ul class="files">
+<ul class="files" bind:this={listEl}>
   {#each files as file (file.path)}
     {@const parts = split(file.path)}
     <li class:active={file.path === active}>
-      <button class="open" type="button" onclick={() => onopen(file)} title={file.oldPath ? `${file.oldPath} → ${file.path}` : file.path}>
+      <button
+        class="open"
+        type="button"
+        tabindex={file.path === focusable ? 0 : -1}
+        onclick={() => onopen(file)}
+        onfocus={() => (current = file.path)}
+        onkeydown={(e) => rowKey(e, file)}
+        title={file.oldPath ? `${file.oldPath} → ${file.path}` : file.path}
+      >
         <span class="kind k-{file.kind}" title={WORD[file.kind]} aria-label={WORD[file.kind]}>{LETTER[file.kind]}</span>
         <span class="path"><span class="dir">{parts.dir}{parts.dir ? '\u200e' : ''}</span><span class="name">{parts.name}</span></span>
         {#if partial?.has(file.path)}
@@ -85,7 +136,8 @@
           class="act"
           class:danger={action.danger}
           type="button"
-          title={action.label}
+          tabindex="-1"
+          title={action.key ? `${action.label} (${action.key})` : action.label}
           aria-label="{action.label}: {file.path}"
           {disabled}
           onclick={() => action.run(file)}><Icon name={action.icon} size={14} /></button
@@ -116,6 +168,16 @@
   }
   li.active {
     background: var(--sel);
+  }
+  /* The row of the keyboard: an inner ring on the whole row, its buttons included, never cut by
+     the list that scrolls (guidelines, 9.6). */
+  .open:focus-visible,
+  .open:global(.focus-ring) {
+    outline: none;
+  }
+  li:has(.open:focus-visible),
+  li:has(.open:global(.focus-ring)) {
+    box-shadow: inset 0 0 0 1.5px var(--accent);
   }
   .open {
     flex: 1;
