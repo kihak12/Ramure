@@ -690,6 +690,8 @@ its own buttons.
 - A counter (commits to pull, to push) is a round badge in `--accent`, at the top right of the
   icon.
 - During an operation, the icon spins and the button is disabled.
+- The branch, beside the repository, is shown, not clicked: it has no action, and is not a stop
+  of the tab order; its full name is in its tooltip and read as text.
 - **A push rejected as "non-fast-forward"**, the remote branch having commits that the local
   one does not have, as after a rebase, an amend, a reword or a reset, is not an error
   notification: the confirmation of a force push opens in its place (9.10). Its body says that
@@ -942,9 +944,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Appears in `--t-fast`, from the point of the click.
 - No scrollbar is drawn over an open menu (9.6).
 - A menu may also open under a button, such as "View" in the toolbar (9.2): 4 px below it,
-  its right edge on the right edge of the button, and it appears from that corner. Escape, or a
-  click outside, closes it and gives the focus back to the button; after Escape, the button
-  shows its focus ring.
+  its right edge on the right edge of the button, and it appears from that corner. Escape, Tab, or
+  a click outside, closes it and gives the focus back to the button; after Escape or Tab, the
+  button shows its focus ring.
 - While a menu is open, the tooltip of the element that opened it, a row or a button, keeps
   quiet, where it would cover the first items. This holds even when the click came while the
   pointer was still moving, before the tooltip was due.
