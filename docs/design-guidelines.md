@@ -199,6 +199,7 @@ Every theme must meet them, in light and in dark.
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | `--ink` on the tints of the two sides of the conflict editor, 10%, 24% and 30% of `--l0` and `--l1`, and on their "Keep" buttons, at rest and on hover (9.26) | 7:1 |
 | `--muted`, the text of a side set aside, on its tint at rest in the conflict editor (9.26) | 4.5:1 |
+| The marks of the overview strip of the conflict editor, on `--panel` (9.26): `--warn`, `--ok`, and `--l0` and `--l1` as the other branch colors | 3:1 |
 | Each terminal color (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
 A hover has to be seen, and the selection has to stand apart from its background and from the
@@ -2283,6 +2284,23 @@ conflict with its arrow; it stays editable."
   focus: nothing is lost that Ctrl + Z does not bring back, so it is not a destructive action.
 - **Ctrl + Z** undoes the last choice, an arrow, a cross, a button, wherever the focus is in the
   editor; in the result, it undoes what was typed when that came last.
+
+**The overview strip**, 12 px wide, at the right of the result, beside its scrollbar, on `--panel`
+with a `--line-soft` line on its left: the whole file at a glance, the three columns having the
+same height. A mark stands at the height of what it shows in that file.
+
+- A conflict is a mark across the strip, 4 px high at least, in `--warn` while it is to decide,
+  in `--ok` once decided; edited by hand, a dashed `--ok` edge on a light `--ok` tint. The current
+  conflict is ringed in `--accent`, 1.5 px, as the ring of the keyboard (9.6).
+- A change merged by git is a thin line, 2 px high at least, in the half of the strip of its
+  side, the left half in `--l0` for side 1, the right one in `--l1` for side 2: the place says it,
+  not the color alone (11).
+- A click goes to the nearest mark within 12 px, a 24 px target around the thin ones, or else to
+  the place clicked: it comes to the middle of the three columns, at once, as a scroll does (8); a
+  conflict becomes the current one. The tooltip of a mark says what and where: "Conflict 2 · lines
+  112 to 115 · decided", "Change merged by git from Upstream · line 40".
+- The strip is not a stop of the tab order and is hidden from screen readers: the counter of the
+  bar and F8 give the same from the keyboard.
 
 **The common ancestor**, shown under the three columns, across their width, read only, follows the
 current conflict and marks it, as the sides do.

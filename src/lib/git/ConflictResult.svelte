@@ -12,6 +12,22 @@
     trailing: boolean;
   }
 
+  /** A mark of the overview strip: a conflict or a change merged by git, and where it is in the
+   *  height of the result, in pixels from its top (guidelines, 9.26). */
+  export interface OverviewMark {
+    kind: 'conflict' | 'change';
+    /** The conflict, for a conflict. */
+    id: number;
+    /** The side of a change, 1 on the left. */
+    n: 1 | 2;
+    /** Its state, for a conflict. */
+    state: RegionInfo['state'];
+    top: number;
+    bottom: number;
+    /** Its lines in the result, from 1; none for a conflict still to decide or decided with no line. */
+    lines: [number, number] | null;
+  }
+
   /** What the result shows of a conflict (guidelines, 9.26). */
   export interface RegionInfo {
     id: number;
@@ -187,6 +203,7 @@
   let host = $state<HTMLDivElement>();
   let view: EditorView | undefined;
   let field: StateField<Map<number, Region>>;
+  let chipsField: StateField<RangeSet<GutterMarker>>;
 
   onMount(() => {
     const doc = State.create({ doc: value, extensions: [State.lineSeparator.of(lineSeparator)] }).doc;
@@ -211,6 +228,7 @@
       create: () => RangeSet.of(lines.map((m) => new Chip(num(m.side), true).range(doc.line(m.line + 1).from)), true),
       update: (chips, tr) => follow(chips, tr),
     });
+    chipsField = mergedChips;
 
     const decorations = EditorView.decorations.compute([field, infoField], (state) => {
       const regions = state.field(field);
@@ -394,6 +412,49 @@
 
   export function getText() {
     return view ? view.state.sliceDoc() : value;
+  }
+
+  /**
+   * The marks of the overview strip, and the height of the result they are placed in: each conflict,
+   * and each run of lines git merged from one side (guidelines, 9.26).
+   */
+  export function overview(): { marks: OverviewMark[]; height: number } {
+    if (!view) return { marks: [], height: 0 };
+    const state = view.state;
+    const regions = state.field(field);
+    const marks: OverviewMark[] = [];
+    for (const item of state.field(infoField)) {
+      const region = regions.get(item.id);
+      if (!region) continue;
+      const at = linesOf(state, region);
+      const top = view.lineBlockAt(at ? at.first.from : region.from).top;
+      const bottom = at ? view.lineBlockAt(at.last.to).bottom : top;
+      const lines: [number, number] | null = at && item.state !== 'open' ? [at.first.number, at.last.number] : null;
+      marks.push({ kind: 'conflict', id: item.id, n: 1, state: item.state, top, bottom, lines });
+    }
+    // The lines merged by git, one mark per run of lines of the same side.
+    let run: OverviewMark | null = null;
+    const cursor = state.field(chipsField).iter();
+    for (; cursor.value; cursor.next()) {
+      const line = state.doc.lineAt(cursor.from);
+      const n = (cursor.value as Chip).n;
+      const block = view.lineBlockAt(line.from);
+      if (run && run.n === n && run.lines && run.lines[1] === line.number - 1) {
+        run.lines[1] = line.number;
+        run.bottom = block.bottom;
+      } else {
+        run = { kind: 'change', id: -1, n, state: 'kept', top: block.top, bottom: block.bottom, lines: [line.number, line.number] };
+        marks.push(run);
+      }
+    }
+    return { marks, height: view.contentHeight };
+  }
+
+  /** Brings the height `y` of the result, in pixels from its top, to the middle of the view. */
+  export function scrollToY(y: number) {
+    if (!view) return;
+    const scroller = view.scrollDOM;
+    scroller.scrollTop = Math.max(0, y - scroller.clientHeight / 2);
   }
 
   /** Brings a conflict to the middle of the view. */
