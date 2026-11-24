@@ -136,6 +136,12 @@
     };
   });
 
+  // The strip shows: the editor under it waits, out of reach, and the keyboard goes to its "Close",
+  // with its ring, as a focus the application gives (guidelines, 9.26 and 11).
+  $effect(() => {
+    if (orphaned) void tick().then(() => focusWithRing(document.querySelector<HTMLElement>('.orphaned .btn')));
+  });
+
   // What the window writes, the main window reads again.
   let statusSeen = false;
   $effect(() => {
