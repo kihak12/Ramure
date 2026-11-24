@@ -153,15 +153,15 @@
         <!-- What the action refused, on the left of the last line, the buttons staying where they
              are (guidelines, 9.1 and 9.21). -->
         {#if refusal && !textFirst}<p class="failure" role="alert"><Icon name="warning" size={14} /> <span>{refusal}</span></p>{/if}
-        <!-- The way out, the secondary action, then the main one, at the right (guidelines, 9.1, "Hierarchy"). -->
+        <!-- The way out, the secondary actions, then the main one, at the right (guidelines, 9.1, "Hierarchy"). -->
         <!-- Destructive action: the focus lands on "Cancel", so that Enter destroys nothing (guidelines, 9.10). -->
         <!-- svelte-ignore a11y_autofocus -->
         <button class="btn" type="button" autofocus={!!spec.danger} disabled={busy} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Cancel'}</button>
-        {#if spec.extra}
-          {@const extra = spec.extra}
+        {#each spec.extra ? [spec.extra].flat() : [] as extra (extra.label)}
           <button
             class="btn"
             type="button"
+            disabled={busy}
             onclick={() => {
               // Closing the dialog empties `spec`: the action is kept beforehand, or it can no longer be read.
               const run = extra.run;
@@ -169,7 +169,7 @@
               run();
             }}>{extra.label}</button
           >
-        {/if}
+        {/each}
         <!-- svelte-ignore a11y_autofocus -->
         <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid || busy} autofocus={fields.length === 0 && !spec.danger}>
           {busy && spec.busyLabel ? spec.busyLabel : spec.confirmLabel}

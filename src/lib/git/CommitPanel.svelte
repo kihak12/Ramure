@@ -9,6 +9,7 @@
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
   import { dateTime, fullDateTime } from '../ui/dates';
+  import { focusBack } from '../ui/focus';
 
   let { repo, commit }: { repo: Repo; commit: CommitRow } = $props();
 
@@ -90,6 +91,25 @@
     } catch {
       /* clipboard refused: the SHA stays selectable in the panel */
     }
+  }
+
+  /**
+   * A parent link: the parent becomes the selection of the graph. The detail is drawn again, which
+   * would lose the keyboard: from a key, it goes to the row of the parent in the graph, with its
+   * ring; the graph hidden, to the first parent link of the detail drawn again. A parent that is
+   * not loaded changes nothing: the keyboard stays on its link (guidelines, 9.27).
+   */
+  function selectParent(e: MouseEvent, sha: string) {
+    const loaded = repo.commits.some((c) => c.sha === sha);
+    const view = (e.currentTarget as HTMLElement).closest('[data-repo-view]');
+    repo.selectSha(sha);
+    if (!loaded) return;
+    // After a key with its ring, after the mouse without it (9.9, 11).
+    void tick().then(() => {
+      const graph = view?.querySelector<HTMLElement>('.center [role="listbox"]');
+      const shown = graph && !graph.closest('[inert], [hidden]');
+      focusBack(shown ? graph : (view?.querySelector<HTMLElement>('.detail .parent') ?? view?.querySelector<HTMLElement>('.detail button')));
+    });
   }
 </script>
 
@@ -244,7 +264,7 @@
       {#if commit.parents.length}
         <span>Parent{commit.parents.length === 1 ? '' : 's'}</span>
         {#each commit.parents as parent (parent)}
-          <button class="btn ghost small mono parent" type="button" title="Select this commit in the graph" onclick={() => repo.selectSha(parent)}>{parent.slice(0, 7)}</button>
+          <button class="btn ghost small mono parent" type="button" title="Select this commit in the graph" onclick={(e) => selectParent(e, parent)}>{parent.slice(0, 7)}</button>
         {/each}
       {:else}
         <span>No parent: first commit</span>

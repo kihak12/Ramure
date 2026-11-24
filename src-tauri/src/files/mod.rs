@@ -836,7 +836,7 @@ mod tests {
         std::fs::write(here.join("site/css/big.css"), vec![3u8; 2_500_000]).unwrap();
         let sources = [here.join("site").to_string_lossy().to_string()];
         let cancel = AtomicBool::new(false);
-        let job = transfer::Job { from: &Fs::Local, to: &server, same: false, sources: &sources, dest: &base, replace: false };
+        let job = transfer::Job { from: &Fs::Local, to: &server, same: false, sources: &sources, dest: &base, taken: transfer::Taken::Skip };
         let summary = transfer::run(&job, &cancel, |_, _| {}).await.unwrap();
         assert!(summary.failed.is_empty(), "{:?}", summary.failed);
         assert_eq!(summary.files, 2);
@@ -844,7 +844,7 @@ mod tests {
         assert_eq!(listing.entries.iter().map(|e| (e.name.as_str(), e.size)).collect::<Vec<_>>(), vec![("big.css", 2_500_000)]);
 
         // Again, replacing: the file is whole, and no part file is left.
-        let job = transfer::Job { replace: true, ..job };
+        let job = transfer::Job { taken: transfer::Taken::Replace, ..job };
         transfer::run(&job, &cancel, |_, _| {}).await.unwrap();
         let names: Vec<String> = server.list(&format!("{base}/site")).await.unwrap().entries.into_iter().map(|e| e.name).collect();
         assert!(names.iter().all(|n| !n.ends_with(".ramure-part")), "{names:?}");
@@ -853,7 +853,7 @@ mod tests {
         server.mkdir(&format!("{base}/copy")).await.unwrap();
         let sources = [format!("{base}/site")];
         let dest = format!("{base}/copy");
-        let job = transfer::Job { from: &server, to: &server, same: true, sources: &sources, dest: &dest, replace: false };
+        let job = transfer::Job { from: &server, to: &server, same: true, sources: &sources, dest: &dest, taken: transfer::Taken::Skip };
         transfer::run(&job, &cancel, |_, _| {}).await.unwrap();
         assert_eq!(server.stat(&format!("{base}/copy/site/css/big.css")).await.unwrap().size, 2_500_000);
 
@@ -862,7 +862,7 @@ mod tests {
         std::fs::create_dir_all(&down).unwrap();
         let sources = [format!("{base}/copy/site")];
         let dest = down.to_string_lossy().to_string();
-        let job = transfer::Job { from: &server, to: &Fs::Local, same: false, sources: &sources, dest: &dest, replace: false };
+        let job = transfer::Job { from: &server, to: &Fs::Local, same: false, sources: &sources, dest: &dest, taken: transfer::Taken::Skip };
         transfer::run(&job, &cancel, |_, _| {}).await.unwrap();
         assert_eq!(std::fs::read(down.join("site/index.html")).unwrap(), b"<h1>hi</h1>");
         assert_eq!(std::fs::metadata(down.join("site/css/big.css")).unwrap().len(), 2_500_000);

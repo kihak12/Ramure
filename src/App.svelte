@@ -22,6 +22,7 @@
   import SettingsPage from './lib/settings/SettingsPage.svelte';
   import { settingsPage } from './lib/settings/settings.svelte';
   import { updates } from './lib/ui/updates.svelte';
+  import { keepFocusInDialogs } from './lib/ui/focus';
 
   // Closing the window stops every local terminal: if a program runs in one, ask first.
   // An error must never prevent quitting: when in doubt, the window closes.
@@ -36,6 +37,9 @@
     });
     return () => void stop.then((off) => off());
   });
+
+  // Tab never leaves a modal dialog for a stop that cannot be seen (guidelines, 9.10 and 11).
+  onMount(() => keepFocusInDialogs());
 
   // Updates (guidelines, 9.23): what this copy is, then the automatic check.
   onMount(() => {

@@ -88,10 +88,12 @@ Everything goes through a right-click on a commit or on a label, and through the
 - **Conflicts**: when an operation stops, a banner offers to continue, skip or abort. Clicking a
   conflicted file opens the **conflict editor**: your side on the left, the result in the
   middle, the other side on the right, aligned line by line and scrolling together. The changes
-  git merged on its own are marked, on their side and in the result. Keep a side of a conflict
-  with the arrow of its header, set it aside with its cross: the result takes the sides kept in
-  the order of their arrows, each line marked with the side it comes from. A conflict not decided yet is a band, not git's markers. Ctrl + Z
-  undoes the last choice, F8 goes to the next conflict, Ctrl + S saves. The result stays
+  git merged on its own are marked, on their side and in the result, and counted. Keep a side of
+  a conflict with the arrow of its header, set it aside with its cross, or decide it on its band
+  in the result (keep a side, both, or neither, and start over): the result takes the sides kept
+  in the order of their arrows, each line marked with the side it comes from. A conflict not
+  decided yet is a band, not git's markers. Ctrl + Z undoes the last choice, F8 goes to the next
+  conflict, F7 to the next change git merged, Ctrl + S saves. The result stays
   editable, and the common ancestor is shown on demand. A file deleted on one
   side, or a binary file, is resolved by keeping one side.
 - **Dragging a branch onto another** (in the graph or the sidebar) offers to merge or rebase it.
@@ -149,7 +151,18 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - **Importing a key**: "Import key…" in "Manage keys…" copies an existing private key into
   `~/.ssh`, with its public key: OpenSSH and PEM keys, and PuTTY keys (`.ppk`) without a
   passphrase, which are converted to the OpenSSH format. Nothing is ever overwritten.
-- **Export to `~/.ssh/config`**: "Export to ~/.ssh/config…" shows, host by host, what will be
+- **A list of hosts to hand to someone**: "Export hosts", then "To a Ramure file…", writes the
+  hosts you check into a JSON file, never a password nor a passphrase; "Import hosts", then
+  "From a Ramure file…", shows what such a file would add, rename or leave out before adding
+  anything. A host of the book is never changed by an import.
+- **Moving over from FileZilla**: "Import hosts", then "From FileZilla…", reads a FileZilla
+  export or its `sitemanager.xml`: the SFTP sites become hosts, the FTP ones are left out and
+  listed, a PuTTY key without a passphrase is converted into `~/.ssh`, and the passwords FileZilla
+  kept in clear go to the system keyring only if you check it.
+- **Moving over from PuTTY**: "Import hosts", then "From PuTTY…", reads a `.reg` export of the
+  sessions of PuTTY on Windows, or the folder `~/.putty/sessions` on Linux: the SSH sessions
+  become hosts, the others are listed, and their keys go as those of FileZilla.
+- **Export to `~/.ssh/config`**: "Export hosts", then "To ~/.ssh/config…", shows, host by host, what will be
   added or changed, then writes HostName, User, Port and IdentityFile, so that `ssh <name>`
   works in any terminal. The rest of the file is left as it is, the old file is kept in
   `~/.ssh/config.ramure.bak`, and the notification offers to undo.
