@@ -2492,8 +2492,8 @@ The actions that decide a conflict are on its band, in the result, where the eye
 "Keep", everywhere, in the list of the files too.
 
 **The current conflict** is the one last reached: by the toolbar, F8, the strip, an arrow, a cross,
-a button of its band, the caret put in it in the result, or its header reached in a side, by ↑ and
-↓ or a click. A scroll alone does not change it.
+a button of its band or a press on it, the caret put in it in the result, or its header reached in
+a side, by ↑ and ↓ or a click. A scroll alone does not change it.
 
 **The order of the lines kept** is that of the sides kept: the order of their arrows; "Keep both"
 puts side 1 first, "Keep both, reversed" side 2. A side is kept whole: a line is chosen alone by

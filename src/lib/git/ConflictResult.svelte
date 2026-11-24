@@ -53,6 +53,15 @@
     startOver(id: number): void;
     /** The label that keeps side `n`, "Keep your commit", for the tooltips. */
     keepLabel(n: 1 | 2): string;
+    /** A press on the band, outside its buttons: its conflict becomes the current one. */
+    reach(id: number): void;
+  }
+
+  /** A press on a band, outside its buttons, makes its conflict the current one (9.26). */
+  function reachOnPress(band: HTMLElement, calls: BandCalls) {
+    band.addEventListener('mousedown', (e) => {
+      if (!(e.target instanceof Element && e.target.closest('button'))) calls.reach(Number(band.dataset.id));
+    });
   }
 
   /** A small button of a band: out of the tab order, the keyboard decides in the sides (9.26). */
@@ -177,6 +186,7 @@
       more.setAttribute('aria-haspopup', 'menu');
       more.innerHTML = `More${iconMarkup('chevron', 14)}`;
       band.append(letter, bandText(this.text), keep(1), keep(2), more);
+      reachOnPress(band, this.calls);
       return band;
     }
     get estimatedHeight() {
@@ -210,6 +220,7 @@
       const again = bandButton('btn ghost small', 'Put this conflict back as it was', `Start over conflict ${this.id + 1}`, () => this.calls.startOver(this.id));
       again.textContent = 'Start over';
       band.append(bandText(this.text), again);
+      reachOnPress(band, this.calls);
       return band;
     }
     get estimatedHeight() {
@@ -332,6 +343,7 @@
     more: (id, anchor) => onmore(id, anchor),
     startOver: (id) => onstartover(id),
     keepLabel: (n) => keepLabel(n),
+    reach: (id) => oncaret?.(id),
   };
 
   let host = $state<HTMLDivElement>();
