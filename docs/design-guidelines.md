@@ -943,7 +943,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - No scrollbar is drawn over an open menu (9.6).
 - A menu may also open under a button, such as "View" in the toolbar (9.2): 4 px below it,
   its right edge on the right edge of the button, and it appears from that corner. Where there is
-  no room for it below, as in the foot of the host book (9.15), it opens above, 4 px from it. Escape, or a
+  no room for it below, as in the foot of the host book (9.15), it opens above, 4 px from it; where
+  it would leave the window on the left, its left edge goes on the left edge of the button. Escape, or a
   click outside, closes it and gives the focus back to the button; after Escape, the button
   shows its focus ring.
 - While a menu is open, the tooltip of the element that opened it, a row or a button, keeps
