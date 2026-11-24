@@ -49,7 +49,7 @@
     return out;
   });
 
-  // The book is one stop of the tab order: the arrows go through its hosts (guidelines, 9.15).
+  // The book is one stop of the tab order: the arrows go through its hosts (guidelines, 9.21).
   // The current host is the one the keyboard is on; the first host shown when it is not shown.
   let currentId = $state('');
   const ordered = $derived(sections.flatMap((s) => s.hosts));
@@ -156,7 +156,8 @@
         <ul>
           {#each section.hosts as host (host.id)}
             {@const wait = waiting.get(host.id)}
-            <li>
+            <!-- The row whose menu was asked for from the keyboard keeps its ring while it is open (9.9). -->
+            <li class:asked={menu.current?.origin?.dataset.id === host.id}>
               <button
                 class="host"
                 type="button"
@@ -186,9 +187,9 @@
                   {/if}
                 </span>
               </button>
-              <!-- For the mouse: the keyboard has Enter and F2 on the row (9.15). -->
+              <!-- For the mouse: the keyboard has Enter and F2 on the row (9.21). -->
               <span class="acts">
-                <button type="button" tabindex="-1" aria-label="Open terminal on {host.alias}" title="Open terminal (Enter)" disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
+                <button type="button" tabindex="-1" aria-label="Open terminal on {host.alias}" title={host.proxyJump ? 'Jump through a bastion: not supported yet' : 'Open terminal (Enter)'} disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
                 <button type="button" tabindex="-1" aria-label="Edit {host.alias}" title="Edit (F2)" onclick={() => (ssh.editing = host)}><Icon name="pencil" size={14} /></button>
               </span>
             </li>
@@ -475,8 +476,12 @@
     outline: none;
   }
   li:has(.host:focus-visible),
-  li:has(.host:global(.focus-ring)) {
+  li:has(.host:global(.focus-ring)),
+  li.asked {
     box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+  li.asked {
+    background: var(--hover);
   }
   .acts button {
     display: grid;

@@ -1758,9 +1758,12 @@ need the room.
 - **The keyboard in the host book.** The book is one stop of the tab order, a list (9.6): ↑ and ↓
   move the current host, Home and End to the first and the last, across the groups; Enter opens a
   terminal, F2 edits the host, Delete deletes it after its confirmation, the Menu key opens its
-  menu. The current host carries the inner ring of 9.6 on the whole row, its buttons included.
+  menu, the row keeping its ring while the menu is open (9.9). A deletion canceled gives the row
+  its ring back. The current host carries the inner ring of 9.6 on the whole row, its buttons
+  included.
   The two buttons of a row, "Open terminal (Enter)" and "Edit (F2)", are for the mouse and are not
-  stops of the tab order; their tooltips say the keys.
+  stops of the tab order; their tooltips say the keys, and for a host behind a bastion, why "Open
+  terminal" is disabled ("Jump through a bastion: not supported yet").
 - **In the host book**, the chosen color is a 4 px bar with round ends on the left of the row, as
   high as the row. It names the host and never says its state, which is why it is the one colored
   bar allowed on the edge of a row (1): the selection is the background of the row (9.6), and the
