@@ -1,7 +1,7 @@
 <script lang="ts">
   // A pane of the Files module: one folder of one place, with its path, its rows and its foot
   // (guidelines, 9.24).
-  import { tick } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu, type MenuItem } from '../ui/menu.svelte';
   import { ssh, STATUS } from '../ssh/ssh.svelte';
@@ -377,6 +377,11 @@
     holdText(false);
   }
 
+  // A pane closed, or left, while the rectangle is drawn gives the text of the window back.
+  onDestroy(() => {
+    if (band) holdText(false);
+  });
+
   /** Escape while it is drawn: the selection goes back as it was. */
   function cancelBand() {
     if (!band) return;
@@ -690,6 +695,7 @@
           onpointermove={dragBand}
           onpointerup={endBand}
           onpointercancel={endBand}
+          onlostpointercapture={endBand}
         >
           {#if parent !== null}
             <!-- svelte-ignore a11y_click_events_have_key_events -->
