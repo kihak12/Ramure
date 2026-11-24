@@ -43,6 +43,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'files-add-pane', group: 'Panes', title: 'Add pane', keys: '', scope: 'files' },
   { id: 'files-hidden', group: 'Panes', title: 'Show or hide hidden files', keys: '', scope: 'files' },
   { id: 'files-mkdir', group: 'Panes', title: 'New folder…', keys: '', scope: 'files' },
+  { id: 'files-pane-next', group: 'Panes', title: 'Next pane', keys: 'Ctrl+Tab', scope: 'files' },
+  { id: 'files-pane-prev', group: 'Panes', title: 'Previous pane', keys: 'Ctrl+Shift+Tab', scope: 'files' },
   { id: 'tab-new', group: 'Tabs', title: 'New tab', keys: 'Ctrl+T', scope: 'git' },
   { id: 'tab-close', group: 'Tabs', title: 'Close tab', keys: 'Ctrl+W', scope: 'git' },
   { id: 'tab-next', group: 'Tabs', title: 'Next tab', keys: 'Ctrl+Tab', scope: 'git' },
