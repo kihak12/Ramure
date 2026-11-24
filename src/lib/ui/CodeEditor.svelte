@@ -106,7 +106,8 @@
         theme,
         EditorView.contentAttributes.of({ 'aria-label': label }),
         ...(readonly
-          ? [State.readOnly.of(true), EditorView.editable.of(false)]
+          ? // Read only, it is still a stop of the tab order: its arrows scroll it (guidelines, 11).
+            [State.readOnly.of(true), EditorView.editable.of(false), EditorView.contentAttributes.of({ tabindex: '0' })]
           : [
               history(),
               highlightActiveLine(),
@@ -147,28 +148,6 @@
   export function getText() {
     return view ? view.state.sliceDoc() : value;
   }
-
-  /** Replaces lines `from` to `to` (included, from 1) with `lines`; an empty list deletes them. */
-  export function replaceLines(from: number, to: number, lines: string[]) {
-    if (!view) return;
-    const doc = view.state.doc;
-    const first = doc.line(Math.max(1, from));
-    const last = doc.line(Math.min(doc.lines, to));
-    if (lines.length) {
-      view.dispatch({ changes: { from: first.from, to: last.to, insert: lines.join(view.state.lineBreak) } });
-    } else if (last.to < doc.length) {
-      view.dispatch({ changes: { from: first.from, to: last.to + 1 } });
-    } else {
-      view.dispatch({ changes: { from: Math.max(0, first.from - 1), to: last.to } });
-    }
-  }
-
-  /** Brings line `line` (from 1) to the middle of the view. */
-  export function scrollToLine(line: number) {
-    if (!view) return;
-    const target = view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, line)));
-    view.dispatch({ effects: EditorView.scrollIntoView(target.from, { y: 'center' }) });
-  }
 </script>
 
 <div class="editor" bind:this={host}></div>
@@ -178,5 +157,10 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+  }
+  /* The ring of the keyboard, drawn inside the area, which clips (guidelines, 11). */
+  .editor:has(:global(.cm-content:focus-visible)) {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
   }
 </style>

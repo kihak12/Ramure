@@ -157,17 +157,26 @@
     return spans.map((span, i) => span ?? (baseAt[i] >= 0 ? { from: baseAt[i], to: baseAt[i] + (blocks[i].base?.length ?? 0) } : null));
   });
   /** What the panel of the ancestor shows: a part of it, numbered as in the file, or all of it. */
+  // Its caption says which conflict and which lines: the tint does not say it alone (11).
   const baseShown = $derived.by(() => {
-    const span = current ? ancestor[Math.min(index, blocks.length - 1)] : null;
-    if (!span) return { text: data?.base ?? '', first: 1, marks: [] as Mark[], caption: current ? 'Before both changes. This conflict was not found in it.' : 'Before both changes.' };
+    const n = Math.min(index, blocks.length - 1) + 1;
+    const span = current ? ancestor[n - 1] : null;
+    if (!span) {
+      const caption = current ? `Before both changes. Conflict ${n} was not found in it.` : 'Before both changes.';
+      return { text: data?.base ?? '', first: 1, marks: [] as Mark[], caption };
+    }
     const from = Math.max(0, span.from - CONTEXT);
     const to = Math.min(baseLines.length, span.to + CONTEXT);
     const empty = span.to <= span.from;
+    const lines = span.to - span.from === 1 ? `line ${span.to}` : `lines ${span.from + 1} to ${span.to}`;
+    const place = span.from === 0 ? 'at the start' : `after line ${span.from}`;
     return {
       text: baseLines.slice(from, to).join(separator),
       first: from + 1,
       marks: empty ? [] : [{ from: span.from - from + 1, to: span.to - from, kind: 'focus' as const }],
-      caption: empty ? 'Before both changes. It had no line here: both sides added theirs.' : 'Before both changes.',
+      caption: empty
+        ? `Before both changes: conflict ${n} had no line here, both sides added theirs ${place}.`
+        : `Before both changes: conflict ${n}, ${lines}.`,
     };
   });
 
@@ -843,6 +852,8 @@
      lines around it (guidelines, 9.26). */
   .base {
     flex: 0 0 180px;
+    /* A small window keeps most of its height for the columns. */
+    max-height: 40%;
     border-top: 1px solid var(--line-soft);
   }
   .side {

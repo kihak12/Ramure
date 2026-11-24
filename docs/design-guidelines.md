@@ -201,6 +201,7 @@ Every theme must meet them, in light and in dark.
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | `--ink` on the tints of the two sides of the conflict editor, 10%, 24% and 30% of `--l0` and `--l1`, and on their "Keep" buttons, at rest and on hover (9.26) | 7:1 |
 | `--muted`, the text of a side set aside, on its tint at rest in the conflict editor (9.26) | 4.5:1 |
+| `--ink` on the lines of the current conflict in the common ancestor, 30% of `--muted` (9.26) | 7:1 |
 | The marks of the overview strip of the conflict editor, on `--panel` (9.26): `--warn`, `--ok`, and `--l0` and `--l1` as the other branch colors | 3:1 |
 | Each terminal color (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
@@ -2571,28 +2572,30 @@ strip carries no mark, and a click there goes to the end of the file.
   toolbar, F8 and F7 give the same from the keyboard. Only 12 px wide, it is the second exception to the
   24 px target, after the handle of a card (9.16), and the keyboard makes up for it.
 
-**The common ancestor**, under the three columns, across their width, 180 px high, read only,
-shows the current conflict as it was before both changes, with the 3 lines around it, numbered as
-in the file. Its lines are marked, as the sides mark the conflict, and the panel follows the
-current conflict. Its place in the ancestor comes from the diffs of the ancestor against each side,
-so that it shows whatever the style of the conflict markers (the ancestor written between them,
-with `merge.conflictStyle diff3`, is the way left when neither side gives it). The caption of its
-bar says "Before both changes."; when the ancestor had no line there, "Before both changes. It had
-no line here: both sides added theirs.", the 3 lines around the place shown; when the conflict is
-not found in it, "Before both changes. This conflict was not found in it.", the whole ancestor
-shown.
+**The common ancestor**, under the three columns, across their width, 180 px high and 40% of the
+editor at most, read only, shows the current conflict as it was before both changes, with the 3
+lines around it, numbered as in the file. Its lines take the tint of a current conflict, `--muted`
+at 30%, and the panel follows the current conflict. Its place in the ancestor comes from the diffs
+of the ancestor against each side, so that it shows whatever the style of the conflict markers
+(the ancestor written between them, with `merge.conflictStyle diff3`, is the way left when neither
+side gives it). The caption of its bar says which conflict and which lines, so that the tint does
+not say it alone (11): "Before both changes: conflict 2, line 35."; when the ancestor had no line
+there, "Before both changes: conflict 3 had no line here, both sides added theirs after line 50.",
+the 3 lines around the place shown; when the conflict is not found in it, "Before both changes.
+Conflict 2 was not found in it.", the whole ancestor shown. It is not announced: the sides say the
+conflict reached.
 
 **Keyboard.**
 
 - The two sides are stops of the tab order, a side with no conflict to go through excepted, and a
   click on a side, its text or a button, gives it the keyboard; the ring of its conflict shows for
   the keyboard only (9.6). The tab order follows the screen: the header, the toolbar, then side 1,
-  its "Keep all"
-  and its conflicts, the result, then side 2; the arrows and crosses are reached through their
-  side, not one by one. In a side, ↑ and ↓ go from conflict to conflict, Home and End to the
-  first and the last, with the inner ring of 9.6 on its header; Enter keeps the side, Delete (or
-  Backspace) sets it aside; ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes
-  is announced: "Conflict 1, Your commit, 4 lines, kept".
+  its "Keep all" and its conflicts, the result, then side 2, then the ancestor when it is shown,
+  which ↑ and ↓ scroll; the arrows and crosses are reached through their side, not one by one.
+  In a side, ↑ and ↓ go from conflict to conflict, Home and End to the first and the last, with
+  the inner ring of 9.6 on its header; Enter keeps the side, Delete (or Backspace) sets it aside;
+  ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes is
+  announced: "Conflict 1, Your commit, 4 lines, kept".
 - The two "Keep all" buttons name their side for a screen reader: "Keep all of your commit".
 - F8 and Shift + F8 go to the next and the previous conflict, F7 and Shift + F7 to the next and
   the previous change merged by git, Ctrl + S saves once nothing is left
