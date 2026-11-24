@@ -143,6 +143,15 @@
       pane.current = entry.name;
       pane.anchor = entry.name;
     } else selectOnly(entry.name);
+    takeKeyboard();
+  }
+
+  /**
+   * A click on a row gives its list the keyboard, with no ring (guidelines, 9.6 and 9.24): a row
+   * can be dragged, and WebKit does not focus the list when such a row is pressed.
+   */
+  function takeKeyboard() {
+    if (document.activeElement !== listEl) listEl?.focus({ preventScroll: true });
   }
 
   async function scrollToCurrent() {
@@ -682,6 +691,7 @@
               onclick={() => {
                 files.focused = pane.key;
                 toParentRow(false);
+                takeKeyboard();
               }}
               ondblclick={() => files.up(pane)}
             >
