@@ -92,12 +92,17 @@ export function sizeOf(done: number, total: number): string {
   return `${numbers.format(done / divisor)} of ${numbers.format(total / divisor)} ${units[unit]}`;
 }
 
-const day = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-const full = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' });
+const stamp = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+const full = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' });
+/** The time keeps AM or PM on its line. */
+const keep = (text: string) => text.replace(/ (AM|PM)$/, '\u00a0$1');
 
-/** "Nov 9, 2026", and its tooltip "Monday, November 9, 2026 at 11:35 PM" (guidelines, 12). */
-export const shortDate = (seconds: number | null) => (seconds === null ? '' : day.format(new Date(seconds * 1000)));
-export const fullDate = (seconds: number | null) => (seconds === null ? '' : full.format(new Date(seconds * 1000)));
+/**
+ * "Nov 9, 2026, 11:35 PM", and its tooltip "Monday, November 9, 2026 at 11:35:12 PM": two versions
+ * of the same day are told apart (guidelines, 9.24 and 12).
+ */
+export const shortDate = (seconds: number | null) => (seconds === null ? '' : keep(stamp.format(new Date(seconds * 1000))));
+export const fullDate = (seconds: number | null) => (seconds === null ? '' : keep(full.format(new Date(seconds * 1000))));
 
 /** The separator of a path: "/" on a server and on Linux, "\" on Windows. */
 const separator = (path: string) => (path.includes('\\') && !path.includes('/') ? '\\' : '/');

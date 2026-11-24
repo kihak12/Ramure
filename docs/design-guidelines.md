@@ -1971,8 +1971,11 @@ of 24 px (4.3, 9.6):
   told from a file at a glance, on a row at rest, hovered or selected (2.3, 2.4); the name, cut
   with an ellipsis and whole in its tooltip; for a link, the word "link" after it, in `--muted` at
   11.5 px, as "partly" (9.6). A link to a folder opens as a folder.
-- "Modified", the short date in 12 px and `--muted` ("Nov 9, 2026"), the full date and the time
-  in its tooltip; it gives way under 420 px of pane, as the columns of the graph do (10.1).
+- "Modified", the date and the time to the minute in 12 px, `--muted` and tabular figures ("Nov
+  9, 2026, 11:35 PM", AM or PM kept on its line), so that two versions of the same day are told
+  apart; the full date and the time to the second in its tooltip ("Monday, November 9, 2026 at
+  11:35:12 PM"). The column is 140 px; it gives way under 464 px of pane, as the columns of the
+  graph do (10.1). It sorts by the exact time.
 - "Size", aligned on the right, in tabular figures, in kB, MB and GB of 1,000 bytes ("12.4 MB");
   empty for a folder.
 - **The parent row**, "..", comes first while the folder has a parent: the "up" icon and its
