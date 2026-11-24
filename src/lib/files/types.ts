@@ -1,5 +1,7 @@
 // Mirror of the structures of the Files module (src-tauri/src/files).
 
+import { dateTime, fullDateTime } from '../ui/dates';
+
 /** Where a command acts: this machine, or an SFTP connection. */
 export type Place = { kind: 'local' } | { kind: 'remote'; id: number };
 
@@ -108,12 +110,12 @@ export function sizeOf(done: number, total: number): string {
   return `${numbers.format(done / divisor)} of ${numbers.format(total / divisor)} ${units[unit]}`;
 }
 
-const day = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-const full = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' });
-
-/** "Nov 9, 2026", and its tooltip "Monday, November 9, 2026 at 11:35 PM" (guidelines, 12). */
-export const shortDate = (seconds: number | null) => (seconds === null ? '' : day.format(new Date(seconds * 1000)));
-export const fullDate = (seconds: number | null) => (seconds === null ? '' : full.format(new Date(seconds * 1000)));
+/**
+ * "Nov 9, 2026, 11:35 PM", and its tooltip "Monday, November 9, 2026 at 11:35:12 PM": two versions
+ * of the same day are told apart (guidelines, 9.24 and 12).
+ */
+export const shortDate = (seconds: number | null) => (seconds === null ? '' : dateTime(seconds * 1000));
+export const fullDate = (seconds: number | null) => (seconds === null ? '' : fullDateTime(seconds * 1000, true));
 
 /** The separator of a path: "/" on a server and on Linux, "\" on Windows. */
 const separator = (path: string) => (path.includes('\\') && !path.includes('/') ? '\\' : '/');
