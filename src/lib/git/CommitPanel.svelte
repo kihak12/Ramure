@@ -8,6 +8,7 @@
   import { readMessage } from './message';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
+  import { focusWithRing } from '../ui/focus';
 
   let { repo, commit }: { repo: Repo; commit: CommitRow } = $props();
 
@@ -91,6 +92,15 @@
     } catch {
       /* clipboard refused: the SHA stays selectable in the panel */
     }
+  }
+
+  /**
+   * A parent link: the parent becomes the selection of the graph. The detail is drawn again, which
+   * would lose the keyboard: from a key, it goes to the row of the parent in the graph, with its ring.
+   */
+  function selectParent(sha: string, keyboard: boolean) {
+    repo.selectSha(sha);
+    if (keyboard) void tick().then(() => focusWithRing(document.querySelector<HTMLElement>('.center [role="listbox"]')));
   }
 </script>
 
@@ -245,7 +255,7 @@
       {#if commit.parents.length}
         <span>Parent{commit.parents.length === 1 ? '' : 's'}</span>
         {#each commit.parents as parent (parent)}
-          <button class="btn ghost small mono parent" type="button" title="Select this commit in the graph" onclick={() => repo.selectSha(parent)}>{parent.slice(0, 7)}</button>
+          <button class="btn ghost small mono parent" type="button" title="Select this commit in the graph" onclick={(e) => selectParent(parent, e.detail === 0)}>{parent.slice(0, 7)}</button>
         {/each}
       {:else}
         <span>No parent: first commit</span>

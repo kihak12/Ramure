@@ -675,8 +675,13 @@ export class Repo {
 
   // --- Diff -------------------------------------------------------------------------------
 
+  /** The element that opened the diff, a file row: closing the diff gives it the keyboard back. */
+  diffOpener: HTMLElement | null = null;
+
   async #showDiff(file: OpenFile, fetch: () => Promise<Diff>) {
     const token = ++this.#diffToken;
+    const focused = typeof document === 'undefined' ? null : document.activeElement;
+    if (focused instanceof HTMLElement && !focused.closest('.diff')) this.diffOpener = focused;
     if (this.openFile?.key !== file.key) this.diff = null;
     this.openFile = file;
     // The diff opens on the card of the graph: asking for it brings the card back if it was hidden.

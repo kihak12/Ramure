@@ -17,6 +17,7 @@
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
   import Splitter from '../ui/Splitter.svelte';
+  import { focusWithRing } from '../ui/focus';
 
   /** `active`: this tab is the one being looked at. */
   let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
@@ -72,10 +73,25 @@
     untrack(() => repo.loadDetail());
   });
 
+  /**
+   * Closes the diff. The keyboard that was in it, or that its closing would lose, goes back to the
+   * file row that opened it, with its ring (guidelines, 9.14 and 11).
+   */
+  function closeDiff() {
+    const opener = repo.diffOpener;
+    const inside = !!document.activeElement?.closest('.diff');
+    repo.closeDiff();
+    void tick().then(() => {
+      const focused = document.activeElement;
+      const lost = !focused || focused === document.body;
+      if ((inside || lost) && opener?.isConnected) focusWithRing(opener);
+    });
+  }
+
   function onKey(e: KeyboardEvent) {
     if (e.key === 'Escape' && repo.openFile) {
       e.preventDefault();
-      repo.closeDiff();
+      closeDiff();
     }
   }
 
@@ -144,7 +160,7 @@
               selectable={repo.openFile.selectable}
               busy={repo.locked}
               onapply={(lines) => void repo.applyLines(lines)}
-              onclose={() => repo.closeDiff()}
+              onclose={closeDiff}
             />
           {/if}
         </div>
