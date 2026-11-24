@@ -7,6 +7,7 @@ import { dialogs } from '../ui/dialogs.svelte';
 import { toasts } from '../ui/toasts.svelte';
 import { secretsHeld } from './secrets';
 import { addressOf, count, listenOf, type Host, type KeyInfo, type Tunnel, type TunnelState } from './types';
+import { focusWithRing } from '../ui/focus';
 
 /** The error notification of each tunnel that could not start, by group and tunnel: it goes away
  *  once the tunnel starts or stops (guidelines, 9.15). */
@@ -242,9 +243,12 @@ class Ssh {
    * called once the dialogs are closed: as it closes, a dialog gives the focus back to what had it
    * before.
    */
-  async focusBook() {
+  /** The filter of the book takes the keyboard; `ring`: from a key, with its ring (guidelines, 11). */
+  async focusBook(ring = false) {
     await tick();
-    document.querySelector<HTMLElement>('.book input[type="search"]')?.focus();
+    const filter = document.querySelector<HTMLElement>('.book input[type="search"]');
+    if (ring) focusWithRing(filter);
+    else filter?.focus();
   }
 
   async importConfig() {

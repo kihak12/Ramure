@@ -2,11 +2,62 @@
 // current tab.
 
 import type { Command } from '../ui/palette.svelte';
+import { mayCloseTerminal } from './guard';
 import { ssh } from './ssh.svelte';
+
+/** The tab `by` places after the active one, in turn: its terminal takes the keyboard. */
+function stepTab(by: 1 | -1) {
+  const tabs = ssh.sessions;
+  if (tabs.length < 2) return;
+  const at = Math.max(0, tabs.findIndex((s) => s.key === ssh.activeKey));
+  ssh.activeKey = tabs[(at + by + tabs.length) % tabs.length].key;
+}
 
 export function sshCommands(): Command[] {
   const session = ssh.active;
+  const several = ssh.sessions.length > 1;
   return [
+    {
+      id: 'terminal-tab-next',
+      group: 'Terminal',
+      icon: 'terminal',
+      title: 'Next terminal tab',
+      keywords: 'switch tab terminal session',
+      disabled: !several,
+      hint: several ? undefined : 'one terminal tab only',
+      run: () => stepTab(1),
+    },
+    {
+      id: 'terminal-tab-prev',
+      group: 'Terminal',
+      icon: 'terminal',
+      title: 'Previous terminal tab',
+      keywords: 'switch tab terminal session',
+      disabled: !several,
+      hint: several ? undefined : 'one terminal tab only',
+      run: () => stepTab(-1),
+    },
+    {
+      id: 'terminal-tab-close',
+      group: 'Terminal',
+      icon: 'x',
+      title: 'Close terminal tab',
+      keywords: 'close tab terminal session disconnect',
+      disabled: !session,
+      hint: session ? undefined : 'no terminal open',
+      // As the cross of the tab: if a program runs in a local terminal, ask first.
+      run: () => {
+        if (session) void mayCloseTerminal(session).then((sure) => sure && ssh.close(session.key));
+      },
+    },
+    {
+      id: 'ssh-book',
+      group: 'Terminal',
+      icon: 'list',
+      title: 'Go to the host book',
+      keywords: 'hosts book filter leave terminal',
+      run: () => void ssh.focusBook(true),
+    },
     {
       id: 'terminal-search',
       group: 'Terminal',

@@ -902,6 +902,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A tab bar keeps 4 px around its tabs, so that the focus ring is never cut by its scrolling. It
   shows no scrollbar: it scrolls to the tab that matters (below).
   The ring of a tab follows its 8 px corners.
+- The tabs of the terminals are a tab list: the active tab alone is a stop of the tab order, ←
+  and → go to the previous and the next tab, Home and End to the first and the last, each
+  opening as it takes the keyboard (11).
 - When the tabs overflow, the bar scrolls to the active tab, and to a tab that takes the focus,
   so that it stays whole to the left of the "+": the bar keeps 40 px of scroll room on its right,
   the width of the "+" and its margins (a derived value, not a gap of 4.1). The "+" covers the
@@ -1112,6 +1115,14 @@ own, under its graph (9.20).
   repository, asks as soon as a shell is open: "A terminal is open…".
 - A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
   gray dot; its tooltip and accessible name then say "Local terminal stopped".
+- **Leaving a terminal from the keyboard.** A terminal keeps most keys for the shell, Tab,
+  Ctrl + K and Ctrl + , included; it lets through the shortcuts with Shift or Alt and the
+  function keys, and four of its own: Ctrl + Page Down and Ctrl + Page Up go to the next and the
+  previous tab, as in the terminals of the system, Ctrl + Shift + W closes the tab (as its cross:
+  a program that runs asks first), and Ctrl + Shift + H gives the keyboard to the filter of the
+  host book, with its ring. They are the commands "Next terminal tab", "Previous terminal tab",
+  "Close terminal tab" and "Go to the host book" of the palette, which Ctrl + Shift + P opens from
+  a terminal.
 - Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus goes
   to its main button: the terminal keeps the Tab key for the shell. A panel that asks for a
   secret gives it to its field. Under a repository, where the state of the shell is a strip, the

@@ -40,6 +40,10 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'terminal-search', group: 'Terminal', title: 'Search the terminal', keys: 'Ctrl+Shift+F', scope: 'ssh' },
   { id: 'terminal-journal', group: 'Terminal', title: 'Record or stop terminal log', keys: '', scope: 'ssh' },
   { id: 'terminal-tunnels', group: 'Terminal', title: 'Show or hide tunnels', keys: '', scope: 'ssh' },
+  { id: 'terminal-tab-next', group: 'Terminal', title: 'Next terminal tab', keys: 'Ctrl+PageDown', scope: 'ssh' },
+  { id: 'terminal-tab-prev', group: 'Terminal', title: 'Previous terminal tab', keys: 'Ctrl+PageUp', scope: 'ssh' },
+  { id: 'terminal-tab-close', group: 'Terminal', title: 'Close terminal tab', keys: 'Ctrl+Shift+W', scope: 'ssh' },
+  { id: 'ssh-book', group: 'Terminal', title: 'Go to the host book', keys: 'Ctrl+Shift+H', scope: 'ssh' },
   { id: 'files-add-pane', group: 'Panes', title: 'Add pane', keys: '', scope: 'files' },
   { id: 'files-hidden', group: 'Panes', title: 'Show or hide hidden files', keys: '', scope: 'files' },
   { id: 'files-mkdir', group: 'Panes', title: 'New folder…', keys: '', scope: 'files' },
@@ -102,7 +106,7 @@ export const display = (combo: string) => combo.split(/\+(?!$)/).join(' + ');
  * the line, Ctrl + W the previous word). Only those a shell does not use go through: with Shift
  * or Alt, or a function key.
  */
-export const allowedInTerminal = (combo: string) => /Shift\+|Alt\+|(^|\+)F\d{1,2}$/.test(combo);
+export const allowedInTerminal = (combo: string) => /Shift\+|Alt\+|(^|\+)F\d{1,2}$|^Ctrl\+Page(Up|Down)$/.test(combo);
 
 function read(): Record<string, string> {
   try {

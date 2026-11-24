@@ -71,6 +71,20 @@
   // The "+" of the tabs: a local terminal, in one click. The tooltip says the shortcut.
   const newLocal = $derived(`New local terminal${keys.binding('terminal-new') ? ` (${display(keys.binding('terminal-new'))})` : ''}`);
 
+  /** The tab list (9.7): ← and → go to the previous and the next tab, Home and End to the first
+   *  and the last, which open as they take the keyboard. */
+  function tabKey(e: KeyboardEvent) {
+    const tabs = ssh.sessions;
+    const at = tabs.findIndex((s) => s.key === ssh.activeKey);
+    const to =
+      e.key === 'ArrowRight' ? at + 1 : e.key === 'ArrowLeft' ? at - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
+    if (to === null || !tabs.length) return;
+    e.preventDefault();
+    const next = tabs[(to + tabs.length) % tabs.length];
+    ssh.activeKey = next.key;
+    void tick().then(() => tabsEl?.querySelectorAll<HTMLElement>('[role="tab"]')[tabs.indexOf(next)]?.focus());
+  }
+
   /** The cross or the middle click: if a program runs in a local terminal, ask first. */
   async function closeTab(session: Session) {
     if (await mayCloseTerminal(session)) ssh.close(session.key);
@@ -194,8 +208,10 @@
               type="button"
               role="tab"
               aria-selected={current}
+              tabindex={current ? 0 : -1}
               title={session.kind === 'local' ? (session.status === 'closed' ? 'Local terminal stopped' : 'Local terminal') : undefined}
               onclick={() => (ssh.activeKey = session.key)}
+              onkeydown={tabKey}
               onauxclick={(e) => {
                 if (e.button === 1) void closeTab(session);
               }}
