@@ -574,6 +574,8 @@
     over = null;
     files.drag = null;
     if (!aimed || aimed.refusal) return;
+    // The keyboard follows the files, into the pane that receives them.
+    takeKeyboard();
     void files.drop(aimed.dragged, pane, aimed.dest, e.ctrlKey);
   }
 

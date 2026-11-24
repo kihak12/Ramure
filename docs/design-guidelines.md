@@ -951,8 +951,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   list), when that row is in view: 4 px under that element, on its left edge, its first enabled
   item focused. Escape, or an item chosen from the keyboard, gives the focus back to the element
   that had it, with its ring (11); the mouse (a click outside, the wheel, an item chosen with a
-  click) gives it back without the ring, as for the button of a menu. While the menu is open, the
-  row it was asked for keeps its ring. A text field keeps the menu of the system, to cut, copy and
+  click) gives it back without the ring, as for the button of a menu. Opened with a right click, it
+  gives the focus back the same way to the list that had it, the one holding the row clicked.
+  While the menu is open, the row it was asked for keeps its ring. A text field keeps the menu of the system, to cut, copy and
   paste.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
@@ -2124,7 +2125,7 @@ of 24 px (4.3, 9.6):
   row.
 - **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
   selects up to it, Ctrl + A selects them all. A click gives the list the keyboard, as a right
-  click and a drag do, so that its keys act on the row clicked at once, Shift + Tab included,
+  click and a drag do (a drop gives it to the pane that receives the files), so that its keys act on the row clicked at once, Shift + Tab included,
   which goes to the stop before the list. After any gesture of the mouse, the ring of the current
   row waits for a key other than Shift, Ctrl or Alt alone (11). The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
