@@ -1984,12 +1984,15 @@ of 24 px (4.3, 9.6):
 - **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
   selects up to it, Ctrl + A selects them all. The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
-  folder. On a file, it sends the file to the pane next to this one, on its right, or on its left
-  for the last pane: a copy into the folder that pane shows, as a drag does, after asking about a
-  name already there (9.10), never a move, even between two folders of the same place. Enter sends
-  the selection when the current row is part of it. When it cannot go, the pane next to it not
-  connected or showing the same folder, a warning toast says why (9.11): "report.pdf was not
-  sent", "Not connected." F2 renames, Delete deletes, the Menu key opens the menu.
+  folder. On a file, it copies the file to the pane next to this one, on its right, or on its left
+  for the last pane: into the folder that pane shows, as a drag does, after asking about a name
+  already there (9.10), never a move, even between two folders of the same place, where the menu
+  offers "Move to …" and Ctrl + drop copies. Enter copies the selection when the current row is
+  part of it, the current file otherwise, once however long it is held; a double-click copies the
+  file clicked, with Ctrl or Shift too. When it cannot go, a warning notification says why and
+  what to do (9.11): "report.pdf was not copied", with "Choose a place in the pane next to this one
+  first.", "The pane next to this one is not connected yet." or "Already in this folder." F2
+  renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
   Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
   folder has an empty part too, once scrolled to the end.

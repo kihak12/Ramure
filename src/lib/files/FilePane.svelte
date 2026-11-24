@@ -200,7 +200,9 @@
           files.open(pane, entry);
         } else if (entry) {
           // A file goes to the pane next to this one, with the selection when it is part of it.
+          // Enter held down copies once.
           e.preventDefault();
+          if (e.repeat) return;
           files.send(pane, selected.has(entry.name) ? [...pane.selected] : [entry.name]);
         }
         return;

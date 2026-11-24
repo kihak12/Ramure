@@ -489,9 +489,14 @@ class Files {
     const target = this.neighbor(pane);
     if (!target || !names.length) return;
     const dragged = { paneKey: pane.key, names };
-    const refusal = this.refusal(dragged, target, target.path);
+    // The pane next to it says what to do first: choose a place, or wait for its connection.
+    const refusal = !target.location
+      ? 'Choose a place in the pane next to this one first.'
+      : !this.place(target)
+        ? 'The pane next to this one is not connected yet.'
+        : this.refusal(dragged, target, target.path);
     if (refusal) {
-      toasts.warn(names.length === 1 ? `${names[0]} was not sent` : `${count(names.length, 'item')} were not sent`, refusal);
+      toasts.warn(names.length === 1 ? `${names[0]} was not copied` : `${count(names.length, 'item')} were not copied`, refusal);
       return;
     }
     void this.drop(dragged, target, target.path, true);
