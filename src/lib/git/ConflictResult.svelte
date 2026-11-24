@@ -507,13 +507,76 @@
     });
     view = new EditorView({ state, parent: host! });
     view.dispatch({ effects: setInfo.of(info) });
-    return () => view?.destroy();
+    // The caret waits where the eye is, scroll after scroll.
+    let frame = 0;
+    let top = view.scrollDOM.scrollTop;
+    // Taken with Tab, the text, taller than the column, is brought into view by the browser from
+    // its top, just after the focus: the three columns would go back to line 1. That jump to the
+    // top, at once after the focus, is undone before the columns follow it; a scroll the editor
+    // asks for is not (9.26).
+    let focusedAt = -Infinity;
+    const onScroll = () => {
+      if (!view) return;
+      if (performance.now() - focusedAt < 100 && view.scrollDOM.scrollTop === 0 && top > 0) {
+        focusedAt = -Infinity;
+        view.scrollDOM.scrollTop = top;
+        return;
+      }
+      top = view.scrollDOM.scrollTop;
+      if (!frame) frame = requestAnimationFrame(() => ((frame = 0), placeCaret()));
+    };
+    const onFocus = () => {
+      focusedAt = performance.now();
+    };
+    view.scrollDOM.addEventListener('scroll', onScroll, { passive: true });
+    view.contentDOM.addEventListener('focus', onFocus);
+    // The keyboard gone elsewhere, the caret waits again where the eye is.
+    const onBlur = () => requestAnimationFrame(placeCaret);
+    view.contentDOM.addEventListener('blur', onBlur);
+    return () => {
+      view?.contentDOM.removeEventListener('blur', onBlur);
+      cancelAnimationFrame(frame);
+      view?.scrollDOM.removeEventListener('scroll', onScroll);
+      view?.contentDOM.removeEventListener('focus', onFocus);
+      view?.destroy();
+    };
   });
 
   $effect(() => {
     const next = info;
     view?.dispatch({ effects: setInfo.of(next) });
+    requestAnimationFrame(placeCaret);
   });
+
+  /**
+   * Before the keyboard comes in with Tab, the caret of the result waits where the eye is: where
+   * it was when that is in view, otherwise on the current conflict when it is in view, otherwise
+   * on the first line in view. Typing then scrolls nothing either (guidelines, 9.26).
+   */
+  function placeCaret() {
+    if (!view || view.hasFocus) return;
+    const v = view;
+    const box = v.scrollDOM.getBoundingClientRect();
+    const inView = (pos: number) => {
+      const at = v.coordsAtPos(pos);
+      return !!at && at.top >= box.top && at.bottom <= box.bottom;
+    };
+    const put = (pos: number) => {
+      if (v.state.selection.main.head !== pos || !v.state.selection.main.empty) v.dispatch({ selection: { anchor: pos } });
+    };
+    if (inView(v.state.selection.main.head)) return;
+    const current = info.find((item) => item.current);
+    const region = current ? v.state.field(field).get(current.id) : undefined;
+    if (region && current) {
+      // A conflict to decide is its band, which takes no caret: the caret waits under it.
+      const pos = current.state === 'open' ? region.to : (linesOf(v.state, region)?.first.from ?? region.from);
+      if (inView(pos)) return put(pos);
+    }
+    // The first line in view whole, not the one the top of the column cuts.
+    let line = v.state.doc.lineAt(v.posAtCoords({ x: box.left + box.width / 2, y: box.top + 4 }, false));
+    if (!inView(line.from) && line.number < v.state.doc.lines) line = v.state.doc.line(line.number + 1);
+    put(line.from);
+  }
 
   /**
    * The rows of the result, as the columns line them up: the band of each conflict, in place of its
@@ -659,8 +722,12 @@
     '.cm-content': { caretColor: 'var(--ink)' },
     '.cm-cursor': { borderLeftColor: 'var(--ink)' },
     '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
-    '.cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
-    '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--ink)' },
+    // The line of the caret is told only while the result has the keyboard: the caret that waits
+    // follows the scroll, and its line would follow it too.
+    '.cm-activeLine': { backgroundColor: 'transparent' },
+    '&.cm-focused .cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
+    '.cm-activeLineGutter': { backgroundColor: 'transparent' },
+    '&.cm-focused .cm-activeLineGutter': { color: 'var(--ink)' },
     '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
       backgroundColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
     },
