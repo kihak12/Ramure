@@ -77,6 +77,12 @@ export interface RewordCheck {
   pushed: boolean;
 }
 
+/** What opened a diff: the row, its list and its place in it, and the view of the repository. */
+type Opener = { element: HTMLElement; list: HTMLElement | null; at: number; view: Element | null };
+
+/** The rows of a list of files, in order: where a row that left it is replaced. */
+const rowsOf = (list: HTMLElement | null) => (list?.matches('ul.files') ? [...list.querySelectorAll<HTMLElement>('button.open')] : []);
+
 export class Repo {
   // `$state.raw`: 50,000 rows must not be wrapped in reactive proxies.
   result = $state.raw<LogResult | null>(null);
@@ -680,18 +686,15 @@ export class Repo {
    * The element that opened the diff, a file row most of the time, and the list it is in: closing
    * the diff gives one of them the keyboard back (guidelines, 9.14).
    */
-  #opener: { element: HTMLElement; list: HTMLElement | null; view: Element | null } | null = null;
+  #opener: Opener | null = null;
 
   async #showDiff(file: OpenFile, fetch: () => Promise<Diff>) {
     const token = ++this.#diffToken;
     const focused = typeof document === 'undefined' ? null : document.activeElement;
     // A diff opened from another diff keeps its opener; one opened with no focus has none.
     if (focused instanceof HTMLElement && focused !== document.body && !focused.closest('.diff')) {
-      this.#opener = {
-        element: focused,
-        list: focused.closest<HTMLElement>('ul.files, [role="listbox"], [role="tree"]'),
-        view: focused.closest('[data-repo-view]'),
-      };
+      const list = focused.closest<HTMLElement>('ul.files, [role="listbox"], [role="tree"]');
+      this.#opener = { element: focused, list, at: rowsOf(list).indexOf(focused), view: focused.closest('[data-repo-view]') };
     } else if (!focused || focused === document.body) {
       this.#opener = null;
     }
@@ -731,7 +734,7 @@ export class Repo {
    * keyboard it took away goes back: to the row that opened the diff, otherwise to the current
    * row of its list, otherwise to the list of the graph that takes its place (guidelines, 9.14).
    */
-  #giveKeyboardBack(opener: { element: HTMLElement; list: HTMLElement | null; view: Element | null } | null) {
+  #giveKeyboardBack(opener: Opener | null) {
     // Still in the diff that leaves (its animation keeps it on the page for a moment), on the body
     // after a click, or gone with its file: the keyboard is lost. Elsewhere, it was taken: it stays.
     const now = document.activeElement;
@@ -741,7 +744,10 @@ export class Repo {
     const view = opener.view;
     const usable = (el: Element | null | undefined): el is HTMLElement =>
       el instanceof HTMLElement && el.isConnected && el !== document.body && !el.closest('[inert], [hidden]');
-    const target = [opener.element, opener.list?.querySelector('[tabindex="0"]'), view?.querySelector('.center [role="listbox"]')].find(usable);
+    // The row gone with its file: the row that takes its place in the list (9.6).
+    const rows = rowsOf(opener.list);
+    const instead = opener.at >= 0 ? rows[Math.min(opener.at, rows.length - 1)] : undefined;
+    const target = [opener.element, instead, opener.list?.querySelector('[tabindex="0"]'), view?.querySelector('.center [role="listbox"]')].find(usable);
     focusBack(target);
   }
 

@@ -1057,8 +1057,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - **The keyboard.** A diff opens in the center, to the left of the list of files that opened it:
   in the order of the screen, Shift + Tab reaches it from that list. However it closes, by
   Escape, by "Close", or by itself when its file leaves its list, the keyboard it took away goes
-  back to the row that opened it. That row gone, it goes to the current row of its list,
-  otherwise to the list of the graph that takes the place of the diff. The ring comes with it
+  back to the row that opened it. That row gone, it goes to the row that takes its place in its
+  list (9.6), otherwise to the list of the graph that takes the place of the diff. The ring comes with it
   after a key, not after the mouse (9.9, 11).
 - The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--bg`, the recessed background, in
   `--muted`: it separates the hunks, and takes neither the color of the selection nor that of
