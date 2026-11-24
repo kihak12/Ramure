@@ -155,6 +155,13 @@
     if (document.activeElement !== listEl) listEl?.focus({ preventScroll: true });
   }
 
+  /**
+   * The last gesture was the mouse: the current row shows no ring until a key. WebKit would show
+   * one after a click when the element left behind showed one, and none after an arrow when the
+   * list was given the focus by a click (guidelines, 9.6 and 11).
+   */
+  let pointed = $state(false);
+
   async function scrollToCurrent() {
     await tick();
     listEl?.querySelector<HTMLElement>(`#${atParent ? upId : rowId(currentIndex)}`)?.scrollIntoView({ block: 'nearest' });
@@ -537,6 +544,8 @@
   );
 </script>
 
+<svelte:window onpointerdowncapture={() => (pointed = true)} onkeydowncapture={() => (pointed = false)} />
+
 <section
   class="pane"
   data-pane={pane.key}
@@ -682,6 +691,7 @@
       {:else}
         <div
           class="rows"
+          class:pointed
           class:stale={pane.loading}
           role="listbox"
           tabindex="0"
@@ -1104,7 +1114,7 @@
     background: var(--sel);
   }
   /* The row of the keyboard: an inner ring, never around the whole list (guidelines, 9.6). */
-  .rows:focus-visible .row.current,
+  .rows:focus:not(.pointed) .row.current,
   .rows:global(.focus-ring) .row.current {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
