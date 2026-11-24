@@ -521,7 +521,11 @@
     };
     view.scrollDOM.addEventListener('scroll', onScroll, { passive: true });
     view.contentDOM.addEventListener('focus', onFocus);
+    // The keyboard gone elsewhere, the caret waits again where the eye is.
+    const onBlur = () => requestAnimationFrame(placeCaret);
+    view.contentDOM.addEventListener('blur', onBlur);
     return () => {
+      view?.contentDOM.removeEventListener('blur', onBlur);
       cancelAnimationFrame(frame);
       view?.scrollDOM.removeEventListener('scroll', onScroll);
       view?.contentDOM.removeEventListener('focus', onFocus);
@@ -536,10 +540,9 @@
   });
 
   /**
-   * Before the keyboard comes in with Tab, the caret of the result waits where the eye is: on the
-   * current conflict when it is in view, otherwise where it was if that is in view, otherwise on
-   * the first line in view. Taking the keyboard then scrolls nothing: the browser would bring the
-   * caret into view, and the three columns with it (guidelines, 9.26).
+   * Before the keyboard comes in with Tab, the caret of the result waits where the eye is: where
+   * it was when that is in view, otherwise on the current conflict when it is in view, otherwise
+   * on the first line in view. Typing then scrolls nothing either (guidelines, 9.26).
    */
   function placeCaret() {
     if (!view || view.hasFocus) return;
@@ -552,13 +555,13 @@
     const put = (pos: number) => {
       if (v.state.selection.main.head !== pos || !v.state.selection.main.empty) v.dispatch({ selection: { anchor: pos } });
     };
+    if (inView(v.state.selection.main.head)) return;
     const current = info.find((item) => item.current);
     const region = current ? v.state.field(field).get(current.id) : undefined;
     if (region) {
       const pos = linesOf(v.state, region)?.first.from ?? region.from;
       if (inView(pos)) return put(pos);
     }
-    if (inView(v.state.selection.main.head)) return;
     // The first line in view whole, not the one the top of the column cuts.
     let line = v.state.doc.lineAt(v.posAtCoords({ x: box.left + box.width / 2, y: box.top + 4 }, false));
     if (!inView(line.from) && line.number < v.state.doc.lines) line = v.state.doc.line(line.number + 1);
