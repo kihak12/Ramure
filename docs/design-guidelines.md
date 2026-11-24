@@ -1964,8 +1964,9 @@ with a plus (7).
 
 **The list.** A header of columns, 26 px, "Name", "Modified" and "Size", separated from the rows
 by a `--line-soft` line: a click sorts by the column, a second click reverses the order, and a
-chevron in `--muted` says which column sorts and which way. Folders always come first. Then rows
-of 24 px (4.3, 9.6):
+chevron in `--muted` says which column sorts and which way. Folders always come first. The header
+keeps the room of the scrollbar of the rows, whether it shows or not: its columns stay over theirs,
+and nothing moves when the folder grows long enough to scroll. Then rows of 24 px (4.3, 9.6):
 
 - the folder icon in `--accent`, or the file icon in `--muted`, 16 px: what opens in place is
   told from a file at a glance, on a row at rest, hovered or selected (2.3, 2.4); the name, cut
@@ -1975,7 +1976,9 @@ of 24 px (4.3, 9.6):
   9, 2026, 11:35 PM", AM or PM kept on its line), so that two versions of the same day are told
   apart; the full date and the time to the second in its tooltip ("Monday, November 9, 2026 at
   11:35:12 PM"). The column is 140 px; it gives way under 464 px of pane, as the columns of the
-  graph do (10.1). It sorts by the exact time.
+  graph do (10.1): the date of a row is then hidden from the eye only and stays spoken (11),
+  while its sort button goes, since a stop of the tab order is never hidden from the eye. It
+  sorts by the exact time.
 - "Size", aligned on the right, in tabular figures, in kB, MB and GB of 1,000 bytes ("12.4 MB");
   empty for a folder.
 - **The parent row**, "..", comes first while the folder has a parent: the "up" icon and its
@@ -2508,7 +2511,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Screen readers.** An icon on its own has an accessible name. An error is announced at once
   (`role="alert"`), other notifications without interrupting (`role="status"`). Menus and the
   palette declare their role. A row of the graph says its message, its author and its date, even
-  when their columns have given way (10.1): they are then hidden from the eye only. A text meant
+  when their columns have given way (10.1), and a row of Files its date (9.24): they are then
+  hidden from the eye only. A text meant
   for screen readers alone takes the shared class `.spoken` of `src/app.css`: hidden from the
   eye, never from the accessibility tree, which `visibility: hidden` or `display: none` would do.
 - **Both themes.** A screen is not finished until it has been checked in light and in dark.
