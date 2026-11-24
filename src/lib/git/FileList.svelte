@@ -143,7 +143,12 @@
         class="open"
         type="button"
         tabindex={file.path === focusable ? 0 : -1}
-        onclick={() => onopen(file)}
+        onclick={(e) => {
+          // A click makes the row current and gives the list the keyboard, with no ring, as in the
+          // other lists (9.6): WebKit does not focus a button it clicks.
+          (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+          onopen(file);
+        }}
         onfocus={() => (current = file.path)}
         onkeydown={(e) => rowKey(e, file)}
         title={file.oldPath ? `${file.oldPath} → ${file.path}` : file.path}
