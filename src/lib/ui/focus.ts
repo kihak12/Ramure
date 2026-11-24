@@ -2,6 +2,21 @@
 // with the mouse, does not always get the ring of the browser: WebKit only shows it if the element
 // left behind showed it. It is set here, for as long as the focus lasts (class `.focus-ring`,
 // app.css): a focus can always be seen (guidelines, section 11).
+// The last gesture, the mouse or a key: a focus the application gives back after the mouse
+// shows no ring (guidelines, 9.9 and 11).
+let byPointer = false;
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', () => (byPointer = true), true);
+  window.addEventListener('keydown', () => (byPointer = false), true);
+}
+
+/** Gives the focus back to an element: with its ring after a key, without it after the mouse. */
+export function focusBack(element: HTMLElement | null | undefined) {
+  if (!element) return;
+  if (byPointer) element.focus();
+  else focusWithRing(element);
+}
+
 export function focusWithRing(element: HTMLElement | null | undefined) {
   if (!element) return;
   element.focus();

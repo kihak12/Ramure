@@ -17,11 +17,44 @@
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
   import Splitter from '../ui/Splitter.svelte';
+  import { focusBack } from '../ui/focus';
 
   /** `active`: this tab is the one being looked at. */
   let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
 
   const current = $derived(repo.current);
+  /** The conflict editor covers the cards: they leave the tab order while it is open (guidelines, 9.26). */
+  const covered = $derived(!!repo.conflictFile);
+
+  // The conflict editor closed, by Escape, "Close" or saving: the keyboard it had goes back to the
+  // row of its file, otherwise to the current row of its list, otherwise to the first list of the
+  // changes, otherwise to the commit message (guidelines, 9.26).
+  let conflictWasOpen = false;
+  $effect(() => {
+    const open = covered;
+    untrack(() => {
+      if (conflictWasOpen && !open) void tick().then(giveBackFromConflict);
+      conflictWasOpen = open;
+    });
+  });
+
+  function giveBackFromConflict() {
+    const opener = repo.conflictOpener;
+    repo.conflictOpener = null;
+    // Still in the editor that leaves (its animation keeps it on the page for a moment), or lost.
+    const now = document.activeElement;
+    const leaving = !!now?.closest('[data-conflict-editor]');
+    if (now && now !== document.body && now.isConnected && !leaving) return;
+    const usable = (el: Element | null | undefined): el is HTMLElement =>
+      el instanceof HTMLElement && el.isConnected && !el.closest('[inert], [hidden]');
+    const target = [
+      opener?.element,
+      opener?.list?.querySelector('[tabindex="0"]'),
+      detailEl?.querySelector('ul.files [tabindex="0"]'),
+      detailEl?.querySelector('textarea'),
+    ].find(usable);
+    focusBack(target);
+  }
   // A new tab, or a folder that could not be opened: the start page replaces the graph.
   const empty = $derived(!repo.result && !repo.loading);
   const pick = () => void workspace.pick();
@@ -113,12 +146,13 @@
     >
       {#if repo.result}
         <!-- A hidden card stays mounted: its filter, its position and the message being written are kept. -->
-        <div class="side" bind:this={sidebarEl} hidden={layout.sidebarHidden} inert={layout.sidebarHidden}>
+        <div class="side" bind:this={sidebarEl} hidden={layout.sidebarHidden} inert={layout.sidebarHidden || covered}>
           <Sidebar {repo} />
         </div>
         {#if !layout.sidebarHidden}
           <Splitter
             label="Width of the branch list"
+            inert={covered}
             value={sides.sidebar}
             min={SIDES.sidebar.min}
             max={sides.maxSidebar}
@@ -130,7 +164,7 @@
       {/if}
 
       <!-- The graph, and under it the terminal of the repository, as wide as it (guidelines, section 9.20). -->
-      <div class="middle" bind:clientHeight={middleHeight}>
+      <div class="middle" bind:clientHeight={middleHeight} inert={covered}>
         <!-- Hidden, the graph stays mounted: its position and its selection are kept. -->
         <div class="center" bind:this={centerEl} hidden={graphHidden} inert={graphHidden}>
           <Graph {repo} {active} />
@@ -180,6 +214,7 @@
         {#if !layout.detailHidden}
           <Splitter
             label="Width of the detail panel"
+            inert={covered}
             value={sides.detail}
             min={SIDES.detail.min}
             max={sides.maxDetail}
@@ -189,7 +224,7 @@
             oncommit={saveLayout}
           />
         {/if}
-        <aside class="detail" class:working={current?.wip} bind:this={detailEl} hidden={layout.detailHidden} inert={layout.detailHidden}>
+        <aside class="detail" class:working={current?.wip} bind:this={detailEl} hidden={layout.detailHidden} inert={layout.detailHidden || covered}>
           {#key repo.currentKey}
             <!-- Another commit shows at once: the selection moves with no fade (guidelines, 8 and 9.27). -->
             <div class="pane">

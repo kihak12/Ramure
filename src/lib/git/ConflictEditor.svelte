@@ -1,12 +1,13 @@
 <script lang="ts">
   // The conflict editor: side 1, the result and side 2 in three columns, aligned and scrolling as
   // one; a side of a conflict is kept with its arrow toward the result (guidelines, 9.26).
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { fly } from 'svelte/transition';
   import CodeEditor, { type Mark } from '../ui/CodeEditor.svelte';
   import { dialogs } from '../ui/dialogs.svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
+  import { focusBack } from '../ui/focus';
   import ConflictResult, { type OverviewMark, type RegionInfo } from './ConflictResult.svelte';
   import ConflictSide, { type SideConflict } from './ConflictSide.svelte';
   import {
@@ -140,6 +141,21 @@
     }),
   );
   const baseMarks = $derived<Mark[]>(current && baseAt[index] >= 0 ? [{ from: baseAt[index] + 1, to: baseAt[index] + (current.base?.length ?? 0), kind: 'focus' }] : []);
+
+  // The editor takes the keyboard as it opens, from a click as from a key: side 1 on its first
+  // conflict to decide, otherwise the result, otherwise its Close button (guidelines, 9.26).
+  let sectionEl = $state<HTMLElement>();
+  let placed = false;
+  $effect(() => {
+    if ((!data && !error) || placed) return;
+    placed = true;
+    void tick().then(() => {
+      const left = first === 'ours' ? oursView : theirsView;
+      if (left?.focus()) return;
+      if (result) return result.focus();
+      focusBack(sectionEl?.querySelector<HTMLElement>('header .btn'));
+    });
+  });
 
   // Loading the versions of the file, and the conflicts as it opens.
   $effect(() => {
@@ -474,6 +490,8 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <section
   class="conflict"
+  data-conflict-editor
+  bind:this={sectionEl}
   aria-label="Conflict editor: {file.path}"
   onkeydown={onKey}
   in:fly={{ y: 10, duration: motion.med }}

@@ -2179,7 +2179,7 @@ scrolling as one, and a side of a conflict kept whole with its arrow toward the 
 aside with its cross, as in the merge tools of the IDEs.
 
 **Place.** One card in place of the three of the view, under the banner of the operation (9.1),
-whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a file of the list
+whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a file of the list, or Enter or Space on it,
 "In conflict" of the changes panel.
 
 **The header**, one line: the merge icon in `--warn`, the path of the file in the code font, and
@@ -2365,6 +2365,12 @@ current conflict and marks it, as the sides do.
   to decide, Escape closes, after "Close without saving?" when something was changed: "The
   choices and corrections made in this editor will be lost for good. The file keeps its conflict
   markers."
+- **Opening and closing.** The editor takes the keyboard as it opens, from a click as from a key:
+  side 1, on its first conflict to decide, otherwise the result. While it is open, the cards it
+  covers are out of the tab order; the toolbar and the bar of the operation stay at hand. Closed,
+  by Escape, "Close" or saving, it gives the keyboard back to the row of its file, otherwise to the
+  current row of its list, otherwise to the first list of the changes. The ring comes with it after
+  a key, not after the mouse (9.9, 11).
 - The captions of the bars of the result and of the ancestor are sentences: "Keep a side of each
   conflict with its arrow or on its band; it stays editable.", "Before both changes."
 

@@ -379,8 +379,17 @@ export class Repo {
     return this.#mutate('git_resolve', { path: file.path, side });
   }
 
+  /**
+   * The row that opened the conflict editor, and its list: closing the editor gives one of them
+   * the keyboard back (guidelines, 9.26).
+   */
+  conflictOpener: { element: HTMLElement; list: HTMLElement | null } | null = null;
+
   /** Opens a conflicted file in the three-way editor. */
   openConflict(file: FileChange) {
+    const focused = typeof document === 'undefined' ? null : document.activeElement;
+    this.conflictOpener =
+      focused instanceof HTMLElement && focused !== document.body ? { element: focused, list: focused.closest<HTMLElement>('ul.files') } : null;
     this.closeDiff();
     this.conflictFile = file;
   }
