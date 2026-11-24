@@ -183,7 +183,7 @@
   // --- The overview strip, beside the scrollbar of the result (guidelines, 9.26) -------------
 
   /** The marks, and the height of the result they are placed in. */
-  let overview = $state.raw<{ marks: OverviewMark[]; height: number }>({ marks: [], height: 0 });
+  let overview = $state.raw<{ marks: OverviewMark[]; height: number; bar: number }>({ marks: [], height: 0, bar: 0 });
 
   /** The tooltip of a mark: what it is, and where. */
   function markTitle(m: OverviewMark): string {
@@ -199,8 +199,10 @@
    */
   function onStrip(e: MouseEvent) {
     if (!result || !overview.height) return;
-    const strip = e.currentTarget as HTMLElement;
-    const box = strip.getBoundingClientRect();
+    // The marks stand on the track of the vertical scrollbar, the sideways bar left out.
+    const track = (e.currentTarget as HTMLElement).querySelector('.track');
+    if (!track) return;
+    const box = track.getBoundingClientRect();
     const scale = box.height / overview.height;
     const y = e.clientY - box.top;
     let best: OverviewMark | null = null;
@@ -504,17 +506,19 @@
           <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
           <div class="strip" aria-hidden="true" onclick={onStrip}>
             {#if overview.height}
-              {#each overview.marks as m, i (i)}
-                <span
-                  class="mark {m.kind} {m.kind === 'conflict' ? m.state : ''}"
-                  class:one={m.kind === 'change' && m.n === 1}
-                  class:two={m.kind === 'change' && m.n === 2}
-                  class:current={m.kind === 'conflict' && m.id === Math.min(index, blocks.length - 1)}
-                  style:top="{(m.top / overview.height) * 100}%"
-                  style:height="max({m.kind === 'conflict' ? 4 : 2}px, {((m.bottom - m.top) / overview.height) * 100}%)"
-                  title={markTitle(m)}
-                ></span>
-              {/each}
+              <div class="track" style:bottom="{overview.bar}px">
+                {#each overview.marks as m, i (i)}
+                  <span
+                    class="mark {m.kind} {m.kind === 'conflict' ? m.state : ''}"
+                    class:one={m.kind === 'change' && m.n === 1}
+                    class:two={m.kind === 'change' && m.n === 2}
+                    class:current={m.kind === 'conflict' && m.id === Math.min(index, blocks.length - 1)}
+                    style:top="{(m.top / overview.height) * 100}%"
+                    style:height="max({m.kind === 'conflict' ? 4 : 2}px, {((m.bottom - m.top) / overview.height) * 100}%)"
+                    title={markTitle(m)}
+                  ></span>
+                {/each}
+              </div>
             {/if}
           </div>
         </div>
@@ -654,10 +658,17 @@
   }
   /* A conflict across the strip, --warn to decide, --ok decided, dashed edited by hand; a change
      merged by git in the half of its side, in its color. The current conflict is ringed in --accent. */
+  /* As high as the track of the vertical scrollbar of the result, the sideways bar left out. */
+  .track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
   .mark {
     position: absolute;
-    left: 2px;
-    right: 2px;
+    left: 1px;
+    right: 1px;
     border-radius: var(--radius-xs);
   }
   .mark.conflict.open {

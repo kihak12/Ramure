@@ -418,8 +418,8 @@
    * The marks of the overview strip, and the height of the result they are placed in: each conflict,
    * and each run of lines git merged from one side (guidelines, 9.26).
    */
-  export function overview(): { marks: OverviewMark[]; height: number } {
-    if (!view) return { marks: [], height: 0 };
+  export function overview(): { marks: OverviewMark[]; height: number; bar: number } {
+    if (!view) return { marks: [], height: 0, bar: 0 };
     const state = view.state;
     const regions = state.field(field);
     const marks: OverviewMark[] = [];
@@ -447,7 +447,9 @@
         marks.push(run);
       }
     }
-    return { marks, height: view.contentHeight };
+    // The height of the sideways bar, under the track of the vertical one: the strip leaves it out.
+    const bar = view.scrollDOM.offsetHeight - view.scrollDOM.clientHeight;
+    return { marks, height: view.contentHeight, bar };
   }
 
   /** Brings the height `y` of the result, in pixels from its top, to the middle of the view. */
