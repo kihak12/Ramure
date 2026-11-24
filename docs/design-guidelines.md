@@ -982,8 +982,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   What was typed in the dialog is lost, without a question.
 - On opening, focus goes to the first field. For a destructive action, it goes to "Cancel".
 - Tab and Shift + Tab go round the controls of the dialog, from the last to the first and back,
-  each with its ring: the focus never leaves it, nor stops on what cannot be seen. A panel laid
-  over a terminal makes the terminal under it out of reach of the keyboard as of the mouse.
+  each with its ring: the focus never leaves it, nor stops on what cannot be seen. This holds for
+  every modal dialog, the command palette included, where Tab stays in its field.
 - **An action done in the dialog.** A rename, a new folder or a deletion runs when its button is
   pressed, before the dialog closes, so that what went wrong is said where the user looks
   (9.11). The button says it in "-ing" ("Renaming…", "Deleting…") and cannot be pressed again; it
@@ -1115,10 +1115,12 @@ own, under its graph (9.20).
   repository, asks as soon as a shell is open: "A terminal is open…".
 - A stopped local terminal shows its icon in `--faint` on its tab, as a closed session shows a
   gray dot; its tooltip and accessible name then say "Local terminal stopped".
-- Whenever a panel appears over a terminal, connection lost or ended, shell stopped, the focus goes
-  to its main button: the terminal keeps the Tab key for the shell. A panel that asks for a
-  secret gives it to its field. Under a repository, where the state of the shell is a strip, the
-  rule is that of 9.20.
+- Whenever a panel appears over a terminal, connection lost or ended, shell stopped, unknown server
+  or changed fingerprint, the focus goes to its main button, or to its first one: the terminal
+  under it is out of the reach of the keyboard as of the mouse. A panel that asks for a secret
+  gives it to its field. A panel is not a dialog: Tab leaves it for the tabs, the rail and the
+  book, which stay at hand while a connection is down. Under a repository, where the state of
+  the shell is a strip and the terminal stays usable, the rule is that of 9.20.
 
 **Search.** Ctrl + Shift + F, or "Search the terminal" in the palette, opens a search bar
 in the terminal of the current tab.
@@ -1390,8 +1392,8 @@ reconnection" is on in the settings.
   one failed, and offers "Reconnect now" (main button) and "Stop".
   The line of the reason keeps its place, so that the buttons do not move from one try to the
   next.
-- When the panel appears, the focus goes to "Reconnect now": the terminal keeps the
-  Tab key for the shell, and the keyboard could not reach the panel otherwise.
+- When the panel appears, the focus goes to "Reconnect now": the terminal under it is out of
+  the reach of the keyboard.
 - The countdown changes every second and is not read; a screen reader hears one sentence per
   try ("Connection lost. Attempt 2 of 5 in 5 seconds.").
 - The dot of the tab and of the header blinks in `--warn` while it waits and tries; its tooltip

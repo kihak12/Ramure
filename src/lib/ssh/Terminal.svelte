@@ -110,8 +110,8 @@
   });
   let retryButton = $state<HTMLButtonElement>();
   let endButton = $state<HTMLButtonElement>();
-  // An end panel appears: the focus goes to its main button, which the keyboard could not reach
-  // otherwise, since the terminal keeps the Tab key (guidelines, section 9.15).
+  // An end panel appears: the focus goes to its main button, where the keyboard was, since the
+  // terminal under the panel is out of its reach (guidelines, section 9.15).
   let rootEl = $state<HTMLElement>();
   $effect(() => {
     if (phase.step !== 'closed' && phase.step !== 'error') return;
@@ -121,10 +121,17 @@
     void tick().then(() => focusWithRing(endButton));
   });
   // The card appears: the focus goes to "Reconnect now". The terminal, cut off, is of no use any
-  // more, and it keeps the Tab key for itself: without this, the keyboard could not reach the card.
+  // more, and out of the reach of the keyboard under the card.
   $effect(() => {
     if (phase.step !== 'lost' || phase.attempt !== 1) return;
     void tick().then(() => focusWithRing(retryButton));
+  });
+  // An unknown server, or a fingerprint that changed: the focus goes to the first button of the
+  // card, the main one when there is one (guidelines, section 9.15).
+  let cardEl = $state<HTMLElement>();
+  $effect(() => {
+    if (phase.step !== 'hostKey' && phase.step !== 'hostKeyChanged') return;
+    void tick().then(() => focusWithRing(cardEl?.querySelector<HTMLElement>('.btn.primary') ?? cardEl?.querySelector<HTMLElement>('button')));
   });
 
   /** Schedules attempt `attempt`, or stops after the last one. */
@@ -429,7 +436,8 @@
       typed = false;
       phase = { step: 'connected' };
       session.status = 'connected';
-      if (autofocus || relaunched) term.focus();
+      // Once the panel is gone and the terminal no longer inert under it.
+      if (autofocus || relaunched) void tick().then(() => term?.focus());
       relaunched = false;
     } catch (e) {
       session.status = 'closed';
@@ -524,7 +532,7 @@
       retry = 0;
       // A first connection starts the tunnels; a lost one that comes back finds them in the core.
       ssh.tunnelsStart(session);
-      term.focus();
+      void tick().then(() => term?.focus());
     } catch (e) {
       const problem = normalize(e);
       session.status = 'closed';
@@ -822,7 +830,7 @@
 
     {#if phase.step !== 'connected' && !strip}
       <div class="veil">
-        <div class="card" class:bad={phase.step === 'hostKeyChanged'}>
+        <div class="card" class:bad={phase.step === 'hostKeyChanged'} bind:this={cardEl}>
           {#if phase.step === 'connecting'}
             <span class="spinner wait" aria-hidden="true"></span>
             <p class="lead">
