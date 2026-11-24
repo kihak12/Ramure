@@ -3,6 +3,7 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
+import { focusBack } from '../ui/focus';
 import { focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
 import { revealDetail } from './layout.svelte';
@@ -675,13 +676,18 @@ export class Repo {
 
   // --- Diff -------------------------------------------------------------------------------
 
-  /** The element that opened the diff, a file row: closing the diff gives it the keyboard back. */
-  diffOpener: HTMLElement | null = null;
+  /**
+   * The element that opened the diff, a file row most of the time, and the list it is in: closing
+   * the diff gives one of them the keyboard back (guidelines, 9.14).
+   */
+  #opener: { element: HTMLElement; list: HTMLElement | null } | null = null;
 
   async #showDiff(file: OpenFile, fetch: () => Promise<Diff>) {
     const token = ++this.#diffToken;
     const focused = typeof document === 'undefined' ? null : document.activeElement;
-    if (focused instanceof HTMLElement && !focused.closest('.diff')) this.diffOpener = focused;
+    if (focused instanceof HTMLElement && focused !== document.body && !focused.closest('.diff')) {
+      this.#opener = { element: focused, list: focused.closest<HTMLElement>('ul.files, [role="listbox"], [role="tree"]') };
+    }
     if (this.openFile?.key !== file.key) this.diff = null;
     this.openFile = file;
     // The diff opens on the card of the graph: asking for it brings the card back if it was hidden.
@@ -702,11 +708,31 @@ export class Repo {
   }
 
   closeDiff() {
+    const open = !!this.openFile;
+    const was = typeof document === 'undefined' ? null : document.activeElement;
+    const opener = this.#opener;
+    this.#opener = null;
     this.#diffToken++;
     this.openFile = null;
     this.diff = null;
     this.diffError = '';
     this.diffLoading = false;
+    if (open && was && was !== document.body) void tick().then(() => this.#giveKeyboardBack(was, opener));
+  }
+
+  /**
+   * However the diff closed (Escape, "Close", or by itself when its file left its list), the
+   * keyboard it took away goes back: to the row that opened the diff, otherwise to the current
+   * row of its list, otherwise to the list of the graph that takes its place (guidelines, 9.14).
+   */
+  #giveKeyboardBack(was: Element, opener: { element: HTMLElement; list: HTMLElement | null } | null) {
+    const now = document.activeElement;
+    if (now && now !== document.body && now.isConnected) return;
+    const view = (was.isConnected ? was : opener?.element)?.closest('[data-repo-view]') ?? document.querySelector('[data-repo-view]:not([hidden])');
+    const usable = (el: Element | null | undefined): el is HTMLElement =>
+      el instanceof HTMLElement && el.isConnected && el !== document.body && !el.closest('[inert], [hidden]');
+    const target = [opener?.element, opener?.list?.querySelector('[tabindex="0"]'), view?.querySelector('.center [role="listbox"]')].find(usable);
+    focusBack(target);
   }
 
   openWorkDiff(file: FileChange, staged: boolean) {

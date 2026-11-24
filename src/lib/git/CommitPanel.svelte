@@ -96,11 +96,20 @@
 
   /**
    * A parent link: the parent becomes the selection of the graph. The detail is drawn again, which
-   * would lose the keyboard: from a key, it goes to the row of the parent in the graph, with its ring.
+   * would lose the keyboard: from a key, it goes to the row of the parent in the graph, with its
+   * ring; the graph hidden, to the first parent link of the detail drawn again. A parent that is
+   * not loaded changes nothing: the keyboard stays on its link (guidelines, 9.27).
    */
-  function selectParent(sha: string, keyboard: boolean) {
+  function selectParent(e: MouseEvent, sha: string) {
+    const loaded = repo.commits.some((c) => c.sha === sha);
+    const view = (e.currentTarget as HTMLElement).closest('[data-repo-view]');
     repo.selectSha(sha);
-    if (keyboard) void tick().then(() => focusWithRing(document.querySelector<HTMLElement>('.center [role="listbox"]')));
+    if (!loaded || e.detail !== 0) return;
+    void tick().then(() => {
+      const graph = view?.querySelector<HTMLElement>('.center [role="listbox"]');
+      const shown = graph && !graph.closest('[inert], [hidden]');
+      focusWithRing(shown ? graph : view?.querySelector<HTMLElement>('.detail .parent, .detail button'));
+    });
   }
 </script>
 
@@ -255,7 +264,7 @@
       {#if commit.parents.length}
         <span>Parent{commit.parents.length === 1 ? '' : 's'}</span>
         {#each commit.parents as parent (parent)}
-          <button class="btn ghost small mono parent" type="button" title="Select this commit in the graph" onclick={(e) => selectParent(parent, e.detail === 0)}>{parent.slice(0, 7)}</button>
+          <button class="btn ghost small mono parent" type="button" title="Select this commit in the graph" onclick={(e) => selectParent(e, parent)}>{parent.slice(0, 7)}</button>
         {/each}
       {:else}
         <span>No parent: first commit</span>
