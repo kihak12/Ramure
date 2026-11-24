@@ -507,13 +507,52 @@
     });
     view = new EditorView({ state, parent: host! });
     view.dispatch({ effects: setInfo.of(info) });
-    return () => view?.destroy();
+    // The caret waits where the eye is, scroll after scroll.
+    let frame = 0;
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(() => ((frame = 0), placeCaret()));
+    };
+    view.scrollDOM.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      view?.scrollDOM.removeEventListener('scroll', onScroll);
+      view?.destroy();
+    };
   });
 
   $effect(() => {
     const next = info;
     view?.dispatch({ effects: setInfo.of(next) });
+    requestAnimationFrame(placeCaret);
   });
+
+  /**
+   * Before the keyboard comes in with Tab, the caret of the result waits where the eye is: on the
+   * current conflict when it is in view, otherwise where it was if that is in view, otherwise on
+   * the first line in view. Taking the keyboard then scrolls nothing: the browser would bring the
+   * caret into view, and the three columns with it (guidelines, 9.26).
+   */
+  function placeCaret() {
+    if (!view || view.hasFocus) return;
+    const v = view;
+    const box = v.scrollDOM.getBoundingClientRect();
+    const inView = (pos: number) => {
+      const at = v.coordsAtPos(pos);
+      return !!at && at.top >= box.top && at.bottom <= box.bottom;
+    };
+    const put = (pos: number) => {
+      if (v.state.selection.main.head !== pos || !v.state.selection.main.empty) v.dispatch({ selection: { anchor: pos } });
+    };
+    const current = info.find((item) => item.current);
+    const region = current ? v.state.field(field).get(current.id) : undefined;
+    if (region) {
+      const pos = linesOf(v.state, region)?.first.from ?? region.from;
+      if (inView(pos)) return put(pos);
+    }
+    if (inView(v.state.selection.main.head)) return;
+    const first = v.posAtCoords({ x: box.left + box.width / 2, y: box.top + 4 }, false);
+    put(v.state.doc.lineAt(first).from);
+  }
 
   /**
    * The rows of the result, as the columns line them up: the band of each conflict, in place of its
@@ -659,8 +698,11 @@
     '.cm-content': { caretColor: 'var(--ink)' },
     '.cm-cursor': { borderLeftColor: 'var(--ink)' },
     '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
-    '.cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
-    '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--ink)' },
+    // The line of the caret is told only while the result has the keyboard: the caret that waits
+    // follows the scroll, and its line would follow it too.
+    '&.cm-focused .cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
+    '.cm-activeLineGutter': { backgroundColor: 'transparent' },
+    '&.cm-focused .cm-activeLineGutter': { color: 'var(--ink)' },
     '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
       backgroundColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
     },

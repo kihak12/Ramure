@@ -2596,6 +2596,10 @@ conflict reached.
   the inner ring of 9.6 on its header; Enter keeps the side, Delete (or Backspace) sets it aside;
   ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes is
   announced: "Conflict 1, Your commit, 4 lines, kept".
+- Reached with Tab, the result takes the keyboard where the eye is: its caret waits on the current
+  conflict when it is in view, otherwise where it was if that is in view, otherwise on the first
+  line in view, so that taking the keyboard scrolls nothing. The line of the caret is tinted only
+  while the result has the keyboard.
 - The two "Keep all" buttons name their side for a screen reader: "Keep all of your commit".
 - F8 and Shift + F8 go to the next and the previous conflict, F7 and Shift + F7 to the next and
   the previous change merged by git, Ctrl + S saves once nothing is left
