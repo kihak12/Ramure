@@ -278,6 +278,7 @@
     current,
     onkeep,
     onaside,
+    onreach,
   }: {
     /** Text of this side. */
     value: string;
@@ -295,6 +296,8 @@
     onkeep: (block: number) => void;
     /** The cross of a conflict: set this side aside. */
     onaside: (block: number) => void;
+    /** A conflict reached in this side, by ↑ and ↓ or a click: it becomes the current one. */
+    onreach?: (block: number) => void;
   } = $props();
 
   let host = $state<HTMLDivElement>();
@@ -365,6 +368,7 @@
     const stop = stops[Math.max(0, Math.min(stops.length - 1, at))];
     if (!stop) return;
     cursor = stop.index;
+    onreach?.(stop.index);
     scrollToLine(stop.at + 1, 'nearest');
     announce(stop.index);
   }
@@ -468,7 +472,10 @@
     if (at === null || at === undefined || !view) return;
     const n = view.state.doc.lineAt(at).number - 1;
     const hit = stops.find((c) => n >= c.at && n < c.at + c.count);
-    if (hit) cursor = hit.index;
+    if (hit) {
+      cursor = hit.index;
+      onreach?.(hit.index);
+    }
   }}
 >
   <div class="editor" bind:this={host}></div>

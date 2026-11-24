@@ -2492,7 +2492,8 @@ The actions that decide a conflict are on its band, in the result, where the eye
 "Keep", everywhere, in the list of the files too.
 
 **The current conflict** is the one last reached: by the toolbar, F8, the strip, an arrow, a cross,
-a button of its band, or the caret put in it in the result. A scroll alone does not change it.
+a button of its band, the caret put in it in the result, or its header reached in a side, by ↑ and
+↓ or a click. A scroll alone does not change it.
 
 **The order of the lines kept** is that of the sides kept: the order of their arrows; "Keep both"
 puts side 1 first, "Keep both, reversed" side 2. A side is kept whole: a line is chosen alone by
@@ -2570,7 +2571,7 @@ strip carries no mark, and a click there goes to the end of the file.
   toolbar, F8 and F7 give the same from the keyboard. Only 12 px wide, it is the second exception to the
   24 px target, after the handle of a card (9.16), and the keyboard makes up for it.
 
-**The common ancestor**, under the three columns, across their width, 160 px high, read only,
+**The common ancestor**, under the three columns, across their width, 180 px high, read only,
 shows the current conflict as it was before both changes, with the 3 lines around it, numbered as
 in the file. Its lines are marked, as the sides mark the conflict, and the panel follows the
 current conflict. Its place in the ancestor comes from the diffs of the ancestor against each side,

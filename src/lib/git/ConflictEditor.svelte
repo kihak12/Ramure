@@ -695,6 +695,7 @@
         current={index}
         onkeep={(block) => keep('ours', block)}
         onaside={(block) => aside('ours', block)}
+        onreach={(block) => (index = block)}
       />
     {:else}
       <ConflictSide
@@ -708,6 +709,7 @@
         current={index}
         onkeep={(block) => keep('theirs', block)}
         onaside={(block) => aside('theirs', block)}
+        onreach={(block) => (index = block)}
       />
     {/if}
   </div>
@@ -840,7 +842,7 @@
   /* The common ancestor, under the three columns, across their width: the current conflict and the
      lines around it (guidelines, 9.26). */
   .base {
-    flex: 0 0 160px;
+    flex: 0 0 180px;
     border-top: 1px solid var(--line-soft);
   }
   .side {
