@@ -6,6 +6,8 @@
   let element = $state<HTMLDivElement>();
   let veil = $state<HTMLDivElement>();
   let position = $state({ x: 0, y: 0 });
+  /** The corner it grows from, nearest the button that dropped it; empty: that of the style. */
+  let origin = $state('');
   // The menu is being browsed from the keyboard: the item that has the focus shows it. The mouse takes over again by moving.
   let keyboard = $state(false);
 
@@ -37,6 +39,8 @@
         x: Math.max(4, Math.min(x, window.innerWidth - width - 6)),
         y: Math.max(4, Math.min(y, window.innerHeight - height - 6)),
       };
+      // It grows from the corner nearest its button.
+      origin = box ? `${y < open.y ? 'bottom' : 'top'} ${x === box.left && open.x - width < 4 ? 'left' : 'right'}` : '';
       // Opened from the keyboard, the first item takes the focus. With the mouse, the menu does: no
       // item is current until one has been hovered or reached, and Space checks nothing.
       if (keyboard) element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
@@ -118,6 +122,7 @@
     bind:this={element}
     style:left="{position.x}px"
     style:top="{position.y}px"
+    style:transform-origin={origin || undefined}
     onkeydown={onKey}
     onpointermove={() => (keyboard = false)}
   >

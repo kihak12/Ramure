@@ -38,7 +38,9 @@
     return out;
   });
   const count = $derived(hosts.filter((h) => checked[h.id]).length);
-  const all = $derived(hosts.length > 0 && count === hosts.length);
+  /** "Check all" acts on the hosts shown: with a filter, on those it keeps (guidelines, 9.15). */
+  const shownChecked = $derived(shown.filter((h) => checked[h.id]).length);
+  const all = $derived(shown.length > 0 && shownChecked === shown.length);
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const WHY = 'Check at least one host.';
 
@@ -66,7 +68,7 @@
   const close = () => (ssh.exportingFile = null);
 
   function checkAll(value: boolean) {
-    for (const host of hosts) checked[host.id] = value;
+    for (const host of shown) checked[host.id] = value;
   }
 
   function checkGroup(group: Host[], value: boolean) {
@@ -140,14 +142,17 @@
       <p>Ramure writes the hosts you check into a file you can hand to someone. Passwords and passphrases are never written.</p>
       <p>The file holds names, addresses, users, key paths, groups, tags, colors, startup commands and tunnels.</p>
       {#if hosts.length > 8}
-        <input class="field" type="search" placeholder="Filter by name, address, group, tag" aria-label="Filter the hosts" bind:value={filter} />
+        <label class="search">
+          <Icon name="search" size={14} />
+          <input type="search" placeholder="Filter by name, address, group, tag" aria-label="Filter the hosts" bind:value={filter} />
+        </label>
       {/if}
     </header>
 
     <div class="list">
       {#if hosts.length}
         <label class="all">
-          <input type="checkbox" checked={all} indeterminate={count > 0 && !all} onchange={(e) => checkAll(e.currentTarget.checked)} />
+          <input type="checkbox" checked={all} indeterminate={shownChecked > 0 && !all} onchange={(e) => checkAll(e.currentTarget.checked)} />
           <span>Check all</span>
         </label>
         {#each groups as group (group.name)}
@@ -246,8 +251,37 @@
     margin: 0;
     color: var(--muted);
   }
-  header .field {
+  /* The filter field of 9.3, as in the host book: its magnifier in --muted on its left. */
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-top: 6px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--bg);
+    color: var(--muted);
+    transition:
+      border-color var(--t-fast) var(--ease),
+      box-shadow var(--t-fast) var(--ease);
+  }
+  .search:hover:not(:focus-within) {
+    border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
+  }
+  .search:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    min-height: 30px;
+    padding: 5px 0;
+    border: 0;
+    background: none;
+    outline: none;
+    color: var(--ink);
   }
   /* Plain rows, separated by a --line rule (guidelines, 9.6, a list inside a dialog). */
   .list {
@@ -272,10 +306,11 @@
     padding: 6px 0;
     border-bottom: 1px solid var(--line);
   }
-  /* The header of a group, as in the book: the name in --muted, 11.5 px. */
+  /* The header of a group, as in the book: its name in --muted, 12 px, weight 650. */
   .group {
     color: var(--muted);
-    font-size: var(--fs-small);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-strong);
     padding-top: 12px;
   }
   .row {

@@ -944,7 +944,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A menu may also open under a button, such as "View" in the toolbar (9.2): 4 px below it,
   its right edge on the right edge of the button, and it appears from that corner. Where there is
   no room for it below, as in the foot of the host book (9.15), it opens above, 4 px from it; where
-  it would leave the window on the left, its left edge goes on the left edge of the button. Escape, or a
+  it would leave the window on the left, its left edge goes on the left edge of the button. It
+  always appears from the corner nearest the button. While it is open, the button keeps its hover
+  and says so (`aria-expanded`), as "View" does (9.2). Escape, or a
   click outside, closes it and gives the focus back to the button; after Escape, the button
   shows its focus ring.
 - While a menu is open, the tooltip of the element that opened it, a row or a button, keeps
@@ -967,7 +969,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating: `--raised` background, `--line` border, 12 px corners, `--shadow-pop` shadow. 460 px
   wide at most for a confirmation or a few values; a dialog that holds a list or a longer form
   takes the width it needs, up to 760 px: the clone 560 px, the form of a host 600 px (9.21),
-  "Manage keys…" and the export to `~/.ssh/config` 640 px, the interactive rebase 760 px.
+  "Manage keys…", the export to `~/.ssh/config`, the preview of an import of hosts and the export
+  to a Ramure file 640 px, the interactive rebase 760 px.
 - **Place.** Centered across the window, and anchored 11% from its top, as the command palette
   (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
@@ -1003,8 +1006,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - **Never for an action done in a dialog.** A modal dialog lays its veil over the notifications
   and makes them unreachable: a click on one falls on the veil and closes the dialog. The dialog
   says the result itself, in its body or on the left of its last line (9.15, "Keys"; 9.21). One
-  exception: a dialog that closes once its action is done, to offer undoing it (the export to
-  `~/.ssh/config`, 9.15).
+  exception: a dialog that closes once its action is done, which the notification then says, and
+  offers to undo when it can (the export to `~/.ssh/config`; the import and the export of hosts,
+  9.15).
 - Floating: `--raised` background, `--line` border, 8 px corners, `--shadow-pop` shadow.
 - The state is carried by an icon in a tinted circle (success, warning, error), not by a
   colored bar on the edge. The circle takes `--tint-letter` of the color of the state (2.7).
@@ -1246,16 +1250,18 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
   way it signs in and its key, group, tags, color, startup command, bastion, log and tunnels.
   Never a secret: no password, no passphrase. A key under `~/.ssh` is written `~/.ssh/name`, which
   means the same on another machine. It is a JSON file.
-- **The preview of an import**, a dialog of 640 px, opens once the file is read, so that its
-  buttons never change under the pointer. Its title names the source, "Import from a Ramure file";
+- **The preview of an import**, a dialog of 640 px: its list and its last line show once the file
+  is read, so that its buttons never change under the pointer. Its title names the source, "Import from a Ramure file";
   its sentence says what Ramure does: "Ramure adds the hosts you check to the book. A host of the
   book is never changed or deleted." Then a list inside a dialog (9.6), as in the export below,
   "Check all" heading it when more than one row can be checked: a row per host, a checkbox, the
   name it takes, its state in words, and under them a line in 11.5 px. "Added", checked, with what
   it is in the code font, `deploy@10.0.0.9 · port 2222 · key ~/.ssh/id_ed25519`, the key said "not
-  found on this machine" when it is not there. "Added as web (2)", checked: its name is taken by
+  found on this machine" when it is not there, "SSH agent and default keys" without a key,
+  "password asked when you connect" for a password. "Added as web (2)", checked: its name is taken by
   another server, in the book or earlier in the file, and its line says by which, `web is
-  deploy@10.0.0.9 in the book · this one is root@10.0.0.1`; both are kept, since replacing a host
+  deploy@10.0.0.9 in the book · this one is root@10.0.0.1`, or `web comes twice in the file · this
+  one is root@10.0.0.1`; both are kept, since replacing a host
   would lose its color, its tunnels and its startup command. "Same server", unchecked: the book
   reaches the same user, address and port under another name, "Already in the book as
   “staging”.". "Not imported", the warning icon in `--warn` in place of the checkbox, with why in
@@ -1282,15 +1288,17 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
   hosts", disabled with nothing checked, the left of the line saying why, "Check at least one
   host.", as in the export. A file that is not one of Ramure says so in place of the list, "This is
   not a file of hosts exported by Ramure.", and one whose hosts are all in the book, "All these
-  hosts are already in the book.", with "Close". Once added, the dialog closes and a notification
-  counts them, "12 hosts imported".
+  hosts are already in the book.", a file with none, "No hosts found in this file.", with "Close";
+  rows that cannot be imported only, "None of these hosts can be imported." on the left of the
+  last line. Once added, the dialog closes and a notification counts them, "12 hosts imported".
 - **Exporting to a Ramure file**, a dialog of 640 px, "Export to a Ramure file": "Ramure writes the
   hosts you check into a file you can hand to someone. Passwords and passphrases are never
   written.", then "The file holds names, addresses, users, key paths, groups, tags, colors, startup
   commands and tunnels." The rows, in the order of the book, under the headers of their groups: a
   checkbox, the name in weight 650 and the address under it in the code font (9.21); the header of
   a group has a checkbox that checks its hosts, partly checked when some are (9.3), and "Check all"
-  heads the list. All are checked at first; opened from the menu of a host, that host only. A
+  heads the list; both act on the hosts the filter shows, the button counting all those checked.
+  The header of a group is as in the book: its name in `--muted`, 12 px, weight 650. All are checked at first; opened from the menu of a host, that host only. A
   filter field (9.3) heads the list from 9 hosts on. The last line: "Cancel", then "Export 12
   hosts…", which opens the "Save" picker of the system with a name proposed after what is
   exported, `ramure-hosts_2026-11-24.json`, or `web-prod_2026-11-24.json` for one host. Once

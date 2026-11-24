@@ -106,16 +106,20 @@
     ]);
   }
 
-  /** The menus of the foot of the book (guidelines, 9.15, "Importing and exporting hosts"). */
+  /** The menus of the foot of the book (guidelines, 9.15, "Importing and exporting hosts"), and
+   *  their buttons, which keep their hover while their menu is open (9.1). */
+  let importEl = $state<HTMLButtonElement>();
+  let exportEl = $state<HTMLButtonElement>();
+  let emptyImportEl = $state<HTMLButtonElement>();
   const importItems = (): MenuItem[] => [
     { label: 'From ~/.ssh/config', icon: 'import', run: () => void ssh.importConfig() },
-    { label: 'From a Ramure file…', icon: 'file', run: () => void ssh.pickImport('ramure') },
-    { label: 'From FileZilla…', icon: 'file', run: () => void ssh.pickImport('filezilla') },
-    { label: 'From PuTTY…', icon: 'file', run: () => void ssh.pickImport('putty') },
+    { label: 'From a Ramure file…', icon: 'import', run: () => void ssh.pickImport('ramure') },
+    { label: 'From FileZilla…', icon: 'import', run: () => void ssh.pickImport('filezilla') },
+    { label: 'From PuTTY…', icon: 'import', run: () => void ssh.pickImport('putty') },
   ];
   const exportItems = (): MenuItem[] => [
     { label: 'To ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = 'all') },
-    { label: 'To a Ramure file…', icon: 'file', run: () => (ssh.exportingFile = 'all') },
+    { label: 'To a Ramure file…', icon: 'export', run: () => (ssh.exportingFile = 'all') },
   ];
 
   onMount(() => void ssh.load());
@@ -189,10 +193,26 @@
 
     <footer>
       <!-- Two menus, which open above them: the foot is at the bottom of the window (9.9). -->
-      <button class="btn small" type="button" aria-haspopup="menu" onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}>
+      <button
+        class="btn small"
+        class:open={menu.isUnder(importEl)}
+        type="button"
+        bind:this={importEl}
+        aria-haspopup="menu"
+        aria-expanded={menu.isUnder(importEl)}
+        onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}
+      >
         <Icon name="import" size={14} /> Import hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
-      <button class="btn small" type="button" aria-haspopup="menu" onclick={(e) => menu.openUnder(e.currentTarget, exportItems, e.detail === 0)}>
+      <button
+        class="btn small"
+        class:open={menu.isUnder(exportEl)}
+        type="button"
+        bind:this={exportEl}
+        aria-haspopup="menu"
+        aria-expanded={menu.isUnder(exportEl)}
+        onclick={(e) => menu.openUnder(e.currentTarget, exportItems, e.detail === 0)}
+      >
         <Icon name="export" size={14} /> Export hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
       <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="key" size={14} /> Manage keys…</button>
@@ -280,7 +300,15 @@
           <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Add host…</button>
           <button class="btn" type="button" onclick={() => ssh.openLocal()}><Icon name="laptop" size={14} /> Open local terminal</button>
           {#if ssh.loaded && !ssh.hosts.length}
-            <button class="btn" type="button" aria-haspopup="menu" onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}>
+            <button
+              class="btn"
+              class:open={menu.isUnder(emptyImportEl)}
+              type="button"
+              bind:this={emptyImportEl}
+              aria-haspopup="menu"
+              aria-expanded={menu.isUnder(emptyImportEl)}
+              onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}
+            >
               <Icon name="import" size={14} /> Import hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
             </button>
           {/if}
@@ -480,9 +508,14 @@
   .book footer {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     padding: 8px 12px 12px;
     border-top: 1px solid var(--line-soft);
+  }
+  /* A button whose menu is open keeps its hover (guidelines, 9.1). */
+  .btn.open {
+    background: var(--hover);
+    border-color: color-mix(in srgb, var(--muted) 45%, var(--line));
   }
   /* The chevron of a button that opens a menu, turned down, in --muted (guidelines, 9.1). */
   .chevron {
