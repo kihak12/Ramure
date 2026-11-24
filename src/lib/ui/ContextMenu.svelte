@@ -70,7 +70,8 @@
     }
     // Tab leaves the menu, as Escape does: the focus goes back to whoever had it, with its ring
     // (guidelines, 9.9).
-    if (event.key === 'Tab') {
+    // With Shift, WebKitGTK may not name Tab (ISO_Left_Tab): it is known by its place.
+    if (event.key === 'Tab' || event.code === 'Tab') {
       event.preventDefault();
       menu.close(true);
       return;
