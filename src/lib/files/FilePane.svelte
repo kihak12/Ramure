@@ -139,7 +139,9 @@
   }
 
   function selectRange(to: string) {
-    const from = rows.findIndex((e) => e.name === (pane.anchor ?? to));
+    // From the parent row, which has no anchor, the range starts where it lands.
+    if (pane.anchor === null) pane.anchor = to;
+    const from = rows.findIndex((e) => e.name === pane.anchor);
     const end = rows.findIndex((e) => e.name === to);
     const [a, b] = from < end ? [from, end] : [end, from];
     pane.selected = rows.slice(Math.max(a, 0), b + 1).map((e) => e.name);
