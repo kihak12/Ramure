@@ -68,6 +68,7 @@
   import { EditorState as State } from '@codemirror/state';
   import { drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
   import { onMount } from 'svelte';
+  import { byKeyboard } from './focus';
 
   let {
     value,
@@ -91,6 +92,10 @@
   } = $props();
 
   let host = $state<HTMLDivElement>();
+  /** Read only, the area is a stop of the tab order: its ring shows after a key, not after a click
+   *  (guidelines, 9.6 and 11). WebKit would show it after a click too. */
+  let ring = $state(false);
+  const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph']);
   let view: EditorView | undefined;
   let loaded = '';
   let loadedFirst = 1;
@@ -151,7 +156,18 @@
   }
 </script>
 
-<div class="editor" bind:this={host}></div>
+<div
+  class="editor"
+  class:ring={ring && readonly}
+  bind:this={host}
+  onfocusin={() => (ring = byKeyboard())}
+  onfocusout={() => (ring = false)}
+  onpointerdown={() => (ring = false)}
+  onkeydown={(e) => {
+    if (!MODIFIERS.has(e.key)) ring = true;
+  }}
+  role="presentation"
+></div>
 
 <style>
   .editor {
@@ -166,7 +182,7 @@
   }
   /* The ring of the keyboard, over the area, which clips: the 2 px of section 9, inside
      (guidelines, 11). */
-  .editor:has(:global(.cm-content:focus-visible))::after {
+  .editor.ring::after {
     content: '';
     position: absolute;
     inset: 0;

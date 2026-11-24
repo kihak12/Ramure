@@ -10,6 +10,9 @@ if (typeof window !== 'undefined') {
   window.addEventListener('keydown', () => (byPointer = false), true);
 }
 
+/** The last gesture was a key, not the mouse: a focus that comes now shows its ring. */
+export const byKeyboard = () => !byPointer;
+
 /** Gives the focus back to an element: with its ring after a key, without it after the mouse. */
 export function focusBack(element: HTMLElement | null | undefined) {
   if (!element) return;
