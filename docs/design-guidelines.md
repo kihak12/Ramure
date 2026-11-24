@@ -1269,11 +1269,12 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
 
 - **"Import hosts"**: "From ~/.ssh/config", which adds at once the hosts of that file whose name
   the book does not have, in the group "Imported from ~/.ssh/config", a notification counting
-  them; "From a Ramure file…", which opens the file picker of the system, "Choose a file of
-  hosts", then the preview. **"Export hosts"**: "To ~/.ssh/config…" and "To a Ramure file…". The
+  them; "From a Ramure file…" and "From FileZilla…", which open the file picker of the system,
+  "Choose a file of hosts", "Choose a FileZilla export" (its File, Export, or its
+  `sitemanager.xml`), then the preview. **"Export hosts"**: "To ~/.ssh/config…" and "To a Ramure file…". The
   menu of a host has "Export to a Ramure file…" too, for that host. An empty book offers "Import
   hosts" beside "Add host…", with the same menu: "No hosts. Add one, or import them from
-  ~/.ssh/config or a Ramure file."
+  ~/.ssh/config, a Ramure file or FileZilla."
 - **A file of Ramure** holds what the book keeps of each host: its name, address, port, user, the
   way it signs in and its key, group, tags, color, startup command, bastion, log and tunnels.
   Never a secret: no password, no passphrase. A key under `~/.ssh` is written `~/.ssh/name`, which
@@ -1295,6 +1296,29 @@ keys…" follows them. A button that opens a menu ends with a 14 px chevron turn
   “staging”.". "Not imported", the warning icon in `--warn` in place of the checkbox, with why in
   `--muted`. The hosts already in the book under the same name and at the same address are not
   listed: a line in `--muted` under the list counts them, "3 hosts are already in the book."
+- **From FileZilla**, an SFTP site becomes a host, in the group "Imported from FileZilla"; an FTP
+  or FTPS site is "Not imported", "FTP is not supported: Ramure opens SSH and SFTP.". A key file
+  of PuTTY (`.ppk`) without a passphrase is converted into `~/.ssh` as its host is added, as
+  "Import key…" does (Keys, below), its line saying so, "key id_prod.ppk, converted to
+  ~/.ssh/id_prod", and a line under the list counting those of the rows checked, "2 keys are
+  converted into ~/.ssh, as their hosts are added."; nothing is overwritten. A key with a
+  passphrase, a key not on this machine, or whose name `~/.ssh` already has, does not come: its
+  host is added without it, on the SSH agent and the default keys, its line saying why and what to
+  do, a label quoted as in a sentence (12): "without its key: id_prod.ppk has a passphrase; export
+  it from PuTTYgen, then import it in “Manage keys…”", "without its key: C:\keys\id.ppk is not on
+  this machine; SSH agent and default keys", "without its key: ~/.ssh/id_prod already exists;
+  import id_prod.ppk in “Manage keys…” under another name". A site whose password is read says
+  "password found in the file". Once added, the notification says the keys converted in its
+  detail, "1 key converted into ~/.ssh."; a key the conversion refused, a warning notification,
+  "1 key not converted", the host and the reason in its detail. A password that
+  FileZilla kept in clear is kept only if asked: "Remember the passwords found in the file in the
+  system keyring", a checkbox under the list, unchecked at first, is the only way a password found
+  in a file is kept, and only in the keyring (Secrets, above); unchecked, it is asked when
+  connecting. A password the keyring refuses gives the warning of Secrets, "The secret could not be
+  kept", with "The system keyring refused 1 password: Ramure will ask for it when connecting.". A
+  password kept under the master password of FileZilla cannot be read: it is asked when
+  connecting. A file that is not a FileZilla export says, in place of the list, "This is not a
+  FileZilla export: in FileZilla, use File, then Export, and choose the file it writes."
 - **Its last line**: "Cancel", then the main button, which counts what it adds, "Import 12
   hosts", disabled with nothing checked, the left of the line saying why, "Check at least one
   host.", as in the export. A file that is not one of Ramure says so in place of the list, "This is

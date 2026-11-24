@@ -155,6 +155,10 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
   hosts you check into a JSON file, never a password nor a passphrase; "Import hosts", then
   "From a Ramure file…", shows what such a file would add, rename or leave out before adding
   anything. A host of the book is never changed by an import.
+- **Moving over from FileZilla**: "Import hosts", then "From FileZilla…", reads a FileZilla
+  export or its `sitemanager.xml`: the SFTP sites become hosts, the FTP ones are left out and
+  listed, a PuTTY key without a passphrase is converted into `~/.ssh`, and the passwords FileZilla
+  kept in clear go to the system keyring only if you check it.
 - **Export to `~/.ssh/config`**: "Export hosts", then "To ~/.ssh/config…", shows, host by host, what will be
   added or changed, then writes HostName, User, Port and IdentityFile, so that `ssh <name>`
   works in any terminal. The rest of the file is left as it is, the old file is kept in

@@ -5,7 +5,7 @@
 //! import adds hosts, and nothing else: a host of the book is never changed or deleted by it.
 
 use std::collections::HashSet;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
@@ -120,7 +120,7 @@ pub fn read(text: &str) -> Result<Vec<Found>, String> {
             let host = Host::from(shared);
             let refused = (host.alias.trim().is_empty() || host.hostname.trim().is_empty())
                 .then(|| "It has no name or no address.".to_string());
-            Found { host, refused, password: None }
+            Found { host, refused, password: None, key: None }
         })
         .collect())
 }
@@ -133,6 +133,46 @@ pub struct Found {
     pub refused: Option<String>,
     /// A password the source holds: kept, in the system keyring only, when the user asks.
     pub password: Option<String>,
+    /// What becomes of a key that OpenSSH cannot read as it is, or that is not on this machine.
+    pub key: Option<KeyPlan>,
+}
+
+/// What an import does with the key a source points to (guidelines, 9.15).
+#[derive(Debug, Clone, PartialEq)]
+pub enum KeyPlan {
+    /// A PuTTY key with no passphrase: converted into `~/.ssh/<name>` as the host is added.
+    Convert { source: PathBuf, into: String },
+    /// A PuTTY key with a passphrase: the host comes without it.
+    Protected { name: String },
+    /// Not on this machine: the host comes without it.
+    Missing { path: String },
+    /// `~/.ssh` has a file of that name already: the host comes without it.
+    Taken { name: String, into: String },
+}
+
+/// What becomes of the key `path` of a source: none when OpenSSH reads it as it is.
+pub fn plan_key(path: &str) -> Option<KeyPlan> {
+    let path = path.trim();
+    if path.is_empty() {
+        return None;
+    }
+    let full = config::expand(path);
+    let Ok(text) = std::fs::read_to_string(&full) else {
+        return Some(KeyPlan::Missing { path: path.to_string() });
+    };
+    let file = full.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
+    if !file.to_lowercase().ends_with(".ppk") {
+        return None;
+    }
+    if !text.lines().any(|line| line.trim() == "Encryption: none") {
+        return Some(KeyPlan::Protected { name: file });
+    }
+    let name = file[..file.len() - 4].to_string();
+    let into = format!("~/.ssh/{name}");
+    if config::expand(&into).exists() {
+        return Some(KeyPlan::Taken { name: file, into });
+    }
+    Some(KeyPlan::Convert { source: full, into })
 }
 
 /// What the import would do with a host found: one row of the preview.
@@ -150,6 +190,8 @@ pub struct Row {
     pub detail: String,
     /// Checked at first.
     pub checked: bool,
+    /// Its key, a PuTTY key, is converted into `~/.ssh` when it is added.
+    pub converts: bool,
 }
 
 /// The preview of an import.
@@ -161,6 +203,8 @@ pub struct Preview {
     pub up_to_date: usize,
     /// The hosts found with a password.
     pub passwords: usize,
+    /// The PuTTY keys that the import converts into `~/.ssh`.
+    pub keys: usize,
 }
 
 /// The server a host reaches: its user, its address and its port.
@@ -183,13 +227,22 @@ fn summary(found: &Found) -> String {
     if host.port != 22 && host.port != 0 {
         parts.push(format!("port {}", host.port));
     }
-    parts.push(match host.auth.as_str() {
-        "keyFile" if !host.key_path.trim().is_empty() => {
+    parts.push(match (&found.key, host.auth.as_str()) {
+        (Some(KeyPlan::Convert { source, into }), _) => {
+            let name = source.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+            format!("key {name}, converted to {into}")
+        }
+        (Some(KeyPlan::Protected { name }), _) => {
+            format!("without its key: {name} has a passphrase; export it from PuTTYgen, then import it in “Manage keys…”")
+        }
+        (Some(KeyPlan::Missing { path }), _) => format!("without its key: {path} is not on this machine; SSH agent and default keys"),
+        (Some(KeyPlan::Taken { name, into }), _) => format!("without its key: {into} already exists; import {name} in “Manage keys…” under another name"),
+        (None, "keyFile") if !host.key_path.trim().is_empty() => {
             let key = host.key_path.trim();
             if config::expand(key).exists() { format!("key {key}") } else { format!("key {key}, not found on this machine") }
         }
-        "password" if found.password.is_some() => "password found in the file".into(),
-        "password" => "password asked when you connect".into(),
+        (None, "password") if found.password.is_some() => "password found in the file".into(),
+        (None, "password") => "password asked when you connect".into(),
         _ => "SSH agent and default keys".into(),
     });
     parts.join(" · ")
@@ -211,7 +264,7 @@ pub fn plan(found: &[Found], book: &[Host]) -> Preview {
         let host = &item.host;
         let alias = host.alias.trim().to_string();
         if let Some(reason) = &item.refused {
-            rows.push(Row { index, status: "refused", alias, detail: reason.clone(), checked: false });
+            rows.push(Row { index, status: "refused", alias, detail: reason.clone(), checked: false, converts: false });
             continue;
         }
         let named = book.iter().find(|h| h.alias.trim().eq_ignore_ascii_case(&alias));
@@ -227,18 +280,21 @@ pub fn plan(found: &[Found], book: &[Host]) -> Preview {
             } else {
                 format!("{alias} comes twice in the file · this one is {}", address(host))
             };
-            Row { index, status: "renamed", alias: fresh, detail, checked: true }
+            Row { index, status: "renamed", alias: fresh, detail, checked: true, converts: false }
         } else if let Some(same) = book.iter().find(|h| server(h) == server(host)) {
-            Row { index, status: "same", alias: alias.clone(), detail: format!("Already in the book as “{}”.", same.alias.trim()), checked: false }
+            Row { index, status: "same", alias: alias.clone(), detail: format!("Already in the book as “{}”.", same.alias.trim()), checked: false, converts: false }
         } else {
-            Row { index, status: "added", alias: alias.clone(), detail: summary(item), checked: true }
+            Row { index, status: "added", alias: alias.clone(), detail: summary(item), checked: true, converts: false }
         };
         taken.insert(row.alias.to_lowercase());
-        rows.push(row);
+        let converts = row.status != "refused" && matches!(item.key, Some(KeyPlan::Convert { .. }));
+        rows.push(Row { converts, ..row });
     }
     // What the rows that can be checked carry: a host already in the book is not one of them.
-    let passwords = rows.iter().filter(|r| r.status != "refused" && found[r.index].password.is_some()).count();
-    Preview { rows, up_to_date, passwords }
+    let listed: Vec<&Found> = rows.iter().filter(|r| r.status != "refused").map(|r| &found[r.index]).collect();
+    let passwords = listed.iter().filter(|f| f.password.is_some()).count();
+    let keys = listed.iter().filter(|f| matches!(f.key, Some(KeyPlan::Convert { .. }))).count();
+    Preview { rows, up_to_date, passwords, keys }
 }
 
 /// The import read, waiting for the user to choose: the passwords it holds stay here, never in the
@@ -253,15 +309,40 @@ pub struct Imported {
     pub added: usize,
     /// The passwords that the keyring refused to keep.
     pub passwords_refused: usize,
+    /// The keys converted into `~/.ssh`, and those that could not be, whose hosts came without them.
+    pub keys_converted: usize,
+    pub keys_failed: Vec<String>,
 }
 
 /// Adds the hosts of the rows `chosen`, under the names of their rows; with `remember`, the
 /// passwords they carry go into the system keyring.
 pub fn apply(store: &Store, found: &[Found], rows: &[Row], chosen: &[usize], remember: bool) -> Result<Imported, String> {
-    let mut done = Imported { added: 0, passwords_refused: 0 };
+    let mut done = Imported { added: 0, passwords_refused: 0, keys_converted: 0, keys_failed: Vec::new() };
+    let ssh_dir = config::home().map(|home| home.join(".ssh"));
     for row in rows.iter().filter(|r| r.status != "refused" && chosen.contains(&r.index)) {
         let Some(item) = found.get(row.index) else { continue };
-        let saved = store.save(Host { id: String::new(), alias: row.alias.clone(), ..item.host.clone() })?;
+        let mut host = Host { id: String::new(), alias: row.alias.clone(), ..item.host.clone() };
+        // A key OpenSSH cannot read as it is: converted, or the host comes without it.
+        let converted = match (&item.key, &ssh_dir) {
+            (Some(KeyPlan::Convert { source, .. }), Some(dir)) => match super::keyfiles::import_in(dir, source) {
+                Ok(key) => {
+                    done.keys_converted += 1;
+                    Some(key.path)
+                }
+                Err(e) => {
+                    done.keys_failed.push(format!("{}: {e}", host.alias));
+                    None
+                }
+            },
+            _ => None,
+        };
+        if item.key.is_some() {
+            match converted {
+                Some(path) => (host.auth, host.key_path) = ("keyFile".into(), path),
+                None => (host.auth, host.key_path) = ("auto".into(), String::new()),
+            }
+        }
+        let saved = store.save(host)?;
         done.added += 1;
         if let (true, Some(password)) = (remember, &item.password) {
             if super::secrets::keep_now(&super::store::password_account(&saved), password).is_err() {
@@ -280,7 +361,7 @@ pub fn hosts_file_export(store: State<'_, Store>, ids: Vec<String>, path: String
     Ok(hosts.len())
 }
 
-/// Reads a source of hosts and says what its import would do. `source`: `ramure`.
+/// Reads a source of hosts and says what its import would do. `source`: `ramure` or `filezilla`.
 #[tauri::command]
 pub fn hosts_import_preview(store: State<'_, Store>, pending: State<'_, Pending>, source: String, path: String) -> Result<Preview, String> {
     let read_text = || {
@@ -292,6 +373,7 @@ pub fn hosts_import_preview(store: State<'_, Store>, pending: State<'_, Pending>
     };
     let found = match source.as_str() {
         "ramure" => read(&read_text()?)?,
+        "filezilla" => super::filezilla::read(&read_text()?)?,
         _ => return Err(format!("Unknown source: {source}.")),
     };
     let preview = plan(&found, &store.list()?);
@@ -319,7 +401,7 @@ mod tests {
     }
 
     fn found(host: Host) -> Found {
-        Found { host, refused: None, password: None }
+        Found { host, refused: None, password: None, key: None }
     }
 
     #[test]
@@ -381,6 +463,41 @@ mod tests {
         let mut aliases: Vec<_> = store.list().unwrap().into_iter().map(|h| h.alias).collect();
         aliases.sort();
         assert_eq!(aliases, vec!["db", "web", "web (2)"]);
+    }
+
+    #[test]
+    fn a_putty_key_is_converted_unless_protected_missing_or_its_name_taken() {
+        let dir = std::env::temp_dir().join(format!("ramure-keys-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let open = dir.join("id_open_test_key.ppk");
+        std::fs::write(&open, "PuTTY-User-Key-File-3: ssh-ed25519\nEncryption: none\n").unwrap();
+        let locked = dir.join("id_locked.ppk");
+        std::fs::write(&locked, "PuTTY-User-Key-File-3: ssh-ed25519\nEncryption: aes256-cbc\n").unwrap();
+        let plain = dir.join("id_plain");
+        std::fs::write(&plain, "-----BEGIN OPENSSH PRIVATE KEY-----\n").unwrap();
+
+        let path = |p: &std::path::Path| p.to_string_lossy().to_string();
+        assert_eq!(plan_key(&path(&open)), Some(KeyPlan::Convert { source: open.clone(), into: "~/.ssh/id_open_test_key".into() }));
+        assert_eq!(plan_key(&path(&locked)), Some(KeyPlan::Protected { name: "id_locked.ppk".into() }));
+        assert_eq!(plan_key(&path(&plain)), None);
+        assert_eq!(plan_key("/nowhere/id.ppk"), Some(KeyPlan::Missing { path: "/nowhere/id.ppk".into() }));
+        assert_eq!(plan_key(""), None);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_host_whose_key_cannot_come_is_added_without_it() {
+        let store = Store::in_memory().unwrap();
+        let mut web = host("web", "deploy", "10.0.0.9", 22);
+        web.auth = "keyFile".into();
+        web.key_path = "/nowhere/id.ppk".into();
+        let source = vec![Found { key: plan_key("/nowhere/id.ppk"), ..found(web) }];
+        let preview = plan(&source, &[]);
+        assert_eq!(preview.rows[0].detail, "deploy@10.0.0.9 · without its key: /nowhere/id.ppk is not on this machine; SSH agent and default keys");
+        assert_eq!(preview.keys, 0);
+        apply(&store, &source, &preview.rows, &[0], false).unwrap();
+        let saved = store.list().unwrap().remove(0);
+        assert_eq!((saved.auth.as_str(), saved.key_path.as_str()), ("auto", ""));
     }
 
     #[test]
