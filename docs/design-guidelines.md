@@ -589,7 +589,7 @@ States are the same everywhere:
 |---|---|
 | Hover | `--hover` background, in `--t-fast`; `--hover-side` on the window background (rail, toolbar, tabs, status bar). |
 | Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists and menus. |
-| Selection | `--sel` background. |
+| Selection | `--sel` background; in a pane of the Files module that is not the active one, a neutral tint (9.24). |
 | Disabled | 45% opacity, "not allowed" cursor, no reaction on hover. |
 
 ### 9.1 Buttons
@@ -834,7 +834,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 - Hover: a rounded `--hover` background under the row, 8 px corners.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
-  the area that scrolls, its scrollbar apart.
+  the area that scrolls, its scrollbar apart. In a pane of the Files module that is not the active
+  one, a neutral tint, which says which pane acts (9.24).
 - **No colored bar on the edge** to mark the selection.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the current row, the one the arrows
   move: the selected row, or in a list of files a row that is not selected (the parent row, or
@@ -1930,11 +1931,15 @@ place: "This machine", or a host of the book.
   of the other panes step back to a neutral tint, `--muted` at `--tint-sel-quiet` over the card
   (2.7), so that the strong selection says at a glance which pane acts, whether the focus came
   from the mouse or the keyboard, and stays on the last active pane while the focus is elsewhere
-  in the window. A lighter `--sel` would be taken for the hover. **Ctrl + Tab** and **Ctrl + Shift
-  + Tab** give the keyboard to the next and the previous pane, in turn: to its list, with the
-  inner ring of its current row (9.6), or to its first control when it has no list ("Connect", the
-  filter of an empty pane). They are the commands "Next pane" and "Previous pane" of the palette,
-  whose shortcuts can be changed (9.18).
+  in the window. A lighter `--sel` would be taken for the hover; gray beside the blue hover, the
+  quiet selection reads as set aside, which it is. With nothing selected, nothing marks the active
+  pane: the ring of the keyboard says it once the keyboard is there. A folder row that receives a
+  drop keeps its drop tint, selected or not (below). **Ctrl + Tab** and **Ctrl + Shift + Tab** give
+  the keyboard to the next and the previous pane, in turn: to its list, with the inner ring of its
+  current row (9.6), or, when it has none to take it, to the main button of its panel
+  ("Connect"), to the filter of an empty pane, or else to its first control. They are the commands
+  "Next pane" and "Previous pane" of the palette, with the icons of a panel on the right and on the
+  left, whose shortcuts can be changed (9.18).
 - **An empty pane** chooses its location. Its header says "Empty pane" in `--muted`; under it, the
   title "Choose a location", 15 px in weight 650 as the title of a panel (3.2), the filter field of
   the host book (9.3) when the book has hosts, then a list (9.6): "This machine" with the computer

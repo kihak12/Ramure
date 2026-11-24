@@ -740,16 +740,21 @@ class Files {
     this.transfers = this.transfers.filter((t) => t.state === 'counting' || t.state === 'copying');
   }
 
-  /** Gives the keyboard to the list of a pane. */
   /**
-   * Gives the keyboard to a pane: its list, or, with none (an empty pane, a host not connected), its
-   * first control. `ring`: from the keyboard, the arrival shows its ring (guidelines, 11).
+   * Gives the keyboard to a pane: its list, or, when it has none that can take it (an empty pane, a
+   * host not connected, whose list is inert under its panel), the main button of its panel
+   * ("Connect"), the filter of an empty pane, or else its first control. `ring`: from the keyboard,
+   * the arrival shows its ring (guidelines, 11).
    */
   async focus(pane: Pane, ring = false) {
     this.focused = pane.key;
     await tick();
     const root = document.querySelector<HTMLElement>(`[data-pane="${pane.key}"]`);
-    const target = root?.querySelector<HTMLElement>('.rows') ?? root?.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled)');
+    const target =
+      root?.querySelector<HTMLElement>('.rows:not([inert])') ??
+      root?.querySelector<HTMLElement>('.veil .btn.primary:not(:disabled)') ??
+      root?.querySelector<HTMLElement>('input[type="search"]:not(:disabled)') ??
+      root?.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled)');
     if (ring) focusWithRing(target);
     else target?.focus();
   }

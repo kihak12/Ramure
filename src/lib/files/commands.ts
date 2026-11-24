@@ -23,7 +23,7 @@ export function filesCommands(): Command[] {
     {
       id: 'files-pane-next',
       group: 'Files',
-      icon: 'panels',
+      icon: 'panel-right',
       title: 'Next pane',
       keywords: 'switch pane focus other side',
       disabled: files.panes.length < 2,
@@ -33,7 +33,7 @@ export function filesCommands(): Command[] {
     {
       id: 'files-pane-prev',
       group: 'Files',
-      icon: 'panels',
+      icon: 'panel-left',
       title: 'Previous pane',
       keywords: 'switch pane focus other side',
       disabled: files.panes.length < 2,
