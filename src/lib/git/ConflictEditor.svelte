@@ -6,7 +6,7 @@
   import CodeEditor, { type Mark } from '../ui/CodeEditor.svelte';
   import { dialogs } from '../ui/dialogs.svelte';
   import Icon from '../ui/Icon.svelte';
-  import ConflictResult, { type RegionInfo } from './ConflictResult.svelte';
+  import ConflictResult, { type OverviewMark, type RegionInfo } from './ConflictResult.svelte';
   import ConflictSide, { type SideConflict } from './ConflictSide.svelte';
   import {
     choose,
@@ -174,6 +174,50 @@
     left.setSpacers(out.left);
     result.setSpacers(out.result);
     right.setSpacers(out.right);
+    // The marks of the strip, once the blanks are laid out.
+    requestAnimationFrame(() => {
+      if (result) overview = result.overview();
+    });
+  }
+
+  // --- The overview strip, beside the scrollbar of the result (guidelines, 9.26) -------------
+
+  /** The marks, and the height of the result they are placed in. */
+  let overview = $state.raw<{ marks: OverviewMark[]; height: number; bar: number }>({ marks: [], height: 0, bar: 0 });
+
+  /** The tooltip of a mark: what it is, and where. */
+  function markTitle(m: OverviewMark): string {
+    const where = m.lines ? (m.lines[0] === m.lines[1] ? ` · line ${m.lines[0]}` : ` · lines ${m.lines[0]} to ${m.lines[1]}`) : '';
+    if (m.kind === 'change') return `Change merged by git from ${names[m.n === 1 ? first : second]}${where}`;
+    const state = m.state === 'open' ? 'to decide' : m.state === 'edited' ? 'edited by hand' : 'decided';
+    return `Conflict ${m.id + 1}${where} · ${state}`;
+  }
+
+  /**
+   * A click on the strip: the nearest mark within 12 px, a conflict becoming the current one, or
+   * else the place clicked, comes to the middle of the three columns, at once.
+   */
+  function onStrip(e: MouseEvent) {
+    if (!result || !overview.height) return;
+    // The marks stand on the track of the vertical scrollbar, the sideways bar left out.
+    const track = (e.currentTarget as HTMLElement).querySelector('.track');
+    if (!track) return;
+    const box = track.getBoundingClientRect();
+    const scale = box.height / overview.height;
+    const y = e.clientY - box.top;
+    let best: OverviewMark | null = null;
+    let distance = 13;
+    for (const m of overview.marks) {
+      const top = m.top * scale;
+      const bottom = Math.max(m.bottom * scale, top + (m.kind === 'conflict' ? 4 : 2));
+      const d = y < top ? top - y : y > bottom ? y - bottom : 0;
+      if (d < distance) {
+        distance = d;
+        best = m;
+      }
+    }
+    result.scrollToY(best ? (best.top + best.bottom) / 2 : y / scale);
+    if (best?.kind === 'conflict') index = best.id;
   }
 
   // Again after each change of the result, a pick or typing, once the panes have drawn it.
@@ -442,20 +486,42 @@
           <b>Result</b>
           <small title="Keep a side of each conflict with its arrow; it stays editable.">Keep a side of each conflict with its arrow; it stays editable.</small>
         </div>
-        <ConflictResult
-          bind:this={result}
-          value={data.merged ?? ''}
-          regions={blocks.map((b, i) => ({ id: i, start: b.start, end: b.end }))}
-          merged={changes?.result ?? []}
-          {first}
-          {info}
-          lineSeparator={separator}
-          label="Result of the resolution"
-          onchange={(next) => (text = next)}
-          onedit={onEdit}
-          ontype={() => (lastTypeAt = performance.now())}
-          onundo={undoPick}
-        />
+        <div class="result-body">
+          <ConflictResult
+            bind:this={result}
+            value={data.merged ?? ''}
+            regions={blocks.map((b, i) => ({ id: i, start: b.start, end: b.end }))}
+            merged={changes?.result ?? []}
+            {first}
+            {info}
+            lineSeparator={separator}
+            label="Result of the resolution"
+            onchange={(next) => (text = next)}
+            onedit={onEdit}
+            ontype={() => (lastTypeAt = performance.now())}
+            onundo={undoPick}
+          />
+          <!-- Where the conflicts and the changes are, in the whole file: a click goes there. The
+               counter and F8 say the same from the keyboard (guidelines, 9.26). -->
+          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+          <div class="strip" aria-hidden="true" onclick={onStrip}>
+            {#if overview.height}
+              <div class="track" style:bottom="{overview.bar}px">
+                {#each overview.marks as m, i (i)}
+                  <span
+                    class="mark {m.kind} {m.kind === 'conflict' ? m.state : ''}"
+                    class:one={m.kind === 'change' && m.n === 1}
+                    class:two={m.kind === 'change' && m.n === 2}
+                    class:current={m.kind === 'conflict' && m.id === Math.min(index, blocks.length - 1)}
+                    style:top="{(m.top / overview.height) * 100}%"
+                    style:height="max({m.kind === 'conflict' ? 4 : 2}px, {((m.bottom - m.top) / overview.height) * 100}%)"
+                    title={markTitle(m)}
+                  ></span>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </div>
       </div>
       {@render column(second, 2)}
     </div>
@@ -577,6 +643,60 @@
     grid-template-columns: minmax(240px, 1fr) minmax(240px, 1.25fr) minmax(240px, 1fr);
     min-height: 0;
     overflow-x: auto;
+  }
+  /* The result, then its overview strip, at its right, beside its scrollbar. */
+  .result-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 12px;
+    min-height: 0;
+  }
+  .strip {
+    position: relative;
+    background: var(--panel);
+    border-left: 1px solid var(--line-soft);
+    cursor: pointer;
+  }
+  /* A conflict across the strip, --warn to decide, --ok decided, dashed edited by hand; a change
+     merged by git in the half of its side, in its color. The current conflict is ringed in --accent. */
+  /* As high as the track of the vertical scrollbar of the result, the sideways bar left out. */
+  .track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  .mark {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    border-radius: var(--radius-xs);
+  }
+  .mark.conflict.open {
+    background: var(--warn);
+  }
+  .mark.conflict.kept,
+  .mark.conflict.edited {
+    background: var(--ok);
+  }
+  .mark.conflict.edited {
+    background: var(--ok-soft);
+    border: 1px dashed var(--ok);
+  }
+  .mark.current {
+    outline: 1.5px solid var(--accent);
+    outline-offset: 1px;
+  }
+  /* A change is a thin line, 2 px at least: square, too small to round. */
+  .mark.change {
+    border-radius: 0;
+  }
+  .mark.change.one {
+    right: 50%;
+    background: var(--l0);
+  }
+  .mark.change.two {
+    left: 50%;
+    background: var(--l1);
   }
   /* The common ancestor, under the three columns, across their width. */
   .base {

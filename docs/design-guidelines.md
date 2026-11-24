@@ -199,6 +199,7 @@ Every theme must meet them, in light and in dark.
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | `--ink` on the tints of the two sides of the conflict editor, 10%, 24% and 30% of `--l0` and `--l1`, and on their "Keep" buttons, at rest and on hover (9.26) | 7:1 |
 | `--muted`, the text of a side set aside, on its tint at rest in the conflict editor (9.26) | 4.5:1 |
+| The marks of the overview strip of the conflict editor, on `--panel` (9.26): `--warn`, `--ok`, and `--l0` and `--l1` as the other branch colors | 3:1 |
 | Each terminal color (2.6) on `--term-bg`, except black in dark and white in light | 4.5:1 |
 
 A hover has to be seen, and the selection has to stand apart from its background and from the
@@ -399,8 +400,9 @@ Margins and gaps take their values from this scale: **2, 4, 6, 8, 10, 12, 16, 20
 | Between two fields of a form | 12 px |
 
 A 1 px margin is a derived value, not a gap of the scale: the one that centers the 12 px ring
-(8) in the 14 px box of an icon it stands in for, or a 14 px icon on the first line of
-11.5 px text.
+(8) in the 14 px box of an icon it stands in for, a 14 px icon on the first line of
+11.5 px text, or the inset of the marks of the overview strip of the conflict editor, in its
+12 px (9.26).
 
 ### 4.2 Screen structure
 
@@ -1423,8 +1425,8 @@ arrows, a horizontal marker and the vertical resize cursor.
 - Double-click: the default width.
 - Each card has a minimum and a maximum width, and the center card always keeps 360 px. The
   chosen widths are restored at the next launch.
-- The handle is only 8 px wide: it is the one exception to the 24 px target, and the keyboard
-  makes up for it.
+- The handle is only 8 px wide: it is one of the two exceptions to the 24 px target, with the
+  overview strip of the conflict editor (9.26), and the keyboard makes up for it.
 - A hidden card has no handle (9.17).
 
 ### 9.17 Showing and hiding cards
@@ -2284,6 +2286,31 @@ conflict with its arrow; it stays editable."
 - **Ctrl + Z** undoes the last choice, an arrow, a cross, a button, wherever the focus is in the
   editor; in the result, it undoes what was typed when that came last.
 
+**The overview strip**, 12 px wide, at the right of the result, beside its scrollbar, on `--panel`
+with a `--line-soft` line on its left: the whole file at a glance, the three columns having the
+same height. A mark stands at the height of what it shows in that file, the file laid on the
+track of the vertical scrollbar of the result: level with the sideways bar of the editors, the
+strip carries no mark, and a click there goes to the end of the file.
+
+- A conflict is a mark across the strip, 1 px from its edges, 4 px high at least, its corners in
+  `--radius-xs`; in `--warn` while it is to decide, in `--ok` once decided; edited by hand, a
+  dashed `--ok` edge on `--ok-soft`. The current conflict is ringed in `--accent`, 1.5 px, as the
+  ring of the keyboard (9.6). The strip is a map of the conflicts: their state is said in words by
+  their band in the result and by the counter of the bar, the color repeats it here (11).
+- A change merged by git is a thin line, 2 px high at least, square, too thin to round, in the half
+  of the strip of its side, the left half in `--l0` for side 1, the right one in `--l1` for side
+  2: the place says it, not the color alone (11).
+- A click goes to the nearest mark within 12 px, a 24 px target around the thin ones, or else to
+  the place clicked: it comes to the middle of the three columns, at once, as a scroll does (8); a
+  conflict becomes the current one. The tooltip of a mark says what and where: "Conflict 2 · lines
+  112 to 115 · decided", "to decide" or "edited by hand" in the other states, "Change merged by
+  git from Upstream · line 40".
+- The strip has no hover of its own: the pointer is a hand over it, and a mark shows its tooltip.
+  It has no disabled state either: a click only moves through the file, which nothing locks.
+- The strip is not a stop of the tab order and is hidden from screen readers: the counter of the
+  bar and F8 give the same from the keyboard. Only 12 px wide, it is the second exception to the
+  24 px target, after the handle of a card (9.16), and the keyboard makes up for it.
+
 **The common ancestor**, shown under the three columns, across their width, read only, follows the
 current conflict and marks it, as the sides do.
 
@@ -2470,7 +2497,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
   searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
   function key are active: the others belong to the shell.
-- **Targets.** 24 × 24 px at least.
+- **Targets.** 24 × 24 px at least; two exceptions, the handle of a card and the overview strip of
+  the conflict editor, for which the keyboard makes up (9.16, 9.26).
 - **Never color alone.** A state is backed by an icon, a sign or text: "+" and "−" in a diff, a
   letter for the state of a file, an icon for local and remote.
 - **Reduced motion.** See section 8.
