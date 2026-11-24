@@ -509,13 +509,22 @@
     view.dispatch({ effects: setInfo.of(info) });
     // The caret waits where the eye is, scroll after scroll.
     let frame = 0;
+    let top = view.scrollDOM.scrollTop;
     const onScroll = () => {
+      if (view) top = view.scrollDOM.scrollTop;
       if (!frame) frame = requestAnimationFrame(() => ((frame = 0), placeCaret()));
     };
+    // Taken with Tab, the text, taller than the column, is brought into view by the browser from
+    // its top: the three columns would go back to line 1. They stay where they were (9.26).
+    const onFocus = () => {
+      if (view && view.scrollDOM.scrollTop !== top) view.scrollDOM.scrollTop = top;
+    };
     view.scrollDOM.addEventListener('scroll', onScroll, { passive: true });
+    view.contentDOM.addEventListener('focus', onFocus);
     return () => {
       cancelAnimationFrame(frame);
       view?.scrollDOM.removeEventListener('scroll', onScroll);
+      view?.contentDOM.removeEventListener('focus', onFocus);
       view?.destroy();
     };
   });
@@ -550,8 +559,10 @@
       if (inView(pos)) return put(pos);
     }
     if (inView(v.state.selection.main.head)) return;
-    const first = v.posAtCoords({ x: box.left + box.width / 2, y: box.top + 4 }, false);
-    put(v.state.doc.lineAt(first).from);
+    // The first line in view whole, not the one the top of the column cuts.
+    let line = v.state.doc.lineAt(v.posAtCoords({ x: box.left + box.width / 2, y: box.top + 4 }, false));
+    if (!inView(line.from) && line.number < v.state.doc.lines) line = v.state.doc.line(line.number + 1);
+    put(line.from);
   }
 
   /**
@@ -700,6 +711,7 @@
     '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--muted)', border: 'none', borderRight: '1px solid var(--line-soft)' },
     // The line of the caret is told only while the result has the keyboard: the caret that waits
     // follows the scroll, and its line would follow it too.
+    '.cm-activeLine': { backgroundColor: 'transparent' },
     '&.cm-focused .cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
     '.cm-activeLineGutter': { backgroundColor: 'transparent' },
     '&.cm-focused .cm-activeLineGutter': { color: 'var(--ink)' },
