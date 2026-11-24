@@ -123,7 +123,8 @@
     const lines = resolved(b, pick).length;
     if (!pick.kept.length) return 'no line kept';
     if (pick.kept.length === 2) return `kept from both · ${lineCount(lines)}`;
-    return `kept from ${names[pick.kept[0]]} · ${lineCount(lines)}`;
+    // In the middle of a sentence, a side is named in lower case (guidelines, 12).
+    return `kept from ${names[pick.kept[0]].toLowerCase()} · ${lineCount(lines)}`;
   }
   const info = $derived<RegionInfo[]>(
     blocks.map((b, i) => {
@@ -213,7 +214,11 @@
   /** The line under the path: what is left, then what git did on its own (guidelines, 9.26). */
   const summary = $derived(
     [
-      open ? `${open} conflict${open === 1 ? '' : 's'} to decide` : 'No conflict left: the file can be saved',
+      open
+        ? `${open} conflict${open === 1 ? '' : 's'} to decide`
+        : markersLeft
+          ? `${markersLeft} conflict${markersLeft === 1 ? '' : 's'} still ${markersLeft === 1 ? 'has' : 'have'} the markers of git`
+          : 'No conflict left: the file can be saved',
       merges.length ? `${merges.length} change${merges.length === 1 ? '' : 's'} merged by git` : '',
     ]
       .filter(Boolean)
@@ -380,7 +385,7 @@
   /** A button of the band of a conflict, or an item of its menu "More". */
   function take(choice: Choice, block: number) {
     index = block;
-    void apply([{ block, pick: choose(choice, first) }]);
+    return apply([{ block, pick: choose(choice, first) }]);
   }
 
   /** "Start over", on the band of a conflict decided: the conflict as it opened, its markers back. */
@@ -389,15 +394,21 @@
     void apply([{ block, pick: emptyPick() }]);
   }
 
+  /** A choice of the menu "More": its band gives way to the band of the conflict decided, and the
+   *  keyboard goes to the result, where the band is (guidelines, 9.26). */
+  function takeFromMenu(choice: Choice, block: number) {
+    void take(choice, block).then(() => setTimeout(() => result?.focus()));
+  }
+
   /** "More", on the band of a conflict: the other choices, in a menu under the button (9.9). */
   function moreChoices(block: number, anchor: HTMLElement) {
     index = block;
     const one = names[first];
     const two = names[second];
     menu.openUnder(anchor, () => [
-      { label: 'Keep both', hint: `${one}, then ${two.toLowerCase()}`, run: () => take('both', block) },
-      { label: 'Keep both, reversed', hint: `${two}, then ${one.toLowerCase()}`, run: () => take('both-reversed', block) },
-      { label: 'Keep neither', hint: 'Keep no line of this conflict', run: () => take('neither', block) },
+      { label: 'Keep both', hint: `${one}, then ${two.toLowerCase()}`, run: () => takeFromMenu('both', block) },
+      { label: 'Keep both, reversed', hint: `${two}, then ${one.toLowerCase()}`, run: () => takeFromMenu('both-reversed', block) },
+      { label: 'Keep neither', hint: 'Keep no line of this conflict', run: () => takeFromMenu('neither', block) },
     ]);
   }
 
@@ -475,7 +486,7 @@
       <small>
         {#if !data && !error}
           Reading the versions…
-        {:else if editable && (open || markersLeft === 0)}
+        {:else if editable}
           {summary}
         {/if}
       </small>
@@ -570,10 +581,10 @@
             ontype={() => (lastTypeAt = performance.now())}
             onundo={undoPick}
             oncaret={(id) => (index = id)}
-            onkeep={(id, n) => take(n === 1 ? first : second, id)}
+            onkeep={(id, n) => void take(n === 1 ? first : second, id)}
             onmore={moreChoices}
             onstartover={startOver}
-            sideName={(n) => names[n === 1 ? first : second]}
+            keepLabel={(n) => keepName(n === 1 ? first : second)}
           />
           <!-- Where the conflicts and the changes are, in the whole file: a click goes there. The
                counter and F8 say the same from the keyboard (guidelines, 9.26). -->
@@ -617,7 +628,7 @@
       <span class="side-chip" aria-hidden="true">{n}</span>
       <b>{names[side]}</b>
       <small class="mono" title={commit}>{commit}</small>
-      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side]}">Keep all</button>
+      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side].toLowerCase()}">Keep all</button>
     </div>
     {#if side === 'ours'}
       <ConflictSide
@@ -690,6 +701,7 @@
   .names small {
     color: var(--muted);
     font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
   }
   .note {
     margin: 0;
@@ -866,7 +878,8 @@
   .toggle {
     margin-left: auto;
   }
-  .toggle[aria-pressed='true'] {
+  .toggle[aria-pressed='true'],
+  .toggle[aria-pressed='true']:hover {
     background: var(--accent-soft);
     border-color: var(--accent);
   }

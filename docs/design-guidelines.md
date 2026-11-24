@@ -511,7 +511,7 @@ The interface has four levels. Each is recognized by its background.
   a folded corner and a plus for a new file, both pluses of the same size, the pencil for
   an edit or a change, the trash for a deletion, the square for stopping or aborting, the
   circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
-  connection. An icon that stands for a git
+  connection, the arrows up and down for the previous and the next, or for moving up and down. An icon that stands for a git
   command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
@@ -2185,11 +2185,12 @@ whose "Continue", "Skip" and "Abort…" stay at hand. It opens with a click on a
 **The header**, one line: the merge icon in `--warn`, the path of the file in the code font, and
 under it what is left, then what git did on its own: "2 conflicts to decide · 4 changes merged by
 git", or "No conflict left: the file can be saved · 4 changes merged by git"; with no change
-merged by git, the first part alone. Then "Close" and "Save and mark resolved", small buttons as the actions of a card are (9.1), in
+merged by git, the first part alone; a conflict typed by hand that keeps the markers of git, "1
+conflict still has the markers of git". Its figures are tabular (3.4). Then "Close" and "Save and mark resolved", small buttons as the actions of a card are (9.1), in
 the order of the last line of a dialog: the way out, then the main button, at the right, since
 the editor is a step that ends with saving. "Save and mark resolved" is disabled while a conflict
-is left; the line under the path says why, and its tooltip repeats it: "Decide every conflict
-first.", or "Git is working: wait for it to finish." Saving writes the file and marks it resolved
+is left; the line under the path says what is left, and its tooltip says why: "Decide every
+conflict first.", or "Git is working: wait for it to finish." Saving writes the file and marks it resolved
 (`git add`).
 
 **Three columns.** Side 1 on the left, the result in the middle, side 2 on the right, in widths of
@@ -2240,7 +2241,7 @@ shrinks, and the columns scroll sideways, as one; the header, the toolbar and th
   toward the result, is the closest to it: at the right of side 1, at the left of side 2, turned
   over; it keeps the side whole ("Keep this side (Enter)"). The cross sets the side aside ("Set
   this side aside (Delete)"). The arrow of a side kept and the cross of a side set aside are
-  disabled. Their accessible names say the side and the conflict: "Keep Your commit in conflict
+  disabled. Their accessible names say the side and the conflict: "Keep your commit in conflict
   2".
 - **What they do.** The arrow keeps the side after a side already kept: the result takes the
   lines of the sides in the order of their arrows, so that both can be kept, in either order. The
@@ -2251,10 +2252,11 @@ shrinks, and the columns scroll sideways, as one; the header, the toolbar and th
 **The toolbar**, one line between the header and the columns, with a `--line-soft` line under it,
 from left to right:
 
-- "Conflict 1 of 3" between two small buttons made of an icon alone, "Previous conflict" and "Next
-  conflict" (Shift + F8, F8).
-- The changes merged by git, the same way: "Change 2 of 4" between "Previous change" and "Next
-  change" (Shift + F7, F7). A change is a run of lines that git merged from one side, a mark of
+- "Conflict 1 of 3" between two small buttons made of an icon alone, `up` and `down`, "Previous
+  conflict" and "Next conflict" (Shift + F8, F8). The number of the current one is in weight 650,
+  the current element (3.3); the figures are tabular.
+- The changes merged by git, the same way: "Change 2 of 4" between "Previous change merged by git"
+  and "Next change merged by git" (Shift + F7, F7). A change is a run of lines that git merged from one side, a mark of
   the overview strip. Until one is reached, the count alone, "4 changes"; with none, "No change
   merged by git", the two buttons disabled. The next change is the one after the last reached, by
   these buttons or by the strip; it comes to the middle of the three columns, at once (8).
@@ -2286,16 +2288,21 @@ conflict with its arrow or on its band; it stays editable."
 - **The band of a conflict**, a row of 28 px, faces its headers in the sides. A conflict not
   decided yet is not shown as the markers of git: its band stands in their place, on
   `--warn-soft`, with the letter "!" (9.6), "Conflict 2 of 3", then what decides it, small
-  buttons: "Keep" with the chip "1", "Keep" with the chip "2", standard, each with 12% of the color
-  of its side, 24% on hover in place of `--hover`, their tooltips naming the side ("Keep Your
-  commit"); then "More", a small ghost button with a chevron, whose menu (9.9) holds "Keep both",
-  "Keep both, reversed" and "Keep neither", their hints naming the order. The caret steps over
+  buttons: "Keep" with the chip "1", "Keep" with the chip "2", the chip at 14 px as in the gutter,
+  standard, each with 12% of the color of its side, 24% on hover in place of `--hover`, and a border
+  of 55% of that color, all of it on hover; their tooltips name the side ("Keep your commit",
+  "Keep upstream"). Then "More", a small ghost button with a 14 px chevron, whose menu (9.9) holds
+  "Keep both", "Keep both, reversed" and "Keep neither", their hints naming the order; "More" is
+  the one label that is not a verb, as the menu "View" of the toolbar (9.2). After a choice in
+  that menu, the band it opened from gives way to the band of the conflict decided: the keyboard
+  goes to the result. The caret steps over
   the band. The markers stay in the file underneath, so that saving is refused while one is left.
   The numbers of the lines it hides are skipped: the result counts the lines of the file, markers
   included, until the conflict is decided.
 - Decided, the band stays, above its lines, as the headers of the sides are: on `--panel`, with a
-  `--line-soft` line above it, "Conflict 2 of 3 · kept from Your commit · 4 lines", "kept from
-  both", "no line kept" or "edited by hand", in 11.5 px and `--muted`, then "Start over", a small
+  `--line-soft` line above it, "Conflict 2 of 3 · kept from your commit · 4 lines" (in the middle
+  of a sentence, a side is named in lower case, 12), "kept from both", "no line kept" or "edited by
+  hand", in 11.5 px and `--muted`, then "Start over", a small
   ghost button, which puts the conflict back as it was. The band of the current conflict is in
   `--ink` and weight 650, as its headers.
 - The buttons of a band follow its text, at its left: a band is as wide as the longest line of
@@ -2345,13 +2352,14 @@ current conflict and marks it, as the sides do.
 
 - The two sides are stops of the tab order, a side with no conflict to go through excepted, and a
   click on a side, its text or a button, gives it the keyboard; the ring of its conflict shows for
-  the keyboard only (9.6). The tab order follows the screen: the toolbar, then side 1, its "Keep all"
+  the keyboard only (9.6). The tab order follows the screen: the header, the toolbar, then side 1,
+  its "Keep all"
   and its conflicts, the result, then side 2; the arrows and crosses are reached through their
   side, not one by one. In a side, ↑ and ↓ go from conflict to conflict, Home and End to the
   first and the last, with the inner ring of 9.6 on its header; Enter keeps the side, Delete (or
   Backspace) sets it aside; ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes
   is announced: "Conflict 1, Your commit, 4 lines, kept".
-- The two "Keep all" buttons name their side for a screen reader: "Keep all of Your commit".
+- The two "Keep all" buttons name their side for a screen reader: "Keep all of your commit".
 - F8 and Shift + F8 go to the next and the previous conflict, F7 and Shift + F7 to the next and
   the previous change merged by git, Ctrl + S saves once nothing is left
   to decide, Escape closes, after "Close without saving?" when something was changed: "The

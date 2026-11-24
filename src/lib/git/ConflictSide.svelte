@@ -109,7 +109,7 @@
         const keep = kind === 'keep';
         b.disabled = keep ? this.status === 'kept' : this.status === 'aside';
         b.title = keep ? 'Keep this side (Enter)' : 'Set this side aside (Delete)';
-        b.setAttribute('aria-label', `${keep ? 'Keep' : 'Set aside'} ${this.label} in conflict ${n}`);
+        b.setAttribute('aria-label', `${keep ? 'Keep' : 'Set aside'} ${this.label.toLowerCase()} in conflict ${n}`);
         b.innerHTML = iconMarkup(keep ? 'keep' : 'x', 14);
         b.addEventListener('mousedown', (e) => e.preventDefault());
         b.addEventListener('click', (e) => {

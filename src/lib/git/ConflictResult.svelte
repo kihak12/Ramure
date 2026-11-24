@@ -51,8 +51,8 @@
     more(id: number, anchor: HTMLElement): void;
     /** "Start over": the conflict back as it was. */
     startOver(id: number): void;
-    /** The name of side `n`, for the tooltips. */
-    name(n: 1 | 2): string;
+    /** The label that keeps side `n`, "Keep your commit", for the tooltips. */
+    keepLabel(n: 1 | 2): string;
   }
 
   /** A small button of a band: out of the tab order, the keyboard decides in the sides (9.26). */
@@ -164,8 +164,8 @@
       letter.setAttribute('aria-hidden', 'true');
       const n = this.id + 1;
       const keep = (side: 1 | 2) => {
-        const name = this.calls.name(side);
-        const b = bandButton(`btn small cm-band-keep cm-band-${side}`, `Keep ${name}`, `Keep ${name} in conflict ${n}`, () => this.calls.keep(this.id, side));
+        const label = this.calls.keepLabel(side);
+        const b = bandButton(`btn small cm-band-keep cm-band-${side}`, label, `${label} in conflict ${n}`, () => this.calls.keep(this.id, side));
         const chip = document.createElement('span');
         chip.className = 'cm-band-chip';
         chip.textContent = String(side);
@@ -175,7 +175,7 @@
       };
       const more = bandButton('btn ghost small cm-band-more', 'Keep both, or neither', `More choices for conflict ${n}`, (b) => this.calls.more(this.id, b));
       more.setAttribute('aria-haspopup', 'menu');
-      more.innerHTML = `More${iconMarkup('chevron', 12)}`;
+      more.innerHTML = `More${iconMarkup('chevron', 14)}`;
       band.append(letter, bandText(this.text), keep(1), keep(2), more);
       return band;
     }
@@ -297,7 +297,7 @@
     onkeep,
     onmore,
     onstartover,
-    sideName,
+    keepLabel,
   }: {
     /** The file with the markers of git, as it opens. */
     value: string;
@@ -323,7 +323,7 @@
     onkeep: BandCalls['keep'];
     onmore: BandCalls['more'];
     onstartover: BandCalls['startOver'];
-    sideName: BandCalls['name'];
+    keepLabel: BandCalls['keepLabel'];
   } = $props();
 
   // The buttons of the bands call through this object: it always holds the callbacks of the last render.
@@ -331,7 +331,7 @@
     keep: (id, n) => onkeep(id, n),
     more: (id, anchor) => onmore(id, anchor),
     startOver: (id) => onstartover(id),
-    name: (n) => sideName(n),
+    keepLabel: (n) => keepLabel(n),
   };
 
   let host = $state<HTMLDivElement>();
@@ -626,6 +626,11 @@
     scroller.scrollTop = Math.max(0, y - scroller.clientHeight / 2);
   }
 
+  /** Gives the keyboard to the result, without moving its view. */
+  export function focus() {
+    view?.focus();
+  }
+
   /** Brings a conflict to the middle of the view. */
   export function scrollToRegion(id: number) {
     if (!view) return;
@@ -715,16 +720,18 @@
     // The chevron of a menu dropped down (9.9), in --muted.
     '.cm-conflict-band .cm-band-more': { gap: '4px', paddingRight: '6px' },
     '.cm-band-more svg': { color: 'var(--muted)', transform: 'rotate(90deg)' },
+    // The letter of a file state (9.6): halfway between its color and --ink, on its tint.
     '.cm-conflict-band .letter': {
       display: 'inline-grid',
       placeItems: 'center',
       minWidth: '16px',
       height: '16px',
       borderRadius: 'var(--radius-xs)',
+      fontFamily: 'var(--f-mono)',
       fontSize: 'var(--fs-micro)',
       fontWeight: 'var(--fw-strong)',
-      color: 'var(--bad)',
-      backgroundColor: 'var(--bad-soft)',
+      color: 'color-mix(in srgb, var(--bad) 50%, var(--ink))',
+      backgroundColor: 'color-mix(in srgb, var(--bad) var(--tint-letter), transparent)',
     },
   });
 </script>
