@@ -2596,11 +2596,13 @@ conflict reached.
   the inner ring of 9.6 on its header; Enter keeps the side, Delete (or Backspace) sets it aside;
   ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes is
   announced: "Conflict 1, Your commit, 4 lines, kept".
-- Reached with Tab, the result takes the keyboard where the eye is, and the columns stay where
-  they are: its caret stays where it was when that is in view, otherwise it waits on the current
-  conflict when that is in view (just under its band while it is to decide, since the band takes
-  no caret), otherwise on the first line in view, so that typing scrolls nothing either. The line
-  of the caret is tinted only while the result has the keyboard.
+- However the result takes the keyboard, with Tab, as the editor opens or after a choice of
+  "More", it takes it where the eye is, and the columns stay where they are. While it does not
+  have the keyboard, its caret waits there, scroll after scroll: where it was when that is in
+  view, otherwise on the current conflict when that is in view (just under its band while it is to
+  decide, since the band takes no caret), otherwise on the first line wholly in view. Typing then
+  scrolls nothing either. The result shows that it has the keyboard by its caret and by the tint
+  of the line of the caret, `--accent` at 6%, which shows only then.
 - The two "Keep all" buttons name their side for a screen reader: "Keep all of your commit".
 - F8 and Shift + F8 go to the next and the previous conflict, F7 and Shift + F7 to the next and
   the previous change merged by git, Ctrl + S saves once nothing is left

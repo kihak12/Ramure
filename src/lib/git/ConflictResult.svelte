@@ -511,12 +511,13 @@
     let frame = 0;
     let top = view.scrollDOM.scrollTop;
     // Taken with Tab, the text, taller than the column, is brought into view by the browser from
-    // its top, just after the focus: the three columns would go back to line 1. The scroll that
-    // follows the focus at once is undone, before the columns follow it (9.26).
+    // its top, just after the focus: the three columns would go back to line 1. That jump to the
+    // top, at once after the focus, is undone before the columns follow it; a scroll the editor
+    // asks for is not (9.26).
     let focusedAt = -Infinity;
     const onScroll = () => {
       if (!view) return;
-      if (performance.now() - focusedAt < 100 && view.scrollDOM.scrollTop !== top) {
+      if (performance.now() - focusedAt < 100 && view.scrollDOM.scrollTop === 0 && top > 0) {
         focusedAt = -Infinity;
         view.scrollDOM.scrollTop = top;
         return;
@@ -566,8 +567,9 @@
     if (inView(v.state.selection.main.head)) return;
     const current = info.find((item) => item.current);
     const region = current ? v.state.field(field).get(current.id) : undefined;
-    if (region) {
-      const pos = linesOf(v.state, region)?.first.from ?? region.from;
+    if (region && current) {
+      // A conflict to decide is its band, which takes no caret: the caret waits under it.
+      const pos = current.state === 'open' ? region.to : (linesOf(v.state, region)?.first.from ?? region.from);
       if (inView(pos)) return put(pos);
     }
     // The first line in view whole, not the one the top of the column cuts.
