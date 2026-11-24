@@ -839,8 +839,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   list of files, which takes the selection away (9.24).
 - **A list in sections**, such as the branch list, is a tree: the title of a section is a row too,
   which folds and unfolds it, inset 6 px from the edges of the card like the rows. ↑ and ↓ go from
-  row to row, titles included, Home and End to the ends; → unfolds a title, or goes down to its
-  first row; ← goes back up to the title, or folds it (during a search, every section stays
+  row to row, titles included, Home and End to the ends, Page Down and Page Up by a page of rows,
+  as in the graph, the current row staying in view with its ring; → unfolds a title, or goes down
+  to its first row; ← goes back up to the title, or folds it (during a search, every section stays
   unfolded, and its title folds nothing); Enter and Space act as a click: a title folds or
   unfolds, a row shows its commit; the Menu key opens the menu of the row, and a title, which has
   none, opens nothing, nor does a right click on it (9.9). The text of an empty section starts at

@@ -108,6 +108,7 @@
   aria-valuenow={Math.round(value)}
   aria-valuemin={min}
   aria-valuemax={max}
+  aria-valuetext="{Math.round(value)} pixels {horizontal ? 'high' : 'wide'}"
   tabindex="0"
   title="Drag to resize. Double-click: default {horizontal ? 'height' : 'width'}."
   onpointerdown={down}
