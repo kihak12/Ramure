@@ -32,6 +32,7 @@ pub fn run() {
         // not used: the window then opens where the system puts it.
         .plugin(tauri_plugin_window_state::Builder::new().with_state_flags(WINDOW_STATE).build())
         .manage(ssh::SshState::default())
+        .manage(ssh::hostfile::Pending::default())
         .manage(files::FilesState::default())
         .manage(local::LocalState::default())
         .manage(git::clone::CloneState::default())
@@ -136,6 +137,9 @@ pub fn run() {
             ssh::export::ssh_config_preview,
             ssh::export::ssh_config_export,
             ssh::export::ssh_config_undo,
+            ssh::hostfile::hosts_file_export,
+            ssh::hostfile::hosts_import_preview,
+            ssh::hostfile::hosts_import_apply,
             ssh::keyfiles::ssh_keys_list,
             ssh::keyfiles::ssh_key_generate,
             ssh::keyfiles::ssh_key_import,
