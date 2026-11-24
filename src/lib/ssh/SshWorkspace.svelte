@@ -8,6 +8,9 @@
   import HostDialog from './HostDialog.svelte';
   import KeysDialog from './KeysDialog.svelte';
   import ExportDialog from './ExportDialog.svelte';
+  import ExportFileDialog from './ExportFileDialog.svelte';
+  import ImportDialog from './ImportDialog.svelte';
+  import type { MenuItem } from '../ui/menu.svelte';
   import { display, keys } from '../ui/keys.svelte';
   import { mayCloseTerminal } from './guard';
   import { ssh, STATUS, type Session } from './ssh.svelte';
@@ -97,10 +100,21 @@
       { label: 'Edit…', icon: 'pencil', run: () => (ssh.editing = host) },
       { label: 'Duplicate…', icon: 'copy', run: () => (ssh.editing = { ...host, id: '', alias: `${host.alias} (copy)` }) },
       { label: 'Export to ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = host.id) },
+      { label: 'Export to a Ramure file…', icon: 'export', run: () => (ssh.exportingFile = host.id) },
       { separator: true },
       { label: 'Delete host…', icon: 'trash', danger: true, run: () => void removeHost(host) },
     ]);
   }
+
+  /** The menus of the foot of the book (guidelines, 9.15, "Importing and exporting hosts"). */
+  const importItems = (): MenuItem[] => [
+    { label: 'From ~/.ssh/config', icon: 'import', run: () => void ssh.importConfig() },
+    { label: 'From a Ramure file…', icon: 'file', run: () => void ssh.pickImport('ramure') },
+  ];
+  const exportItems = (): MenuItem[] => [
+    { label: 'To ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = 'all') },
+    { label: 'To a Ramure file…', icon: 'file', run: () => (ssh.exportingFile = 'all') },
+  ];
 
   onMount(() => void ssh.load());
 </script>
@@ -165,18 +179,19 @@
           {:else if ssh.hosts.length}
             No host matches “{filter}”.
           {:else}
-            No hosts. Add one, or import those from ~/.ssh/config.
+            No hosts. Add one, or import them from ~/.ssh/config or a Ramure file.
           {/if}
         </p>
       {/each}
     </div>
 
     <footer>
-      <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Add the hosts of ~/.ssh/config that are not listed yet">
-        <Icon name="import" size={14} /> Import from ~/.ssh/config
+      <!-- Two menus, which open above them: the foot is at the bottom of the window (9.9). -->
+      <button class="btn small" type="button" aria-haspopup="menu" onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}>
+        <Icon name="import" size={14} /> Import hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.exporting = 'all')} title="Write the hosts to ~/.ssh/config, after showing what changes">
-        <Icon name="export" size={14} /> Export to ~/.ssh/config…
+      <button class="btn small" type="button" aria-haspopup="menu" onclick={(e) => menu.openUnder(e.currentTarget, exportItems, e.detail === 0)}>
+        <Icon name="export" size={14} /> Export hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
       <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="key" size={14} /> Manage keys…</button>
     </footer>
@@ -263,7 +278,9 @@
           <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Add host…</button>
           <button class="btn" type="button" onclick={() => ssh.openLocal()}><Icon name="laptop" size={14} /> Open local terminal</button>
           {#if ssh.loaded && !ssh.hosts.length}
-            <button class="btn" type="button" onclick={() => void ssh.importConfig()}>Import from ~/.ssh/config</button>
+            <button class="btn" type="button" aria-haspopup="menu" onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}>
+              <Icon name="import" size={14} /> Import hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
+            </button>
           {/if}
         </div>
       </div>
@@ -274,6 +291,8 @@
 <HostDialog />
 <KeysDialog />
 <ExportDialog />
+<ImportDialog />
+<ExportFileDialog />
 
 <style>
   .ssh {
@@ -462,6 +481,12 @@
     gap: 6px;
     padding: 8px 12px 12px;
     border-top: 1px solid var(--line-soft);
+  }
+  /* The chevron of a button that opens a menu, turned down, in --muted (guidelines, 9.1). */
+  .chevron {
+    display: grid;
+    color: var(--muted);
+    transform: rotate(90deg);
   }
 
   .work {

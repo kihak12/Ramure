@@ -24,9 +24,16 @@
       // offsetWidth and offsetHeight: the true size, which the appearing animation does not shrink.
       const { offsetWidth: width, offsetHeight: height } = element;
       const x = open.anchor ? open.x - width : open.x;
+      // Dropped by a button with no room below it, as in the foot of the host book, it opens
+      // above the button, 4 px from it (guidelines, 9.9).
+      let y = open.y;
+      if (open.anchor && y + height > window.innerHeight - 6) {
+        const above = open.anchor.getBoundingClientRect().top - 4 - height;
+        if (above >= 4) y = above;
+      }
       position = {
         x: Math.max(4, Math.min(x, window.innerWidth - width - 6)),
-        y: Math.max(4, Math.min(open.y, window.innerHeight - height - 6)),
+        y: Math.max(4, Math.min(y, window.innerHeight - height - 6)),
       };
       // Opened from the keyboard, the first item takes the focus. With the mouse, the menu does: no
       // item is current until one has been hovered or reached, and Space checks nothing.

@@ -6,6 +6,7 @@
 
 pub mod config;
 pub mod export;
+pub mod hostfile;
 pub mod keyfiles;
 pub mod known_hosts;
 pub mod secrets;

@@ -324,7 +324,7 @@ pub fn hosts_list(store: State<'_, Store>) -> Result<Vec<Host>, String> {
 
 /// The name under which the keyring keeps the password of a host: that of its account on its
 /// server, as a connection forms it.
-fn password_account(host: &Host) -> String {
+pub(crate) fn password_account(host: &Host) -> String {
     let user = if host.user.is_empty() { super::current_user() } else { host.user.clone() };
     secrets::password_account(&user, &host.hostname, if host.port == 0 { 22 } else { host.port })
 }
