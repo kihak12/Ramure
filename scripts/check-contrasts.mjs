@@ -57,6 +57,7 @@ const SIDE_KEPT = 0.24; // a line kept
 const SIDE_CHIP = 0.3; // the chip "1" or "2"
 const SIDE_BUTTON = 0.12; // "Keep upstream", "Keep your commit"
 const SIDE_BUTTON_HOVER = 0.24;
+const ANCESTOR_LINE = 0.3; // a line of the current conflict in the common ancestor (.cm-mark-focus)
 
 // The minimum color distances, in light then in dark: a hover shows on its background, and the
 // selection stands apart from its background and from the hover. Each is the lowest value of the
@@ -222,6 +223,7 @@ function check(name, t, dark) {
     for (const [what, p, bg] of tints) need(`--ink on ${what} of ${side}`, contrast(t['--ink'], mix(c, p, t[bg])), 7);
     need(`--muted on a line set aside of ${side}`, contrast(t['--muted'], mix(c, SIDE_LINE, t['--bg'])), 4.5);
   }
+  need('--ink on a line of the conflict in the common ancestor', contrast(t['--ink'], mix(t['--muted'], ANCESTOR_LINE, t['--bg'])), 7);
 }
 
 for (const palette of PALETTES) {

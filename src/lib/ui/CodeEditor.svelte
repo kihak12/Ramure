@@ -68,12 +68,14 @@
   import { EditorState as State } from '@codemirror/state';
   import { drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
   import { onMount } from 'svelte';
+  import { byKeyboard } from './focus';
 
   let {
     value,
     readonly = false,
     marks = [],
     lineSeparator = '\n',
+    firstLine = 1,
     label,
     onchange,
   }: {
@@ -83,26 +85,35 @@
     marks?: Mark[];
     /** Line ending of the file: `\r\n` is kept as it is when the file uses it. */
     lineSeparator?: string;
+    /** The number of the first line: a part of a file keeps the numbers of the file. */
+    firstLine?: number;
     label: string;
     onchange?: (text: string) => void;
   } = $props();
 
   let host = $state<HTMLDivElement>();
+  /** Read only, the area is a stop of the tab order: its ring shows after a key, not after a click
+   *  (guidelines, 9.6 and 11). WebKit would show it after a click too. */
+  let ring = $state(false);
+  const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph']);
   let view: EditorView | undefined;
   let loaded = '';
+  let loadedFirst = 1;
 
   function makeState(text: string) {
     return State.create({
       doc: text,
       extensions: [
         State.lineSeparator.of(lineSeparator),
-        lineNumbers(),
-        drawSelection(),
+        lineNumbers({ formatNumber: (n) => String(n + firstLine - 1) }),
+        // Read only, it has no caret to draw.
+        ...(readonly ? [] : [drawSelection()]),
         markField,
         theme,
         EditorView.contentAttributes.of({ 'aria-label': label }),
         ...(readonly
-          ? [State.readOnly.of(true), EditorView.editable.of(false)]
+          ? // Read only, it is still a stop of the tab order: its arrows scroll it (guidelines, 11).
+            [State.readOnly.of(true), EditorView.editable.of(false), EditorView.contentAttributes.of({ tabindex: '0' })]
           : [
               history(),
               highlightActiveLine(),
@@ -118,16 +129,19 @@
 
   onMount(() => {
     loaded = value;
+    loadedFirst = firstLine;
     view = new EditorView({ state: makeState(value), parent: host! });
     view.dispatch({ effects: setMarks.of(marks) });
     return () => view?.destroy();
   });
 
-  // Another file: start again from a new document (and an empty undo history).
+  // Another file, or another part of it: start again from a new document (and an empty undo history).
   $effect(() => {
-    if (view && value !== loaded) {
+    if (view && (value !== loaded || firstLine !== loadedFirst)) {
       loaded = value;
+      loadedFirst = firstLine;
       view.setState(makeState(value));
+      view.dispatch({ effects: setMarks.of(marks) });
     }
   });
 
@@ -140,36 +154,39 @@
   export function getText() {
     return view ? view.state.sliceDoc() : value;
   }
-
-  /** Replaces lines `from` to `to` (included, from 1) with `lines`; an empty list deletes them. */
-  export function replaceLines(from: number, to: number, lines: string[]) {
-    if (!view) return;
-    const doc = view.state.doc;
-    const first = doc.line(Math.max(1, from));
-    const last = doc.line(Math.min(doc.lines, to));
-    if (lines.length) {
-      view.dispatch({ changes: { from: first.from, to: last.to, insert: lines.join(view.state.lineBreak) } });
-    } else if (last.to < doc.length) {
-      view.dispatch({ changes: { from: first.from, to: last.to + 1 } });
-    } else {
-      view.dispatch({ changes: { from: Math.max(0, first.from - 1), to: last.to } });
-    }
-  }
-
-  /** Brings line `line` (from 1) to the middle of the view. */
-  export function scrollToLine(line: number) {
-    if (!view) return;
-    const target = view.state.doc.line(Math.max(1, Math.min(view.state.doc.lines, line)));
-    view.dispatch({ effects: EditorView.scrollIntoView(target.from, { y: 'center' }) });
-  }
 </script>
 
-<div class="editor" bind:this={host}></div>
+<div
+  class="editor"
+  class:ring={ring && readonly}
+  bind:this={host}
+  onfocusin={() => (ring = byKeyboard())}
+  onfocusout={() => (ring = false)}
+  onpointerdown={() => (ring = false)}
+  onkeydown={(e) => {
+    if (!MODIFIERS.has(e.key)) ring = true;
+  }}
+  role="presentation"
+></div>
 
 <style>
   .editor {
+    position: relative;
     height: 100%;
     min-height: 0;
     overflow: hidden;
+  }
+  /* The layers of the editor stay inside it, under the ring. */
+  .editor :global(.cm-editor) {
+    isolation: isolate;
+  }
+  /* The ring of the keyboard, over the area, which clips: the 2 px of section 9, inside
+     (guidelines, 11). */
+  .editor.ring::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--accent);
+    pointer-events: none;
   }
 </style>

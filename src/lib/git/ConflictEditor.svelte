@@ -27,7 +27,7 @@
     type Side,
   } from './conflicts';
   import type { Repo } from './repo.svelte';
-  import { align, mergedChanges } from './threeway';
+  import { align, ancestorSpans, mergedChanges } from './threeway';
   import type { ConflictFile, FileChange } from './types';
   import { motion } from '../ui/motion';
 
@@ -55,7 +55,6 @@
   let result = $state<ReturnType<typeof ConflictResult>>();
   let oursView = $state<ReturnType<typeof ConflictSide>>();
   let theirsView = $state<ReturnType<typeof ConflictSide>>();
-  let baseView = $state<ReturnType<typeof CodeEditor>>();
 
   // During a rebase, git swaps the roles: "ours" is upstream, "theirs" the commit being replayed.
   const rebase = $derived(repo.status?.operation === 'rebase');
@@ -140,7 +139,46 @@
       };
     }),
   );
-  const baseMarks = $derived<Mark[]>(current && baseAt[index] >= 0 ? [{ from: baseAt[index] + 1, to: baseAt[index] + (current.base?.length ?? 0), kind: 'focus' }] : []);
+  // The common ancestor shows the current conflict, with 3 lines around it, and follows it. Its
+  // place comes from the diffs of the ancestor against each side; the ancestor written between the
+  // markers (diff3) is the way left when neither side gives it (guidelines, 9.26).
+  const CONTEXT = 3;
+  const ancestor = $derived.by(() => {
+    if (!data || data.base === null) return [];
+    const spans = ancestorSpans(
+      baseLines,
+      oursLines,
+      theirsLines,
+      blocks.map((b, i) => ({
+        ours: oursAt[i] >= 0 ? { from: oursAt[i], to: oursAt[i] + b.ours.length } : null,
+        theirs: theirsAt[i] >= 0 ? { from: theirsAt[i], to: theirsAt[i] + b.theirs.length } : null,
+      })),
+    );
+    return spans.map((span, i) => span ?? (baseAt[i] >= 0 ? { from: baseAt[i], to: baseAt[i] + (blocks[i].base?.length ?? 0) } : null));
+  });
+  /** What the panel of the ancestor shows: a part of it, numbered as in the file, or all of it. */
+  // Its caption says which conflict and which lines: the tint does not say it alone (11).
+  const baseShown = $derived.by(() => {
+    const n = Math.min(index, blocks.length - 1) + 1;
+    const span = current ? ancestor[n - 1] : null;
+    if (!span) {
+      const caption = current ? `Before both changes. Conflict ${n} was not found in it.` : 'Before both changes.';
+      return { text: data?.base ?? '', first: 1, marks: [] as Mark[], caption };
+    }
+    const from = Math.max(0, span.from - CONTEXT);
+    const to = Math.min(baseLines.length, span.to + CONTEXT);
+    const empty = span.to <= span.from;
+    const lines = span.to - span.from === 1 ? `line ${span.to}` : `lines ${span.from + 1} to ${span.to}`;
+    const place = span.from === 0 ? 'at the start' : `after line ${span.from}`;
+    return {
+      text: baseLines.slice(from, to).join(separator),
+      first: from + 1,
+      marks: empty ? [] : [{ from: span.from - from + 1, to: span.to - from, kind: 'focus' as const }],
+      caption: empty
+        ? `Before both changes: conflict ${n} had no line here, both sides added theirs ${place}.`
+        : `Before both changes: conflict ${n}, ${lines}.`,
+    };
+  });
 
   // The editor takes the keyboard as it opens, from a click as from a key: side 1 on its first
   // conflict to decide, otherwise the result, otherwise its Close button (guidelines, 9.26).
@@ -196,7 +234,6 @@
       queueMicrotask(() => {
         // The sides follow the result: the three columns scroll as one.
         if (show) result?.scrollToRegion(i);
-        if (baseAt[i] >= 0) baseView?.scrollToLine(baseAt[i] + 1);
         oursView?.follow(i);
         theirsView?.follow(i);
       });
@@ -631,8 +668,15 @@
 
     {#if showBase && data.base !== null}
       <div class="side base">
-        <div class="bar"><b>Common ancestor</b><small>Before both changes.</small></div>
-        <CodeEditor bind:this={baseView} value={data.base} readonly marks={baseMarks} lineSeparator={separator} label="Common ancestor, read-only" />
+        <div class="bar"><b>Common ancestor</b><small>{baseShown.caption}</small></div>
+        <CodeEditor
+          value={baseShown.text}
+          firstLine={baseShown.first}
+          readonly
+          marks={baseShown.marks}
+          lineSeparator={separator}
+          label="Common ancestor around the current conflict, read-only"
+        />
       </div>
     {/if}
   {/if}
@@ -660,6 +704,7 @@
         current={index}
         onkeep={(block) => keep('ours', block)}
         onaside={(block) => aside('ours', block)}
+        onreach={(block) => (index = block)}
       />
     {:else}
       <ConflictSide
@@ -673,6 +718,7 @@
         current={index}
         onkeep={(block) => keep('theirs', block)}
         onaside={(block) => aside('theirs', block)}
+        onreach={(block) => (index = block)}
       />
     {/if}
   </div>
@@ -802,9 +848,12 @@
     left: 50%;
     background: var(--l1);
   }
-  /* The common ancestor, under the three columns, across their width. */
+  /* The common ancestor, under the three columns, across their width: the current conflict and the
+     lines around it (guidelines, 9.26). */
   .base {
-    flex: 0 0 30%;
+    flex: 0 0 180px;
+    /* A small window keeps most of its height for the columns. */
+    max-height: 40%;
     border-top: 1px solid var(--line-soft);
   }
   .side {
