@@ -11,7 +11,7 @@
   // over, chosen before anything is written (guidelines, 9.15, "Importing and exporting hosts").
 
   type Status = 'added' | 'renamed' | 'same' | 'refused';
-  type Row = { index: number; status: Status; alias: string; detail: string; checked: boolean };
+  type Row = { index: number; status: Status; alias: string; detail: string; checked: boolean; converts: boolean };
   type Preview = { rows: Row[]; upToDate: number; passwords: number; keys: number };
   type Imported = { added: number; passwordsRefused: number; keysConverted: number; keysFailed: string[] };
 
@@ -32,6 +32,8 @@
   const rows = $derived(preview?.rows ?? []);
   const choosable = $derived(rows.filter((row) => row.status !== 'refused'));
   const count = $derived(choosable.filter((row) => checked[row.index]).length);
+  /** The keys converted into ~/.ssh: those of the rows checked (guidelines, 9.15). */
+  const converting = $derived(choosable.filter((row) => checked[row.index] && row.converts).length);
   const all = $derived(choosable.length > 0 && count === choosable.length);
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const WHY = 'Check at least one host.';
@@ -102,11 +104,12 @@
       const done = await invoke<Imported>('hosts_import_apply', { chosen, rememberPasswords: remember });
       ssh.hosts = await invoke<Host[]>('hosts_list');
       close();
-      const said = [
-        done.keysConverted ? `${plural(done.keysConverted, 'key')} converted into ~/.ssh.` : '',
-        done.passwordsRefused ? `The system keyring refused ${plural(done.passwordsRefused, 'password')}: Ramure will ask for them.` : '',
-      ].filter(Boolean);
-      toasts.ok(`${plural(done.added, 'host')} imported`, said.join(' '));
+      toasts.ok(`${plural(done.added, 'host')} imported`, done.keysConverted ? `${plural(done.keysConverted, 'key')} converted into ~/.ssh.` : '');
+      // A password the keyring refused: the secret is not kept, said as for any secret (9.15, "Secrets").
+      if (done.passwordsRefused) {
+        const them = done.passwordsRefused === 1 ? 'it' : 'them';
+        toasts.warn('The secret could not be kept', `The system keyring refused ${plural(done.passwordsRefused, 'password')}: Ramure will ask for ${them} when connecting.`);
+      }
       // A key that could not be converted: its host came without it, and the reason is said.
       if (done.keysFailed.length) toasts.warn(`${plural(done.keysFailed.length, 'key')} not converted`, done.keysFailed.join(' '));
     } catch (err) {
@@ -170,8 +173,8 @@
         {#if preview?.upToDate}
           <p class="count">{plural(preview.upToDate, 'host')} {preview.upToDate === 1 ? 'is' : 'are'} already in the book.</p>
         {/if}
-        {#if preview?.keys}
-          <p class="count">{plural(preview.keys, 'key')} {preview.keys === 1 ? 'is' : 'are'} converted into ~/.ssh, as {preview.keys === 1 ? 'its host is' : 'their hosts are'} added.</p>
+        {#if converting}
+          <p class="count">{plural(converting, 'key')} {converting === 1 ? 'is' : 'are'} converted into ~/.ssh, as {converting === 1 ? 'its host is' : 'their hosts are'} added.</p>
         {/if}
         {#if preview?.passwords}
           <label class="remember">
