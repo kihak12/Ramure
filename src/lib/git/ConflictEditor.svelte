@@ -210,6 +210,15 @@
   const merges = $derived(overview.marks.filter((m) => m.kind === 'change'));
   /** The last change reached, by the toolbar, F7 or the strip; -1 before any. */
   let changeAt = $state(-1);
+  /** The line under the path: what is left, then what git did on its own (guidelines, 9.26). */
+  const summary = $derived(
+    [
+      open ? `${open} conflict${open === 1 ? '' : 's'} to decide` : 'No conflict left: the file can be saved',
+      merges.length ? `${merges.length} change${merges.length === 1 ? '' : 's'} merged by git` : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  );
 
   /** The tooltip of a mark: what it is, and where. */
   function markTitle(m: OverviewMark): string {
@@ -467,8 +476,7 @@
         {#if !data && !error}
           Reading the versions…
         {:else if editable && (open || markersLeft === 0)}
-          {open ? `${open} conflict${open === 1 ? '' : 's'} to decide` : 'No conflict left: the file can be saved'}{#if merges.length}
-            · {merges.length} change{merges.length === 1 ? '' : 's'} merged by git{/if}
+          {summary}
         {/if}
       </small>
     </div>
@@ -534,7 +542,7 @@
       </div>
       {#if data.base !== null}
         <button class="btn ghost small toggle" type="button" aria-pressed={showBase} onclick={() => (showBase = !showBase)} title={showBase ? 'Hide the common ancestor' : 'Show the common ancestor, under the columns'}>
-          Common ancestor
+          <Icon name="panel-bottom" size={14} /> Common ancestor
         </button>
       {/if}
     </div>

@@ -2258,8 +2258,8 @@ from left to right:
   the overview strip. Until one is reached, the count alone, "4 changes"; with none, "No change
   merged by git", the two buttons disabled. The next change is the one after the last reached, by
   these buttons or by the strip; it comes to the middle of the three columns, at once (8).
-- At the right, "Common ancestor", a toggle (9.1), which shows the common ancestor under the
-  columns. A file added on both sides has none, and no toggle.
+- At the right, "Common ancestor", a toggle (9.1) with the icon of a panel at the bottom, which
+  shows the common ancestor under the columns. A file added on both sides has none, and no toggle.
 
 The actions that decide a conflict are on its band, in the result, where the eye is. The verb is
 "Keep", everywhere, in the list of the files too.
@@ -2298,7 +2298,9 @@ conflict with its arrow or on its band; it stays editable."
   both", "no line kept" or "edited by hand", in 11.5 px and `--muted`, then "Start over", a small
   ghost button, which puts the conflict back as it was. The band of the current conflict is in
   `--ink` and weight 650, as its headers.
-- The text of a band is cut first, whole in its tooltip (3.4); its buttons stay. The buttons of
+- The buttons of a band follow its text, at its left: a band is as wide as the longest line of
+  the result, which may run past the view. The text is cut first, whole in its tooltip (3.4); the
+  buttons stay, in `--ink`. The buttons of
   the bands are not stops of the tab order: from the keyboard, a conflict is decided in the sides
   (Enter, Delete), as with the arrows, and Ctrl + Z takes a choice back.
 - A conflict is decided once a side is kept, or both are set aside ("Keep neither"). The cross on

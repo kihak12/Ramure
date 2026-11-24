@@ -686,8 +686,10 @@
       color: 'var(--muted)',
     },
     '.cm-conflict-band.current .cm-band-text': { color: 'var(--ink)', fontWeight: 'var(--fw-strong)' },
-    '.cm-band-text': { flex: '1', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-    '.cm-conflict-band .btn': { flex: 'none' },
+    // The buttons follow the text, at the left: a band is as wide as the longest line, which may
+    // run past the view. The text is cut first.
+    '.cm-band-text': { flex: '0 1 auto', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    '.cm-conflict-band .btn': { flex: 'none', color: 'var(--ink)' },
     // "Keep" with the chip of its side, on 12% of its color, 24% on hover (9.26).
     '.cm-band-1': { '--c': 'var(--l0)' },
     '.cm-band-2': { '--c': 'var(--l1)' },
