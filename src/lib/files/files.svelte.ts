@@ -9,7 +9,21 @@ import { toasts } from '../ui/toasts.svelte';
 import { explain } from '../ssh/reasons';
 import { ssh } from '../ssh/ssh.svelte';
 import { addressOf, count, type Host, type SshError } from '../ssh/types';
-import { fsMessage, isLost, joinPath, nameOf, parentPath, type Entry, type Listing, type Place, type Progress, type SftpOpened, type Summary } from './types';
+import {
+  fsMessage,
+  isLost,
+  joinPath,
+  nameOf,
+  numbered,
+  parentPath,
+  type Entry,
+  type Listing,
+  type Place,
+  type Progress,
+  type SftpOpened,
+  type Summary,
+  type Taken,
+} from './types';
 
 const STORAGE_KEY = 'ramure.files';
 /** Four panes at the most (guidelines, 9.24). */
@@ -661,23 +675,42 @@ class Files {
     const from = this.place(source);
     const to = this.place(target);
     if (!from || !to) return;
-    let replace = false;
+    let mode: Taken = 'skip';
     try {
       const taken = await invoke<string[]>('files_existing', { place: to, dir: dest, names });
       if (taken.length) {
-        let skip = false;
+        // What the buttons answered; set from their callbacks, which TypeScript does not follow.
+        const chosen: { answer: Taken | null } = { answer: null };
         const shown = taken.length > 6 ? `${taken.slice(0, 6).join(', ')} and ${taken.length - 6} more` : taken.join(', ');
+        // The free name of the first one, as an example, among the names the destination pane
+        // shows when it shows that folder: the core finds the real ones as it copies.
+        const isDir = source.entries.find((e) => e.name === taken[0])?.dir ?? false;
+        const visible = target.path === dest;
+        const there = new Set(visible ? target.entries.map((e) => e.name) : [...taken]);
+        for (const name of names) there.add(name);
+        let n = 1;
+        while (there.has(numbered(taken[0], isDir, n))) n++;
+        const example = numbered(taken[0], isDir, n);
+        // The name is promised only when the pane shows the folder it goes into.
+        const both =
+          taken.length === 1 && visible
+            ? `“Keep both” copies it as ${example}.`
+            : `“Keep both” copies ${taken.length === 1 ? 'it' : 'them'} under a free name, such as ${example}.`;
         const confirmed = await dialogs.confirm({
           title: `Replace ${taken.length === 1 ? taken[0] : count(taken.length, 'item')} in ${nameOf(dest)}?`,
-          body: `${taken.length === 1 ? 'This name already exists' : `These names already exist`} there: ${shown}. A replaced file cannot be recovered. A folder is merged: only the files of the same name inside it are replaced.`,
+          body: `${taken.length === 1 ? 'This name already exists' : `These names already exist`} there: ${shown}. A replaced file cannot be recovered. A folder is merged: only the files of the same name inside it are replaced. ${both}`,
           confirmLabel: 'Replace',
           danger: true,
-          extra: { label: taken.length === 1 ? 'Skip it' : 'Skip them', run: () => (skip = true) },
+          extra: [
+            { label: taken.length === 1 ? 'Skip it' : 'Skip them', run: () => (chosen.answer = 'skip') },
+            { label: 'Keep both', run: () => (chosen.answer = 'keepBoth') },
+          ],
         });
-        if (!confirmed && !skip) return;
-        replace = confirmed;
+        if (confirmed) chosen.answer = 'replace';
+        if (!chosen.answer) return;
+        mode = chosen.answer;
         // Everything is already there and skipped: nothing to do.
-        if (skip && taken.length === names.length) return;
+        if (mode === 'skip' && taken.length === names.length) return;
       }
     } catch (e) {
       toasts.err('The copy could not start', fsMessage(e));
@@ -700,10 +733,10 @@ class Files {
       dest,
     };
     this.transfers.push(transfer);
-    await this.#run(this.transfers.at(-1)!, replace);
+    await this.#run(this.transfers.at(-1)!, mode);
   }
 
-  async #run(t: Transfer, replace: boolean) {
+  async #run(t: Transfer, taken: Taken) {
     const progress = new Channel<Progress>();
     progress.onmessage = (p) => {
       t.progress = p;
@@ -711,7 +744,7 @@ class Files {
     };
     try {
       const summary = await invoke<Summary>('transfer_start', {
-        params: { id: t.id, from: t.from.place, to: t.to.place, sources: t.sources, dest: t.dest, replace },
+        params: { id: t.id, from: t.from.place, to: t.to.place, sources: t.sources, dest: t.dest, taken },
         onProgress: progress,
       });
       t.summary = summary;
@@ -725,10 +758,12 @@ class Files {
         t.error = isLost(e) ? `The connection to ${this.#lostOf(t)} was lost. Connect again, then retry.` : fsMessage(e);
       }
     }
-    // The folder it went to is listed again, and what was copied becomes its selection.
+    // The folder it went to is listed again, and what was copied becomes its selection, under the
+    // new names of what was kept beside a name already there.
     const target = this.pane(t.to.paneKey);
     if (target && target.path === t.dest && this.place(target)) {
-      await this.refresh(target, t.sources.map((s) => nameOf(s)));
+      const renamed = new Map(t.summary?.renamed ?? []);
+      await this.refresh(target, t.sources.map((s) => renamed.get(nameOf(s)) ?? nameOf(s)));
     }
   }
 

@@ -47,8 +47,24 @@ export interface Summary {
   folders: number;
   bytes: number;
   skipped: string[];
+  /** Copied under another name, the folder having it: [name, new name]. */
+  renamed: [string, string][];
   links: string[];
   failed: { path: string; reason: string }[];
+}
+
+/** What a copy does with a name the folder it goes into already has (src-tauri/src/files/transfer.rs). */
+export type Taken = 'skip' | 'replace' | 'keepBoth';
+
+/**
+ * `name` with the number `n`, as "Keep both" names a copy: "report (1).pdf", the number before the
+ * extension of a file, after the whole name of a folder or of a file whose only dot leads (the
+ * core, `numbered`, finds the first free one; guidelines, 9.24).
+ */
+export function numbered(name: string, isDir: boolean, n = 1): string {
+  const dot = name.lastIndexOf('.');
+  const [stem, ext] = !isDir && dot > 0 ? [name.slice(0, dot), name.slice(dot)] : [name, ''];
+  return `${stem} (${n})${ext}`;
 }
 
 /** The sentence of an error of the core. */
