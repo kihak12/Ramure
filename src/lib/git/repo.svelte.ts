@@ -680,13 +680,20 @@ export class Repo {
    * The element that opened the diff, a file row most of the time, and the list it is in: closing
    * the diff gives one of them the keyboard back (guidelines, 9.14).
    */
-  #opener: { element: HTMLElement; list: HTMLElement | null } | null = null;
+  #opener: { element: HTMLElement; list: HTMLElement | null; view: Element | null } | null = null;
 
   async #showDiff(file: OpenFile, fetch: () => Promise<Diff>) {
     const token = ++this.#diffToken;
     const focused = typeof document === 'undefined' ? null : document.activeElement;
+    // A diff opened from another diff keeps its opener; one opened with no focus has none.
     if (focused instanceof HTMLElement && focused !== document.body && !focused.closest('.diff')) {
-      this.#opener = { element: focused, list: focused.closest<HTMLElement>('ul.files, [role="listbox"], [role="tree"]') };
+      this.#opener = {
+        element: focused,
+        list: focused.closest<HTMLElement>('ul.files, [role="listbox"], [role="tree"]'),
+        view: focused.closest('[data-repo-view]'),
+      };
+    } else if (!focused || focused === document.body) {
+      this.#opener = null;
     }
     if (this.openFile?.key !== file.key) this.diff = null;
     this.openFile = file;
@@ -709,7 +716,6 @@ export class Repo {
 
   closeDiff() {
     const open = !!this.openFile;
-    const was = typeof document === 'undefined' ? null : document.activeElement;
     const opener = this.#opener;
     this.#opener = null;
     this.#diffToken++;
@@ -717,7 +723,7 @@ export class Repo {
     this.diff = null;
     this.diffError = '';
     this.diffLoading = false;
-    if (open && was && was !== document.body) void tick().then(() => this.#giveKeyboardBack(was, opener));
+    if (open && typeof document !== 'undefined') void tick().then(() => this.#giveKeyboardBack(opener));
   }
 
   /**
@@ -725,13 +731,17 @@ export class Repo {
    * keyboard it took away goes back: to the row that opened the diff, otherwise to the current
    * row of its list, otherwise to the list of the graph that takes its place (guidelines, 9.14).
    */
-  #giveKeyboardBack(was: Element, opener: { element: HTMLElement; list: HTMLElement | null } | null) {
+  #giveKeyboardBack(opener: { element: HTMLElement; list: HTMLElement | null; view: Element | null } | null) {
+    // Still in the diff that leaves (its animation keeps it on the page for a moment), on the body
+    // after a click, or gone with its file: the keyboard is lost. Elsewhere, it was taken: it stays.
     const now = document.activeElement;
-    if (now && now !== document.body && now.isConnected) return;
-    const view = (was.isConnected ? was : opener?.element)?.closest('[data-repo-view]') ?? document.querySelector('[data-repo-view]:not([hidden])');
+    const leaving = !!now?.closest('.diff') && !this.openFile;
+    if (now && now !== document.body && now.isConnected && !leaving) return;
+    if (!opener) return;
+    const view = opener.view;
     const usable = (el: Element | null | undefined): el is HTMLElement =>
       el instanceof HTMLElement && el.isConnected && el !== document.body && !el.closest('[inert], [hidden]');
-    const target = [opener?.element, opener?.list?.querySelector('[tabindex="0"]'), view?.querySelector('.center [role="listbox"]')].find(usable);
+    const target = [opener.element, opener.list?.querySelector('[tabindex="0"]'), view?.querySelector('.center [role="listbox"]')].find(usable);
     focusBack(target);
   }
 
