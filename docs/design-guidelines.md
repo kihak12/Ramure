@@ -624,7 +624,8 @@ States are the same everywhere:
   ("Tunnels · 2"), and a toggle of a search by what it changes ("Aa", ".*").
 - A disabled button whose reason is not plain to see says why: a sentence in `--muted` at
   11.5 px next to it, repeated in its tooltip. If the user tries the action all the same, the
-  sentence turns to `--warn` and takes the warning icon.
+  sentence turns to `--warn` and takes the warning icon. The buttons of a row (9.6), which show
+  only on hover and on keyboard focus, say it in their tooltip alone (9.26, "One editor").
 
 #### Hierarchy
 
@@ -2425,8 +2426,10 @@ files of the same operation open there too, until the operation ends.
   left, a card "In conflict · 2", 240 px wide, with the rows of the list (9.6), their click and
   their keys, without their buttons; on the right, the editor. No toolbar, no tabs, no rail, no
   status bar. Its title is "Conflict editor". It opens at 1440 × 880 px, 1000 × 600 at least, and
-  shows once its page has painted, as the main window does (4.2); the size and the place that 4.2
-  keeps are those of the main window.
+  shows as soon as its page is mounted, on the color of the window and before the repository is
+  read, since a hidden view is given no frame to wait for; the size and the place that 4.2 keeps
+  are those of the main window. Until the repository is read, the card says "In conflict" with no
+  figure. Escape and Ctrl + S act on the editor from its list too; F8 and F7, in the editor.
 - **Saved, it goes on**: the file leaves the list, and the editor opens the next one, the row that
   took its place, or the first. With no file left, the card of the editor says "All conflicts are
   resolved." and "Continue the merge to finish." (the rebase, the cherry-pick, the revert), and
@@ -2447,10 +2450,13 @@ files of the same operation open there too, until the operation ends.
   Skip, Abort…) closes it, or, with choices not saved, leaves it with a strip in `--warn-soft`
   over the editor, "This file is no longer in conflict. The choices made here cannot be saved.",
   and its "Close", which asks nothing more, nor does the button of the system; the editor under
-  the strip waits, out of the tab order, and the strip comes first in it. "Abort…" says it then:
-  "The choices not saved in the conflict editor are lost too." Closing the main window closes the
-  editor's, after the question of the quit, which names its choices not saved and says they are
-  lost for good.
+  the strip waits, out of the tab order, and the strip comes first in it and takes the keyboard.
+  Under it, Escape closes the window too, and Ctrl + Shift + W does nothing: the choices can go
+  nowhere. "Abort…" says it then: "The choices not saved in the conflict editor are lost too."
+  Closing the main window closes the editor's, after the question of the quit, which names its
+  choices not saved and says they are lost for good. When the window cannot open, the editor stays
+  in the main window, and the notification says so with the reason. Closed, the window gives the
+  keyboard to the row of its file, otherwise the first row of the changes, otherwise the graph.
 
 **The header**, one line: the merge icon in `--warn`, the path of the file in the code font, and
 under it what is left, then what git did on its own: "2 conflicts to decide · 4 changes merged by

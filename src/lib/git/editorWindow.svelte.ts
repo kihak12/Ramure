@@ -49,7 +49,7 @@ export async function openInWindow(repo: Repo, file: FileChange, snapshot: Edito
     repo.preferWindow = false;
     repo.restoreEditor = snapshot;
     repo.conflictFile = file;
-    toasts.err('Could not open the window', String(event.payload));
+    toasts.err('Could not open the window', `The editor stays in the main window. ${String(event.payload)}`);
   });
 }
 
@@ -87,7 +87,9 @@ async function backToRow(path: string | null) {
   await getCurrentWindow().setFocus();
   await tick();
   const rows = [...document.querySelectorAll<HTMLElement>('[data-file-lists] ul.files button.open')];
-  focusBack(rows.find((row) => row.title === path) ?? rows[0]);
+  // The row of the file, otherwise the first row of the changes, otherwise the graph (9.26).
+  const graph = document.querySelector<HTMLElement>('[data-repo-view]:not([inert]) .center [role="listbox"]');
+  focusBack(rows.find((row) => row.title === path) ?? rows[0] ?? graph);
 }
 
 /** Listens to the windows of the editors, for the repositories of `repos`. Returns how to stop. */

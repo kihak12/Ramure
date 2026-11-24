@@ -35,6 +35,8 @@
   /** The last file open, and the list it was in: a file saved, the row in its place opens. */
   let lastPath: string | null = null;
   let lastList: string[] = [];
+  /** "All conflicts are resolved." is shown: the keyboard went to "Continue", once. */
+  let doneShown = false;
 
   /** The main window is told which file is open, and whether its choices are not saved. */
   function report() {
@@ -181,10 +183,12 @@
         return;
       }
       if (!list.length) {
-        void tick().then(() => focusWithRing(document.querySelector<HTMLElement>('.banner .btn.primary')));
+        if (!doneShown) void tick().then(() => focusWithRing(document.querySelector<HTMLElement>('.banner .btn.primary')));
+        doneShown = true;
         report();
         return;
       }
+      doneShown = false;
       const at = Math.max(0, lastList.indexOf(lastPath ?? ''));
       const next = repo.conflicts[Math.min(at, repo.conflicts.length - 1)];
       restore = null;
@@ -198,9 +202,29 @@
   function onKey(e: KeyboardEvent) {
     if (document.querySelector('dialog[open]')) return;
     const combo = comboOf(e);
+    // Under the strip, the file is no longer in conflict: its choices cannot go anywhere, and
+    // only Escape and the strip's "Close" act, closing the window (9.26, "Its ends").
+    if (orphaned) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        void close();
+      }
+      return;
+    }
     if (combo && keys.find(combo, 'git') === 'conflict-window') {
       e.preventDefault();
       void back();
+      return;
+    }
+    // From the list of the files, Escape and Ctrl + S act on the editor as they do in it.
+    const inEditor = e.target instanceof Element && e.target.closest('[data-conflict-editor]');
+    if (inEditor || !editor) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      editor.requestClose();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      editor.requestSave();
     }
   }
 
@@ -215,7 +239,7 @@
   {/if}
   <div class="body">
     <section class="list" aria-label="Files in conflict">
-      <header><span class="label">In conflict · {repo.conflicts.length}</span></header>
+      <header><span class="label">In conflict{loaded ? ` · ${repo.conflicts.length}` : ''}</span></header>
       <div class="rows">
         <FileList files={repo.conflicts} active={repo.conflictFile?.path ?? null} disabled={repo.locked} onopen={(file) => void openFile(file, null)} />
       </div>
@@ -270,7 +294,8 @@
   .body {
     flex: 1;
     display: grid;
-    grid-template-columns: 240px minmax(0, 1fr);
+    /* The card, 240 px, and its margin of 8 px. */
+    grid-template-columns: 248px minmax(0, 1fr);
     min-height: 0;
   }
   /* The files in conflict: a card on the left, its rows as in the changes panel (9.6). */

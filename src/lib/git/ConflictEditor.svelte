@@ -536,6 +536,14 @@
     onmodified?.(modified);
   });
 
+  /** Escape and Ctrl + S from elsewhere in its window, the list of the files (9.26). */
+  export function requestClose() {
+    void close();
+  }
+  export function requestSave() {
+    save();
+  }
+
   /** The editor as it is, to carry it to the other window. */
   export function snapshot(): EditorSnapshot {
     return { path: file.path, picks, edited, undo, index, showBase, text, result: result?.snapshot() ?? null };
