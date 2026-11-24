@@ -8,15 +8,14 @@
   import { readMessage } from './message';
   import type { Repo } from './repo.svelte';
   import type { CommitRow } from './types';
+  import { dateTime, fullDateTime } from '../ui/dates';
   import { focusBack } from '../ui/focus';
 
   let { repo, commit }: { repo: Repo; commit: CommitRow } = $props();
 
-  const fullDateFmt = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' });
-  const shortDateFmt = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
   /** The date, its time kept on one line with AM or PM. */
-  const fullDate = (ms: number) => fullDateFmt.format(ms).replace(/ (AM|PM)$/, '\u00a0$1');
-  const shortDate = (ms: number) => shortDateFmt.format(ms).replace(/ (AM|PM)$/, '\u00a0$1');
+  const fullDate = (ms: number) => fullDateTime(ms);
+  const shortDate = (ms: number) => dateTime(ms);
   const numFmt = new Intl.NumberFormat('en-US');
 
   const detail = $derived(repo.detail);

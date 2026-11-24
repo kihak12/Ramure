@@ -1027,7 +1027,7 @@
   .cols,
   .row {
     display: grid;
-    grid-template-columns: 22px minmax(0, 1fr) 96px 72px;
+    grid-template-columns: 22px minmax(0, 1fr) 140px 72px;
     align-items: center;
     gap: 6px;
   }
@@ -1155,6 +1155,7 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
   .size {
     text-align: right;
@@ -1163,8 +1164,9 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  /* A narrow pane gives up the date first (guidelines, 9.24). */
-  @container (max-width: 420px) {
+  /* A narrow pane gives up the date first (guidelines, 9.24): the name keeps the same room as
+     before the time was added to the date. */
+  @container (max-width: 464px) {
     .cols,
     .row {
       grid-template-columns: 22px minmax(0, 1fr) 72px;
