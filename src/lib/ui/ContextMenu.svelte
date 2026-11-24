@@ -23,12 +23,14 @@
       if (!element) return;
       // offsetWidth and offsetHeight: the true size, which the appearing animation does not shrink.
       const { offsetWidth: width, offsetHeight: height } = element;
-      const x = open.anchor ? open.x - width : open.x;
-      // Dropped by a button with no room below it, as in the foot of the host book, it opens
-      // above the button, 4 px from it (guidelines, 9.9).
+      // Dropped by a button, its right edge on the right edge of the button; near the left of the
+      // window, its left edge on the left edge of the button. With no room below the button, as
+      // in the foot of the host book, it opens above it, 4 px from it (guidelines, 9.9).
+      const box = open.anchor?.getBoundingClientRect();
+      const x = box ? (open.x - width >= 4 ? open.x - width : box.left) : open.x;
       let y = open.y;
-      if (open.anchor && y + height > window.innerHeight - 6) {
-        const above = open.anchor.getBoundingClientRect().top - 4 - height;
+      if (box && y + height > window.innerHeight - 6) {
+        const above = box.top - 4 - height;
         if (above >= 4) y = above;
       }
       position = {
