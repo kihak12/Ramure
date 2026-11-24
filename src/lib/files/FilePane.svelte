@@ -29,10 +29,21 @@
   const parent = $derived(ready && !pane.error ? parentPath(pane.path) : null);
   const atParent = $derived(parent !== null && pane.current === UP);
 
-  /** Under 464 px of pane, the date gives way to the eye only: it stays spoken (guidelines, 9.24 and 11). */
+  /**
+   * Under 464 px of pane, the date gives way to the eye only: it stays spoken (guidelines, 9.24 and
+   * 11). The width is that of the pane, not of the window: two panes of a window at its minimum
+   * keep their dates.
+   */
   const NARROW = 464;
   let paneWidth = $state(0);
-  const narrow = $derived(paneWidth > 0 && paneWidth <= NARROW);
+  const narrow = $derived(paneWidth > 0 && paneWidth < NARROW);
+
+  /** The order of a column, in words: the chevron never says it alone (guidelines, 7 and 9.24). */
+  const ORDER: Record<SortBy, [string, string]> = {
+    name: ['A to Z', 'Z to A'],
+    modified: ['oldest first', 'newest first'],
+    size: ['smallest first', 'largest first'],
+  };
 
   /** What the header says of the connection, as a fragment (guidelines, 12). */
   const stateText = $derived(
@@ -644,7 +655,14 @@
     >
       <div class="cols" role="presentation">
         {#each [['name', 'Name'], ['modified', 'Modified'], ['size', 'Size']] as [by, title] (by)}
-          <button class="col {by}" type="button" onclick={() => sortBy(by as SortBy)} aria-label="Sort by {title.toLowerCase()}">
+          {@const order = pane.sort.by === by ? ORDER[by as SortBy][pane.sort.desc ? 1 : 0] : ''}
+          <button
+            class="col {by}"
+            type="button"
+            onclick={() => sortBy(by as SortBy)}
+            aria-label={order ? `Sort by ${title.toLowerCase()}, sorted ${order}` : `Sort by ${title.toLowerCase()}`}
+            title={order ? `Sorted ${order}: click to reverse` : `Sort by ${title.toLowerCase()}`}
+          >
             <span>{title}</span>
             {#if pane.sort.by === by}<span class="arrow" class:desc={pane.sort.desc} aria-hidden="true"><Icon name="chevron" size={14} /></span>{/if}
           </button>
@@ -776,7 +794,6 @@
     overflow: hidden;
     border-radius: var(--radius-card);
     background: var(--panel);
-    container-type: inline-size;
   }
   header,
   .pathbar,
