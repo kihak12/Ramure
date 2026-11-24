@@ -1983,7 +1983,8 @@ of 24 px (4.3, 9.6):
   row.
 - **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
   selects up to it, Ctrl + A selects them all. A click gives the list the keyboard, with no ring,
-  so that its keys act on the row clicked at once. The arrows move the current row, with the inner
+  so that its keys act on the row clicked at once, Shift + Tab included, which goes to the stop
+  before the list. The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
   folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as

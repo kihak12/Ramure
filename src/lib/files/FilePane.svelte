@@ -4,6 +4,7 @@
   import { tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu, type MenuItem } from '../ui/menu.svelte';
+  import { focusWithRing } from '../ui/focus';
   import { ssh, STATUS } from '../ssh/ssh.svelte';
   import { count } from '../ssh/types';
   import ConnectPanel from './ConnectPanel.svelte';
@@ -168,7 +169,28 @@
     void scrollToCurrent();
   }
 
+  /**
+   * The stop of the tab order before the list. After a click, WebKit goes on from the row clicked,
+   * which is inside the list: Shift + Tab would give the list the focus again, press after press.
+   */
+  function stopBefore(): HTMLElement | undefined {
+    const stops = [...document.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href], [tabindex]')].filter(
+      (el) => el.tabIndex >= 0 && !el.matches(':disabled') && !el.closest('[inert], [hidden]') && el.getClientRects().length > 0,
+    );
+    const at = listEl ? stops.indexOf(listEl) : -1;
+    return at > 0 ? stops[at - 1] : undefined;
+  }
+
   function onListKey(e: KeyboardEvent) {
+    // Tab by its code: WebKitGTK does not always name Shift + Tab.
+    if (e.code === 'Tab' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      const to = stopBefore();
+      if (to) {
+        e.preventDefault();
+        focusWithRing(to);
+      }
+      return;
+    }
     const entry = currentIndex >= 0 ? rows[currentIndex] : null;
     const page = Math.max(1, Math.floor((listEl?.clientHeight ?? 240) / 24) - 1);
     switch (e.key) {
