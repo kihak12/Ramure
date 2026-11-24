@@ -1993,7 +1993,10 @@ of 24 px (4.3, 9.6):
   touches are selected as it grows and let go as it shrinks; with Ctrl or Shift held at the
   start, they add to the selection that was there. A press on the scrollbar scrolls, and never
   starts one. Near the top or the bottom of the list, the
-  list scrolls and the rectangle follows. Escape, while it is drawn, puts the selection back as
+  list scrolls and the rectangle follows. The rectangle stays inside the list: a pointer that
+  leaves it, toward the other pane, the path or the foot, draws it to the edge of the list, which
+  neither scrolls sideways nor past its last rows; and nothing of the window is selected as text
+  while it is drawn. Escape, while it is drawn, puts the selection back as
   it was. A row is dragged from the row itself: the rectangle never starts on a row.
 - **The menu of a row**: "Open" for a folder, "Copy to …" (copy icon) for each other pane on
   another place and "Move to …" (folder icon) for each other pane on the same place, naming the
