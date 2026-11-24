@@ -1,7 +1,7 @@
 <script lang="ts">
   // A pane of the Files module: one folder of one place, with its path, its rows and its foot
   // (guidelines, 9.24).
-  import { tick } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu, type MenuItem } from '../ui/menu.svelte';
   import { ssh, STATUS } from '../ssh/ssh.svelte';
@@ -270,13 +270,32 @@
     /** What Escape puts back. */
     before: { selected: string[]; current: string | null; anchor: string | null };
     pointer: number;
+    /** The height of the content of the list as the rectangle starts: it never goes past it. */
+    limit: number;
   } | null>(null);
   let pointerY = 0;
   let scrolling = 0;
 
-  function point(e: PointerEvent) {
+  /**
+   * Where the pointer is, in the content of the list, kept inside it: a pointer that leaves the
+   * list draws the rectangle to its edge, and neither widens nor lengthens what scrolls.
+   */
+  function point(e: PointerEvent, limit = listEl!.scrollHeight) {
     const box = listEl!.getBoundingClientRect();
-    return { x: e.clientX - box.left + listEl!.scrollLeft, y: e.clientY - box.top + listEl!.scrollTop };
+    const x = Math.min(Math.max(e.clientX - box.left, 0), listEl!.clientWidth - 1) + listEl!.scrollLeft;
+    const y = Math.min(Math.max(e.clientY - box.top + listEl!.scrollTop, 0), limit - 1);
+    return { x, y };
+  }
+
+  /**
+   * While the rectangle is drawn, nothing of the window is selected as text: the pointer may leave
+   * the list for the other pane, its path or the foot (guidelines, 9.24).
+   */
+  function holdText(on: boolean) {
+    const style = document.body.style as CSSStyleDeclaration & { webkitUserSelect: string };
+    style.userSelect = on ? 'none' : '';
+    style.webkitUserSelect = on ? 'none' : '';
+    if (on) window.getSelection()?.removeAllRanges();
   }
 
   /** A press on the empty part takes the selection away and starts a rectangle; never on a row. */
@@ -285,8 +304,10 @@
     // A press on the scrollbar scrolls: it is outside the content.
     if (e.clientX - listEl.getBoundingClientRect().left >= listEl.clientWidth) return;
     files.focused = pane.key;
-    const at = point(e);
+    const limit = listEl.scrollHeight;
+    const at = point(e, limit);
     const adds = e.ctrlKey || e.metaKey || e.shiftKey;
+    holdText(true);
     band = {
       x0: at.x,
       y0: at.y,
@@ -296,6 +317,7 @@
       base: adds ? [...pane.selected] : [],
       before: { selected: [...pane.selected], current: pane.current, anchor: pane.anchor },
       pointer: e.pointerId,
+      limit,
     };
     if (!adds) pane.selected = [];
     pointerY = e.clientY;
@@ -305,7 +327,7 @@
   function dragBand(e: PointerEvent) {
     if (!band || e.pointerId !== band.pointer) return;
     pointerY = e.clientY;
-    const at = point(e);
+    const at = point(e, band.limit);
     band.x = at.x;
     band.y = at.y;
     if (!band.moved && Math.hypot(band.x - band.x0, band.y - band.y0) < 4) return;
@@ -341,7 +363,7 @@
     if (!step) return;
     const before = listEl.scrollTop;
     listEl.scrollTop += step;
-    band.y += listEl.scrollTop - before;
+    band.y = Math.min(Math.max(band.y + listEl.scrollTop - before, 0), band.limit - 1);
     pick();
     scrolling = requestAnimationFrame(follow);
   }
@@ -352,7 +374,13 @@
     cancelAnimationFrame(scrolling);
     scrolling = 0;
     band = null;
+    holdText(false);
   }
+
+  // A pane closed, or left, while the rectangle is drawn gives the text of the window back.
+  onDestroy(() => {
+    if (band) holdText(false);
+  });
 
   /** Escape while it is drawn: the selection goes back as it was. */
   function cancelBand() {
@@ -362,6 +390,7 @@
     cancelAnimationFrame(scrolling);
     scrolling = 0;
     band = null;
+    holdText(false);
   }
 
   // --- Menus ----------------------------------------------------------------------------------
@@ -666,6 +695,7 @@
           onpointermove={dragBand}
           onpointerup={endBand}
           onpointercancel={endBand}
+          onlostpointercapture={endBand}
         >
           {#if parent !== null}
             <!-- svelte-ignore a11y_click_events_have_key_events -->
