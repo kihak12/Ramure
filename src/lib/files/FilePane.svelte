@@ -1038,12 +1038,18 @@
   .col:focus-visible {
     outline-offset: -2px;
   }
+  /* The words of the header start where the text of their column starts: past the icon for the
+     name, and the 4 px of the button given back for the date and the size (guidelines, 9.24). */
   .col.name {
     grid-column: 1 / 3;
-    padding-left: 24px;
+    padding-left: 28px;
+  }
+  .col.modified {
+    margin-left: -4px;
   }
   .col.size {
     justify-content: flex-end;
+    margin-right: -4px;
   }
   .arrow {
     display: grid;

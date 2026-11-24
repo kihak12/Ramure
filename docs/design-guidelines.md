@@ -1964,9 +1964,10 @@ with a plus (7).
 
 **The list.** A header of columns, 26 px, "Name", "Modified" and "Size", separated from the rows
 by a `--line-soft` line: a click sorts by the column, a second click reverses the order, and a
-chevron in `--muted` says which column sorts and which way. Folders always come first. The header
-keeps the room of the scrollbar of the rows, whether it shows or not: its columns stay over theirs,
-and nothing moves when the folder grows long enough to scroll. Then rows of 24 px (4.3, 9.6):
+chevron in `--muted` says which column sorts and which way. Folders always come first. The words
+of the header line up with the text of their columns, and the header keeps the room of the
+scrollbar of the rows, whether it shows or not: nothing moves when the folder grows long enough to
+scroll. Then rows of 24 px (4.3, 9.6):
 
 - the folder icon in `--accent`, or the file icon in `--muted`, 16 px: what opens in place is
   told from a file at a glance, on a row at rest, hovered or selected (2.3, 2.4); the name, cut
