@@ -12,10 +12,10 @@
 
   type Status = 'added' | 'renamed' | 'same' | 'refused';
   type Row = { index: number; status: Status; alias: string; detail: string; checked: boolean };
-  type Preview = { rows: Row[]; upToDate: number; passwords: number };
-  type Imported = { added: number; passwordsRefused: number };
+  type Preview = { rows: Row[]; upToDate: number; passwords: number; keys: number };
+  type Imported = { added: number; passwordsRefused: number; keysConverted: number; keysFailed: string[] };
 
-  const TITLE: Record<ImportSource, string> = { ramure: 'Import from a Ramure file' };
+  const TITLE: Record<ImportSource, string> = { ramure: 'Import from a Ramure file', filezilla: 'Import from FileZilla' };
 
   let element = $state<HTMLDialogElement>();
   let preview = $state<Preview | null>(null);
@@ -102,8 +102,13 @@
       const done = await invoke<Imported>('hosts_import_apply', { chosen, rememberPasswords: remember });
       ssh.hosts = await invoke<Host[]>('hosts_list');
       close();
-      const refused = done.passwordsRefused ? `The system keyring refused ${plural(done.passwordsRefused, 'password')}: Ramure will ask for them.` : '';
-      toasts.ok(`${plural(done.added, 'host')} imported`, refused);
+      const said = [
+        done.keysConverted ? `${plural(done.keysConverted, 'key')} converted into ~/.ssh.` : '',
+        done.passwordsRefused ? `The system keyring refused ${plural(done.passwordsRefused, 'password')}: Ramure will ask for them.` : '',
+      ].filter(Boolean);
+      toasts.ok(`${plural(done.added, 'host')} imported`, said.join(' '));
+      // A key that could not be converted: its host came without it, and the reason is said.
+      if (done.keysFailed.length) toasts.warn(`${plural(done.keysFailed.length, 'key')} not converted`, done.keysFailed.join(' '));
     } catch (err) {
       failure = typeof err === 'string' ? err : String(err);
     } finally {
@@ -164,6 +169,9 @@
         </ul>
         {#if preview?.upToDate}
           <p class="count">{plural(preview.upToDate, 'host')} {preview.upToDate === 1 ? 'is' : 'are'} already in the book.</p>
+        {/if}
+        {#if preview?.keys}
+          <p class="count">{plural(preview.keys, 'key')} {preview.keys === 1 ? 'is' : 'are'} converted into ~/.ssh, as {preview.keys === 1 ? 'its host is' : 'their hosts are'} added.</p>
         {/if}
         {#if preview?.passwords}
           <label class="remember">

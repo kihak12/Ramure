@@ -40,3 +40,5 @@ tauri-plugin-updater = "2.14"
 tauri-plugin-window-state = "2.5.0"
 # SFTP over a russh connection: the file explorer of the hosts (module Files).
 russh-sftp = "3.0.1"
+roxmltree = "0.20"
+base64 = "0.23"

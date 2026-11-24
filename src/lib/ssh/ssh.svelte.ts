@@ -10,7 +10,13 @@ import { addressOf, count, listenOf, type Host, type KeyInfo, type Tunnel, type 
 import { open as openFile } from '@tauri-apps/plugin-dialog';
 
 /** Where an import of hosts comes from (src-tauri/src/ssh/hostfile.rs). */
-export type ImportSource = 'ramure';
+export type ImportSource = 'ramure' | 'filezilla';
+
+/** The file picker of each source: its title and the kind of file. */
+const PICKER: Record<ImportSource, { title: string; name: string; extensions: string[] }> = {
+  ramure: { title: 'Choose a file of hosts', name: 'Hosts of Ramure', extensions: ['json'] },
+  filezilla: { title: 'Choose a FileZilla export', name: 'FileZilla export', extensions: ['xml'] },
+};
 
 /** The error notification of each tunnel that could not start, by group and tunnel: it goes away
  *  once the tunnel starts or stops (guidelines, 9.15). */
@@ -255,15 +261,16 @@ class Ssh {
     document.querySelector<HTMLElement>('.book input[type="search"]')?.focus();
   }
 
-  /** "From a Ramure file…": the file picker, then the preview of the import. */
+  /** "From a Ramure file…", "From FileZilla…": the file picker, then the preview of the import. */
   async pickImport(source: ImportSource) {
     let path: string | null;
+    const picker = PICKER[source];
     try {
       const picked = await openFile({
-        title: 'Choose a file of hosts',
+        title: picker.title,
         multiple: false,
         directory: false,
-        filters: [{ name: 'Hosts of Ramure', extensions: ['json'] }],
+        filters: [{ name: picker.name, extensions: picker.extensions }],
       });
       path = typeof picked === 'string' ? picked : null;
     } catch (e) {
