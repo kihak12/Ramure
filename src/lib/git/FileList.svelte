@@ -300,6 +300,10 @@
       background var(--t-fast) var(--ease),
       transform var(--t-fast) var(--ease);
   }
+  /* The list scrolls and would cut a ring drawn around the button: it is drawn inside (11). */
+  .act:focus-visible {
+    outline-offset: -2px;
+  }
   .act:active:not(:disabled) {
     transform: scale(0.97);
   }
