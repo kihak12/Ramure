@@ -266,6 +266,7 @@
   import { EditorState as State } from '@codemirror/state';
   import { lineNumbers } from '@codemirror/view';
   import { onMount } from 'svelte';
+  import { focusBack } from '../ui/focus';
 
   let {
     value,
@@ -405,6 +406,17 @@
       cursor = (stops.find((s) => s.index === current) ?? stops[0]).index;
       announce(cursor);
     }
+  }
+
+  /**
+   * Gives this side the keyboard, on the current conflict, its ring shown after a key (guidelines,
+   * 9.26). False when the side has no conflict to go through.
+   */
+  export function focus(): boolean {
+    if (!paneEl || !stops.length) return false;
+    focusBack(paneEl);
+    keyboard = paneEl.classList.contains('focus-ring');
+    return true;
   }
 
   /** Brings line `line` (from 1) into view, to the middle by default. */
