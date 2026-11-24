@@ -13,6 +13,7 @@
     direction = 1,
     orientation = 'vertical',
     label,
+    inert = false,
     onchange,
     oncommit,
   }: {
@@ -27,6 +28,8 @@
     /** `vertical`: the handle separates two cards side by side; `horizontal`: one above the other. */
     orientation?: 'vertical' | 'horizontal';
     label: string;
+    /** Covered by another card (the conflict editor): out of the tab order. */
+    inert?: boolean;
     onchange: (value: number) => void;
     /** End of the gesture: the time to save. */
     oncommit: () => void;
@@ -102,12 +105,14 @@
   class="splitter"
   class:dragging
   class:horizontal
+  {inert}
   role="separator"
   aria-orientation={orientation}
   aria-label={label}
   aria-valuenow={Math.round(value)}
   aria-valuemin={min}
   aria-valuemax={max}
+  aria-valuetext="{Math.round(value)} pixels {horizontal ? 'high' : 'wide'}"
   tabindex="0"
   title="Drag to resize. Double-click: default {horizontal ? 'height' : 'width'}."
   onpointerdown={down}

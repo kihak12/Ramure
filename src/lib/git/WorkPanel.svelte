@@ -58,7 +58,8 @@
   }
 </script>
 
-<div class="work">
+<!-- data-file-lists: where the keyboard goes when a list of files empties (guidelines, 9.6). -->
+<div class="work" data-file-lists>
   {#if conflicts.length}
     <section class="conflicts" transition:slide={{ duration: motion.med }}>
       <header>
@@ -67,6 +68,7 @@
       <div class="list">
         <FileList
           files={conflicts}
+          order={1}
           active={repo.conflictFile?.path ?? null}
           disabled={busy}
           onopen={(f) => repo.openConflict(f)}
@@ -92,13 +94,14 @@
       <div class="list">
         <FileList
           files={unstaged}
+          order={2}
           {partial}
           active={activeIn('u:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, false)}
           actions={[
-            { label: 'Discard changes…', icon: 'undo', danger: true, run: (f: FileChange) => void discardFiles(repo, [f]) },
-            { label: 'Stage', icon: 'plus', run: (f: FileChange) => void repo.stage([f]) },
+            { label: 'Discard changes…', icon: 'undo', danger: true, key: 'Delete', run: (f: FileChange) => discardFiles(repo, [f]) },
+            { label: 'Stage', icon: 'plus', key: 'Space', run: (f: FileChange) => repo.stage([f]) },
           ]}
         />
       </div>
@@ -118,11 +121,12 @@
       <div class="list">
         <FileList
           files={status.staged}
+          order={3}
           {partial}
           active={activeIn('s:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, true)}
-          actions={[{ label: 'Unstage', icon: 'minus', run: (f: FileChange) => void repo.unstage([f]) }]}
+          actions={[{ label: 'Unstage', icon: 'minus', key: 'Space', run: (f: FileChange) => repo.unstage([f]) }]}
         />
       </div>
     {:else}
