@@ -4,13 +4,13 @@
   import { onDestroy, tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu, type MenuItem } from '../ui/menu.svelte';
+  import { focusWithRing } from '../ui/focus';
   import { ssh, STATUS } from '../ssh/ssh.svelte';
   import { count } from '../ssh/types';
   import ConnectPanel from './ConnectPanel.svelte';
   import LocationPicker from './LocationPicker.svelte';
   import { files, MAX_PANES, visible, type Pane, type SortBy } from './files.svelte';
   import { fullDate, joinPath, nameOf, parentPath, segments, shortDate, size, type Entry } from './types';
-  import { focusWithRing } from '../ui/focus';
 
   let { pane }: { pane: Pane } = $props();
 
@@ -181,7 +181,24 @@
       pane.current = entry.name;
       pane.anchor = entry.name;
     } else selectOnly(entry.name);
+    takeKeyboard();
   }
+
+  /**
+   * A click on a row gives its list the keyboard, with no ring (guidelines, 9.6 and 9.24): a row
+   * can be dragged, and WebKit does not focus the list when such a row is pressed.
+   */
+  function takeKeyboard() {
+    if (document.activeElement !== listEl) listEl?.focus({ preventScroll: true });
+  }
+
+  /**
+   * The last gesture was the mouse: the current row shows no ring until a key. WebKit would show
+   * one after a click when the element left behind showed one, and none after an arrow when the
+   * list was given the focus by a click (guidelines, 9.6 and 11).
+   */
+  let pointed = $state(false);
+  const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph']);
 
   async function scrollToCurrent() {
     await tick();
@@ -197,7 +214,28 @@
     void scrollToCurrent();
   }
 
+  /**
+   * The stop of the tab order before the list. After a click, WebKit goes on from the row clicked,
+   * which is inside the list: Shift + Tab would give the list the focus again, press after press.
+   */
+  function stopBefore(): HTMLElement | undefined {
+    const stops = [...document.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href], [tabindex]')].filter(
+      (el) => el.tabIndex >= 0 && !el.matches(':disabled') && !el.closest('[inert], [hidden]') && el.getClientRects().length > 0,
+    );
+    const at = listEl ? stops.indexOf(listEl) : -1;
+    return at > 0 ? stops[at - 1] : undefined;
+  }
+
   function onListKey(e: KeyboardEvent) {
+    // Tab by its code: WebKitGTK does not always name Shift + Tab.
+    if (e.code === 'Tab' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      const to = stopBefore();
+      if (to) {
+        e.preventDefault();
+        focusWithRing(to);
+      }
+      return;
+    }
     const entry = currentIndex >= 0 ? rows[currentIndex] : null;
     const page = Math.max(1, Math.floor((listEl?.clientHeight ?? 240) / 24) - 1);
     switch (e.key) {
@@ -462,6 +500,8 @@
     if (!selected.has(entry.name)) selectOnly(entry.name);
     else pane.current = entry.name;
     files.focused = pane.key;
+    // The menu closed, the keyboard comes back to the list, on the row asked for.
+    takeKeyboard();
     const names = [...pane.selected];
     const single = names.length === 1;
     const send = sendItems(names);
@@ -512,6 +552,7 @@
 
   function dragStart(e: DragEvent, entry: Entry) {
     if (!selected.has(entry.name)) selectOnly(entry.name);
+    takeKeyboard();
     files.drag = { paneKey: pane.key, names: [...pane.selected] };
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'copyMove';
@@ -568,6 +609,9 @@
     e.preventDefault();
     const aimed = aim(e);
     over = null;
+    // The keyboard follows the files, into the pane that receives them; while the drag lasts, the
+    // focus it gives selects no first row (9.24).
+    if (aimed && !aimed.refusal) takeKeyboard();
     files.drag = null;
     if (!aimed || aimed.refusal) return;
     void files.drop(aimed.dragged, pane, aimed.dest, e.ctrlKey);
@@ -578,6 +622,14 @@
     files.drag && over ? (over.refusal || files.verb(files.drag, pane, over.named, over.copy)) : '',
   );
 </script>
+
+<!-- A modifier alone (Shift, Ctrl held during a click) is not a use of the keyboard. -->
+<svelte:window
+  onpointerdowncapture={() => (pointed = true)}
+  onkeydowncapture={(e) => {
+    if (!MODIFIERS.has(e.key)) pointed = false;
+  }}
+/>
 
 <section
   class="pane"
@@ -734,6 +786,7 @@
       {:else}
         <div
           class="rows"
+          class:pointed
           class:stale={pane.loading}
           role="listbox"
           tabindex="0"
@@ -766,6 +819,7 @@
               onclick={() => {
                 files.focused = pane.key;
                 toParentRow(false);
+                takeKeyboard();
               }}
               ondblclick={() => files.up(pane)}
             >
@@ -1175,7 +1229,7 @@
     background: color-mix(in srgb, var(--muted) var(--tint-sel-quiet), var(--panel));
   }
   /* The row of the keyboard: an inner ring, never around the whole list (guidelines, 9.6). */
-  .rows:focus-visible .row.current,
+  .rows:focus:not(.pointed) .row.current,
   .rows:global(.focus-ring) .row.current {
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }

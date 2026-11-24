@@ -1,6 +1,6 @@
 // Floating menu: one at a time. It opens where the right-click was, or under the button that
 // drops it down (guidelines, section 9.9).
-import { focusWithRing } from './focus';
+import { focusBack, focusWithRing } from './focus';
 import type { IconName } from './Icon.svelte';
 
 export type MenuItem =
@@ -30,6 +30,9 @@ interface Open {
   /** The element that had the focus when the context menu was asked for from the keyboard: it
    *  gets it back when the menu closes. It is the row, or the list that points to it (the graph). */
   origin?: HTMLElement;
+  /** Opened with a right click: the list that had the focus, holding the row clicked. It gets the
+   *  focus back as `origin` does, without being the row the menu was asked for from the keyboard. */
+  back?: HTMLElement;
 }
 
 // The Menu key, or Shift + F10: the browser sends the `contextmenu` event right after. The time of
@@ -118,7 +121,10 @@ class Menu {
       this.current = { x: box.left, y: box.bottom + 4, items, keyboard: true, origin };
       return;
     }
-    this.current = { x: event.clientX, y: event.clientY, items };
+    // With a right click: the list that has the focus and holds the row clicked gets it back.
+    const active = document.activeElement;
+    const holds = active instanceof HTMLElement && active !== document.body && event.target instanceof Node && active.contains(event.target);
+    this.current = { x: event.clientX, y: event.clientY, items, back: holds ? active : undefined };
   }
 
   /** Drops the menu down under `anchor`, aligned on its right edge. */
@@ -138,10 +144,12 @@ class Menu {
    *  without the ring, as the button does (guidelines, 9.9). */
   close(keyboard = false, outside = false) {
     const anchor = this.current?.anchor;
-    const origin = this.current?.origin;
+    const origin = this.current?.origin ?? this.current?.back;
     this.current = null;
-    if (origin && !outside) focusWithRing(origin);
-    else if (origin) origin.focus();
+    // Closed by the window (its focus lost, its size changed): the ring follows the last gesture.
+    if (origin && keyboard) focusWithRing(origin);
+    else if (origin && outside) origin.focus();
+    else if (origin) focusBack(origin);
     else if (keyboard) focusWithRing(anchor);
     else anchor?.focus();
   }
