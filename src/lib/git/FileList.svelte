@@ -71,13 +71,13 @@
     files.some((f) => f.path === current) ? current : files.some((f) => f.path === active) ? active : (files[0]?.path ?? null),
   );
 
-  function focusRow(index: number, ring = false) {
+  /** A key moves the current row: its ring shows, even after a click, which WebKit would not do. */
+  function focusRow(index: number) {
     const rows = listEl?.querySelectorAll<HTMLElement>('button.open');
     const row = rows?.[Math.max(0, Math.min(rows.length - 1, index))];
     if (!row) return;
     current = files[Math.max(0, Math.min(files.length - 1, index))]?.path ?? null;
-    if (ring) focusWithRing(row);
-    else row.focus();
+    focusWithRing(row);
   }
 
   /**
@@ -98,7 +98,7 @@
     await tick();
     const now = document.activeElement;
     if (now && now !== document.body && now.isConnected) return;
-    if (listEl?.isConnected && files.length) return focusRow(Math.min(at, files.length - 1), true);
+    if (listEl?.isConnected && files.length) return focusRow(Math.min(at, files.length - 1));
     const next = [...lists.slice(mine + 1), ...lists.slice(0, Math.max(0, mine)).reverse()].find(
       (list) => list.isConnected && list.querySelector('button.open'),
     );
@@ -195,7 +195,8 @@
   }
   /* The background follows the pointer, and the keyboard focus: a click leaves no hover behind (guidelines, 9.6). */
   li:hover,
-  li:has(:focus-visible) {
+  li:has(:focus-visible),
+  li:has(.open:global(.focus-ring)) {
     background: var(--hover);
   }
   li.active {
@@ -313,7 +314,8 @@
     transform: scale(0.97);
   }
   li:hover .act,
-  li:has(:focus-visible) .act {
+  li:has(:focus-visible) .act,
+  li:has(.open:global(.focus-ring)) .act {
     opacity: 1;
   }
   .act:hover:not(:disabled) {
@@ -326,6 +328,7 @@
   }
   li:hover .act:disabled,
   li:has(:focus-visible) .act:disabled,
+  li:has(.open:global(.focus-ring)) .act:disabled,
   .act:disabled {
     opacity: 0.45;
     cursor: not-allowed;
