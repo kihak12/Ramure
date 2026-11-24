@@ -168,7 +168,8 @@ Eight colors, reserved for the graph. A branch takes the color of its column: co
   and `--sel`, more saturated, so that the selection stays apart from the hover. Every theme
   makes them so, in the hue of its accent; their lightness is kept where `--ink` and `--muted`
   stay readable, the hover far enough from its background to be seen, and the selection far
-  enough from its background and from the hover (2.4).
+  enough from its background and from the hover (2.4). One exception: the selection of a pane of the Files module that is not the active one is
+  neutral, `--muted` over the card, since a lighter `--sel` would be the hover (2.7, 9.24).
 
 ### 2.4 Minimum contrasts and color distances
 
@@ -184,6 +185,7 @@ Every theme must meet them, in light and in dark.
 | The line of a lane on its own sleeve, under the pointer, on a row at rest, hovered or selected (10.2): of the same color, the line stays apart from it; the sleeve carries no information | 2:1 |
 | `--muted` on `--bg` (the header of a hunk, 9.14) | 4.5:1 |
 | `--muted` on `--accent-soft` (a folder that receives a drop, 9.24) | 4.5:1 |
+| `--ink`, then `--muted` and the `--accent` of a folder icon, on the selection of a pane that is not the active one (9.24) | 7:1, 4.5:1, 3:1 |
 | `--ink` on the header of the pane of a host, tinted with its color (9.24) | 7:1 |
 | The dot of a host, and the `--muted` icons (chevron, "Add pane", "Close pane"), on the header of its pane, tinted with its color (9.24) | 3:1 |
 | `--warn` on `--warn-soft` (the icon of an incomplete transfer, 9.24) | 3:1 |
@@ -223,6 +225,9 @@ closer to the hover: there, a hover at 7 was seen, discreet but visible.
 | `--sel` from `--panel` (a selected row in a card) | 18 | 24 |
 | `--sel` from `--raised` (a selected row in what floats, such as the command palette) | 18 | 21 |
 | `--sel` from `--hover` (the selection next to a hovered row) | 9 | 15 |
+| The selection of a pane that is not the active one (9.24) from `--panel` | 8 | 12 |
+| The same from `--hover` | 5 | 8 |
+| The same from `--sel`, the selection of the active pane | 10 | 10 |
 | A line of a diff, added or removed, from `--panel` (9.14) | 14 | 18 |
 | A line of a diff from the same line hovered to be picked | 7 | 6 |
 | A hovered line of a diff from the same line picked | 5 | 5 |
@@ -309,6 +314,7 @@ not change them: they hold for the four, which `npm run check` checks.
 | Token | Use | Light | Dark |
 |---|---|---|---|
 | `--tint-veil` | The capsule of a message and the band that links it to its commit (10.2); the header of the pane of a host (9.24) | 24% | 18% |
+| `--tint-sel-quiet` | The selection of a pane that is not the active one (9.24): `--muted` over the card, neutral, since a lighter `--sel` would be the hover | 16% | 20% |
 | `--tint-label` | A branch or tag label at rest, "Ribbon" rendering (9.4) | 34% | 24% |
 | `--tint-lane` | The sleeve of the lane under the pointer (10.2) | 34% | 24% |
 | `--tint-lane-veil` | The capsules and bands of the commits of the lane under the pointer (10.2): in dark, no stronger than `--tint-veil`, which keeps `--ink` at 7:1 on a hovered or selected row | 34% | 18% |
@@ -584,7 +590,7 @@ States are the same everywhere:
 |---|---|
 | Hover | `--hover` background, in `--t-fast`; `--hover-side` on the window background (rail, toolbar, tabs, status bar). |
 | Keyboard focus | A 2 px outline in `--accent`, offset by 1 px. See the exceptions for fields, lists, menus and the resize handle (9.16). |
-| Selection | `--sel` background. |
+| Selection | `--sel` background; in a pane of the Files module that is not the active one, a neutral tint (9.24). |
 | Disabled | 45% opacity, "not allowed" cursor, no reaction on hover. |
 
 ### 9.1 Buttons
@@ -833,7 +839,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 - Hover: a rounded `--hover` background under the row, 8 px corners.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
-  the area that scrolls, its scrollbar apart.
+  the area that scrolls, its scrollbar apart. In a pane of the Files module that is not the active
+  one, a neutral tint, which says which pane acts (9.24).
 - **No colored bar on the edge** to mark the selection.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the current row, the one the arrows
   move: the selected row, or in a list of files a row that is not selected (the parent row, or
@@ -2079,6 +2086,20 @@ place: "This machine", or a host of the book.
   pane to choose a location. It then comes back as it was left: the same panes, on the same
   folders, an empty pane completing a row of one. A host is never connected at launch: its pane says "Not connected" and offers
   "Connect", so that three panes never ask three passwords at once.
+- **The active pane** is the one that last took a click or the keyboard: Enter, Delete, F2, the
+  double-click and the commands of the palette act on it. Its selected rows are on `--sel`; those
+  of the other panes step back to a neutral tint, `--muted` at `--tint-sel-quiet` over the card
+  (2.7), so that the strong selection says at a glance which pane acts, whether the focus came
+  from the mouse or the keyboard, and stays on the last active pane while the focus is elsewhere
+  in the window. A lighter `--sel` would be taken for the hover; gray beside the blue hover, the
+  quiet selection reads as set aside, which it is. With nothing selected, nothing marks the active
+  pane: the ring of the keyboard says it once the keyboard is there. A folder row that receives a
+  drop keeps its drop tint, selected or not (below). **Ctrl + Tab** and **Ctrl + Shift + Tab** give
+  the keyboard to the next and the previous pane, in turn: to its list, with the inner ring of its
+  current row (9.6), or, when it has none to take it, to the main button of its panel
+  ("Connect"), to the filter of an empty pane, or else to its first control. They are the commands
+  "Next pane" and "Previous pane" of the palette, with the icons of a panel on the right and on the
+  left, whose shortcuts can be changed (9.18).
 - **An empty pane** chooses its location. Its header says "Empty pane" in `--muted`; under it, the
   title "Choose a location", 15 px in weight 650 as the title of a panel (3.2), the filter field of
   the host book (9.3) when the book has hosts, then a list (9.6): "This machine" with the computer

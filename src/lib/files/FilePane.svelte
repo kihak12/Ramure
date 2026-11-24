@@ -559,6 +559,7 @@
 
 <section
   class="pane"
+  class:active={files.focused === pane.key}
   class:narrow
   bind:clientWidth={paneWidth}
   data-pane={pane.key}
@@ -1145,6 +1146,11 @@
   }
   .row.sel {
     background: var(--sel);
+  }
+  /* The selection of a pane that is not the active one steps back to a neutral tint: the strong
+     selection says which pane Enter, Delete, F2 and the double-click act on (guidelines, 9.24). */
+  .pane:not(.active) .row.sel:not(.drop) {
+    background: color-mix(in srgb, var(--muted) var(--tint-sel-quiet), var(--panel));
   }
   /* The row of the keyboard: an inner ring, never around the whole list (guidelines, 9.6). */
   .rows:focus-visible .row.current,
