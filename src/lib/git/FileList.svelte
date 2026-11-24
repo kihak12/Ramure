@@ -1,15 +1,17 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import Icon, { type IconName } from '../ui/Icon.svelte';
+  import { focusWithRing } from '../ui/focus';
   import type { ChangeKind, FileChange } from './types';
 
   interface Action {
     label: string;
     /** Icon of the button; `label` stays the accessible name. */
     icon: IconName;
-    run: (file: FileChange) => void;
+    /** What the keyboard waits for before giving the row that takes its place the focus. */
+    run: (file: FileChange) => unknown;
     danger?: boolean;
-    /** The key that runs it on the current row, from the keyboard (guidelines, 9.22). */
+    /** The key that runs it on the current row, from the keyboard (guidelines, 9.6). */
     key?: 'Space' | 'Delete';
   }
 
@@ -69,13 +71,40 @@
     files.some((f) => f.path === current) ? current : files.some((f) => f.path === active) ? active : (files[0]?.path ?? null),
   );
 
-  function focusRow(index: number) {
+  function focusRow(index: number, ring = false) {
     const rows = listEl?.querySelectorAll<HTMLElement>('button.open');
     const row = rows?.[Math.max(0, Math.min(rows.length - 1, index))];
     if (!row) return;
     current = files[Math.max(0, Math.min(files.length - 1, index))]?.path ?? null;
-    row.focus();
+    if (ring) focusWithRing(row);
+    else row.focus();
   }
+
+  /**
+   * Runs the action of a key, then gives the keyboard back if the file took it away when it left
+   * the list: to the row that takes its place, or, the list being empty, to the next list of the
+   * panel, the previous one, or the commit message (guidelines, 9.6).
+   */
+  async function runKey(action: Action, file: FileChange, at: number) {
+    const scope = listEl?.closest<HTMLElement>('[data-file-lists]');
+    const lists = scope ? [...scope.querySelectorAll<HTMLElement>('ul.files')] : [];
+    const mine = listEl ? lists.indexOf(listEl) : -1;
+    running = true;
+    try {
+      await action.run(file);
+    } finally {
+      running = false;
+    }
+    await tick();
+    const now = document.activeElement;
+    if (now && now !== document.body && now.isConnected) return;
+    if (listEl?.isConnected && files.length) return focusRow(Math.min(at, files.length - 1), true);
+    const next = [...lists.slice(mine + 1), ...lists.slice(0, Math.max(0, mine)).reverse()].find(
+      (list) => list.isConnected && list.querySelector('button.open'),
+    );
+    focusWithRing(next?.querySelector<HTMLElement>('button.open[tabindex="0"]') ?? scope?.querySelector<HTMLElement>('textarea'));
+  }
+  let running = false;
 
   /** ↑ ↓ Home End move; Space and Delete run the action that has that key, the keyboard staying in the list. */
   function rowKey(e: KeyboardEvent, file: FileChange) {
@@ -92,14 +121,12 @@
     }
     const key = e.key === ' ' ? 'Space' : e.key === 'Delete' ? 'Delete' : null;
     const action = key && actions.find((a) => a.key === key);
-    if (!action || disabled) return;
+    // Where no action has the key, Space opens the row, as on any button.
+    if (!action) return;
     e.preventDefault();
-    action.run(file);
-    // The file may leave the list (staged, unstaged): the row that takes its place gets the keyboard.
-    void tick().then(() => {
-      if (listEl?.contains(document.activeElement)) return;
-      if (files.length) focusRow(at);
-    });
+    // While the changes are being written, the key does nothing: it neither runs twice nor opens.
+    if (disabled || running || e.repeat) return;
+    void runKey(action, file, at);
   }
 
   function split(path: string) {
@@ -136,7 +163,7 @@
           class="act"
           class:danger={action.danger}
           type="button"
-          tabindex="-1"
+          tabindex={action.key ? -1 : 0}
           title={action.key ? `${action.label} (${action.key})` : action.label}
           aria-label="{action.label}: {file.path}"
           {disabled}
@@ -184,8 +211,9 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 3px 6px;
+    gap: 6px;
+    min-height: 24px;
+    padding: 2px 6px;
     border: 0;
     background: none;
     cursor: pointer;

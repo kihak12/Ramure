@@ -872,12 +872,19 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   `--muted` at 11.5 px, tabular figures, "binary" for a binary file (9.27). The name keeps
   priority: the folder is cut first, the counts never.
 - **The keyboard in a list of files** (the changes, the files of a commit): each list is one stop
-  of the tab order; ↑ and ↓ move the current row, Home and End to the first and the last, Enter
-  opens its diff. Space stages a file, or unstages it in the staged list; Delete discards its
-  changes, after the confirmation (9.10). The keyboard stays in the list when the file leaves it,
-  on the row that takes its place. The current row carries the inner ring on the whole row, its
-  buttons included, never cut by the list that scrolls; the buttons of a row are for the mouse,
-  their tooltips saying the key ("Stage (Space)").
+  of the tab order, so the lists of the changes (in conflict, unstaged, staged) are one stop each;
+  ↑ and ↓ move the current row, Home and End to the first and the last, Enter opens its diff.
+  Space stages a file, or unstages it in the staged list; Delete discards its changes, after the
+  confirmation (9.10). While the changes are being written, these two keys do nothing. Where no
+  action has the key (the files in conflict, the files of a commit), Space opens the row, as Enter
+  does.
+- The keyboard stays in the list when the file leaves it, on the row that takes its place. When
+  the list is left empty, it goes to the next list of the changes, otherwise the previous one,
+  otherwise to the commit message.
+- The current row carries the inner ring on the whole row, its buttons included, never cut by the
+  list that scrolls. A button whose action has a key is for the mouse, out of the tab order, its
+  tooltip saying the key ("Stage (Space)"). The others, those of the files in conflict, stay stops
+  of the tab order: every action has a way from the keyboard (11).
 - **A list inside a dialog** (the keys of "Manage keys…", the commits of an interactive
   rebase) is made of plain rows: no border and no background of their own, since a framed row
   inside a dialog would be a card in a card (6). The rows are separated by a `--line` line: on

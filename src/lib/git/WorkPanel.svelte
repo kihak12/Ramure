@@ -58,7 +58,8 @@
   }
 </script>
 
-<div class="work">
+<!-- data-file-lists: where the keyboard goes when a list of files empties (guidelines, 9.6). -->
+<div class="work" data-file-lists>
   {#if conflicts.length}
     <section class="conflicts" transition:slide={{ duration: motion.med }}>
       <header>
@@ -97,8 +98,8 @@
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, false)}
           actions={[
-            { label: 'Discard changes…', icon: 'undo', danger: true, key: 'Delete', run: (f: FileChange) => void discardFiles(repo, [f]) },
-            { label: 'Stage', icon: 'plus', key: 'Space', run: (f: FileChange) => void repo.stage([f]) },
+            { label: 'Discard changes…', icon: 'undo', danger: true, key: 'Delete', run: (f: FileChange) => discardFiles(repo, [f]) },
+            { label: 'Stage', icon: 'plus', key: 'Space', run: (f: FileChange) => repo.stage([f]) },
           ]}
         />
       </div>
@@ -122,7 +123,7 @@
           active={activeIn('s:')}
           disabled={busy}
           onopen={(f) => repo.openWorkDiff(f, true)}
-          actions={[{ label: 'Unstage', icon: 'minus', key: 'Space', run: (f: FileChange) => void repo.unstage([f]) }]}
+          actions={[{ label: 'Unstage', icon: 'minus', key: 'Space', run: (f: FileChange) => repo.unstage([f]) }]}
         />
       </div>
     {:else}
