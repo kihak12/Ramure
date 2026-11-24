@@ -473,6 +473,30 @@ class Files {
     if (entry.dir) void this.list(pane, joinPath(pane.path, entry.name));
   }
 
+  /** The pane next to `pane`: on its right, or on its left for the last one (guidelines, 9.24). */
+  neighbor(pane: Pane): Pane | null {
+    const at = this.panes.findIndex((p) => p.key === pane.key);
+    if (at < 0 || this.panes.length < 2) return null;
+    return this.panes[at + 1] ?? this.panes[at - 1];
+  }
+
+  /**
+   * A double-click on a file, or Enter: a copy into the folder shown by the pane next to it, as a
+   * drag does, after asking about a name already there. Never a move, even between two folders of
+   * the same place.
+   */
+  send(pane: Pane, names: string[]) {
+    const target = this.neighbor(pane);
+    if (!target || !names.length) return;
+    const dragged = { paneKey: pane.key, names };
+    const refusal = this.refusal(dragged, target, target.path);
+    if (refusal) {
+      toasts.warn(names.length === 1 ? `${names[0]} was not sent` : `${count(names.length, 'item')} were not sent`, refusal);
+      return;
+    }
+    void this.drop(dragged, target, target.path, true);
+  }
+
   /** "New folder…": its name in a dialog; a name that is taken is said there. */
   mkdir(pane: Pane) {
     return this.#create(pane, 'folder');
