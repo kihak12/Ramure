@@ -18,11 +18,33 @@
   import { workspace } from './workspace.svelte';
   import Splitter from '../ui/Splitter.svelte';
   import { focusBack } from '../ui/focus';
+  import { openInWindow } from './editorWindow.svelte';
+  import type { EditorSnapshot } from './conflictWindow';
 
   /** `active`: this tab is the one being looked at. */
   let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
 
   const current = $derived(repo.current);
+  // The editor moves to its own window with its choices, and comes back with them (9.26).
+  let inlineEditor = $state<ReturnType<typeof ConflictEditor>>();
+  /** What the editor brings back from its window: taken once, as its file opens here. */
+  let restore = $state.raw<EditorSnapshot | null>(null);
+  $effect.pre(() => {
+    void repo.conflictFile;
+    untrack(() => {
+      restore = repo.restoreEditor;
+      repo.restoreEditor = null;
+    });
+  });
+  function moveEditor() {
+    const file = repo.conflictFile;
+    if (file) void openInWindow(repo, file, inlineEditor?.snapshot() ?? null);
+  }
+  // The shortcut and the palette move it too, while it is open here.
+  $effect(() => {
+    repo.moveEditor = repo.conflictFile ? moveEditor : null;
+  });
+
   /** The conflict editor covers the cards: they leave the tab order while it is open (guidelines, 9.26). */
   const covered = $derived(!!repo.conflictFile);
 
@@ -253,7 +275,13 @@
       {/if}
 
       {#if repo.conflictFile}
-        <ConflictEditor {repo} file={repo.conflictFile} />
+        <ConflictEditor
+          bind:this={inlineEditor}
+          {repo}
+          file={repo.conflictFile}
+          {restore}
+          onmove={moveEditor}
+        />
       {/if}
     </div>
 

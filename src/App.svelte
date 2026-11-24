@@ -23,6 +23,7 @@
   import { settingsPage } from './lib/settings/settings.svelte';
   import { updates } from './lib/ui/updates.svelte';
   import { keepFocusInDialogs } from './lib/ui/focus';
+  import { closeEditorWindows, listenEditorWindows } from './lib/git/editorWindow.svelte';
 
   // Closing the window stops every local terminal: if a program runs in one, ask first.
   // An error must never prevent quitting: when in doubt, the window closes.
@@ -30,7 +31,9 @@
     const stop = getCurrentWindow().onCloseRequested(async (event) => {
       try {
         const locals = [...ssh.sessions, ...workspace.tabs.flatMap((tab) => tab.repo.terminals.sessions)];
-        if (!(await mayQuit(locals, files.running))) event.preventDefault();
+        const editors = workspace.tabs.flatMap((tab) => (tab.repo.editorWindow?.modified && tab.repo.editorWindow.file ? [tab.repo.editorWindow.file] : []));
+        if (!(await mayQuit(locals, files.running, editors))) event.preventDefault();
+        else await closeEditorWindows(workspace.tabs.map((tab) => tab.repo));
       } catch {
         /* let it close */
       }
@@ -40,6 +43,9 @@
 
   // Tab never leaves a modal dialog for a stop that cannot be seen (guidelines, 9.10 and 11).
   onMount(() => keepFocusInDialogs());
+
+  // The windows of the conflict editor (guidelines, 9.26, "Its own window").
+  onMount(() => listenEditorWindows(() => workspace.tabs.map((tab) => tab.repo)));
 
   // Updates (guidelines, 9.23): what this copy is, then the automatic check.
   onMount(() => {

@@ -5,7 +5,9 @@
   import { motion } from '../ui/motion';
   import { abortOperation } from './actions';
 
-  let { repo }: { repo: Repo } = $props();
+  /** `window`: the banner of the window of the conflict editor, whose list is beside the editor
+   *  (guidelines, 9.26, "Its own window"). */
+  let { repo, place = 'main' }: { repo: Repo; place?: 'main' | 'window' } = $props();
 
   const operation = $derived(repo.status?.operation ?? null);
   const conflicts = $derived(repo.conflicts.length);
@@ -19,13 +21,19 @@
       <!-- “Show files” follows the sentence it acts on: a ghost button (guidelines, 9.1). -->
       <span class="line">
         <span>
-          {#if conflicts}
+          {#if conflicts === 1 && place === 'window'}
+            1 file in conflict: resolve it, then continue.
+          {:else if conflicts && place === 'window'}
+            {conflicts} files in conflict: pick one in the list, then continue.
+          {:else if conflicts}
             {conflicts} file{conflicts === 1 ? '' : 's'} in conflict: resolve {conflicts === 1 ? 'it' : 'them'} in the changes panel, then continue.
           {:else}
             All conflicts are resolved: you can continue.
           {/if}
         </span>
-        <button class="btn ghost small" type="button" onclick={() => repo.showWip()}>Show files</button>
+        {#if place === 'main'}
+          <button class="btn ghost small" type="button" onclick={() => repo.showWip()}>Show files</button>
+        {/if}
       </span>
     </div>
     <!-- The main button first, the way out last, as on the line of a panel (guidelines, 9.1). -->

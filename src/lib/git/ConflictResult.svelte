@@ -30,6 +30,18 @@
   }
 
   /** What the result shows of a conflict (guidelines, 9.26). */
+  /**
+   * The result as it is, carried to the other window and back: its text with its history and its
+   * caret, its conflicts, the lines git merged, and its scroll (guidelines, 9.26, "Its own window").
+   */
+  export interface ResultSnapshot {
+    /** The state of the editor, `EditorState.toJSON` with its history. */
+    state: { doc: string } & Record<string, unknown>;
+    regions: [number, Region][];
+    merged: { line: number; side: 'ours' | 'theirs' }[];
+    scrollTop: number;
+  }
+
   export interface RegionInfo {
     id: number;
     /** `open`: still to decide, its band in place of its lines; `kept`: lines kept from the sides;
@@ -287,7 +299,7 @@
 </script>
 
 <script lang="ts">
-  import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+  import { defaultKeymap, history, historyField, historyKeymap } from '@codemirror/commands';
   import { EditorState as State } from '@codemirror/state';
   import { drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
   import { onMount } from 'svelte';
@@ -296,6 +308,7 @@
     value,
     regions: initialRegions,
     merged = [],
+    restore = null,
     first = 'ours',
     info,
     lineSeparator = '\n',
@@ -316,6 +329,9 @@
     regions: { id: number; start: number; end: number }[];
     /** The lines git merged from a side outside the conflicts, in `value` (from 0). */
     merged?: { line: number; side: 'ours' | 'theirs' }[];
+    /** The result carried from the other window: it takes the place of `value`, `regions` and
+     *  `merged`, read when the result opens. */
+    restore?: ResultSnapshot | null;
     /** The side shown on the left, side 1: its chips read "1" and take its color. */
     first?: 'ours' | 'theirs';
     info: RegionInfo[];
@@ -350,11 +366,12 @@
   let view: EditorView | undefined;
   let field: StateField<Map<number, Region>>;
   let chipsField: StateField<RangeSet<GutterMarker>>;
+  let tintsField: StateField<DecorationSet>;
 
   onMount(() => {
-    const doc = State.create({ doc: value, extensions: [State.lineSeparator.of(lineSeparator)] }).doc;
-    const initial = new Map<number, Region>();
-    for (const r of initialRegions) {
+    const doc = State.create({ doc: restore ? restore.state.doc : value, extensions: [State.lineSeparator.of(lineSeparator)] }).doc;
+    const initial = new Map<number, Region>(restore ? restore.regions : []);
+    for (const r of restore ? [] : initialRegions) {
       const first = doc.line(r.start + 1);
       const trailing = r.end + 2 <= doc.lines;
       initial.set(r.id, { from: first.from, to: trailing ? doc.line(r.end + 2).from : doc.length, trailing });
@@ -364,7 +381,7 @@
 
     // The lines git merged from a side, outside the conflicts: their tint and their chip follow the
     // lines when the text above them is typed (guidelines, 9.26).
-    const lines = merged.filter((m) => m.line < doc.lines);
+    const lines = (restore ? restore.merged : merged).filter((m) => m.line < doc.lines);
     const mergedTints = StateField.define<DecorationSet>({
       create: () => Decoration.set(lines.map((m) => Decoration.line({ class: `cm-from-${num(m.side)}` }).range(doc.line(m.line + 1).from)), true),
       update: (tints, tr) => follow(tints, tr),
@@ -375,6 +392,7 @@
       update: (chips, tr) => follow(chips, tr),
     });
     chipsField = mergedChips;
+    tintsField = mergedTints;
 
     const decorations = EditorView.decorations.compute([field, infoField], (state) => {
       const regions = state.field(field);
@@ -480,8 +498,7 @@
       if (touched.size) onedit?.([...touched]);
     });
 
-    const state = State.create({
-      doc: value,
+    const config = {
       extensions: [
         State.lineSeparator.of(lineSeparator),
         field,
@@ -504,9 +521,16 @@
         theme,
         EditorView.contentAttributes.of({ 'aria-label': label }),
       ],
-    });
+    };
+    // Carried from the other window: the text, its history and its caret as they were.
+    const state = restore ? State.fromJSON(restore.state, config, { history: historyField }) : State.create({ doc: value, ...config });
     view = new EditorView({ state, parent: host! });
     view.dispatch({ effects: setInfo.of(info) });
+    // Its scroll, once the columns are lined up.
+    if (restore) {
+      const at = restore.scrollTop;
+      requestAnimationFrame(() => requestAnimationFrame(() => view && (view.scrollDOM.scrollTop = at)));
+    }
     // The caret waits where the eye is, scroll after scroll.
     let frame = 0;
     let top = view.scrollDOM.scrollTop;
@@ -610,6 +634,23 @@
       }
     }
     return rows;
+  }
+
+  /** The result as it is, to carry it to the other window (guidelines, 9.26, "Its own window"). */
+  export function snapshot(): ResultSnapshot | null {
+    if (!view) return null;
+    const state = view.state;
+    const lines: ResultSnapshot['merged'] = [];
+    const other = first === 'ours' ? 'theirs' : 'ours';
+    state.field(tintsField).between(0, state.doc.length, (from, _to, deco) => {
+      lines.push({ line: state.doc.lineAt(from).number - 1, side: deco.spec.class === 'cm-from-1' ? first : other });
+    });
+    return {
+      state: state.toJSON({ history: historyField }) as ResultSnapshot['state'],
+      regions: [...state.field(field)],
+      merged: lines,
+      scrollTop: view.scrollDOM.scrollTop,
+    };
   }
 
   export function rows(): Row[] {

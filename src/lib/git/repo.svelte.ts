@@ -3,6 +3,8 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
+import type { EditorSnapshot } from './conflictWindow';
+import { openInWindow, operationEnded } from './editorWindow.svelte';
 import { focusBack } from '../ui/focus';
 import { besideList } from './fileLists';
 import { focusWithRing } from '../ui/focus';
@@ -118,6 +120,18 @@ export class Repo {
   diffError = $state('');
   /** File open in the conflict editor. */
   conflictFile = $state.raw<FileChange | null>(null);
+  /** The window of the conflict editor, while it is open: the file it has, and whether choices
+   *  are not saved there (guidelines, 9.26, "Its own window"). */
+  editorWindow = $state.raw<{ label: string; file: string | null; modified: boolean } | null>(null);
+  /** The editor went to its window during this operation: the next files open there too. */
+  preferWindow = false;
+  /** What the editor carries back from its window, read once as it opens in the main window. */
+  restoreEditor: EditorSnapshot | null = null;
+  /** In the window of the editor, the page decides what follows a file that left the conflicts:
+   *  the next file, or the strip that keeps its choices (guidelines, 9.26, "Its ends"). */
+  holdConflictFile = false;
+  /** Moves the editor open in the main window to its window: set by the view while it is open. */
+  moveEditor: (() => void) | null = null;
   /** Plan of an interactive rebase being prepared; the dialog opens when it exists. */
   rebasePlan = $state.raw<RebasePlan | null>(null);
   /** The message being reworded in the detail panel (guidelines, 9.25), kept as a draft while
@@ -281,10 +295,13 @@ export class Repo {
 
   /** Records a new status; reloads the history if it no longer matches it. */
   applyStatus(next: Status, fromLoad = false) {
+    const ended = !!this.status?.operation && !next.operation;
     this.status = next;
+    // The operation is over: its window closes, or warns of the choices it holds (9.26).
+    if (ended) operationEnded(this);
     // The file open in the conflict editor may have been resolved or discarded in the meantime.
     const editing = this.conflictFile?.path;
-    if (editing && !next.unstaged.some((f) => f.kind === 'conflict' && f.path === editing)) this.conflictFile = null;
+    if (editing && !this.holdConflictFile && !next.unstaged.some((f) => f.kind === 'conflict' && f.path === editing)) this.conflictFile = null;
     if (fromLoad || this.#logHead === undefined) {
       this.#logHead = next.head;
       return;
@@ -395,6 +412,11 @@ export class Repo {
 
   /** Opens a conflicted file in the three-way editor. */
   openConflict(file: FileChange) {
+    // The editor is in its window, or went there during this operation: the file opens there.
+    if (this.editorWindow || this.preferWindow) {
+      void openInWindow(this, file, null);
+      return;
+    }
     const focused = typeof document === 'undefined' ? null : document.activeElement;
     const list = focused instanceof HTMLElement ? focused.closest<HTMLElement>('ul.files') : null;
     const at = list ? [...list.querySelectorAll('button.open')].indexOf(focused as HTMLElement) : -1;

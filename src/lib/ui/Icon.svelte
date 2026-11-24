@@ -61,6 +61,8 @@
     'panel-right': '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M10 3v10"/>',
     panels: '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M6 3v10M10 3v10"/>',
     'panel-bottom': '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 9.5h12"/>',
+    // A frame, and an arrow that leaves it toward the top right: a window of its own.
+    window: '<path d="M7.5 3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h8a1.5 1.5 0 0 0 1.5-1.5V8.5"/><path d="M10 2h4v4M14 2 8.5 7.5"/>',
   } as const;
 
   export type IconName = keyof typeof PATHS;
