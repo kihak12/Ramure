@@ -161,6 +161,7 @@
    * list was given the focus by a click (guidelines, 9.6 and 11).
    */
   let pointed = $state(false);
+  const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph']);
 
   async function scrollToCurrent() {
     await tick();
@@ -427,6 +428,8 @@
     if (!selected.has(entry.name)) selectOnly(entry.name);
     else pane.current = entry.name;
     files.focused = pane.key;
+    // The menu closed, the keyboard comes back to the list, on the row asked for.
+    takeKeyboard();
     const names = [...pane.selected];
     const single = names.length === 1;
     const send = sendItems(names);
@@ -477,6 +480,7 @@
 
   function dragStart(e: DragEvent, entry: Entry) {
     if (!selected.has(entry.name)) selectOnly(entry.name);
+    takeKeyboard();
     files.drag = { paneKey: pane.key, names: [...pane.selected] };
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'copyMove';
@@ -544,7 +548,13 @@
   );
 </script>
 
-<svelte:window onpointerdowncapture={() => (pointed = true)} onkeydowncapture={() => (pointed = false)} />
+<!-- A modifier alone (Shift, Ctrl held during a click) is not a use of the keyboard. -->
+<svelte:window
+  onpointerdowncapture={() => (pointed = true)}
+  onkeydowncapture={(e) => {
+    if (!MODIFIERS.has(e.key)) pointed = false;
+  }}
+/>
 
 <section
   class="pane"

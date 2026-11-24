@@ -1982,9 +1982,10 @@ of 24 px (4.3, 9.6):
   it out. The arrows and Home reach it. A drop on it goes into the parent folder, as on a folder
   row.
 - **Selecting.** A click selects a row, Ctrl + click adds one or takes it out, Shift + click
-  selects up to it, Ctrl + A selects them all. A click gives the list the keyboard, with no ring,
-  so that its keys act on the row clicked at once, Shift + Tab included, which goes to the stop
-  before the list. The arrows move the current row, with the inner
+  selects up to it, Ctrl + A selects them all. A click gives the list the keyboard, as a right
+  click and a drag do, so that its keys act on the row clicked at once, Shift + Tab included,
+  which goes to the stop before the list. After any gesture of the mouse, the ring of the current
+  row waits for a key other than Shift, Ctrl or Alt alone (11). The arrows move the current row, with the inner
   ring of 9.6; Shift with an arrow extends the selection. A double-click, or Enter, opens a
   folder; a file does not open. F2 renames, Delete deletes, the Menu key opens the menu.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
