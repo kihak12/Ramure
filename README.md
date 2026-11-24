@@ -151,7 +151,11 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - **Importing a key**: "Import key…" in "Manage keys…" copies an existing private key into
   `~/.ssh`, with its public key: OpenSSH and PEM keys, and PuTTY keys (`.ppk`) without a
   passphrase, which are converted to the OpenSSH format. Nothing is ever overwritten.
-- **Export to `~/.ssh/config`**: "Export to ~/.ssh/config…" shows, host by host, what will be
+- **A list of hosts to hand to someone**: "Export hosts", then "To a Ramure file…", writes the
+  hosts you check into a JSON file, never a password nor a passphrase; "Import hosts", then
+  "From a Ramure file…", shows what such a file would add, rename or leave out before adding
+  anything. A host of the book is never changed by an import.
+- **Export to `~/.ssh/config`**: "Export hosts", then "To ~/.ssh/config…", shows, host by host, what will be
   added or changed, then writes HostName, User, Port and IdentityFile, so that `ssh <name>`
   works in any terminal. The rest of the file is left as it is, the old file is kept in
   `~/.ssh/config.ramure.bak`, and the notification offers to undo.
