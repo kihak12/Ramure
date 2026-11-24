@@ -8,7 +8,8 @@
   import Icon from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
   import { focusBack } from '../ui/focus';
-  import ConflictResult, { type OverviewMark, type RegionInfo } from './ConflictResult.svelte';
+  import ConflictResult, { type OverviewMark, type RegionInfo, type ResultSnapshot } from './ConflictResult.svelte';
+  import type { EditorSnapshot } from './conflictWindow';
   import ConflictSide, { type SideConflict } from './ConflictSide.svelte';
   import {
     choose,
@@ -31,7 +32,31 @@
   import type { ConflictFile, FileChange } from './types';
   import { motion } from '../ui/motion';
 
-  let { repo, file }: { repo: Repo; file: FileChange } = $props();
+  let {
+    repo,
+    file,
+    place = 'main',
+    restore = null,
+    onmove,
+    onclose,
+    onmodified,
+  }: {
+    repo: Repo;
+    file: FileChange;
+    /** Where the editor is: the main window, or its own (guidelines, 9.26, "Its own window"). */
+    place?: 'main' | 'window';
+    /** What was not saved of the file, carried from the other window. */
+    restore?: EditorSnapshot | null;
+    /** "Open in window" in the main window, "Back to main window" in its own. */
+    onmove?: () => void;
+    /** Closing, once nothing is to be lost: the editor leaves its place. */
+    onclose?: () => void;
+    /** Whether the editor holds choices not saved. */
+    onmodified?: (modified: boolean) => void;
+  } = $props();
+
+  /** The result carried from the other window, read once by the result as it opens. */
+  let resultRestore = $state.raw<ResultSnapshot | null>(null);
 
   let data = $state.raw<ConflictFile | null>(null);
   let error = $state('');
@@ -206,13 +231,18 @@
         if (target !== file) return;
         const sep = loaded.merged?.includes('\r\n') ? '\r\n' : '\n';
         const parsed = parseConflicts(splitLines(loaded.merged ?? '', sep));
+        // Carried from the other window: the choices of this file, if the file is the same.
+        const carried = untrack(() => restore);
+        const kept = carried && carried.path === target.path && carried.picks.length === parsed.length ? carried : null;
         blocks = parsed;
-        picks = parsed.map(() => emptyPick());
-        edited = parsed.map(() => false);
-        undo = [];
-        text = loaded.merged ?? '';
-        reveal = true;
-        index = 0;
+        picks = kept ? kept.picks : parsed.map(() => emptyPick());
+        edited = kept ? kept.edited : parsed.map(() => false);
+        undo = kept ? kept.undo : [];
+        text = kept ? kept.text : (loaded.merged ?? '');
+        reveal = !kept;
+        index = kept ? kept.index : 0;
+        if (kept) showBase = kept.showBase;
+        resultRestore = kept?.result ?? null;
         changeAt = -1;
         data = loaded;
       })
@@ -494,7 +524,18 @@
       });
       if (!sure) return;
     }
-    repo.conflictFile = null;
+    if (onclose) onclose();
+    else repo.conflictFile = null;
+  }
+
+  // The other window, or the main one, is told whether choices are not saved (9.26, "Its ends").
+  $effect(() => {
+    onmodified?.(modified);
+  });
+
+  /** The editor as it is, to carry it to the other window. */
+  export function snapshot(): EditorSnapshot {
+    return { path: file.path, picks, edited, undo, index, showBase, text, result: result?.snapshot() ?? null };
   }
 
   const canSave = $derived(editable && markersLeft === 0 && !repo.locked);
@@ -546,6 +587,17 @@
         {/if}
       </small>
     </div>
+    {#if onmove}
+      <button
+        class="btn ghost small"
+        type="button"
+        onclick={onmove}
+        title={place === 'main' ? 'Open the editor in its own window (Ctrl + Shift + W)' : 'Bring the editor back to the main window (Ctrl + Shift + W)'}
+      >
+        <Icon name="window" size={14} />
+        {place === 'main' ? 'Open in window' : 'Back to main window'}
+      </button>
+    {/if}
     <button class="btn small" type="button" onclick={close} title="Close (Escape)"><Icon name="x" size={14} /> Close</button>
     <button
       class="btn primary small"
@@ -625,6 +677,7 @@
           <ConflictResult
             bind:this={result}
             value={data.merged ?? ''}
+            restore={resultRestore}
             regions={blocks.map((b, i) => ({ id: i, start: b.start, end: b.end }))}
             merged={changes?.result ?? []}
             {first}

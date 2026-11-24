@@ -518,7 +518,8 @@ The interface has four levels. Each is recognized by its background.
   a folded corner and a plus for a new file, both pluses of the same size, the pencil for
   an edit or a change, the trash for a deletion, the square for stopping or aborting, the
   circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
-  connection, the arrows up and down for the previous and the next, or for moving up and down. An icon that stands for a git
+  connection, the arrows up and down for the previous and the next, or for moving up and down,
+  the frame with an arrow that leaves it toward the top right for a window of its own. An icon that stands for a git
   command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
