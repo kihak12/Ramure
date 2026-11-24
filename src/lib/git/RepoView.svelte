@@ -27,8 +27,8 @@
   const covered = $derived(!!repo.conflictFile);
 
   // The conflict editor closed, by Escape, "Close" or saving: the keyboard it had goes back to the
-  // row of its file, otherwise to the current row of its list, otherwise to the first list of the
-  // changes, otherwise to the commit message (guidelines, 9.26).
+  // row of its file, otherwise to the row that takes its place in its list, otherwise to the first
+  // list of the changes, otherwise to the commit message (guidelines, 9.26).
   let conflictWasOpen = false;
   $effect(() => {
     const open = covered;
@@ -47,10 +47,14 @@
     if (now && now !== document.body && now.isConnected && !leaving) return;
     const usable = (el: Element | null | undefined): el is HTMLElement =>
       el instanceof HTMLElement && el.isConnected && !el.closest('[inert], [hidden]');
+    // The row resolved has left its list: the row in its place.
+    const rows = opener?.list ? [...opener.list.querySelectorAll<HTMLElement>('button.open')] : [];
+    const instead = opener && opener.at >= 0 ? rows[Math.min(opener.at, rows.length - 1)] : undefined;
     const target = [
       opener?.element,
-      opener?.list?.querySelector('[tabindex="0"]'),
-      detailEl?.querySelector('ul.files [tabindex="0"]'),
+      instead,
+      detailEl?.querySelector('ul.files button.open[tabindex="0"]'),
+      detailEl?.querySelector('ul.files button.open'),
       detailEl?.querySelector('textarea'),
     ].find(usable);
     focusBack(target);

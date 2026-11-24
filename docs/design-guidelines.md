@@ -2366,11 +2366,13 @@ current conflict and marks it, as the sides do.
   choices and corrections made in this editor will be lost for good. The file keeps its conflict
   markers."
 - **Opening and closing.** The editor takes the keyboard as it opens, from a click as from a key:
-  side 1, on its first conflict to decide, otherwise the result. While it is open, the cards it
-  covers are out of the tab order; the toolbar and the bar of the operation stay at hand. Closed,
-  by Escape, "Close" or saving, it gives the keyboard back to the row of its file, otherwise to the
-  current row of its list, otherwise to the first list of the changes. The ring comes with it after
-  a key, not after the mouse (9.9, 11).
+  side 1, on its first conflict to decide, otherwise the result. A file that cannot be merged line
+  by line, or that could not be read, gives it to "Close": keeping a side of it is a choice to
+  make, not a default. While it is open, the cards it covers, and their handles, are out of the tab
+  order; the toolbar and the bar of the operation stay at hand. Closed, by Escape, "Close" or
+  saving, it gives the keyboard back to the row of its file, otherwise to the row that takes its
+  place in its list, otherwise to the first list of the changes, otherwise to the commit message.
+  The ring comes with it after a key, not after the mouse (9.9, 11).
 - The captions of the bars of the result and of the ancestor are sentences: "Keep a side of each
   conflict with its arrow or on its band; it stays editable.", "Before both changes."
 
@@ -2531,7 +2533,8 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Visible focus.** Every element that takes keyboard focus shows it. An outline is never
   removed without another marker replacing it. A focus given by the application, to the main
   button of a panel or back to the button of a menu, shows the same ring as one reached with
-  Tab, until the next click.
+  Tab, until the next click. A focus given back after a gesture of the mouse, a click on "Close"
+  for instance, comes without the ring, as the browser does for a click.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element. The labels of the graph are reached through
   the branch list (9.4).

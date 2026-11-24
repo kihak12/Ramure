@@ -383,13 +383,14 @@ export class Repo {
    * The row that opened the conflict editor, and its list: closing the editor gives one of them
    * the keyboard back (guidelines, 9.26).
    */
-  conflictOpener: { element: HTMLElement; list: HTMLElement | null } | null = null;
+  conflictOpener: { element: HTMLElement; list: HTMLElement | null; at: number } | null = null;
 
   /** Opens a conflicted file in the three-way editor. */
   openConflict(file: FileChange) {
     const focused = typeof document === 'undefined' ? null : document.activeElement;
-    this.conflictOpener =
-      focused instanceof HTMLElement && focused !== document.body ? { element: focused, list: focused.closest<HTMLElement>('ul.files') } : null;
+    const list = focused instanceof HTMLElement ? focused.closest<HTMLElement>('ul.files') : null;
+    const at = list ? [...list.querySelectorAll('button.open')].indexOf(focused as HTMLElement) : -1;
+    this.conflictOpener = focused instanceof HTMLElement && focused !== document.body ? { element: focused, list, at } : null;
     this.closeDiff();
     this.conflictFile = file;
   }
