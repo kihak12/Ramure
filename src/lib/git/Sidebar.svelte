@@ -168,6 +168,16 @@
       case 'End':
         point(nodes[nodes.length - 1]);
         break;
+      case 'PageDown':
+      case 'PageUp': {
+        // A page of rows, as in the graph: the current row moves with the list and stays in view,
+        // its ring with it (guidelines, 9.6).
+        const row = node ? document.getElementById(node.id) : null;
+        const page = Math.max(1, Math.floor((tree?.clientHeight ?? 0) / (row?.offsetHeight || 28)) - 1);
+        const to = Math.max(0, Math.min(nodes.length - 1, (i < 0 ? 0 : i) + (event.key === 'PageDown' ? page : -page)));
+        point(nodes[to]);
+        break;
+      }
       case 'ArrowRight':
         // A folded title unfolds; unfolded, go down to its first row.
         if (node?.heading && !isOpen(node.section)) toggle(node.section);

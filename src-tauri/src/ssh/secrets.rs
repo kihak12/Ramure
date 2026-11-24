@@ -123,6 +123,17 @@ async fn off_thread<T: Send + 'static>(call: impl FnOnce() -> T + Send + 'static
     tauri::async_runtime::spawn_blocking(call).await.unwrap_or(fallback)
 }
 
+/// Keeps `secret` under `account` now, from a thread that may wait for the keyring.
+pub fn keep_now(account: &str, secret: &str) -> Result<(), String> {
+    backend::set(account, secret)
+}
+
+/// The secret kept under `account`, read now.
+#[cfg(test)]
+pub fn held_now(account: &str) -> Option<String> {
+    backend::get(account).ok().flatten()
+}
+
 /// The secret kept under `account`, if there is one. A keyring that does not respond has none.
 pub async fn held(account: String) -> Option<String> {
     off_thread(move || backend::get(&account).ok().flatten(), None).await

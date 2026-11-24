@@ -8,6 +8,9 @@
   import HostDialog from './HostDialog.svelte';
   import KeysDialog from './KeysDialog.svelte';
   import ExportDialog from './ExportDialog.svelte';
+  import ExportFileDialog from './ExportFileDialog.svelte';
+  import ImportDialog from './ImportDialog.svelte';
+  import type { MenuItem } from '../ui/menu.svelte';
   import { display, keys } from '../ui/keys.svelte';
   import { mayCloseTerminal } from './guard';
   import { ssh, STATUS, type Session } from './ssh.svelte';
@@ -48,6 +51,40 @@
     }
     return out;
   });
+
+  // The book is one stop of the tab order: the arrows go through its hosts (guidelines, 9.21).
+  // The current host is the one the keyboard is on; the first host shown when it is not shown.
+  let currentId = $state('');
+  const ordered = $derived(sections.flatMap((s) => s.hosts));
+  const current = $derived(ordered.some((h) => h.id === currentId) ? currentId : (ordered[0]?.id ?? ''));
+
+  function moveHost(to: number) {
+    const host = ordered[Math.max(0, Math.min(ordered.length - 1, to))];
+    if (!host) return;
+    currentId = host.id;
+    void tick().then(() => document.querySelector<HTMLElement>(`.book .host[data-id="${CSS.escape(host.id)}"]`)?.focus());
+  }
+
+  /** The keys of a host: ↑ ↓ Home End move, Enter opens a terminal, F2 edits, Delete deletes. */
+  function hostKey(e: KeyboardEvent, host: Host) {
+    const at = ordered.findIndex((h) => h.id === host.id);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveHost(at + (e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      moveHost(e.key === 'Home' ? 0 : ordered.length - 1);
+    } else if (e.key === 'Enter' && !host.proxyJump) {
+      e.preventDefault();
+      ssh.open(host);
+    } else if (e.key === 'F2') {
+      e.preventDefault();
+      ssh.editing = host;
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      void removeHost(host);
+    }
+  }
 
   // The hosts whose session is opening: their row says so at once, where the user has just acted
   // (guidelines, section 9.15). The state comes from the session, not from the terminal: it does
@@ -97,10 +134,27 @@
       { label: 'Edit…', icon: 'pencil', run: () => (ssh.editing = host) },
       { label: 'Duplicate…', icon: 'copy', run: () => (ssh.editing = { ...host, id: '', alias: `${host.alias} (copy)` }) },
       { label: 'Export to ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = host.id) },
+      { label: 'Export to a Ramure file…', icon: 'export', run: () => (ssh.exportingFile = host.id) },
       { separator: true },
       { label: 'Delete host…', icon: 'trash', danger: true, run: () => void removeHost(host) },
     ]);
   }
+
+  /** The menus of the foot of the book (guidelines, 9.15, "Importing and exporting hosts"), and
+   *  their buttons, which keep their hover while their menu is open (9.1). */
+  let importEl = $state<HTMLButtonElement>();
+  let exportEl = $state<HTMLButtonElement>();
+  let emptyImportEl = $state<HTMLButtonElement>();
+  const importItems = (): MenuItem[] => [
+    { label: 'From ~/.ssh/config', icon: 'import', run: () => void ssh.importConfig() },
+    { label: 'From a Ramure file…', icon: 'import', run: () => void ssh.pickImport('ramure') },
+    { label: 'From FileZilla…', icon: 'import', run: () => void ssh.pickImport('filezilla') },
+    { label: 'From PuTTY…', icon: 'import', run: () => void ssh.pickImport('putty') },
+  ];
+  const exportItems = (): MenuItem[] => [
+    { label: 'To ~/.ssh/config…', icon: 'export', run: () => (ssh.exporting = 'all') },
+    { label: 'To a Ramure file…', icon: 'export', run: () => (ssh.exportingFile = 'all') },
+  ];
 
   onMount(() => void ssh.load());
 </script>
@@ -122,15 +176,17 @@
         <ul>
           {#each section.hosts as host (host.id)}
             {@const wait = waiting.get(host.id)}
-            <li>
+            <!-- The row whose menu was asked for from the keyboard keeps its ring while it is open (9.9). -->
+            <li class:asked={menu.current?.origin?.dataset.id === host.id}>
               <button
                 class="host"
                 type="button"
+                data-id={host.id}
+                tabindex={host.id === current ? 0 : -1}
                 title="{host.alias} — double-click to open a terminal, right-click for actions"
                 ondblclick={() => !host.proxyJump && ssh.open(host)}
-                onkeydown={(e) => {
-                  if (e.key === 'Enter' && !host.proxyJump) ssh.open(host);
-                }}
+                onfocus={() => (currentId = host.id)}
+                onkeydown={(e) => hostKey(e, host)}
                 oncontextmenu={(e) => hostMenu(e, host)}
               >
                 <!-- The chosen color names the host; without a color, the place stays empty (guidelines, 9.21). -->
@@ -151,9 +207,10 @@
                   {/if}
                 </span>
               </button>
+              <!-- For the mouse: the keyboard has Enter and F2 on the row (9.21). -->
               <span class="acts">
-                <button type="button" aria-label="Open terminal on {host.alias}" title="Open terminal" disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
-                <button type="button" aria-label="Edit {host.alias}" title="Edit" onclick={() => (ssh.editing = host)}><Icon name="pencil" size={14} /></button>
+                <button type="button" tabindex="-1" aria-label="Open terminal on {host.alias}" title={host.proxyJump ? 'Jump through a bastion: not supported yet' : 'Open terminal (Enter)'} disabled={host.proxyJump} onclick={() => ssh.open(host)}><Icon name="play" size={14} /></button>
+                <button type="button" tabindex="-1" aria-label="Edit {host.alias}" title="Edit (F2)" onclick={() => (ssh.editing = host)}><Icon name="pencil" size={14} /></button>
               </span>
             </li>
           {/each}
@@ -165,18 +222,35 @@
           {:else if ssh.hosts.length}
             No host matches “{filter}”.
           {:else}
-            No hosts. Add one, or import those from ~/.ssh/config.
+            No hosts. Add one, or import them from ~/.ssh/config, a Ramure file, FileZilla or PuTTY.
           {/if}
         </p>
       {/each}
     </div>
 
     <footer>
-      <button class="btn small" type="button" onclick={() => void ssh.importConfig()} title="Add the hosts of ~/.ssh/config that are not listed yet">
-        <Icon name="import" size={14} /> Import from ~/.ssh/config
+      <!-- Two menus, which open above them: the foot is at the bottom of the window (9.9). -->
+      <button
+        class="btn small"
+        class:open={menu.isUnder(importEl)}
+        type="button"
+        bind:this={importEl}
+        aria-haspopup="menu"
+        aria-expanded={menu.isUnder(importEl)}
+        onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}
+      >
+        <Icon name="import" size={14} /> Import hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
-      <button class="btn small" type="button" onclick={() => (ssh.exporting = 'all')} title="Write the hosts to ~/.ssh/config, after showing what changes">
-        <Icon name="export" size={14} /> Export to ~/.ssh/config…
+      <button
+        class="btn small"
+        class:open={menu.isUnder(exportEl)}
+        type="button"
+        bind:this={exportEl}
+        aria-haspopup="menu"
+        aria-expanded={menu.isUnder(exportEl)}
+        onclick={(e) => menu.openUnder(e.currentTarget, exportItems, e.detail === 0)}
+      >
+        <Icon name="export" size={14} /> Export hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
       </button>
       <button class="btn small" type="button" onclick={() => (ssh.showKeys = true)}><Icon name="key" size={14} /> Manage keys…</button>
     </footer>
@@ -263,7 +337,17 @@
           <button class="btn primary" type="button" onclick={() => (ssh.editing = emptyHost())}><Icon name="plus" size={14} /> Add host…</button>
           <button class="btn" type="button" onclick={() => ssh.openLocal()}><Icon name="laptop" size={14} /> Open local terminal</button>
           {#if ssh.loaded && !ssh.hosts.length}
-            <button class="btn" type="button" onclick={() => void ssh.importConfig()}>Import from ~/.ssh/config</button>
+            <button
+              class="btn"
+              class:open={menu.isUnder(emptyImportEl)}
+              type="button"
+              bind:this={emptyImportEl}
+              aria-haspopup="menu"
+              aria-expanded={menu.isUnder(emptyImportEl)}
+              onclick={(e) => menu.openUnder(e.currentTarget, importItems, e.detail === 0)}
+            >
+              <Icon name="import" size={14} /> Import hosts <span class="chevron" aria-hidden="true"><Icon name="chevron" size={14} /></span>
+            </button>
           {/if}
         </div>
       </div>
@@ -274,6 +358,8 @@
 <HostDialog />
 <KeysDialog />
 <ExportDialog />
+<ImportDialog />
+<ExportFileDialog />
 
 <style>
   .ssh {
@@ -429,8 +515,22 @@
     transition: opacity var(--t-fast) var(--ease);
   }
   li:hover .acts,
-  li:has(:focus-visible) .acts {
+  li:has(:focus-visible) .acts,
+  li:has(:global(.focus-ring)) .acts {
     opacity: 1;
+  }
+  /* The host of the keyboard: an inner ring on the whole row, its buttons included (9.6). */
+  .host:focus-visible,
+  .host:global(.focus-ring) {
+    outline: none;
+  }
+  li:has(.host:focus-visible),
+  li:has(.host:global(.focus-ring)),
+  li.asked {
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+  li.asked {
+    background: var(--hover);
   }
   .acts button {
     display: grid;
@@ -459,9 +559,20 @@
   .book footer {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     padding: 8px 12px 12px;
     border-top: 1px solid var(--line-soft);
+  }
+  /* A button whose menu is open keeps its hover (guidelines, 9.1). */
+  .btn.open {
+    background: var(--hover);
+    border-color: color-mix(in srgb, var(--muted) 45%, var(--line));
+  }
+  /* The chevron of a button that opens a menu, turned down, in --muted (guidelines, 9.1). */
+  .chevron {
+    display: grid;
+    color: var(--muted);
+    transform: rotate(90deg);
   }
 
   .work {

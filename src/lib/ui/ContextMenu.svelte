@@ -6,6 +6,8 @@
   let element = $state<HTMLDivElement>();
   let veil = $state<HTMLDivElement>();
   let position = $state({ x: 0, y: 0 });
+  /** The corner it grows from, nearest the button that dropped it; empty: that of the style. */
+  let origin = $state('');
   // The menu is being browsed from the keyboard: the item that has the focus shows it. The mouse takes over again by moving.
   let keyboard = $state(false);
 
@@ -23,11 +25,22 @@
       if (!element) return;
       // offsetWidth and offsetHeight: the true size, which the appearing animation does not shrink.
       const { offsetWidth: width, offsetHeight: height } = element;
-      const x = open.anchor ? open.x - width : open.x;
+      // Dropped by a button, its right edge on the right edge of the button; near the left of the
+      // window, its left edge on the left edge of the button. With no room below the button, as
+      // in the foot of the host book, it opens above it, 4 px from it (guidelines, 9.9).
+      const box = open.anchor?.getBoundingClientRect();
+      const x = box ? (open.x - width >= 4 ? open.x - width : box.left) : open.x;
+      let y = open.y;
+      if (box && y + height > window.innerHeight - 6) {
+        const above = box.top - 4 - height;
+        if (above >= 4) y = above;
+      }
       position = {
         x: Math.max(4, Math.min(x, window.innerWidth - width - 6)),
-        y: Math.max(4, Math.min(open.y, window.innerHeight - height - 6)),
+        y: Math.max(4, Math.min(y, window.innerHeight - height - 6)),
       };
+      // It grows from the corner nearest its button.
+      origin = box ? `${y < open.y ? 'bottom' : 'top'} ${x === box.left && open.x - width < 4 ? 'left' : 'right'}` : '';
       // Opened from the keyboard, the first item takes the focus. With the mouse, the menu does: no
       // item is current until one has been hovered or reached, and Space checks nothing.
       if (keyboard) element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
@@ -122,6 +135,7 @@
     bind:this={element}
     style:left="{position.x}px"
     style:top="{position.y}px"
+    style:transform-origin={origin || undefined}
     onkeydown={onKey}
     onpointermove={() => (keyboard = false)}
   >
