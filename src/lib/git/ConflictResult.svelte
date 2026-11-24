@@ -510,14 +510,22 @@
     // The caret waits where the eye is, scroll after scroll.
     let frame = 0;
     let top = view.scrollDOM.scrollTop;
+    // Taken with Tab, the text, taller than the column, is brought into view by the browser from
+    // its top, just after the focus: the three columns would go back to line 1. The scroll that
+    // follows the focus at once is undone, before the columns follow it (9.26).
+    let focusedAt = -Infinity;
     const onScroll = () => {
-      if (view) top = view.scrollDOM.scrollTop;
+      if (!view) return;
+      if (performance.now() - focusedAt < 100 && view.scrollDOM.scrollTop !== top) {
+        focusedAt = -Infinity;
+        view.scrollDOM.scrollTop = top;
+        return;
+      }
+      top = view.scrollDOM.scrollTop;
       if (!frame) frame = requestAnimationFrame(() => ((frame = 0), placeCaret()));
     };
-    // Taken with Tab, the text, taller than the column, is brought into view by the browser from
-    // its top: the three columns would go back to line 1. They stay where they were (9.26).
     const onFocus = () => {
-      if (view && view.scrollDOM.scrollTop !== top) view.scrollDOM.scrollTop = top;
+      focusedAt = performance.now();
     };
     view.scrollDOM.addEventListener('scroll', onScroll, { passive: true });
     view.contentDOM.addEventListener('focus', onFocus);
