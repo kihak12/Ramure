@@ -465,8 +465,9 @@
     if (local) return openLocal();
     retry = auto;
     attempt = { ...attempt, ...next };
-    // Before the card gives way to the one of the try, and the focus with it.
-    if (auto) keyboardHere = !!rootEl?.contains(document.activeElement);
+    // Before the card gives way to the one of the try, and the focus with it: the card or the
+    // terminal, not the header or the strip of the tunnels above them.
+    if (auto) keyboardHere = [cardEl, termEl].some((el) => el?.contains(document.activeElement));
     if (host.proxyJump) {
       phase = { step: 'error', message: 'This host goes through a bastion (ProxyJump). Connecting through a bastion is not supported yet.' };
       session.status = 'closed';
