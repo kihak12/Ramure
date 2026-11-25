@@ -127,16 +127,22 @@
     overflow-y: auto;
     container-type: inline-size;
   }
+  /* The groups of a section, 24 px apart (guidelines, 9.18). */
   .column {
     display: grid;
-    gap: 20px;
+    gap: 24px;
     max-width: 640px;
     padding: 24px;
   }
-  /* A group of settings: its title, then its rows, 12 px apart. */
+  /* A group of settings: its title, then its rows, 12 px apart; two settings of a group are
+     parted by a --line-soft line, 12 px from each (guidelines, 9.18). */
   .column :global(.group) {
     display: grid;
     gap: 12px;
+  }
+  .column :global(.group > .setting + .setting) {
+    padding-top: 12px;
+    border-top: 1px solid var(--line-soft);
   }
   .column :global(.group h3) {
     margin: 0;

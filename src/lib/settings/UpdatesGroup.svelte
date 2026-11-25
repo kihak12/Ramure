@@ -5,7 +5,7 @@
   import { mayRestart, restartLosses } from '../ssh/guard';
   import { files } from '../files/files.svelte';
   import { ssh } from '../ssh/ssh.svelte';
-  import Choice from '../ui/Choice.svelte';
+  import Switch from '../ui/Switch.svelte';
   import { date } from '../ui/dates';
   import { focusWithRing } from '../ui/focus';
   import Icon from '../ui/Icon.svelte';
@@ -17,11 +17,6 @@
   // check, and the box of a version that waits, whose install takes two steps.
 
   const RELEASES = 'github.com/kihak12/Ramure/releases';
-
-  const AUTO = [
-    { value: 'on', label: 'On', help: 'At startup, then once a day. Nothing is downloaded or installed on its own.' },
-    { value: 'off', label: 'Off', help: 'Ramure never contacts the network on its own. Use “Check for updates” when you want to.' },
-  ] as const;
 
   const info = $derived(updates.info);
   const found = $derived(updates.found);
@@ -183,15 +178,12 @@
     {/if}
 
     {#if info.canUpdate}
-      <SettingRow id="set-update-check" name="Automatic update check" help="Ramure asks GitHub whether a newer version exists." group>
-        <Choice
-          name="set-update-check"
-          labelledby="set-update-check-name"
-          describedby="set-update-check-help"
-          value={prefs.updateCheck ? 'on' : 'off'}
-          options={AUTO}
-          onchange={(value) => savePrefs({ updateCheck: value === 'on' })}
-        />
+      <SettingRow
+        id="set-update-check"
+        name="Automatic update check"
+        help="At startup, then once a day, Ramure asks GitHub whether a newer version exists; nothing is downloaded or installed on its own. Off, Ramure never contacts the network on its own: use “Check for updates”."
+      >
+        <Switch id="set-update-check" describedby="set-update-check-help" on={prefs.updateCheck} onchange={(on) => savePrefs({ updateCheck: on })} />
       </SettingRow>
     {/if}
 

@@ -75,7 +75,9 @@ What the interface favors:
 3. **Surfaces rather than lines.** Areas are separated by their background and by space. Lines
    are only used inside a card or a dialog.
 4. **One shape, one role.** A slightly rounded rectangle can be clicked. A pill or a circle
-   informs. One exception: a color swatch, a round dot of color that is chosen (9.21).
+   informs. Two exceptions: a color swatch, a round dot of color that is chosen (9.21); and the
+   switch of a setting, a pill whose round thumb slides from off to on (9.3), the shape everyone
+   knows for it.
 5. **Dense and readable.** A lot of information on screen, but no text under 10.5 px and no
    target under 24 px.
 6. **Calm.** A movement is brief and explains a change. Nothing moves without an action from the
@@ -87,7 +89,7 @@ What it forbids:
 - a border or a shadow around a card;
 - a colored bar on the edge of a card or of a row, to mark a selection or a state; the color
   that the user gives an SSH host is the one exception (9.21): it names the host, never a state;
-- a pill for an element that can be clicked;
+- a pill for an element that can be clicked, the switch of a setting apart (9.3);
 - an element that changes size when it is clicked, other than a button;
 - a decorative gradient;
 - text in all capitals;
@@ -471,12 +473,14 @@ From left to right and from top to bottom:
 | `--radius` | 8 px | Selectable rows, tabs, notifications, rail buttons; the unfolded labels of a commit (9.4), which float but hug their labels; a tinted box inside a card or a dialog (a warning, the strip of uncommitted changes, the box of an update). |
 | `--radius-l` | 12 px | What floats: dialogs, menus, command palette; notifications and the unfolded labels of a commit excepted (8 px). |
 | `--radius-card` | 14 px | Cards. |
-| `--radius-pill` | 999 px | What informs: counters, the "+N" of the labels of a commit (9.4), the capsule of a commit message. |
+| `--radius-pill` | 999 px | What informs: counters, the "+N" of the labels of a commit (9.4), the capsule of a commit message. The one pill that can be clicked: the track of a switch (9.3). |
 
 - **Everything that can be clicked is a slightly rounded rectangle**, except a color swatch
-  (below). The pill is reserved for what informs without being clicked.
+  (below) and the switch of a setting (9.3). The pill is otherwise reserved for what informs
+  without being clicked.
 - The circle is reserved for the dot of a commit, the badge of a toolbar button, the dot that
-  says an update waits (9.23), the icon of a notification, the waiting ring, and the color
+  says an update waits (9.23), the icon of a notification, the waiting ring, the thumb of a
+  switch (9.3), and the color
   swatches of a choice of color (the color of
   an SSH host). A swatch is a dot of color that can be clicked: it is round, and it is the one
   element that grows on hover (8).
@@ -793,6 +797,19 @@ its own buttons.
     checked.
   - Focus: the focus ring of the application (the states of section 9). Disabled: 45%, and its
     text too.
+- A switch is a setting that is on or off and applies at once: it lives on the settings page
+  (9.18), where nothing is confirmed; a checkbox belongs to a form that is confirmed. It is a
+  button with the role `switch`, in the column of the control of its setting, and the name of
+  the setting is its label, which toggles it too.
+  - The track: a pill of 34 × 20 px, the one pill that can be clicked (1, 5). Off, a `--bg`
+    background and a 1 px border in `--muted`; on, the `--accent` background and border.
+  - The thumb: a circle of 14 px, 2 px inside the border, in `--muted` off and in `--on-accent`
+    on. It slides from one end to the other in `--t-fast` (8).
+  - Beside it, 8 px away, the word "On" or "Off" in 12 px, `--muted`, in a room that keeps the
+    width of the longer: the state is never the color alone, and the switch never moves. The
+    track and its word are the target, 32 px high, as a field.
+  - Hover: the border in `--ink`, or the accent 10% toward `--ink` when on, as the checkbox.
+    Focus: the focus ring of the application, around the track. Disabled: 45%.
 - A list is drawn by the application when it is closed, like the checkbox: the system's is
   taller than a field on Linux, and cannot be brought to 32 px without cutting its text. It is a
   field, 32 px high with its states, its value on the left, and on the right the "chevron" icon
@@ -1698,19 +1715,25 @@ Escape bring back the module and the tab that were shown; after Escape, the focu
 (9.8): it heads the whole card. A note may follow it, in 11.5 px, `--muted`. On the right,
 "Reset all", a small ghost button, disabled while nothing differs from the defaults;
 its tooltip then says so. Under the title, groups, each with a 12 px title, weight 650, in
-`--muted`.
+`--muted`, 24 px apart, so that a group reads as one: its title 24 px under what comes before,
+its first setting 12 px under its title.
 
 **A setting** is a row: its name in 13.5 px, `--ink`, a help text under it in 11.5 px,
-`--muted`, and its control on the right, 240 px wide. 12 px between two rows. The name is a
-noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice sits
-under the name of its setting, on the whole width of the column.
+`--muted`, and its control on the right, 240 px wide. Two settings of a group are parted by a
+`--line-soft` line, 12 px from each, so that the eye knows where one ends; no line above the
+first one, nor between groups (6). The name is a noun, not a verb. The controls are those of
+section 9.3, the switch for what is on or off among them, and the choice (9.19), which follows
+from the options (its first paragraph): rows and tiles sit under the name of their setting, on
+the whole width of the column; segments, a list and a switch, on the right.
 
 **A row that states a fact** is not a setting: its name says something ("Version 0.3.0") and
 labels no field, and its control, when it has one, is a small standard button that names itself
 ("Check for updates"). It takes the place and the look of a setting (9.23).
 
-**A setting applies at once.** A list, as soon as the choice changes; a number, when the field
-is left or on Enter.
+**A setting applies at once.** A list or a switch, as soon as it changes; a number, when the
+field is left or on Enter. The help of a switch is one text, true whether it is on or off, which
+says what "Off" does: "A lost connection is retried five times, 2 to 30 s apart. Off, the tab
+waits for a click on “Reconnect”."
 
 - No "Save" and no "Cancel" button on the page, no main button, and no notification to
   say that a setting was saved: the control shows the state.
@@ -1763,10 +1786,15 @@ better seen than named: the theme, the way to pull, the style of the graph, the 
 diff; or two or three short ones, in segments: the clock. Nothing has to be opened to compare
 them.
 
+The control of a setting follows from its options: on or off, a switch (9.3); two or three short
+options with nothing to explain, segments; options that need a sentence each, rows; options
+better seen, tiles; many options, or plain values, a list (9.3).
+
 - It is a group of radio buttons: one option is always chosen. Tab enters and leaves the group;
   the arrows move the choice, which applies at once.
 - **Rows**: one option per row, its name in 13.5 px, and under it what it entails, in 11.5 px,
-  `--muted`.
+  `--muted`. A row has a `--line` border, as a tile: it is a control, which reads as one even
+  when it is not chosen. Rows are 6 px apart.
 - **Tiles**: the options side by side, each with a preview 64 px high above its name. For what
   is seen rather than read. A tile has a `--line` border: it is a control, at the level of a
   button or a field (6), not a card, and neither is its preview.
@@ -2068,11 +2096,10 @@ and the entry "General" has the same words for screen readers. The button opens 
     before all its installers: "The new version has no installer for this system yet. Try again
     later.";
   - nothing when a version was found: the box says it.
-- **"Automatic update check"**, a choice (9.19), with the help "Ramure asks GitHub whether a
-  newer version exists.":
-  - "On": "At startup, then once a day. Nothing is downloaded or installed on its own.";
-  - "Off": "Ramure never contacts the network on its own. Use “Check for updates” when you want
-    to."
+- **"Automatic update check"**, a switch (9.3), on by default, with one help true in both
+  states: "At startup, then once a day, Ramure asks GitHub whether a newer version exists;
+  nothing is downloaded or installed on its own. Off, Ramure never contacts the network on its
+  own: use “Check for updates”."
   "Reset all" turns it back on, as it does for every setting of the section that is shown.
 - **A copy that cannot update itself**, built from the sources, says so in the help of
   "Version": "This copy was built from the sources and cannot update itself. New versions are on

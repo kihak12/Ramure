@@ -72,10 +72,14 @@
 </div>
 
 <style>
+  /* Rows, 6 px apart, each with the border of a tile: a control (guidelines, 9.19). */
   .choice {
     display: grid;
-    gap: 2px;
+    gap: 6px;
     min-width: 0;
+  }
+  .rows .option {
+    border: 1px solid var(--line);
   }
   .tiles {
     grid-template-columns: repeat(var(--count), minmax(0, 1fr));
@@ -102,6 +106,7 @@
      9.19). The 2 px inside the border and the 4 px corners of an option follow from it. */
   .segments {
     grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+    gap: 2px;
     padding: 2px;
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
