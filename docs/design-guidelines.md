@@ -579,9 +579,18 @@ button: the cross and the "+" of a tab bar, the close button of a notification o
 - The width of a card that is hidden or shown: the graph would be laid out again at every frame.
 - The text of a diff or of a terminal.
 
-**The only two loops.** The waiting indicator, for as long as the operation or the wait lasts: a
-spinning icon, a spinning ring, a bar, a blinking dot. The halo of the current commit in the
-graph: a ring that widens and fades, in 2.4 s.
+**The only two loops.** The waiting indicator, for as long as the operation or the wait lasts.
+The halo of the current commit in the graph: a ring that widens and fades, in 2.4 s.
+
+The waiting indicator takes one of four forms, each in its own place:
+
+- **A spinning icon**: an icon turns in place in a button while the operation of that button
+  runs, as in the toolbar (9.2), beside or in place of the words that say the state. The button
+  draws its turn, one turn in `--t-spin`, on a linear curve. It is not the waiting ring, below.
+- **The waiting ring**, below: where the user asked for the operation, and beside a button at
+  work when the wait can last (9.1).
+- **A progress bar**, next to a wait that can last (9.1).
+- **A blinking dot**: the dot of a host that waits and tries to reconnect (9.15).
 
 The waiting ring is 12 px, in `--accent` or in the color of the text around it, and it appears
 where the user asked for the operation: on the tab of the repository, on the label or the row of
@@ -590,7 +599,8 @@ to, on the row of a tunnel that starts (9.15). It is the shared class `.spinner`
 `src/app.css`, whose `--spinner` property gives it another color. Words always say the state
 beside it, so the ring itself is hidden from screen readers. One exception: on the tab of a host
 being connected to, the ring stands alone in the place of the dot, and carries the name of the
-state (9.15).
+state (9.15). `.spinner` is the ring alone: a spinning icon is not written with it, and is not a
+ring written again.
 
 **When a repository is opened** or after a full reload, the rows of the graph come in one after
 the other, once. Never on scroll.
