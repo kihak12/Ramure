@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { slide } from 'svelte/transition';
+  import { focusBack } from '../ui/focus';
   import Icon from '../ui/Icon.svelte';
   import { discardFiles } from './actions';
   import FileList from './FileList.svelte';
@@ -25,14 +27,36 @@
   // A file in both lists is only partly staged.
   const partial = $derived(new Set(status.staged.filter((f) => unstaged.some((u) => u.path === f.path)).map((f) => f.path)));
 
+  // Lines picked in the diff and not staged yet (guidelines, 9.14).
+  const picked = $derived(repo.picked.length);
+  const lines = (n: number) => `${n.toLocaleString('en-US')} line${plural(n)}`;
+  // Something would be committed: picked lines not staged would be left out of it.
+  const leftOut = $derived(
+    !busy && !conflicts.length && picked && (status.staged.length > 0 || repo.amend)
+      ? `${lines(picked)} picked ${picked === 1 ? 'is' : 'are'} not staged: ${picked === 1 ? 'it' : 'they'} will not be in the commit.`
+      : '',
+  );
+
   // What is missing to commit: said on screen, rather than left to guess in front of a grayed-out button.
+  // Lines picked come before "Nothing is staged": staging them is the step to do.
   const blocker = $derived.by(() => {
     if (busy) return '';
     if (conflicts.length) return 'Resolve the conflicts first.';
-    if (!status.staged.length && !repo.amend) return 'Nothing is staged: stage a file or some lines.';
+    if (!status.staged.length && !repo.amend) return picked ? `${lines(picked)} picked, not staged yet.` : 'Nothing is staged: stage a file or some lines.';
     if (!message.trim()) return 'Write a commit message.';
     return '';
   });
+  // The hint is that of the lines picked: the button that stages them goes beside it, and nowhere else.
+  const pickedHint = $derived(!busy && !conflicts.length && !!picked && !status.staged.length && !repo.amend);
+  const describedBy = $derived([leftOut && 'commit-left-out', blocker && 'commit-blocker'].filter(Boolean).join(' ') || undefined);
+
+  /** "Stage N lines" of the commit box: the lines picked in the diff, as its own button does; the
+   *  button gone, the keyboard goes to the message, the next step (9.14). */
+  async function stagePicked() {
+    await repo.applyLines(repo.picked);
+    await tick();
+    focusBack(document.getElementById('commit-message'));
+  }
   // Ctrl + Enter while committing is not possible: the reason is brought forward, until it changes.
   let nudged = $state(false);
   $effect(() => {
@@ -152,14 +176,27 @@
     <label class="label" for="commit-message">Commit message</label>
     <MessageField id="commit-message" bind:value={repo.message} onkeydown={onKey} disabled={busy}>
       {#snippet notes()}
+        {#snippet stage()}
+          <button class="btn ghost small" type="button" onclick={() => void stagePicked()}>Stage {lines(picked)}</button>
+        {/snippet}
+        {#if leftOut}
+          <!-- "Commit" would leave out the lines picked: a warning, with what stages them (9.14). -->
+          <div class="hint">
+            <p id="commit-left-out" class="why small warned" aria-live="polite"><Icon name="warning" size={14} /><span>{leftOut}</span></p>
+            {@render stage()}
+          </div>
+        {/if}
         {#if blocker}
-          <!-- Ctrl + Enter refused: an icon is added to the color, and the text, inserted again, is announced again. -->
-          <p id="commit-blocker" class="why small" class:nudged aria-live="polite">
-            {#key nudged}
-              {#if nudged}<Icon name="warning" size={14} />{/if}
-              <span>{blocker}</span>
-            {/key}
-          </p>
+          <div class="hint">
+            <!-- Ctrl + Enter refused: an icon is added to the color, and the text, inserted again, is announced again. -->
+            <p id="commit-blocker" class="why small" class:nudged aria-live="polite">
+              {#key nudged}
+                {#if nudged}<Icon name="warning" size={14} />{/if}
+                <span>{blocker}</span>
+              {/key}
+            </p>
+            {#if pickedHint}{@render stage()}{/if}
+          </div>
         {/if}
       {/snippet}
       {#snippet actions()}
@@ -167,7 +204,7 @@
         class="btn primary"
         type="button"
         disabled={!canCommit}
-        aria-describedby={blocker ? 'commit-blocker' : undefined}
+        aria-describedby={describedBy}
         onclick={() => void repo.commit()}
         title={blocker || 'Ctrl + Enter'}
       >
@@ -255,15 +292,29 @@
     gap: 6px;
     color: var(--muted);
   }
+  /* A sentence that wraps keeps its icon on its first line (4.1). */
   .why {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     margin: 0;
     color: var(--muted);
     transition: color var(--t-fast) var(--ease);
   }
-  .why.nudged {
+  .why :global(.icon) {
+    flex: none;
+    margin-top: 1px;
+  }
+  .why.nudged,
+  .why.warned {
     color: var(--warn);
+  }
+  /* A sentence of the commit box and the button that does the step, side by side; under the
+     sentence when the panel is narrow. */
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
   }
 </style>

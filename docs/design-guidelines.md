@@ -1208,6 +1208,18 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   button that picks the other half. It sits under the lines so that they do not move while they
   are being picked. Two lines count as one modified line when they look alike; it holds for both
   layouts, and when lines are taken out of the index.
+- **Lines picked and not staged yet** are said in the commit box, under the message, where the
+  eye goes before "Commit", with the button that stages them beside the sentence, or under it
+  when the panel is too narrow for both: "Stage 1 line", a small ghost button, which does what
+  "Stage 1 line" above the diff does. While nothing
+  is staged, the sentence takes the place of "Nothing is staged…", in `--muted`, since staging
+  them is the step to do: "1 line picked, not staged yet.". When something is staged, or the last
+  commit is amended, "Commit" would leave them out: the sentence says so in `--warn`, with the
+  warning icon, above what else is missing: "2 lines picked are not staged: they will not be in
+  the commit.". The button shows beside these sentences only. Once it has staged them, it goes
+  with its sentence, its step done, outside "The button just pressed does not move" (9.1), and
+  the keyboard goes to the message. Lines picked to be taken out of the index say nothing there:
+  they are in the commit already.
 
 ### 9.15 Terminal
 

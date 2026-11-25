@@ -15,6 +15,7 @@
     selectable = null,
     busy = false,
     onapply,
+    onpick,
     onclose,
   }: {
     title: string;
@@ -27,6 +28,9 @@
     busy?: boolean;
     /** Receives the indices of the picked lines, in `diff.text.split('\n')`. */
     onapply?: (lines: number[]) => void;
+    /** Told of the lines picked whenever they change, the same indices: the commit box says when
+     *  they are not staged (guidelines, 9.14). */
+    onpick?: (lines: number[]) => void;
     onclose: () => void;
   } = $props();
 
@@ -102,6 +106,11 @@
     anchor = -1;
     cursor = -1;
   });
+  // The lines picked are known outside the diff, and forgotten when it closes (9.14).
+  $effect(() => {
+    onpick?.(canSelect ? [...selected] : []);
+  });
+  $effect(() => () => onpick?.([]));
 
   function toggle(line: Line, event: MouseEvent) {
     if (!canSelect || (line.type !== 'add' && line.type !== 'del')) return;
@@ -286,7 +295,7 @@
     {#if canSelect && selected.size}
       <button class="btn small" type="button" onclick={() => selected.clear()}>Clear selection</button>
       <button class="btn primary small" type="button" disabled={busy} onclick={applySelection} title="Enter, in the list of lines">
-        {verb} {selected.size} line{selected.size === 1 ? '' : 's'}
+        {verb} {selected.size.toLocaleString('en-US')} line{selected.size === 1 ? '' : 's'}
       </button>
     {:else if canSelect}
       <small class="hint" title="From the keyboard: ↑ and ↓ to move from one line to the next, Home and End to go to the ends, Space to pick a line or let go of it, Shift to extend, Enter to confirm">Click lines to {selectable === 'unstage' ? 'unstage' : 'stage'} only some of them</small>

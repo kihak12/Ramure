@@ -116,6 +116,9 @@ export class Repo {
   detailError = $state('');
   openFile = $state<OpenFile | null>(null);
   diff = $state.raw<Diff | null>(null);
+  /** The lines picked in the open diff of the working tree, not staged yet: the commit box says
+   *  so, and can stage them (guidelines, 9.14). */
+  picked = $state.raw<number[]>([]);
   diffLoading = $state(false);
   diffError = $state('');
   /** File open in the conflict editor. */
@@ -387,6 +390,12 @@ export class Repo {
       tracked: files.filter((f) => f.kind !== 'untracked').map((f) => f.path),
       untracked: files.filter((f) => f.kind === 'untracked').map((f) => f.path),
     });
+  }
+
+  /** The lines picked in the open diff: only those to stage concern the commit. */
+  pick(lines: number[]) {
+    const next = this.openFile?.selectable === 'stage' ? lines : [];
+    if (next.length || this.picked.length) this.picked = next;
   }
 
   /** Stages or unstages the lines picked in the open diff. */
@@ -737,7 +746,10 @@ export class Repo {
     } else if (!focused || focused === document.body) {
       this.#opener = null;
     }
-    if (this.openFile?.key !== file.key) this.diff = null;
+    if (this.openFile?.key !== file.key) {
+      this.diff = null;
+      this.picked = [];
+    }
     this.openFile = file;
     // The diff opens on the card of the graph: asking for it brings the card back if it was hidden.
     this.terminals.setGraph(true);
@@ -763,6 +775,7 @@ export class Repo {
     this.#diffToken++;
     this.openFile = null;
     this.diff = null;
+    this.picked = [];
     this.diffError = '';
     this.diffLoading = false;
     if (open && typeof document !== 'undefined') void tick().then(() => this.#giveKeyboardBack(opener));
