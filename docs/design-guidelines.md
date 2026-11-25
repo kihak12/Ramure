@@ -740,6 +740,14 @@ its own buttons.
   `--accent-soft` background, the icon in `--accent`, `aria-pressed`. On hover the tint gets a
   little stronger (12% of `--accent` over `--accent-soft`). While the terminal is hidden with
   shells still running, the badge of the action counts them.
+- At the end of that group, after "Reload", "Open", with the folder icon, shows the folder of the
+  repository in the file manager of the system: File Explorer on Windows, the default file
+  manager on Ubuntu. Its tooltip says so, "Open the folder of the repository in the file
+  manager", and the palette has the same action, "Open repository folder". Another repository
+  opens from the name of the repository at the left of the toolbar, from "Open repository…" in
+  the palette and from the start page of a new tab. A failure is an error notification that says
+  what to do (9.11): "Could not open the folder", then the folder to open by hand, or that it no
+  longer exists.
 - One view button sits at the right end of the toolbar, above the right edge of the cards:
   "View". It is an 18 px icon alone, in a 30 × 30 px button, and it opens the menu of the cards
   to show (9.17).

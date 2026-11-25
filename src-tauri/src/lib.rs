@@ -6,6 +6,7 @@ mod git;
 mod journal;
 mod local;
 mod ssh;
+mod system;
 mod update;
 
 use tauri::{Emitter, Manager};
@@ -126,6 +127,7 @@ pub fn run() {
             journal::journal_stop,
             journal::journal_default_dir,
             journal::journal_open_dir,
+            system::open_folder,
             local::local_write,
             local::local_resize,
             local::local_close,

@@ -331,18 +331,7 @@ pub fn journal_default_dir(app: tauri::AppHandle) -> Option<String> {
 pub fn journal_open_dir(path: String) -> Result<(), String> {
     let dir = PathBuf::from(&path);
     fs::create_dir_all(&dir).map_err(|e| format!("{path}: {e}"))?;
-    let program = if cfg!(windows) {
-        "explorer"
-    } else if cfg!(target_os = "macos") {
-        "open"
-    } else {
-        "xdg-open"
-    };
-    std::process::Command::new(program)
-        .arg(&dir)
-        .spawn()
-        .map(|_| ())
-        .map_err(|e| format!("The file manager could not open the folder: open “{path}” by hand. ({e})"))
+    crate::system::show_folder(&dir)
 }
 
 #[tauri::command]
