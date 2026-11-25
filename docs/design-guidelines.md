@@ -707,7 +707,7 @@ its own buttons.
   can last, the waiting ring (8) or a progress bar next to it shows it.
 - **Keyboard.** In a dialog, Enter triggers the primary, unless the focus is on another button,
   which Enter then presses: for a destructive action the focus starts on the way out, so Enter
-  leaves. Escape and a click on the veil leave (9.10). The tab order follows the visual order. A
+  leaves, the delete of the Files module apart (9.10). Escape and a click on the veil leave (9.10). The tab order follows the visual order. A
   shortcut, when there is one, is in the tooltip: "Ctrl + Enter".
 - **The button just pressed does not move.** What it produces, a result, an error, a question, a
   progress, appears below it, or on the left of the last line of a dialog, the buttons staying at
@@ -1074,11 +1074,14 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - The buttons are on the last line, in the order of 9.1 ("Hierarchy"): "Cancel", then
   the action, at the right.
 - Enter triggers the main button; for a destructive action the focus is on "Cancel", and Enter
-  cancels. Escape cancels. A click on the veil cancels too, when it is pressed and released on
+  cancels. One exception, the delete of the Files module (9.24): the user chose what goes, from a
+  selection, and confirms with Enter; the focus is on "Delete", with its ring. Escape cancels. A click on the veil cancels too, when it is pressed and released on
   the veil, not at the end of a drag that started in the dialog; except while an operation runs
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
   What was typed in the dialog is lost, without a question.
-- On opening, focus goes to the first field. For a destructive action, it goes to "Cancel".
+- On opening, focus goes to the first field. For a destructive action, it goes to "Cancel", the
+  delete of the Files module apart (above), a dialog with no field. An Enter held from what
+  opened the dialog repeats: its repeats are ignored, so that it never answers the dialog.
 - Tab and Shift + Tab go round the controls of the dialog, from the last to the first and back,
   each with its ring: the focus never leaves it, nor stops on what cannot be seen. This holds for
   every modal dialog, the command palette included, where Tab stays in its field.
@@ -2338,8 +2341,11 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   menu was opened on, and becomes the selection. The
   deletion says what is lost: "Delete 3 items from staging?", "They are deleted from the server
   for good, with what the folders hold: they cannot be recovered.", or "from this machine",
-  "… they do not go to the trash", with "Cancel", which has the focus, and "Delete", a danger
-  button.
+  "… they do not go to the trash". What a folder holds is named only when a folder goes: "Delete
+  Dockerfile from staging?", "It is deleted from the server for good: it cannot be recovered."; a
+  folder alone, "…for good, with what it holds: …"; one folder among several items, "…with what
+  the folder holds: …". Then "Cancel", and "Delete", a danger button,
+  which has the focus: the one destructive confirmation that does (9.10).
 - Nothing lists again on its own, except after an action of the pane or a transfer into it:
   "Refresh" does it.
 

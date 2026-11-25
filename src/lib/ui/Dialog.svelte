@@ -76,6 +76,11 @@
     if (!busy) dialogs.close(null);
   }}
   use:veil={() => !busy && dialogs.close(null)}
+  onkeydown={(e) => {
+    // An Enter held from what opened the dialog, a menu item, repeats: it never answers the dialog,
+    // above all a delete whose button has the focus (guidelines, 9.10).
+    if (e.key === 'Enter' && e.repeat) e.preventDefault();
+  }}
 >
   {#if spec}
     <form onsubmit={submit}>
@@ -154,9 +159,10 @@
              are (guidelines, 9.1 and 9.21). -->
         {#if refusal && !textFirst}<p class="failure" role="alert"><Icon name="warning" size={14} /> <span>{refusal}</span></p>{/if}
         <!-- The way out, the secondary actions, then the main one, at the right (guidelines, 9.1, "Hierarchy"). -->
-        <!-- Destructive action: the focus lands on "Cancel", so that Enter destroys nothing (guidelines, 9.10). -->
+        <!-- Destructive action: the focus lands on "Cancel", so that Enter destroys nothing, the delete of
+             the Files module apart (guidelines, 9.10). -->
         <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn" type="button" autofocus={!!spec.danger} disabled={busy} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Cancel'}</button>
+        <button class="btn" type="button" autofocus={!!spec.danger && !spec.confirmFirst} disabled={busy} onclick={() => dialogs.close(null)}>{spec.cancelLabel ?? 'Cancel'}</button>
         {#each spec.extra ? [spec.extra].flat() : [] as extra (extra.label)}
           <button
             class="btn"
@@ -171,7 +177,7 @@
           >
         {/each}
         <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid || busy} autofocus={fields.length === 0 && !spec.danger}>
+        <button class="btn {spec.danger ? 'danger' : 'primary'}" type="submit" disabled={!valid || busy} autofocus={fields.length === 0 && (!spec.danger || !!spec.confirmFirst)}>
           {busy && spec.busyLabel ? spec.busyLabel : spec.confirmLabel}
         </button>
       </footer>
