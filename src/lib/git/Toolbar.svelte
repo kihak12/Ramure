@@ -117,7 +117,7 @@
       terminals.shown,
     )}
     {@render tool('refresh', 'Reload', 'Read the history of the repository again', !ready, () => void repo.reload())}
-    {@render tool('folder', 'Open', 'Open the folder of the repository in the file manager', !repo.result, () => void openRepoFolder(repo))}
+    {@render tool('folder', 'Open', 'Open in the file manager', !repo.result, () => void openRepoFolder(repo))}
   </div>
   <!-- “View”: the one view button, it opens the choice of the cards. While its menu is open, its
        tooltip keeps quiet: it would cover the first item. The editor of a conflict covers the
