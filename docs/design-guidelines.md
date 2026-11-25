@@ -876,6 +876,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
   the area that scrolls, its scrollbar apart. In a pane of the Files module that is not the active
   one, a neutral tint, which says which pane acts (9.24).
+- In a list that holds several rows selected at once (9.24), rows selected one after another form
+  one block: its corners round at the top of its first row and at the bottom of its last one
+  only, so that the run reads as one selection and not as a stack of rows. A row selected alone
+  keeps its four corners.
 - **No colored bar on the edge** to mark the selection.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the current row, the one the arrows
   move: the selected row, or in a list of files a row that is not selected (the parent row, or
