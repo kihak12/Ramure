@@ -1128,7 +1128,7 @@
   .cols,
   .row {
     display: grid;
-    grid-template-columns: 22px minmax(0, 1fr) 140px 72px;
+    grid-template-columns: 22px minmax(0, 1fr) 152px 72px;
     align-items: center;
     gap: 6px;
   }

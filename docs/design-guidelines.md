@@ -2235,12 +2235,12 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
 - "Modified", the date and the time to the second in 12 px, `--muted` and tabular figures, in the
   format of the settings (9.18): "11-25-2026 14:30:05" by default, AM or PM kept on its line with
   the 12-hour clock, so that two versions of the same day are told apart; the full date in its
-  tooltip ("Wednesday, November 25, 2026 at 14:30:05"). The column is 140 px, which holds the
-  longest format, "Nov 25, 2026, 12:30:05 PM"; it gives way under 464 px of pane, as the columns of the
-  graph do (10.1), measured on the pane, not the window: the date of a row is then hidden from the
-  eye only and stays spoken (11), while its sort button goes, since a stop of the tab order is
-  never hidden from the eye. An order by date chosen before stays, with no chevron, until a click
-  on "Name" or "Size", or a wider pane. It sorts by the exact time.
+  tooltip ("Wednesday, November 25, 2026 at 14:30:05"). The column is 152 px, which holds the
+  longest format, "Nov 24, 2026, 10:30:00 PM"; it gives way under 464 px of pane, as the columns of
+  the graph do (10.1), measured on the pane, not the window: the date of a row is then hidden from
+  the eye only and stays spoken (11), while its sort button goes, since a stop of the tab order is
+  never hidden from the eye. An order by date chosen before stays, with no chevron, until a click on
+  "Name" or "Size", or a wider pane. It sorts by the exact time.
 - "Size", aligned on the right, in tabular figures, in kB, MB and GB of 1,000 bytes ("12.4 MB");
   empty for a folder.
 - **The parent row**, "..", comes first while the folder has a parent: the "up" icon and its
