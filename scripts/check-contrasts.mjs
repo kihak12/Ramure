@@ -52,12 +52,6 @@ const distance = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
 const TOWARD_INK = 0.9; // hover on a solid fill: 10% toward --ink
 const MATCH = 0.3; // search match in the terminal: the accent on --term-bg (Terminal.svelte)
 // Tints of the two sides of the conflict editor (ConflictSide, ConflictResult, ConflictEditor).
-const SIDE_LINE = 0.1; // a line of a conflict, and a line of the result kept from a side
-const SIDE_KEPT = 0.24; // a line kept
-const SIDE_CHIP = 0.3; // the chip "1" or "2"
-const SIDE_BUTTON = 0.12; // "Keep upstream", "Keep your commit"
-const SIDE_BUTTON_HOVER = 0.24;
-const ANCESTOR_LINE = 0.3; // a line of the current conflict in the common ancestor (.cm-mark-focus)
 
 // The minimum color distances, in light then in dark: a hover shows on its background, and the
 // selection stands apart from its background and from the hover. Each is the lowest value of the
@@ -92,7 +86,7 @@ for (const palette of PALETTES.filter((p) => p !== 'slate')) {
   }
 }
 for (const [mode, values] of Object.entries(STRENGTHS)) {
-  for (const name of ['--tint-veil', '--tint-sel-quiet', '--tint-lane', '--tint-lane-veil', '--tint-label', '--tint-label-soft', '--tint-label-hover', '--tint-letter', '--tint-added', '--tint-removed', '--tint-line-hover', '--tint-line-pick']) {
+  for (const name of ['--tint-veil', '--tint-sel-quiet', '--tint-lane', '--tint-lane-veil', '--tint-label', '--tint-label-soft', '--tint-label-hover', '--tint-letter', '--tint-added', '--tint-removed', '--tint-line-hover', '--tint-line-pick', '--tint-side', '--tint-side-kept', '--tint-side-chip', '--tint-keep', '--tint-keep-hover', '--tint-keep-border', '--tint-current-line', '--tint-caret-line', '--tint-text-sel']) {
     if (!(name in values)) findings.push(`slate, ${mode}: ${name} is missing`);
   }
 }
@@ -213,17 +207,23 @@ function check(name, t, dark) {
   for (const side of ['--l0', '--l1']) {
     const c = t[side];
     const tints = [
-      ['a line', SIDE_LINE, '--bg'],
-      ['a kept line', SIDE_KEPT, '--bg'],
-      ['a chip in a bar', SIDE_CHIP, '--panel'],
-      ['a chip in the result', SIDE_CHIP, '--bg'],
-      ['a Keep button', SIDE_BUTTON, '--raised'],
-      ['a hovered Keep button', SIDE_BUTTON_HOVER, '--raised'],
+      ['a line', s['--tint-side'], '--bg'],
+      ['the bar', s['--tint-side'], '--panel'],
+      ['a kept line', s['--tint-side-kept'], '--bg'],
+      ['a chip in a bar', s['--tint-side-chip'], '--panel'],
+      ['a chip in the result', s['--tint-side-chip'], '--bg'],
+      ['a Keep button', s['--tint-keep'], '--raised'],
+      ['a hovered Keep button', s['--tint-keep-hover'], '--raised'],
+      ['a chip in a Keep button', s['--tint-side-chip'], '--raised'],
     ];
     for (const [what, p, bg] of tints) need(`--ink on ${what} of ${side}`, contrast(t['--ink'], mix(c, p, t[bg])), 7);
-    need(`--muted on a line set aside of ${side}`, contrast(t['--muted'], mix(c, SIDE_LINE, t['--bg'])), 4.5);
+    need(`--muted on a line set aside of ${side}`, contrast(t['--muted'], mix(c, s['--tint-side'], t['--bg'])), 4.5);
+    // Text selected in the result, over a line kept from this side.
+    need(`--ink on text selected over a line of ${side}`, contrast(t['--ink'], mix(t['--accent'], s['--tint-text-sel'], mix(c, s['--tint-side'], t['--bg']))), 7);
   }
-  need('--ink on a line of the conflict in the common ancestor', contrast(t['--ink'], mix(t['--muted'], ANCESTOR_LINE, t['--bg'])), 7);
+  need('--ink on a line of the conflict in the common ancestor', contrast(t['--ink'], mix(t['--muted'], s['--tint-current-line'], t['--bg'])), 7);
+  need('--ink on the line of the caret', contrast(t['--ink'], mix(t['--accent'], s['--tint-caret-line'], t['--bg'])), 7);
+  need('--ink on text selected', contrast(t['--ink'], mix(t['--accent'], s['--tint-text-sel'], t['--bg'])), 7);
 }
 
 for (const palette of PALETTES) {

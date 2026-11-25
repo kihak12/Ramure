@@ -167,9 +167,9 @@
   }
 
   /**
-   * A blank before its row. Before the first line of a conflict, it goes above the header, which
-   * stays with its lines: the header is the same height wherever it is, and faces nothing once the
-   * conflict is decided.
+   * A blank before its row. Before a header, it goes above it; before the first line of a conflict,
+   * under its header, which stays level with the band of the conflict in the result (guidelines,
+   * 9.26).
    */
   function blanks(state: EditorState): DecorationSet {
     const spacers = state.field(spacersField);
@@ -181,7 +181,8 @@
         const widget = new Spacer(s.height);
         if (!row) return Decoration.widget({ widget, block: true, side: 1 }).range(state.doc.length);
         const underHead = rows[s.row - 1]?.head === true;
-        return Decoration.widget({ widget, block: true, side: row.head || underHead ? -2 : -1 }).range(row.pos);
+        // The header is a block at side -1: -2 goes above it, 0 between it and its first line.
+        return Decoration.widget({ widget, block: true, side: row.head ? -2 : underHead ? 0 : -1 }).range(row.pos);
       }),
       true,
     );
@@ -220,8 +221,8 @@
     '.cm-signs': { minWidth: '14px' },
     '.cm-signs .cm-gutterElement': { display: 'flex', alignItems: 'center', justifyContent: 'center' },
     '.cm-side-plus': { color: 'var(--muted)', fontWeight: 'var(--fw-strong)' },
-    '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) 10%, transparent)' },
-    '.cm-side-kept': { backgroundColor: 'color-mix(in srgb, var(--c) 24%, transparent)' },
+    '.cm-side-line': { backgroundColor: 'color-mix(in srgb, var(--c) var(--tint-side), transparent)' },
+    '.cm-side-kept': { backgroundColor: 'color-mix(in srgb, var(--c) var(--tint-side-kept), transparent)' },
     // A side set aside steps back: its lines in --muted, on the tint at rest.
     '.cm-side-aside': { color: 'var(--muted)' },
     '.cm-conflict-head': {

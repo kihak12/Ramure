@@ -424,8 +424,8 @@
       return Decoration.set(ranges, true);
     });
     // The blanks of the alignment: before a band, or before a line, or at the end. A blank before
-    // the first line of a decided conflict goes above its band, which stays on its lines, as in the
-    // sides; one after a band with no line goes under it, the band facing its headers.
+    // the first line of a decided conflict goes under its band, as one after a band with no line:
+    // the band stays level with its headers in the sides (guidelines, 9.26).
     const blanks = EditorView.decorations.compute([field, infoField, spacersField, 'doc'], (state) => {
       const spacers = state.field(spacersField);
       if (!spacers.length) return Decoration.none;
@@ -436,7 +436,7 @@
           const widget = new Spacer(s.height);
           if (!row) return Decoration.widget({ widget, block: true, side: 1 }).range(state.doc.length);
           const prev = rows[s.row - 1];
-          const under = prev?.band === 'empty' && prev.pos === row.pos;
+          const under = prev?.band !== undefined && prev.pos === row.pos;
           return Decoration.widget({ widget, block: true, side: under ? 0 : -2 }).range(row.pos);
         }),
         true,
@@ -777,11 +777,23 @@
     view?.focus();
   }
 
-  /** Brings a conflict to the middle of the view. */
-  export function scrollToRegion(id: number) {
+  /**
+   * Gives the result the keyboard in conflict `id`, the columns staying where they are: the caret
+   * at the start of its first line, or just under its band when it keeps no line (9.26).
+   */
+  export function focusIn(id: number) {
     if (!view) return;
     const region = view.state.field(field).get(id);
-    if (region) view.dispatch({ effects: EditorView.scrollIntoView(region.from, { y: 'center' }) });
+    if (region) view.dispatch({ selection: { anchor: linesOf(view.state, region)?.first.from ?? region.from } });
+    view.focus();
+  }
+
+  /** Brings a conflict to the middle of the view; or, `nearest`, into view if it is not, with the
+   *  band above its first line, 28 px, and a margin. */
+  export function scrollToRegion(id: number, where: 'center' | 'nearest' = 'center') {
+    if (!view) return;
+    const region = view.state.field(field).get(id);
+    if (region) view.dispatch({ effects: EditorView.scrollIntoView(region.from, { y: where, yMargin: 36 }) });
   }
 
   const theme = EditorView.theme({
@@ -796,11 +808,11 @@
     // The line of the caret is told only while the result has the keyboard: the caret that waits
     // follows the scroll, and its line would follow it too.
     '.cm-activeLine': { backgroundColor: 'transparent' },
-    '&.cm-focused .cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
+    '&.cm-focused .cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) var(--tint-caret-line), transparent)' },
     '.cm-activeLineGutter': { backgroundColor: 'transparent' },
     '&.cm-focused .cm-activeLineGutter': { color: 'var(--ink)' },
     '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-      backgroundColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
+      backgroundColor: 'color-mix(in srgb, var(--accent) var(--tint-text-sel), transparent)',
     },
     '.cm-chips': { minWidth: '22px' },
     '.cm-chips .cm-gutterElement': { display: 'flex', alignItems: 'center', justifyContent: 'center' },
@@ -817,10 +829,10 @@
       color: 'var(--ink)',
     },
     // Side 1, on the left, takes the first color of the graph, side 2 the second (2.2, 9.26).
-    '.cm-chip-1': { backgroundColor: 'color-mix(in srgb, var(--l0) 30%, var(--bg))' },
-    '.cm-chip-2': { backgroundColor: 'color-mix(in srgb, var(--l1) 30%, var(--bg))' },
-    '.cm-from-1': { backgroundColor: 'color-mix(in srgb, var(--l0) 10%, transparent)' },
-    '.cm-from-2': { backgroundColor: 'color-mix(in srgb, var(--l1) 10%, transparent)' },
+    '.cm-chip-1': { backgroundColor: 'color-mix(in srgb, var(--l0) var(--tint-side-chip), var(--bg))' },
+    '.cm-chip-2': { backgroundColor: 'color-mix(in srgb, var(--l1) var(--tint-side-chip), var(--bg))' },
+    '.cm-from-1': { backgroundColor: 'color-mix(in srgb, var(--l0) var(--tint-side), transparent)' },
+    '.cm-from-2': { backgroundColor: 'color-mix(in srgb, var(--l1) var(--tint-side), transparent)' },
     // The band of a conflict, 28 px, facing its headers in the sides (guidelines, 9.26): on
     // --warn-soft while it is to decide; decided, on --panel and in --muted, as the headers.
     '.cm-conflict-band': {
@@ -845,16 +857,16 @@
     // run past the view. The text is cut first.
     '.cm-band-text': { flex: '0 1 auto', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     '.cm-conflict-band .btn': { flex: 'none', color: 'var(--ink)' },
-    // "Keep" with the chip of its side, on 12% of its color, 24% on hover (9.26).
+    // "Keep" with the chip of its side, on its color at --tint-keep, --tint-keep-hover on hover (9.26).
     '.cm-band-1': { '--c': 'var(--l0)' },
     '.cm-band-2': { '--c': 'var(--l1)' },
     '.cm-conflict-band .cm-band-keep': {
       gap: '4px',
       paddingRight: '4px',
-      borderColor: 'color-mix(in srgb, var(--c) 55%, var(--line))',
-      backgroundColor: 'color-mix(in srgb, var(--c) 12%, var(--raised))',
+      borderColor: 'color-mix(in srgb, var(--c) var(--tint-keep-border), var(--line))',
+      backgroundColor: 'color-mix(in srgb, var(--c) var(--tint-keep), var(--raised))',
     },
-    '.cm-conflict-band .cm-band-keep:hover:not(:disabled)': { backgroundColor: 'color-mix(in srgb, var(--c) 24%, var(--raised))', borderColor: 'var(--c)' },
+    '.cm-conflict-band .cm-band-keep:hover:not(:disabled)': { backgroundColor: 'color-mix(in srgb, var(--c) var(--tint-keep-hover), var(--raised))', borderColor: 'var(--c)' },
     // The letter of a file state (9.6), as the chips of the gutter.
     '.cm-band-chip': {
       display: 'inline-grid',
@@ -865,7 +877,7 @@
       fontFamily: 'var(--f-mono)',
       fontSize: 'var(--fs-micro)',
       fontWeight: 'var(--fw-strong)',
-      backgroundColor: 'color-mix(in srgb, var(--c) 30%, var(--raised))',
+      backgroundColor: 'color-mix(in srgb, var(--c) var(--tint-side-chip), var(--raised))',
     },
     // The chevron of a menu dropped down (9.9), in --muted.
     '.cm-conflict-band .cm-band-more': { gap: '4px', paddingRight: '6px' },

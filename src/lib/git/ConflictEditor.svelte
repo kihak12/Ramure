@@ -67,6 +67,8 @@
    *  F8 do, a click on the conflict itself does not (guidelines, 9.26). */
   let reveal = true;
   let showBase = $state(false);
+  /** What a screen reader is told of a choice undone (guidelines, 9.26). */
+  let said = $state('');
 
   /** The conflicts of the file as it opened, and what is kept of each. */
   let blocks = $state.raw<ConflictBlock[]>([]);
@@ -454,7 +456,26 @@
     }
     picks = nextPicks;
     edited = nextEdited;
+    // It shows what it undid, the focus staying where it is: the conflict becomes the current one,
+    // comes into view if it is not, and what it becomes is said (9.26).
+    const block = last.items[0].block;
+    index = block;
+    result.scrollToRegion(block, 'nearest');
+    // Emptied first: the same sentence twice is still said twice.
+    const sentence =
+      last.items.length === 1
+        ? `Choice undone, conflict ${block + 1}, ${stateOf(block)}`
+        : `Choice undone, ${last.items.length} conflicts back as they were`;
+    said = '';
+    void tick().then(() => (said = sentence));
     return true;
+  }
+
+  /** What conflict `i` is, as a screen reader is told: "to decide", "kept from both, 2 lines"… */
+  function stateOf(i: number): string {
+    if (edited[i]) return 'edited by hand';
+    if (!isDecided(picks[i])) return 'to decide';
+    return decision(blocks[i], picks[i]).replaceAll(' · ', ', ');
   }
 
   /** The arrow of a side, in the header of a conflict: the side kept whole, after one already kept. */
@@ -482,9 +503,9 @@
   }
 
   /** A choice of the menu "More": its band gives way to the band of the conflict decided, and the
-   *  keyboard goes to the result, where the band is (guidelines, 9.26). */
+   *  keyboard goes to the result, in that conflict, where the eye is (guidelines, 9.26). */
   function takeFromMenu(choice: Choice, block: number) {
-    void take(choice, block).then(() => setTimeout(() => result?.focus()));
+    void take(choice, block).then(() => setTimeout(() => result?.focusIn(block)));
   }
 
   /** "More", on the band of a conflict: the other choices, in a menu under the button (9.9). */
@@ -587,6 +608,7 @@
   in:fly={{ y: 10, duration: motion.med }}
   out:fly={{ y: 10, duration: motion.fast }}
 >
+  <p class="spoken" aria-live="polite">{said}</p>
   <header>
     <span class="glyph"><Icon name="merge" size={18} /></span>
     <div class="names">
@@ -949,7 +971,7 @@
     min-height: 33px;
     padding: 4px 10px;
     border-bottom: 1px solid var(--line-soft);
-    background: color-mix(in srgb, var(--c) 10%, var(--panel));
+    background: color-mix(in srgb, var(--c) var(--tint-side), var(--panel));
     min-width: 0;
   }
   .result .bar,
@@ -976,7 +998,7 @@
     width: 16px;
     height: 16px;
     border-radius: var(--radius-xs);
-    background: color-mix(in srgb, var(--c) 30%, var(--panel));
+    background: color-mix(in srgb, var(--c) var(--tint-side-chip), var(--panel));
     font-family: var(--f-mono);
     font-size: var(--fs-micro);
     font-weight: var(--fw-strong);

@@ -72,6 +72,15 @@
   --tint-lane-veil: 34%;
   --tint-veil: 24%;
   --tint-sel-quiet: 16%;
+  --tint-side: 10%;
+  --tint-side-kept: 24%;
+  --tint-side-chip: 30%;
+  --tint-keep: 12%;
+  --tint-keep-hover: 24%;
+  --tint-keep-border: 55%;
+  --tint-current-line: 30%;
+  --tint-caret-line: 6%;
+  --tint-text-sel: 30%;
 
   /* Brand colors (section 13): those of the icon. They change neither in dark nor with the color
      theme. */
@@ -182,6 +191,15 @@
     --tint-lane-veil: 18%;
     --tint-veil: 18%;
     --tint-sel-quiet: 20%;
+    --tint-side: 10%;
+    --tint-side-kept: 24%;
+    --tint-side-chip: 30%;
+    --tint-keep: 12%;
+    --tint-keep-hover: 24%;
+    --tint-keep-border: 55%;
+    --tint-current-line: 30%;
+    --tint-caret-line: 6%;
+    --tint-text-sel: 30%;
     --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
     --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
   }
@@ -249,6 +267,15 @@
   --tint-lane-veil: 18%;
   --tint-veil: 18%;
   --tint-sel-quiet: 20%;
+  --tint-side: 10%;
+  --tint-side-kept: 24%;
+  --tint-side-chip: 30%;
+  --tint-keep: 12%;
+  --tint-keep-hover: 24%;
+  --tint-keep-border: 55%;
+  --tint-current-line: 30%;
+  --tint-caret-line: 6%;
+  --tint-text-sel: 30%;
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-pop: 0 22px 50px -14px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
 }
@@ -802,7 +829,7 @@ dialog:focus-visible {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) var(--tint-text-sel), transparent);
 }
 
 /* Thin scrollbars, in the tones of the interface. */
