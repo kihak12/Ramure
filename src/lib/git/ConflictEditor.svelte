@@ -72,10 +72,9 @@
   let blocks = $state.raw<ConflictBlock[]>([]);
   let picks = $state.raw<Pick[]>([]);
   let edited = $state.raw<boolean[]>([]);
-  /** What each choice changed, to undo it: the state of each conflict before it. */
-  let undo: { block: number; pick: Pick; edited: boolean; text: string }[][] = [];
-  let lastPickAt = 0;
-  let lastTypeAt = 0;
+  /** What each choice changed, to undo it: the state of each conflict before it, and how deep the
+   *  history of the typing was then. Typing since a choice is undone before it (9.26). */
+  let undo: EditorSnapshot['undo'] = [];
 
   let result = $state<ReturnType<typeof ConflictResult>>();
   let oursView = $state<ReturnType<typeof ConflictSide>>();
@@ -429,18 +428,21 @@
     }
     picks = nextPicks;
     edited = nextEdited;
-    undo.push(before);
-    lastPickAt = performance.now();
+    undo.push({ depth: result.historyDepth(), items: before });
   }
 
-  /** Ctrl + Z: the last choice, when it came after the last typing. */
+  /**
+   * Ctrl + Z, in the order the choices and the typing were made: the typing done since the last
+   * choice goes first, through the history of the result; then that choice (guidelines, 9.26).
+   * False when it leaves the typing to the result.
+   */
   function undoPick(): boolean {
     const last = undo.at(-1);
-    if (!last || !result || lastTypeAt > lastPickAt) return false;
+    if (!last || !result || result.typedSince(last.depth)) return false;
     undo.pop();
     const nextPicks = [...picks];
     const nextEdited = [...edited];
-    for (const item of last) {
+    for (const item of last.items) {
       nextPicks[item.block] = item.pick;
       nextEdited[item.block] = item.edited;
       // A conflict typed in by hand gets its typing back; any other, the text of its picks.
@@ -452,7 +454,6 @@
     }
     picks = nextPicks;
     edited = nextEdited;
-    lastPickAt = undo.length ? performance.now() : 0;
     return true;
   }
 
@@ -505,7 +506,6 @@
 
   /** Typing in a conflict: edited by hand from now on. */
   function onEdit(ids: number[]) {
-    lastTypeAt = performance.now();
     const next = [...edited];
     for (const id of ids) next[id] = true;
     edited = next;
@@ -568,7 +568,8 @@
       save();
     } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !(e.target instanceof Element && e.target.closest('.result'))) {
       // In the result, the editor itself asks first whether a choice comes before the typing.
-      if (undoPick()) e.preventDefault();
+      // Elsewhere, the same order: the typing since the last choice, then that choice (9.26).
+      if (undoPick() || result?.undoTyping()) e.preventDefault();
     } else if (e.key === 'Escape' && !e.defaultPrevented) {
       e.preventDefault();
       void close();
@@ -697,7 +698,6 @@
             label="Result of the resolution"
             onchange={(next) => (text = next)}
             onedit={onEdit}
-            ontype={() => (lastTypeAt = performance.now())}
             onundo={undoPick}
             oncaret={(id) => (index = id)}
             onkeep={(id, n) => void take(n === 1 ? first : second, id)}

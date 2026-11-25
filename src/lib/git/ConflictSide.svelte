@@ -151,13 +151,17 @@
   /** The rows of this side, as the columns line them up: the header of a conflict, then each line. */
   function rowsOf(state: EditorState): (Row & { pos: number; head: boolean })[] {
     const heads = new Map<number, number>();
-    for (const c of shown(state.field(infoField))) heads.set(c.at, c.index);
+    const parts = new Map<number, number>();
+    for (const c of shown(state.field(infoField))) {
+      heads.set(c.at, c.index);
+      for (let k = c.at; k < c.at + c.count; k++) parts.set(k, c.index);
+    }
     const rows = [];
     for (let n = 1; n <= state.doc.lines; n++) {
       const line = state.doc.line(n);
       const head = heads.get(n - 1);
       if (head !== undefined) rows.push({ key: conflictKey(head), height: 28, pos: line.from, head: true });
-      rows.push({ key: line.text, height: 18, pos: line.from, head: false });
+      rows.push({ key: line.text, height: 18, pos: line.from, head: false, part: parts.get(n - 1) });
     }
     return rows;
   }
@@ -432,7 +436,7 @@
 
   /** The rows of this side, for the alignment of the three columns. */
   export function rows(): Row[] {
-    return view ? rowsOf(view.state).map(({ key, height }) => ({ key, height })) : [];
+    return view ? rowsOf(view.state).map(({ key, height, part }) => ({ key, height, part })) : [];
   }
 
   export function setSpacers(spacers: Blank[]) {
