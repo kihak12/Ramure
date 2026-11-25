@@ -1691,8 +1691,8 @@ Escape bring back the module and the tab that were shown; after Escape, the focu
   has an inner margin of 24 px.
 - A section appears in the navigation when it holds its first setting: "General", "Git",
   "Terminal and SSH", "Keyboard shortcuts". No tabs at the top of the page: tabs are repositories.
-  "General" holds the groups "Appearance" and "Updates" (9.23), and its entry carries a dot
-  while an update waits.
+  "General" holds the groups "Appearance", "Date and time" (below) and "Updates" (9.23), and its
+  entry carries a dot while an update waits.
 
 **A section.** Its title in 15 px, weight 650, the one title of a section that is not in 12 px
 (9.8): it heads the whole card. A note may follow it, in 11.5 px, `--muted`. On the right,
@@ -1730,6 +1730,20 @@ default. A folder chosen applies at once. A failure of "Browse…" or "Open fold
 said under the control, with what to do, and announced; the field keeps its look, its value not
 being at fault. In "Terminal and SSH", group "Session logs": "Log folder", "Where
 Ramure writes one file per recorded session." (9.15).
+
+**Date and time**, a group of "General", says how every date of the application is written
+(12): two choices (9.19), each option with the same moment written its way, an afternoon, so that
+the clocks differ.
+
+- "Date format", "Every date of the application: the files, the commits, the graph.":
+  "MM-DD-YYYY" (`11-25-2026`), the default; "DD-MM-YYYY" (`25-11-2026`); "YYYY-MM-DD"
+  (`2026-11-25`); "Written out" (`Nov 25, 2026`).
+- "Clock", "The time that goes with a date, to the second.": "24-hour" (`14:30:05`), the default;
+  "12-hour" (`2:30:05 PM`).
+- A choice applies at once, everywhere: the Modified column of the Files module (9.24), the
+  commit detail (9.22), the date column of the graph (10.1), the date of an update (9.23), the
+  time of a tunnel's last failure (9.15). Relative dates ("3 days ago") stay relative, and the
+  session logs, which are files, keep the format of section 12.
 
 **Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
 keys (9.12), and a button that restores the default.
@@ -2068,7 +2082,7 @@ The install takes two steps, so that the download never interrupts and only the 
 
 | State | First line, 13.5 px, weight 650 | Second line, 11.5 px | Then |
 |---|---|---|---|
-| Available | "Version 0.4.0 is available" | "Published Nov 12, 2026. What changed is on github.com/kihak12/Ramure/releases." | "Download update" |
+| Available | "Version 0.4.0 is available" | "Published 11-12-2026. What changed is on github.com/kihak12/Ramure/releases." | "Download update" |
 | Downloading | "Downloading version 0.4.0…" | A bar, and at its right "6.2 of 11.4 MB" in tabular figures; "6.2 MB" and a bar that sweeps when the size is not known. Then the waiting ring and "Verifying…". | "Stop downloading", disabled while it verifies: nothing is left to stop |
 | Ready | "Version 0.4.0 is ready to install" | "Nothing changes until you restart. You can keep working." | "Restart and install…" |
 | Installing | "Installing version 0.4.0…" | The waiting ring and "Ramure restarts when it is done." | Nothing: it cannot stop halfway |
@@ -2211,10 +2225,11 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   told from a file at a glance, on a row at rest, hovered or selected (2.3, 2.4); the name, cut
   with an ellipsis and whole in its tooltip; for a link, the word "link" after it, in `--muted` at
   11.5 px, as "partly" (9.6). A link to a folder opens as a folder.
-- "Modified", the date and the time to the minute in 12 px, `--muted` and tabular figures ("Nov
-  9, 2026, 11:35 PM", AM or PM kept on its line), so that two versions of the same day are told
-  apart; the full date and the time to the second in its tooltip ("Monday, November 9, 2026 at
-  11:35:12 PM"). The column is 140 px; it gives way under 464 px of pane, as the columns of the
+- "Modified", the date and the time to the second in 12 px, `--muted` and tabular figures, in the
+  format of the settings (9.18): "11-25-2026 14:30:05" by default, AM or PM kept on its line with
+  the 12-hour clock, so that two versions of the same day are told apart; the full date in its
+  tooltip ("Wednesday, November 25, 2026 at 14:30:05"). The column is 140 px, which holds the
+  longest format, "Nov 25, 2026, 12:30:05 PM"; it gives way under 464 px of pane, as the columns of the
   graph do (10.1), measured on the pane, not the window: the date of a row is then hidden from the
   eye only and stays spoken (11), while its sort button goes, since a stop of the tab order is
   never hidden from the eye. An order by date chosen before stays, with no chevron, until a click
@@ -2751,7 +2766,8 @@ at the right (9.25).
 
 - The subject, `--fs-title`, `--fw-strong`, `--ink`.
 - 4 px under it, one line at 12 px: the author in `--ink`, then " · " and the date in `--muted`,
-  short ("Nov 17, 2026, 4:47 PM"), the full date in the tooltip, tabular figures.
+  short, in the format of the settings ("11-17-2026 16:47:03", 9.18), the full date in the
+  tooltip, tabular figures.
 - Then, 4 px apart, each on a line at 12 px in `--muted`: where the commit is, with its icon
   (7), the cloud and "On the remote", or the computer and "Local only, not pushed yet", when the
   repository has a remote; "Refs", then the branches and tags on the commit, their names in the
@@ -2980,10 +2996,11 @@ Typography:
   is (“Reconnect”, “.pub”), and a period inside would seem to be part of it;
 - no space before ":", ";", "?" and "!";
 - plurals agree: "1 commit", "10 commits";
-- dates and numbers in the American format, whatever the language of the system: a short date
-  "Nov 9, 2026", with its time where two moments of a day must be told apart "Nov 9, 2026, 11:35
-  PM", a full date "Monday, November 9, 2026 at 11:35 PM", with the seconds where they matter
-  "at 11:35:12 PM" (9.24), a number "10,000";
+- numbers in the American format, whatever the language of the system: "10,000"; dates in the
+  format chosen in the settings (9.18, "Date and time"): by default a date "11-25-2026", with its
+  time to the second where two moments of a day must be told apart "11-25-2026 14:30:05", a full
+  date in words in a tooltip "Wednesday, November 25, 2026 at 14:30:05". Text that Ramure writes
+  in a file, a session log, keeps the American format: "Nov 11, 2026 at 11:05 PM";
 - keys are named as on the keyboard: "Ctrl + Shift + N", "Enter", "Escape".
 
 ## 13. Logo

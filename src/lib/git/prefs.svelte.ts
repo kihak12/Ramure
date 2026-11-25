@@ -11,6 +11,9 @@ export type DiffMode = 'unified' | 'split';
 export type ThemeChoice = 'system' | 'light' | 'dark';
 /** Color theme (guidelines, section 2.5). */
 export type Palette = 'slate' | 'ink' | 'undergrowth' | 'ember';
+/** The order of a date, and the clock (guidelines, 9.18): see `src/lib/ui/dates.ts`. */
+export type DateFormat = 'mdy' | 'dmy' | 'ymd' | 'text';
+export type Clock = '24' | '12';
 /** The names of the color themes before the interface moved to English (#147): a setting saved
  *  under one of them is read under its new name. */
 const FORMER_PALETTES: Readonly<Record<string, Palette>> = { ardoise: 'slate', encre: 'ink', 'sous-bois': 'undergrowth', braise: 'ember' };
@@ -32,9 +35,12 @@ export interface Settings {
   journalDir: string;
   /** Ramure asks GitHub at startup, then once a day, whether a newer version exists (guidelines, 9.23). */
   updateCheck: boolean;
+  /** How every date of the application is written, and its time (guidelines, 9.18 and 12). */
+  dateFormat: DateFormat;
+  clock: Clock;
 }
 
-export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'slate', sshReconnect: true, journalDir: '', updateCheck: true };
+export const DEFAULTS: Readonly<Settings> = { limit: 10000, autoFetch: 5, pullMode: 'ff-only', graphStyle: 'ribbon', diffMode: 'unified', theme: 'system', palette: 'slate', sshReconnect: true, journalDir: '', updateCheck: true, dateFormat: 'mdy', clock: '24' };
 
 /** Bounds of the automatic fetch, in minutes. */
 export const AUTO_FETCH = { min: 0, max: 60 } as const;

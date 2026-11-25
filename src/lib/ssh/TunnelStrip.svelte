@@ -3,6 +3,7 @@
   // per tunnel, its state in words, and "Add tunnel", whose form opens in place.
   import { tick } from 'svelte';
   import Icon, { type IconName } from '../ui/Icon.svelte';
+  import { time } from '../ui/dates';
   import { focusWithRing } from '../ui/focus';
   import { toasts } from '../ui/toasts.svelte';
   import { ssh, type Session, type TunnelRuntime } from './ssh.svelte';
@@ -25,7 +26,6 @@
   };
 
   // The time of a last failure, in the American format (guidelines, 12): "11:07 PM".
-  const time = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
 
   // Past five rows, the list scrolls: it stops where the sixth row starts, the lines under the
   // first five included.
@@ -126,7 +126,7 @@
         {:else if state.lastFailure}
           <!-- The last connection the other side refused: the next one may work. Not announced: a
                program that retries would make it speak every second. -->
-          <p class="line warn">{state.lastFailure.message} <time class="when" datetime={new Date(state.lastFailure.at).toISOString()}>{time.format(state.lastFailure.at)}</time></p>
+          <p class="line warn">{state.lastFailure.message} <time class="when" datetime={new Date(state.lastFailure.at).toISOString()}>{time(state.lastFailure.at)}</time></p>
         {/if}
       {/each}
     </div>

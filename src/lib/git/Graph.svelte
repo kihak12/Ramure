@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { date } from '../ui/dates';
   import Icon from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
   import { commitMenu, dropMenu, labelMenu, switchBranch, switchToRemote } from './actions';
@@ -113,7 +114,6 @@
     };
   });
 
-  const dateFmt = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const initials = (author: string) =>
     author
@@ -713,7 +713,7 @@
               <span class="who" class:spoken={!columns.who} title={commit.author}>{commit.author}</span>
             {/if}
           </span>
-          <span class="date"><span class:spoken={!columns.date}>{commit.wip ? '' : dateFmt.format(commit.time * 1000)}</span></span>
+          <span class="date"><span class:spoken={!columns.date}>{commit.wip ? '' : date(commit.time * 1000)}</span></span>
           <span class="sha mono">{commit.wip ? '' : commit.sha.slice(0, 7)}</span>
         </div>
       {/each}
