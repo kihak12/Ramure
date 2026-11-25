@@ -110,6 +110,24 @@ pub fn open_file(path: String, program: Option<String>, editor: Option<String>) 
     })
 }
 
+/// A new folder for the copy of a remote file opened in another program (guidelines, 9.24): one
+/// per opening, so that two files of the same name, from two folders or two hosts, never meet.
+#[tauri::command]
+pub fn open_copy_dir() -> Result<String, String> {
+    let dir = std::env::temp_dir().join("ramure-open").join(uuid::Uuid::new_v4().to_string());
+    std::fs::create_dir_all(&dir).map_err(|e| format!("No folder could be made for the copy: {e}."))?;
+    Ok(dir.display().to_string())
+}
+
+/// What tells a save of a file apart: its size and its modified time, in milliseconds. `None` while
+/// it is missing, as between the two steps of a save that writes a new file and renames it.
+#[tauri::command]
+pub fn file_stamp(path: String) -> Option<String> {
+    let meta = std::fs::metadata(&path).ok()?;
+    let modified = meta.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?.as_millis();
+    Some(format!("{}:{modified}", meta.len()))
+}
+
 /// Whether a program can be found, for the settings and "Open with…" (guidelines, 9.18).
 #[tauri::command]
 pub fn program_found(program: String) -> bool {
@@ -144,6 +162,18 @@ mod tests {
         assert_eq!(find_program(&found.display().to_string()), Some(found));
         assert_eq!(find_program("ramure-no-such-program-8f3a"), None);
         assert_eq!(find_program("  "), None);
+    }
+
+    #[test]
+    fn a_save_changes_the_stamp() {
+        let dir = open_copy_dir().unwrap();
+        let file = Path::new(&dir).join("nginx.conf");
+        assert_eq!(file_stamp(file.display().to_string()), None);
+        std::fs::write(&file, "a").unwrap();
+        let first = file_stamp(file.display().to_string()).unwrap();
+        std::fs::write(&file, "ab").unwrap();
+        assert_ne!(file_stamp(file.display().to_string()).unwrap(), first);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

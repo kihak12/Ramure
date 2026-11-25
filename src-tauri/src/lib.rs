@@ -130,6 +130,8 @@ pub fn run() {
             system::open_folder,
             system::open_file,
             system::program_found,
+            system::open_copy_dir,
+            system::file_stamp,
             local::local_write,
             local::local_resize,
             local::local_close,

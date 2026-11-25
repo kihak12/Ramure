@@ -7,6 +7,7 @@
   import { sizeOf } from './types';
 
   const WORDS: Record<Transfer['state'], string> = {
+    waiting: 'To send',
     counting: 'Counting…',
     copying: 'Copying…',
     done: 'Copied',
@@ -17,15 +18,16 @@
 
   const running = (t: Transfer) => t.state === 'counting' || t.state === 'copying';
   /** The bar takes the color of the result once it has ended (guidelines, 9.24). */
-  const TONE = { counting: 'accent', copying: 'accent', done: 'ok', incomplete: 'warn', failed: 'bad', canceled: 'muted' } as const;
-  const finished = $derived(files.transfers.some((t) => !running(t)));
+  const TONE = { waiting: 'warn', counting: 'accent', copying: 'accent', done: 'ok', incomplete: 'warn', failed: 'bad', canceled: 'muted' } as const;
+  const finished = $derived(files.transfers.some((t) => !running(t) && t.state !== 'waiting'));
 
   const percent = (t: Transfer) =>
-    t.state === 'counting' ? null : t.progress.bytesTotal ? Math.min(100, (t.progress.bytesDone / t.progress.bytesTotal) * 100) : t.state === 'done' ? 100 : 0;
+    t.state === 'counting' || t.state === 'waiting' ? null : t.progress.bytesTotal ? Math.min(100, (t.progress.bytesDone / t.progress.bytesTotal) * 100) : t.state === 'done' ? 100 : 0;
 
   /** "18.4 of 60 MB · 12 of 40 files". */
   function amounts(t: Transfer): string {
     const p = t.progress;
+    if (t.state === 'waiting') return '';
     if (t.state === 'counting') return p.filesTotal ? count(p.filesTotal, 'file') : '';
     return `${sizeOf(p.bytesDone, p.bytesTotal)} · ${p.filesDone} of ${count(p.filesTotal, 'file')}`;
   }
@@ -62,13 +64,13 @@
     {#each files.transfers as t (t.id)}
       {@const more = details(t)}
       <!-- A result to act on sits on a tinted box (guidelines, 9.24). -->
-      <li class:warn={t.state === 'incomplete'} class:bad={t.state === 'failed'}>
+      <li class:warn={t.state === 'incomplete' || t.state === 'waiting'} class:bad={t.state === 'failed'}>
         <div class="row">
           <span class="state s-{t.state}">
             {#if running(t)}
               <span class="spinner" aria-hidden="true"></span>
             {:else}
-              <Icon name={t.state === 'done' ? 'check' : t.state === 'canceled' ? 'stop' : 'warning'} size={14} />
+              <Icon name={t.state === 'done' ? 'check' : t.state === 'canceled' ? 'stop' : t.state === 'waiting' ? 'up' : 'warning'} size={14} />
             {/if}
             <!-- The state is announced when it changes: "Copied" is the answer (guidelines, 11). -->
             <span role="status">{WORDS[t.state]}</span>
@@ -79,9 +81,20 @@
               >{#each [t.from, t.to] as end, i (i)}{#if i}{' → '}{/if}{#if end.color}<span class="dot" style:--c="var(--l{end.color})" aria-hidden="true"></span>{/if}{end.label}{/each}</span
             >
           </span>
-          <span class="bar"><ProgressBar percent={percent(t)} tone={TONE[t.state]} /></span>
-          <span class="amounts">{amounts(t)}</span>
-          {#if running(t)}
+          {#if t.state === 'waiting'}
+            <!-- Changes of a file opened elsewhere: sent only on this answer (guidelines, 9.24). -->
+            <span class="bar"></span>
+            <!-- Not in the cell of the amounts, which clips: the ring of the button stays whole (11). -->
+            <span class="send"><button class="btn small" type="button" onclick={() => void files.sendChanges(t)}>Send changes</button></span>
+          {:else}
+            <span class="bar"><ProgressBar percent={percent(t)} tone={TONE[t.state]} /></span>
+            <span class="amounts">{amounts(t)}</span>
+          {/if}
+          {#if t.state === 'waiting'}
+            <button class="icon-btn" type="button" aria-label="Stop watching {t.title}" title="Stop watching" onclick={() => void files.stopWatchingOf(t)}>
+              <Icon name="stop" size={14} />
+            </button>
+          {:else if running(t)}
             <button class="icon-btn" type="button" aria-label="Cancel transfer of {t.title}" title="Cancel transfer" onclick={() => files.cancel(t)}>
               <Icon name="stop" size={14} />
             </button>
@@ -151,7 +164,8 @@
   .s-done :global(.icon) {
     color: var(--ok);
   }
-  .s-incomplete :global(.icon) {
+  .s-incomplete :global(.icon),
+  .s-waiting :global(.icon) {
     color: var(--warn);
   }
   .s-failed :global(.icon) {
@@ -196,6 +210,9 @@
   }
   li.bad {
     background: var(--bad-soft);
+  }
+  .send {
+    display: flex;
   }
   .amounts {
     color: var(--muted);
