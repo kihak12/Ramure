@@ -1223,13 +1223,14 @@
   .row.sel {
     background: var(--sel);
   }
-  /* Rows selected one after another form one block: the corners round at its two ends only
+  /* Rows selected one after another form one block: the corners round at its two ends only. A
+     folder that receives a drop keeps its four, its outline standing out of the block
      (guidelines, 9.6). */
-  .row.sel:has(+ .row.sel) {
+  .row.sel:not(.drop):has(+ .row.sel) {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
   }
-  .row.sel + .row.sel {
+  .row.sel + .row.sel:not(.drop) {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }
