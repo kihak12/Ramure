@@ -8,7 +8,8 @@
    * `busy`: the setting is being applied, and what that is doing.
    * `group`: the control is a choice (section 9.19). It sits under the name, on the whole width,
    * and `{id}-name` is what names it.
-   * `fact`: the name states something and labels no field: its control, a button, names itself.
+   * `fact`: the name states something and labels no field by `for`: its control, a button, names
+   * itself, or a choice in segments points to `{id}-name`.
    */
   let {
     id,

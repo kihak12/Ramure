@@ -2,6 +2,7 @@
   import { DEFAULTS, prefs, savePrefs, type Clock, type DateFormat, type Palette, type ThemeChoice } from '../git/prefs.svelte';
   import Choice from '../ui/Choice.svelte';
   import { date, time } from '../ui/dates';
+  import Select from '../ui/Select.svelte';
   import SectionHeader from './SectionHeader.svelte';
   import SettingRow from './SettingRow.svelte';
   import { updates } from '../ui/updates.svelte';
@@ -27,16 +28,15 @@
   // Each format shows itself on the same moment, an afternoon, so that the clocks differ
   // (guidelines, 9.18).
   const SAMPLE = new Date(2026, 10, 25, 14, 30, 5).getTime();
+  // A plain value: a list, each format read by its example first (guidelines, 9.3 and 9.18).
   const DATE_FORMATS = (['mdy', 'dmy', 'ymd', 'text'] as const).map((value) => ({
     value,
-    label: { mdy: 'MM-DD-YYYY', dmy: 'DD-MM-YYYY', ymd: 'YYYY-MM-DD', text: 'Written out' }[value],
-    help: date(SAMPLE, value),
-  })) satisfies { value: DateFormat; label: string; help: string }[];
-  const CLOCKS = (['24', '12'] as const).map((value) => ({
-    value,
-    label: value === '24' ? '24-hour' : '12-hour',
-    help: time(SAMPLE, value),
-  })) satisfies { value: Clock; label: string; help: string }[];
+    label: `${date(SAMPLE, value)} · ${{ mdy: 'MM-DD-YYYY', dmy: 'DD-MM-YYYY', ymd: 'YYYY-MM-DD', text: 'Written out' }[value]}`,
+  })) satisfies { value: DateFormat; label: string }[];
+  const CLOCKS = [
+    { value: '24', label: '24-hour' },
+    { value: '12', label: '12-hour' },
+  ] as const satisfies readonly { value: Clock; label: string }[];
 
   // The automatic check is a setting only on a copy that can update itself: elsewhere it is not shown.
   const checkShown = $derived(updates.info?.canUpdate ?? false);
@@ -92,11 +92,13 @@
 
 <section class="group" aria-labelledby="group-dates">
   <h3 id="group-dates">Date and time</h3>
-  <SettingRow id="set-date" name="Date format" help="Every date of the application: the files, the commits, the graph." group>
-    <Choice name="set-date" labelledby="set-date-name" describedby="set-date-help" value={prefs.dateFormat} options={DATE_FORMATS} onchange={(dateFormat: DateFormat) => savePrefs({ dateFormat })} />
+  <SettingRow id="set-date" name="Date format" help="Every date of the application: the files, the commits, the graph.">
+    <Select id="set-date" aria-describedby="set-date-help" value={prefs.dateFormat} onchange={(e) => savePrefs({ dateFormat: e.currentTarget.value as DateFormat })}>
+      {#each DATE_FORMATS as format (format.value)}<option value={format.value}>{format.label}</option>{/each}
+    </Select>
   </SettingRow>
-  <SettingRow id="set-clock" name="Clock" help="The time that goes with a date, to the second." group>
-    <Choice name="set-clock" labelledby="set-clock-name" describedby="set-clock-help" value={prefs.clock} options={CLOCKS} onchange={(clock: Clock) => savePrefs({ clock })} />
+  <SettingRow id="set-clock" name="Clock" help={`The time that goes with a date, to the second: ${time(SAMPLE, '24')} or ${time(SAMPLE, '12')}.`} fact>
+    <Choice name="set-clock" layout="segments" labelledby="set-clock-name" describedby="set-clock-help" value={prefs.clock} options={CLOCKS} onchange={(clock: Clock) => savePrefs({ clock })} />
   </SettingRow>
 </section>
 

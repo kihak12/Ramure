@@ -1732,14 +1732,14 @@ being at fault. In "Terminal and SSH", group "Session logs": "Log folder", "Wher
 Ramure writes one file per recorded session." (9.15).
 
 **Date and time**, a group of "General", says how every date of the application is written
-(12): two choices (9.19), each option with the same moment written its way, an afternoon, so that
-the clocks differ.
+(12). Its two settings are plain values, with their control on the right, so that what they are
+set to reads at a glance.
 
-- "Date format", "Every date of the application: the files, the commits, the graph.":
-  "MM-DD-YYYY" (`11-25-2026`), the default; "DD-MM-YYYY" (`25-11-2026`); "YYYY-MM-DD"
-  (`2026-11-25`); "Written out" (`Nov 25, 2026`).
-- "Clock", "The time that goes with a date, to the second.": "24-hour" (`14:30:05`), the default;
-  "12-hour" (`2:30:05 PM`).
+- "Date format", "Every date of the application: the files, the commits, the graph.": a list
+  (9.3), each option read by its example first, the same day for all: "11-25-2026 · MM-DD-YYYY",
+  the default; "25-11-2026 · DD-MM-YYYY"; "2026-11-25 · YYYY-MM-DD"; "Nov 25, 2026 · Written out".
+- "Clock": segments (9.19), "24-hour", the default, and "12-hour"; its help shows the same
+  afternoon both ways, "The time that goes with a date, to the second: 14:30:05 or 2:30:05 PM."
 - A choice applies at once, everywhere: the Modified column of the Files module (9.24), the
   commit detail (9.22), the date column of the graph (10.1), the date of an update (9.23), the
   time of a tunnel's last failure (9.15). Relative dates ("3 days ago") stay relative, and the
@@ -1760,7 +1760,8 @@ keys (9.12), and a button that restores the default.
 
 A few options, all in view, for a setting whose options need a word of explanation or are
 better seen than named: the theme, the way to pull, the style of the graph, the layout of the
-diff. Nothing has to be opened to compare them.
+diff; or two or three short ones, in segments: the clock. Nothing has to be opened to compare
+them.
 
 - It is a group of radio buttons: one option is always chosen. Tab enters and leaves the group;
   the arrows move the choice, which applies at once.
@@ -1769,10 +1770,16 @@ diff. Nothing has to be opened to compare them.
 - **Tiles**: the options side by side, each with a preview 64 px high above its name. For what
   is seen rather than read. A tile has a `--line` border: it is a control, at the level of a
   button or a field (6), not a card, and neither is its preview.
+- **Segments**: two or three short options with nothing to explain, side by side in one control
+  as high as a field, 32 px, in the column of the control of a setting: a `--line` border around
+  the group, 6 px corners, 2 px inside it, and options of 4 px corners, their names centered. The
+  chosen one has the `--sel` background and the weight 650, and no check mark: its weight and its
+  tint say it in its place. The name of the setting names the group (`aria-labelledby`).
 - An option has 8 px corners and is at least 28 px high. Hover: a `--hover` background.
 - The chosen option: a `--sel` background, its name in weight 650, and a check mark in
-  `--accent` on its right. Never the color alone, never a colored bar on an edge. The place
-  of the check mark is kept on the other options: an option never changes size.
+  `--accent` on its right, except in segments (above). Never the color alone, never a colored
+  bar on an edge. The place of the check mark is kept on the other options: an option never
+  changes size.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the chosen option, as on a row (9.6).
 - A preview is drawn with the tokens, never with colors of its own. A preview of a theme
   carries `data-theme` and `data-palette`, which give it the tokens of that theme whatever the
