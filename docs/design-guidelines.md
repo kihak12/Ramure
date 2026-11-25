@@ -1231,7 +1231,9 @@ own, under its graph (9.20).
   without a question.
 - Closing the window asks the same way when a program runs in a local terminal, here or under a
   repository (9.20): "Quit Ramure?", and "Quit". The text agrees with the number of terminals:
-  "Programs are running in 2 terminals. They will be stopped and their output lost."
+  "Programs are running in 2 terminals. They will be stopped and their output lost." It also says
+  what else would stop or stay: a transfer of the Files module, the choices of a conflict editor
+  in its window (9.26), a change not sent of a file opened elsewhere, whose copy stays (9.24).
 - On Windows, the application cannot tell whether a program runs. The tab of one terminal, which
   the user is looking at, closes without a question; closing the window, or the tab of a
   repository, asks as soon as a shell is open: "A terminal is open…".
@@ -2398,8 +2400,22 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   - "Stop watching" with a change not sent asks first: "Stop watching nginx.conf?", "Your
     changes were not sent to staging. Your copy stays at …", with "Cancel" and "Stop watching", a
     danger button. "Open" on a file whose copy holds a change not sent opens that copy again: it
-    is never downloaded over. Closing the pane, or showing another place in it, stops watching its
-    files; their copies stay.
+    is never downloaded over.
+  - **Never sent over a newer file.** Before a send, Ramure reads the size and the modified time
+    of the file on the server again. The same as when it was opened or last sent: it sends. Not
+    the same: a dialog (9.10), "Replace nginx.conf on staging?", "The file changed on staging after
+    you opened it (11-25-2026 14:30:05). Replacing it loses those changes: a replaced file cannot
+    be recovered. “Keep both” sends your copy beside it, under a new name.", with "Cancel", which
+    has the focus, "Keep both", and "Replace", a danger button. A file gone from the server is
+    sent with no question.
+  - **Never dropped quietly.** Closing the pane, or showing another place in it, stops watching
+    its files. While a change waits, it asks first: "Close this pane?", or "Leave staging?", with
+    "nginx.conf was changed and not sent to staging. Closing the pane stops watching it; your copy
+    stays at …", and "Close pane" or "Leave", a danger button. "Quit Ramure?" and "Restart and
+    install…" say it the same way, one line per file: "Changes to nginx.conf were not sent to
+    staging. Your copy stays at …" (9.15, 9.23).
+  - On quitting, the copies of this session are deleted, except those that hold a change not
+    sent, which stay where the dialogs said.
 - **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar

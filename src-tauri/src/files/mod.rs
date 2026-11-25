@@ -749,6 +749,27 @@ pub async fn files_remove(state: State<'_, FilesState>, place: Place, paths: Vec
     Ok(())
 }
 
+/// The size and the modified time of a file, "size:seconds", following a link; none when nothing
+/// is there. What a file of a server was when it was opened elsewhere, to tell whether it changed
+/// before a send (guidelines, 9.24).
+#[tauri::command]
+pub async fn files_stamp(state: State<'_, FilesState>, place: Place, path: String) -> Result<Option<String>, FsError> {
+    let fs = state.fs(place)?;
+    let stamp = match &fs {
+        Fs::Local => match tokio::fs::metadata(&path).await {
+            Ok(meta) => Some(format!("{}:{}", meta.len(), meta.modified().ok().and_then(seconds).unwrap_or(0))),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => return Err(local_error(&e, &path)),
+        },
+        Fs::Remote(remote) => match remote.sftp.metadata(&path).await {
+            Ok(attrs) => Some(format!("{}:{}", attrs.size.unwrap_or(0), attrs.mtime.unwrap_or(0))),
+            Err(SftpError::Status(status)) if status.status_code == StatusCode::NoSuchFile => None,
+            Err(e) => return Err(remote.error(&e, &path)),
+        },
+    };
+    Ok(stamp)
+}
+
 /// The names among `names` that already exist in `dir`: a copy there would replace them.
 #[tauri::command]
 pub async fn files_existing(state: State<'_, FilesState>, place: Place, dir: String, names: Vec<String>) -> Result<Vec<String>, FsError> {

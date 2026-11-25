@@ -85,7 +85,7 @@
     const repos = workspace.tabs
       .filter((tab) => tab.repo.path)
       .map((tab) => ({ name: workspace.title(tab), message: tab.repo.message.trim() !== '', busy: tab.repo.busy !== '' }));
-    if (await mayRestart(found.version, info.installer, await restartLosses(sessions, tunnels, repos, files.running))) {
+    if (await mayRestart(found.version, info.installer, await restartLosses(sessions, tunnels, repos, files.running, files.unsent))) {
       void updates.install().then(follow);
     } else {
       await follow();
