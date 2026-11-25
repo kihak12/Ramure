@@ -62,7 +62,7 @@
   let list = $state<HTMLElement>();
   let addButton = $state<HTMLButtonElement>();
   /** The first field of row `index`, once drawn. */
-  const fieldOf = (index: number) => [...(list?.querySelectorAll<HTMLElement>('.rule') ?? [])][index]?.querySelector('input');
+  const fieldOf = (index: number) => [...(list?.querySelectorAll<HTMLElement>('.rule:not(.head)') ?? [])][index]?.querySelector('input');
 
   function add() {
     rows.push(toRow({ match: '', program: '' }));
