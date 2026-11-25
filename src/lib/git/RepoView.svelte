@@ -206,6 +206,7 @@
               selectable={repo.openFile.selectable}
               busy={repo.locked}
               onapply={(lines) => void repo.applyLines(lines)}
+              onpick={(lines) => repo.pick(lines)}
               onclose={() => repo.closeDiff()}
             />
           {/if}
