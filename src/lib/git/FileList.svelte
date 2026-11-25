@@ -144,6 +144,7 @@
         class="open"
         type="button"
         tabindex={file.path === focusable ? 0 : -1}
+        aria-current={file.path === active ? 'true' : undefined}
         onclick={(e) => {
           // A click makes the row current and gives the list the keyboard, with no ring, as in the
           // other lists (9.6): WebKit does not focus a button it clicks.
