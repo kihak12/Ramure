@@ -892,9 +892,10 @@ buttons.
 Sidebar, file lists, graph, palette results, lists inside a dialog.
 
 - Hover: a rounded `--hover` background under the row, 8 px corners.
-- Selection: the same background, in `--sel`. In the graph, it is inset 6 px from the edges of
-  the area that scrolls, its scrollbar apart. In a pane of the Files module that is not the active
-  one, a neutral tint, which says which pane acts (9.24).
+- Selection: the same background, in `--sel`, which alone says it: an exception to "Never color
+  alone" (11), held by the distances of 2.4 from the card and from the hover. In the graph, it is
+  inset 6 px from the edges of the area that scrolls, its scrollbar apart. In a pane of the Files
+  module that is not the active one, a neutral tint, which says which pane acts (9.24).
 - In a list that holds several rows selected at once (9.24), rows selected one after another form
   one block: its corners round at the top of its first row and at the bottom of its last one
   only, so that the run reads as one selection and not as a stack of rows. A row selected alone
@@ -3086,7 +3087,13 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Targets.** 24 × 24 px at least; two exceptions, the handle of a card and the overview strip of
   the conflict editor, for which the keyboard makes up (9.16, 9.26).
 - **Never color alone.** A state is backed by an icon, a sign or text: "+" and "−" in a diff, a
-  letter for the state of a file, an icon for local and remote.
+  letter for the state of a file, an icon for local and remote. One exception, the selected row
+  of a list (9.6), on a card or on what floats: its background alone tells it from the other
+  rows, kept apart from the card and from the hover by the distances of 2.4, which `npm run check`
+  checks in every theme, and the hovered row is also the one under the pointer. Where the
+  selection opens something, the detail of a commit or a diff, that shows it too. Screen readers
+  are given it: `aria-selected` where the role of the row takes it (an option, a tree item, a
+  tab), `aria-current` otherwise.
 - **Reduced motion.** See section 8.
 - **Screen readers.** An icon on its own has an accessible name. An error is announced at once
   (`role="alert"`), other notifications without interrupting (`role="status"`). Menus and the

@@ -398,6 +398,7 @@
               type="button"
               class="item"
               class:current={repo.openFile?.key === `stash:${stash.index}`}
+              aria-current={repo.openFile?.key === `stash:${stash.index}` ? 'true' : undefined}
               class:cursor={cursorNode?.id === rowId('stashes', i)}
               id={rowId('stashes', i)}
               role="treeitem"
