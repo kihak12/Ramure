@@ -949,8 +949,9 @@
                     ? 'Connection lost'
                     : 'Session ended'}{/if}
             </h3>
-            <!-- A failure is announced at once: the focus goes to the button, and the reason would not be read. -->
-            <p class:err={phase.step === 'error'} role={phase.step === 'error' ? 'alert' : undefined}>{phase.message}</p>
+            <!-- How it ended is announced, a failure at once: the focus goes to the button, and the
+                 sentence would not be read. -->
+            <p class:err={phase.step === 'error'} role={phase.step === 'error' ? 'alert' : 'status'}>{phase.message}</p>
             <div class="row">
               <!-- A local terminal is never "reconnected": it is restarted. -->
               <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Restart' : 'Reconnect'}</button>

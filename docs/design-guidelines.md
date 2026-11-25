@@ -1552,12 +1552,15 @@ the tab), ended by the server (`exit`, end of the shell), or lost (network cut, 
 no longer answering). Only a lost connection comes back on its own, and only if "Automatic
 reconnection" is on in the settings.
 
-- The card that takes the place of the terminal says which way it ended, under "Session ended":
-  "You disconnected." after "Disconnect", "The server closed the session." after `exit` or the end
-  of the shell, and the code when the shell ended on one ("Session ended (exit code 2)."). Each
-  offers "Reconnect" (main button) and "Close tab". A session closed by the user never comes back
-  on its own, even if the connection was cut at the same time.
-
+- The card that takes the place of the terminal says which way it ended. Under "Session ended":
+  "You disconnected." after "Disconnect"; "The server closed the session." after `exit` or the end
+  of the shell; the code when the shell ended on one ("Session ended (exit code 2)."); "Connection
+  interrupted: " and the reason the server gave. Under "Connection lost", when it is not tried
+  again: the reason in plain words, or "The connection to the server was cut."; "Automatic
+  reconnection stopped." after "Stop"; and after the last try, below. Each offers "Reconnect"
+  (main button) and "Close tab". Its sentence is announced, the focus going to "Reconnect". A
+  session closed by the user never comes back on its own, even if the connection was cut at the
+  same time.
 - Five tries, 2, 5, 10, 20 and 30 s apart. While it waits, the terminal keeps its text under
   the veil, and a panel over the veil, like the one that shows the connection, says "Connection
   lost", when the next try comes and which one it is ("Next attempt in 4 s, 2 of 5."), why the last
