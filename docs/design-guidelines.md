@@ -537,6 +537,7 @@ The interface has four levels. Each is recognized by its background.
   an edit or a change, the trash for a deletion, the square for stopping or aborting, the
   circling arrows for doing again or waiting to: reload, reconnect, a tunnel waiting for its
   connection, the arrows up and down for the previous and the next, or for moving up and down,
+  the arrow up also for a change that waits to be sent to a server (9.24),
   the frame with an arrow that leaves it toward the top right for a window of its own. An icon that stands for a git
   command (pull, push, stash) is never borrowed for something else.
 - A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
@@ -599,7 +600,8 @@ The waiting indicator takes one of four forms, each in its own place:
 The waiting ring is 12 px, in `--accent` or in the color of the text around it, and it appears
 where the user asked for the operation: on the tab of the repository, on the label or the row of
 the branch being switched to, in the status bar, on the row and the tab of a host being connected
-to, on the row of a tunnel that starts (9.15). It is the shared class `.spinner` of
+to, on the row of a tunnel that starts (9.15), on the row of a file of a server downloaded to be
+opened (9.24). It is the shared class `.spinner` of
 `src/app.css`, whose `--spinner` property gives it another color. Words always say the state
 beside it, so the ring itself is hidden from screen readers. One exception: on the tab of a host
 being connected to, the ring stands alone in the place of the dot, and carries the name of the
@@ -1126,6 +1128,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   "Send changes", 9.24). It stays until it is answered or closed; closing it means "not now", and
   what it asks about stays where it belongs, a row of the card of the transfers. There is one
   question per subject at a time, however often its cause comes back. It takes no focus away.
+  When more than five notifications come, the oldest go first, a question last.
 - A notification stays for as long as the pointer or the focus is on it; its delay starts again
   when they leave. When what the action undoes was run from the keyboard, the focus goes to the
   button of the action: it is one key away.
@@ -2374,24 +2377,29 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   - A program is a name found in the folders of the system's PATH, or a path, with no arguments:
     the file is its only argument.
   - **A file of a server** is downloaded to a folder of its own on this machine, opened from that
-    copy, and watched for as long as its pane is open. While it downloads, the waiting ring takes
-    the place of its icon (8). After a save in the other program, once the copy has been quiet
+    copy, and watched for as long as its pane shows that host. While it downloads, the waiting ring
+    takes the place of its icon (8), and the word "opening…" follows its name, announced. After a save in the other program, once the copy has been quiet
     for a second, a question asks (9.11): "Send the changes to staging?", the path of the file on
     the server in the code font, and "Send changes". Nothing is sent without that answer. If
     Ramure is behind the other program, its icon in the taskbar asks for attention, and nothing
     takes the focus. A save while the question waits makes no second one.
   - The row of a watched file says so after its name, in 11.5 px as the word "link": "open" in
-    `--muted`, or "not sent" in `--warn` while a change waits; its tooltip says it in full
-    ("Changed in another program, not sent to staging yet."). Its menu adds "Stop watching".
+    `--muted`, or "not sent" in `--warn` while a change waits, in `--muted` on a selected row,
+    where `--warn` does not reach 4.5:1: the word says it. Its tooltip says it in full, after its
+    name: "nginx.conf · Opened in another program: its changes are sent when you answer.", or
+    "nginx.conf · Changed in another program, not sent to staging yet.". Its menu adds "Stop
+    watching", with the square (7).
   - A change not sent is a row of the card of the transfers, on `--warn-soft`: "To send", the
     "up" icon in `--warn`, its route "This machine → staging", "Send changes", a small standard
-    button, and "Stop watching", a ghost icon button (cross). "Send changes" runs it as a copy,
+    button, and "Stop watching", a ghost icon button (square). "Send changes" runs it as a copy,
     which replaces the file on the server: "Copying…", then "Copied", the pane listing again; a
-    failure is "Failed" with its reason and "Retry". "Clear finished" leaves it.
+    failure is "Failed" with its reason and "Retry"; a copy canceled is "To send" again. "Clear
+    finished" leaves it, and is disabled while every row runs or waits.
   - "Stop watching" with a change not sent asks first: "Stop watching nginx.conf?", "Your
     changes were not sent to staging. Your copy stays at …", with "Cancel" and "Stop watching", a
     danger button. "Open" on a file whose copy holds a change not sent opens that copy again: it
-    is never downloaded over. Closing the pane stops watching its files; their copies stay.
+    is never downloaded over. Closing the pane, or showing another place in it, stops watching its
+    files; their copies stay.
 - **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar

@@ -84,14 +84,15 @@
           {#if t.state === 'waiting'}
             <!-- Changes of a file opened elsewhere: sent only on this answer (guidelines, 9.24). -->
             <span class="bar"></span>
-            <span class="amounts"><button class="btn small" type="button" onclick={() => void files.sendChanges(t)}>Send changes</button></span>
+            <!-- Not in the cell of the amounts, which clips: the ring of the button stays whole (11). -->
+            <span class="send"><button class="btn small" type="button" onclick={() => void files.sendChanges(t)}>Send changes</button></span>
           {:else}
             <span class="bar"><ProgressBar percent={percent(t)} tone={TONE[t.state]} /></span>
             <span class="amounts">{amounts(t)}</span>
           {/if}
           {#if t.state === 'waiting'}
             <button class="icon-btn" type="button" aria-label="Stop watching {t.title}" title="Stop watching" onclick={() => void files.stopWatchingOf(t)}>
-              <Icon name="x" size={14} />
+              <Icon name="stop" size={14} />
             </button>
           {:else if running(t)}
             <button class="icon-btn" type="button" aria-label="Cancel transfer of {t.title}" title="Cancel transfer" onclick={() => files.cancel(t)}>
@@ -209,6 +210,9 @@
   }
   li.bad {
     background: var(--bad-soft);
+  }
+  .send {
+    display: flex;
   }
   .amounts {
     color: var(--muted);

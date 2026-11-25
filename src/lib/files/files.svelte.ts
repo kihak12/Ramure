@@ -319,13 +319,8 @@ class Files {
       if (!confirmed) return false;
       for (const t of using) void invoke('transfer_cancel', { id: t.id });
     }
+    this.#forget(pane);
     this.#disconnect(pane);
-    // The files it opened elsewhere are no longer watched; their copies stay (guidelines, 9.24).
-    for (const w of this.watches.filter((x) => x.paneKey === pane.key)) {
-      if (w.toast !== null) toasts.dismiss(w.toast);
-      this.transfers = this.transfers.filter((t) => !(t.watch === w.id && (t.state === 'waiting' || t.state === 'failed')));
-    }
-    this.watches = this.watches.filter((x) => x.paneKey !== pane.key);
     // Of two panes, the one closed becomes empty and offers the locations again (9.24).
     if (this.panes.length <= 2) {
       Object.assign(pane, blank(null), { key: pane.key });
@@ -345,6 +340,9 @@ class Files {
 
   /** Opens `location` in the pane, in place of what it showed. */
   choose(pane: Pane, location: Location, path = '') {
+    // Another place: the files it opened elsewhere are no longer watched (guidelines, 9.24).
+    const same = pane.location?.kind === location.kind && (location.kind === 'local' || (pane.location?.kind === 'host' && pane.location.hostId === location.hostId));
+    if (!same) this.#forget(pane);
     this.#disconnect(pane);
     pane.location = location;
     pane.path = path;
@@ -367,6 +365,7 @@ class Files {
 
   /** "Cancel" in a panel of the connection: the pane chooses a location again. */
   unchoose(pane: Pane) {
+    this.#forget(pane);
     this.#disconnect(pane);
     Object.assign(pane, { location: null, phase: { step: 'idle' }, entries: [], path: '', error: '', selected: [], attempt: {} });
     this.save();
@@ -764,10 +763,14 @@ class Files {
     t.state = 'counting';
     await this.#run(t, 'replace');
     // The run changed the state meanwhile.
-    if ((t.state as TransferState) === 'done') {
+    const ended = t.state as TransferState;
+    if (ended === 'done') {
       w.stamp = sending;
       w.asked = sending;
       w.pending = false;
+    } else if (ended === 'canceled') {
+      // A send stopped: the change still waits, to be sent (guidelines, 9.24).
+      t.state = 'waiting';
     }
   }
 
@@ -785,6 +788,16 @@ class Files {
     if (w.toast !== null) toasts.dismiss(w.toast);
     this.watches = this.watches.filter((x) => x !== w);
     this.transfers = this.transfers.filter((t) => !(t.watch === w.id && (t.state === 'waiting' || t.state === 'failed')));
+  }
+
+  /** The files a pane opened elsewhere are no longer watched: it closes or shows another place.
+   *  Their copies stay (guidelines, 9.24). */
+  #forget(pane: Pane) {
+    for (const w of this.watches.filter((x) => x.paneKey === pane.key)) {
+      if (w.toast !== null) toasts.dismiss(w.toast);
+      this.transfers = this.transfers.filter((t) => !(t.watch === w.id && (t.state === 'waiting' || t.state === 'failed')));
+    }
+    this.watches = this.watches.filter((x) => x.paneKey !== pane.key);
   }
 
   stopWatchingOf(t: Transfer) {
@@ -1059,7 +1072,8 @@ class Files {
   }
 
   clearFinished() {
-    this.transfers = this.transfers.filter((t) => t.state === 'counting' || t.state === 'copying');
+    // A change that waits is not finished: its row stays (guidelines, 9.24).
+    this.transfers = this.transfers.filter((t) => t.state === 'counting' || t.state === 'copying' || t.state === 'waiting');
   }
 
   /**

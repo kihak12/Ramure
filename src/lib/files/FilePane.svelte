@@ -522,7 +522,7 @@
       : [
           { label: 'Open', icon: 'file' as const, disabled: !!why, hint: why, run: () => void files.openFile(pane, entry) },
           { label: 'Open with…', disabled: !!why, hint: why, run: () => void files.openWith(pane, entry) },
-          ...(watched ? [{ label: 'Stop watching', icon: 'x' as const, run: () => void files.stopWatching(watched) }] : []),
+          ...(watched ? [{ label: 'Stop watching', icon: 'stop' as const, run: () => void files.stopWatching(watched) }] : []),
           { separator: true } as const,
         ];
     menu.open(e, [
@@ -879,8 +879,13 @@
               <span class="fname">
                 <span class="label-text">{entry.name}</span>
                 {#if entry.kind === 'link'}<span class="link">link</span>{/if}
-                <!-- Opened in another program: a word, never a color alone (guidelines, 9.24). -->
-                {#if watch}<span class="link" class:unsent={watch.pending}>{watch.pending ? 'not sent' : 'open'}</span>{/if}
+                <!-- Downloaded, or opened in another program: a word, never a ring or a color alone
+                     (guidelines, 8 and 9.24). -->
+                {#if files.opening.includes(`${pane.key}:${joinPath(pane.path, entry.name)}`)}
+                  <span class="link" role="status">opening…</span>
+                {:else if watch}
+                  <span class="link" class:unsent={watch.pending}>{watch.pending ? 'not sent' : 'open'}</span>
+                {/if}
               </span>
               <span class="modified" class:spoken={narrow} title={fullDate(entry.modified)}>{shortDate(entry.modified)}</span>
               <span class="size">{entry.dir ? '' : size(entry.size)}</span>
@@ -1310,6 +1315,10 @@
   }
   .link.unsent {
     color: var(--warn);
+  }
+  /* On the selection, --warn does not read: the word says it in --muted (guidelines, 2.4). */
+  .row.sel .link.unsent {
+    color: var(--muted);
   }
   .modified {
     color: var(--muted);

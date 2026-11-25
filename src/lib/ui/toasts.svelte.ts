@@ -33,7 +33,13 @@ class Toasts {
     const id = this.#next++;
     const lines = body.trim().split('\n');
     const text = kind === 'ok' ? lines.slice(-MAX_LINES).join('\n') : lines.join('\n');
-    this.items = [...this.items, { id, kind, title, body: text, action, question }].slice(-5);
+    // Five at most: the oldest go first, a question last, since it waits on an answer (9.11).
+    const items = [...this.items, { id, kind, title, body: text, action, question }];
+    while (items.length > 5) {
+      const oldest = items.findIndex((t) => !t.question);
+      items.splice(oldest < 0 ? 0 : oldest, 1);
+    }
+    this.items = items;
     this.#arm(id);
     return id;
   }
