@@ -1121,6 +1121,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   not cut on the right. A title that is still too long runs over a second line.
 - A notification may carry one action, a small button before its close button: it undoes what
   was just done ("Undo"). A click runs the action and closes the notification.
+- **A question** is the one other action: a warning that asks about something that waits on the
+  user, with the button that answers it, a verb and its object ("Send the changes to staging?",
+  "Send changes", 9.24). It stays until it is answered or closed; closing it means "not now", and
+  what it asks about stays where it belongs, a row of the card of the transfers. There is one
+  question per subject at a time, however often its cause comes back. It takes no focus away.
 - A notification stays for as long as the pointer or the focus is on it; its delay starts again
   when they leave. When what the action undoes was run from the keyboard, the focus goes to the
   button of the action: it is one key away.
@@ -1129,7 +1134,7 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 | Type | Duration |
 |---|---|
 | Success | 4.5 s; 9 s when it carries an action |
-| Warning | 9 s |
+| Warning | 9 s; a question stays until it is answered or closed |
 | Error | Stays until it is closed. |
 
 ### 9.12 Command palette
@@ -2356,8 +2361,7 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   first 8 kB hold no NUL byte, the text editor of the settings; else the program the system
   associates with its type. The double-click and Enter keep copying the file to the pane next to
   this one. With several files selected, "Open" and "Open with…" are disabled and say "Select one
-  file to open it."; on a pane of a host, they say that a file of a server cannot be opened yet.
-  A failure is an error notification that says what to do: "Could not open nginx.conf", then
+  file to open it.". A failure is an error notification that says what to do: "Could not open nginx.conf", then
   "No program named code was found. Check its name or its path in the settings, or choose another
   with “Open with…”."
   - "Open with…" has no icon of its own: its text stands in the column of the others (9.9).
@@ -2369,6 +2373,25 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
     field: "No program named code was found."
   - A program is a name found in the folders of the system's PATH, or a path, with no arguments:
     the file is its only argument.
+  - **A file of a server** is downloaded to a folder of its own on this machine, opened from that
+    copy, and watched for as long as its pane is open. While it downloads, the waiting ring takes
+    the place of its icon (8). After a save in the other program, once the copy has been quiet
+    for a second, a question asks (9.11): "Send the changes to staging?", the path of the file on
+    the server in the code font, and "Send changes". Nothing is sent without that answer. If
+    Ramure is behind the other program, its icon in the taskbar asks for attention, and nothing
+    takes the focus. A save while the question waits makes no second one.
+  - The row of a watched file says so after its name, in 11.5 px as the word "link": "open" in
+    `--muted`, or "not sent" in `--warn` while a change waits; its tooltip says it in full
+    ("Changed in another program, not sent to staging yet."). Its menu adds "Stop watching".
+  - A change not sent is a row of the card of the transfers, on `--warn-soft`: "To send", the
+    "up" icon in `--warn`, its route "This machine → staging", "Send changes", a small standard
+    button, and "Stop watching", a ghost icon button (cross). "Send changes" runs it as a copy,
+    which replaces the file on the server: "Copying…", then "Copied", the pane listing again; a
+    failure is "Failed" with its reason and "Retry". "Clear finished" leaves it.
+  - "Stop watching" with a change not sent asks first: "Stop watching nginx.conf?", "Your
+    changes were not sent to staging. Your copy stays at …", with "Cancel" and "Stop watching", a
+    danger button. "Open" on a file whose copy holds a change not sent opens that copy again: it
+    is never downloaded over. Closing the pane stops watching its files; their copies stay.
 - **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar

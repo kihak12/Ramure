@@ -3,6 +3,7 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow, UserAttentionType } from '@tauri-apps/api/window';
 import { tick } from 'svelte';
 import { prefs, savePrefs } from '../git/prefs.svelte';
 import { dialogs } from '../ui/dialogs.svelte';
@@ -84,7 +85,8 @@ export interface Pane {
   seq: number;
 }
 
-export type TransferState = 'counting' | 'copying' | 'done' | 'incomplete' | 'failed' | 'canceled';
+/** `waiting`: the changes of a file opened in another program, not sent yet (guidelines, 9.24). */
+export type TransferState = 'waiting' | 'counting' | 'copying' | 'done' | 'incomplete' | 'failed' | 'canceled';
 
 export interface Transfer {
   id: number;
@@ -105,6 +107,33 @@ export interface Transfer {
   to: { paneKey: number; place: Place; label: string; color: string };
   sources: string[];
   dest: string;
+  /** The file opened in another program whose changes this sends. */
+  watch?: number;
+}
+
+/**
+ * A file of a server opened in another program, from a copy of this machine that Ramure watches
+ * (guidelines, 9.24, "Opening a file"). `stamp`: the copy as it was last sent or downloaded;
+ * `seen`: as last read; `asked`: as it was when the question was last asked.
+ */
+export interface Watch {
+  id: number;
+  paneKey: number;
+  /** The host, as the pane names it: "staging". */
+  label: string;
+  /** The file on the server, and its folder there. */
+  remote: string;
+  dir: string;
+  name: string;
+  /** The copy of this machine. */
+  copy: string;
+  stamp: string;
+  seen: string;
+  changedAt: number;
+  asked: string;
+  /** Changes not sent: the row of the card, and the question. */
+  pending: boolean;
+  toast: number | null;
 }
 
 /** What is being dragged: rows of a pane. */
@@ -123,6 +152,9 @@ interface Saved {
 
 let nextKey = 1;
 let nextTransfer = 1;
+let nextWatch = 1;
+/** A save is over once its copy has been quiet that long (guidelines, 9.24). */
+const QUIET = 1000;
 
 function blank(location: Location | null, path = '', hidden = false, sort: Pane['sort'] = { by: 'name', desc: false }): Pane {
   return {
@@ -166,6 +198,11 @@ export function visible(pane: Pane): Entry[] {
 class Files {
   panes = $state<Pane[]>([]);
   transfers = $state<Transfer[]>([]);
+  /** Files of a server opened in another program, and watched (guidelines, 9.24). */
+  watches = $state<Watch[]>([]);
+  /** The rows of a file of a server being downloaded to be opened: `${paneKey}:${path}`. */
+  opening = $state<string[]>([]);
+  #poll: number | undefined;
   /** The pane that last had the keyboard or the pointer: its name is in weight 650. */
   focused = $state(0);
   drag = $state.raw<Dragged | null>(null);
@@ -283,6 +320,12 @@ class Files {
       for (const t of using) void invoke('transfer_cancel', { id: t.id });
     }
     this.#disconnect(pane);
+    // The files it opened elsewhere are no longer watched; their copies stay (guidelines, 9.24).
+    for (const w of this.watches.filter((x) => x.paneKey === pane.key)) {
+      if (w.toast !== null) toasts.dismiss(w.toast);
+      this.transfers = this.transfers.filter((t) => !(t.watch === w.id && (t.state === 'waiting' || t.state === 'failed')));
+    }
+    this.watches = this.watches.filter((x) => x.paneKey !== pane.key);
     // Of two panes, the one closed becomes empty and offers the locations again (9.24).
     if (this.panes.length <= 2) {
       Object.assign(pane, blank(null), { key: pane.key });
@@ -583,21 +626,174 @@ class Files {
    * is text, else in the program of the system (guidelines, 9.24, "Opening a file").
    */
   async openFile(pane: Pane, entry: Entry, program?: string) {
-    if (pane.location?.kind !== 'local') return;
+    const chosen = program ?? exceptionFor(entry.name, prefs.openWith);
+    if (pane.location?.kind === 'local') return this.#launch(joinPath(pane.path, entry.name), entry.name, chosen);
+    // A file of a server: downloaded to a copy of this machine, opened from there, and watched.
+    const place = this.place(pane);
+    if (place?.kind !== 'remote') return;
+    const remote = joinPath(pane.path, entry.name);
+    const known = this.watches.find((w) => w.paneKey === pane.key && w.remote === remote);
+    // A copy with changes not sent opens again: it is never downloaded over (guidelines, 9.24).
+    if (known?.pending) return this.#launch(known.copy, entry.name, chosen);
+    const key = `${pane.key}:${remote}`;
+    if (this.opening.includes(key)) return;
+    this.opening.push(key);
     try {
-      await invoke('open_file', {
-        path: joinPath(pane.path, entry.name),
-        program: program ?? exceptionFor(entry.name, prefs.openWith),
-        editor: prefs.textEditor.trim() || null,
+      const dir = known ? (parentPath(known.copy) ?? known.copy) : await invoke<string>('open_copy_dir');
+      await invoke('transfer_start', {
+        params: { id: nextTransfer++, from: place, to: { kind: 'local' }, sources: [remote], dest: dir, taken: 'replace' },
+        onProgress: new Channel<Progress>(),
       });
+      const copy = known?.copy ?? joinPath(dir, entry.name);
+      const stamp = (await invoke<string | null>('file_stamp', { path: copy })) ?? '';
+      if (known) Object.assign(known, { stamp, seen: stamp, asked: stamp, changedAt: 0 });
+      else
+        this.watches.push({
+          id: nextWatch++,
+          paneKey: pane.key,
+          label: this.label(pane),
+          remote,
+          dir: pane.path,
+          name: entry.name,
+          copy,
+          stamp,
+          seen: stamp,
+          changedAt: 0,
+          asked: stamp,
+          pending: false,
+          toast: null,
+        });
+      this.#watch();
+      await this.#launch(copy, entry.name, chosen);
     } catch (e) {
-      toasts.err(`Could not open ${entry.name}`, String(e));
+      toasts.err(`Could not open ${entry.name}`, isLost(e) ? `The connection to ${this.label(pane)} was lost. Connect again, then open it again.` : fsMessage(e));
+    } finally {
+      this.opening = this.opening.filter((k) => k !== key);
     }
+  }
+
+  async #launch(path: string, name: string, program: string | null) {
+    try {
+      await invoke('open_file', { path, program, editor: prefs.textEditor.trim() || null });
+    } catch (e) {
+      toasts.err(`Could not open ${name}`, String(e));
+    }
+  }
+
+  /** The watch of a row, if its file is opened in another program. */
+  watchOf(pane: Pane, name: string): Watch | undefined {
+    const remote = joinPath(pane.path, name);
+    return this.watches.find((w) => w.paneKey === pane.key && w.remote === remote);
+  }
+
+  /** The copies are read once a second, while there are some (guidelines, 9.24). */
+  #watch() {
+    if (this.#poll === undefined && this.watches.length) this.#poll = window.setInterval(() => void this.#check(), QUIET);
+  }
+
+  async #check() {
+    if (!this.watches.length) {
+      window.clearInterval(this.#poll);
+      this.#poll = undefined;
+      return;
+    }
+    for (const w of this.watches) {
+      // While its changes are being sent, a copy is not asked about.
+      if (this.transfers.some((t) => t.watch === w.id && (t.state === 'counting' || t.state === 'copying'))) continue;
+      const now = await invoke<string | null>('file_stamp', { path: w.copy }).catch(() => null);
+      // Missing: between the two steps of a save that writes a new file and renames it.
+      if (now === null) continue;
+      if (now !== w.seen) {
+        w.seen = now;
+        w.changedAt = Date.now();
+        continue;
+      }
+      if (w.seen !== w.stamp && w.seen !== w.asked && Date.now() - w.changedAt >= QUIET) this.#changed(w);
+    }
+  }
+
+  /** A save, quiet for a second: a row "To send" in the card, and one question per file. */
+  #changed(w: Watch) {
+    w.asked = w.seen;
+    const pane = this.pane(w.paneKey);
+    if (!w.pending) {
+      w.pending = true;
+      this.transfers.push({
+        id: nextTransfer++,
+        title: w.name,
+        route: `This machine → ${w.label}`,
+        relayed: false,
+        state: 'waiting',
+        progress: { counting: false, filesTotal: 0, filesDone: 0, bytesTotal: 0, bytesDone: 0, current: '' },
+        summary: null,
+        error: '',
+        from: { paneKey: -1, place: { kind: 'local' }, label: 'This machine', color: '' },
+        to: { paneKey: w.paneKey, place: (pane && this.place(pane)) ?? { kind: 'local' }, label: w.label, color: (pane && this.host(pane)?.color) ?? '' },
+        sources: [w.copy],
+        dest: w.dir,
+        watch: w.id,
+      });
+    }
+    if (toasts.shown(w.toast)) return;
+    w.toast = toasts.ask(`Send the changes to ${w.label}?`, w.remote, {
+      label: 'Send changes',
+      run: () => {
+        const t = this.transfers.find((x) => x.watch === w.id && x.state === 'waiting');
+        if (t) void this.sendChanges(t);
+      },
+    });
+    // Behind the other program, Ramure asks for attention in the taskbar, without taking the focus.
+    if (!document.hasFocus()) void getCurrentWindow().requestUserAttention(UserAttentionType.Informational).catch(() => {});
+  }
+
+  /** "Send changes": the copy replaces the file on the server, through the card (guidelines, 9.24). */
+  async sendChanges(t: Transfer) {
+    const w = this.watches.find((x) => x.id === t.watch);
+    if (!w) return this.dismiss(t);
+    if (w.toast !== null) toasts.dismiss(w.toast);
+    w.toast = null;
+    const pane = this.pane(t.to.paneKey);
+    const place = pane ? this.place(pane) : null;
+    if (!place) {
+      t.state = 'failed';
+      t.error = `The connection to ${w.label} was lost. Connect again, then retry.`;
+      return;
+    }
+    const sending = w.seen;
+    t.to.place = place;
+    t.state = 'counting';
+    await this.#run(t, 'replace');
+    // The run changed the state meanwhile.
+    if ((t.state as TransferState) === 'done') {
+      w.stamp = sending;
+      w.asked = sending;
+      w.pending = false;
+    }
+  }
+
+  /** "Stop watching": asked first while changes are not sent; the copy stays (guidelines, 9.24). */
+  async stopWatching(w: Watch) {
+    if (w.pending) {
+      const sure = await dialogs.confirm({
+        title: `Stop watching ${w.name}?`,
+        body: `Your changes were not sent to ${w.label}. Your copy stays at ${w.copy}.`,
+        confirmLabel: 'Stop watching',
+        danger: true,
+      });
+      if (!sure) return;
+    }
+    if (w.toast !== null) toasts.dismiss(w.toast);
+    this.watches = this.watches.filter((x) => x !== w);
+    this.transfers = this.transfers.filter((t) => !(t.watch === w.id && (t.state === 'waiting' || t.state === 'failed')));
+  }
+
+  stopWatchingOf(t: Transfer) {
+    const w = this.watches.find((x) => x.id === t.watch);
+    return w ? this.stopWatching(w) : this.dismiss(t);
   }
 
   /** "Open with…": a program for this file, and, asked for, for every file of its kind (9.24). */
   async openWith(pane: Pane, entry: Entry) {
-    if (pane.location?.kind !== 'local') return;
     const always = matchFor(entry.name);
     const answers = await dialogs.ask({
       title: `Open ${entry.name} with…`,
@@ -840,6 +1036,11 @@ class Files {
 
   /** "Retry": the same copy, from the panes as they are now; what is already there is asked about. */
   async retry(t: Transfer) {
+    // The changes of a file opened elsewhere are sent again from its copy.
+    if (t.watch !== undefined) {
+      t.error = '';
+      return this.sendChanges(t);
+    }
     const source = this.pane(t.from.paneKey);
     const target = this.pane(t.to.paneKey);
     this.dismiss(t);

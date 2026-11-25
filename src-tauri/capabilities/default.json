@@ -12,6 +12,7 @@
     "dialog:default",
     "core:webview:allow-create-webview-window",
     "core:window:allow-set-focus",
+    "core:window:allow-request-user-attention",
     "core:window:allow-unminimize"
   ]
 }

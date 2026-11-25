@@ -496,6 +496,15 @@
     return out;
   }
 
+  /** The tooltip of a row: its name, and, opened in another program, what that means (9.24). */
+  function rowTitle(entry: Entry): string {
+    const watch = files.watchOf(pane, entry.name);
+    if (!watch) return entry.name;
+    return watch.pending
+      ? `${entry.name} · Changed in another program, not sent to ${watch.label} yet.`
+      : `${entry.name} · Opened in another program: its changes are sent when you answer.`;
+  }
+
   function rowMenu(e: MouseEvent, entry: Entry) {
     if (!selected.has(entry.name)) selectOnly(entry.name);
     else pane.current = entry.name;
@@ -506,13 +515,14 @@
     const single = names.length === 1;
     const send = sendItems(names);
     // A file opens in another program, from this machine for now (guidelines, 9.24, "Opening a file").
-    const local = pane.location?.kind === 'local';
-    const why = !single ? 'Select one file to open it.' : local ? undefined : 'A file of a server cannot be opened yet: copy it to this machine first.';
+    const why = single ? undefined : 'Select one file to open it.';
+    const watched = single ? files.watchOf(pane, entry.name) : undefined;
     const opening = entry.dir
       ? []
       : [
           { label: 'Open', icon: 'file' as const, disabled: !!why, hint: why, run: () => void files.openFile(pane, entry) },
           { label: 'Open with…', disabled: !!why, hint: why, run: () => void files.openWith(pane, entry) },
+          ...(watched ? [{ label: 'Stop watching', icon: 'x' as const, run: () => void files.stopWatching(watched) }] : []),
           { separator: true } as const,
         ];
     menu.open(e, [
@@ -840,6 +850,7 @@
           {/if}
           {#each rows as entry, i (entry.name)}
             {@const picked = selected.has(entry.name)}
+            {@const watch = files.watchOf(pane, entry.name)}
             <!-- The list keeps the focus and points to its current row (guidelines, 9.6). -->
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_interactive_supports_focus -->
@@ -853,7 +864,7 @@
               data-index={i}
               role="option"
               aria-selected={picked}
-              title={entry.name}
+              title={rowTitle(entry)}
               draggable="true"
               onclick={(e) => click(e, entry)}
               ondblclick={() => (entry.dir ? files.open(pane, entry) : files.send(pane, [entry.name]))}
@@ -861,10 +872,15 @@
               ondragstart={(e) => dragStart(e, entry)}
               ondragend={dragEnd}
             >
-              <span class="kind" class:dir={entry.dir} aria-hidden="true"><Icon name={entry.dir ? 'folder' : 'file'} size={16} /></span>
+              <!-- Downloaded to be opened: the waiting ring in place of its icon (guidelines, 8 and 9.24). -->
+              <span class="kind" class:dir={entry.dir} aria-hidden="true">
+                {#if files.opening.includes(`${pane.key}:${joinPath(pane.path, entry.name)}`)}<span class="spinner"></span>{:else}<Icon name={entry.dir ? 'folder' : 'file'} size={16} />{/if}
+              </span>
               <span class="fname">
                 <span class="label-text">{entry.name}</span>
                 {#if entry.kind === 'link'}<span class="link">link</span>{/if}
+                <!-- Opened in another program: a word, never a color alone (guidelines, 9.24). -->
+                {#if watch}<span class="link" class:unsent={watch.pending}>{watch.pending ? 'not sent' : 'open'}</span>{/if}
               </span>
               <span class="modified" class:spoken={narrow} title={fullDate(entry.modified)}>{shortDate(entry.modified)}</span>
               <span class="size">{entry.dir ? '' : size(entry.size)}</span>
@@ -1291,6 +1307,9 @@
     flex: none;
     color: var(--muted);
     font-size: var(--fs-small);
+  }
+  .link.unsent {
+    color: var(--warn);
   }
   .modified {
     color: var(--muted);

@@ -205,6 +205,10 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 - **Transfers** run in the background, in a card under the panes: progress in bytes and files,
   "Cancel transfer", "Retry". A file is written under a temporary name and takes its own once
   whole: a canceled transfer leaves no half file. What could not be copied is listed with why.
+- **Opening a file** in another program, from the menu of a file: "Open" uses the program set
+  for its extension in the settings, else the text editor for a text file, else the program of
+  the system; "Open with…" asks. A file of a server opens from a copy of this machine that
+  Ramure watches: after each save, it asks before sending the changes back.
 - **Tidying**: "New folder…", "Rename…" (F2), "Delete…" (always confirmed), "Copy path".
 
 ### Settings, shortcuts and command log
@@ -226,9 +230,8 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Not there yet
 
-- The Files module opens a file of this machine in another program, not yet a file of a server
-  (#297), and does not take files dropped from the file manager of the system: use a pane of
-  this machine.
+- The Files module does not take files dropped from the file manager of the system: use a pane
+  of this machine.
 - Tunnels are not read from `~/.ssh/config` (LocalForward, RemoteForward, DynamicForward), nor
   written to it, yet (#163).
 - The interface exists in English only: no other language is planned.

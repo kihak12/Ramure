@@ -16,6 +16,8 @@ export interface Toast {
   title: string;
   body: string;
   action?: ToastAction;
+  /** A question: it stays until it is answered or closed (guidelines, 9.11). */
+  question?: boolean;
 }
 
 /** The wordy outputs of git (push, fetch) are cut down to their last lines. */
@@ -27,20 +29,31 @@ class Toasts {
   /** Timers of the notifications that go away on their own. */
   #timers = new Map<number, number>();
 
-  push(kind: ToastKind, title: string, body = '', action?: ToastAction) {
+  push(kind: ToastKind, title: string, body = '', action?: ToastAction, question = false) {
     const id = this.#next++;
     const lines = body.trim().split('\n');
     const text = kind === 'ok' ? lines.slice(-MAX_LINES).join('\n') : lines.join('\n');
-    this.items = [...this.items, { id, kind, title, body: text, action }].slice(-5);
+    this.items = [...this.items, { id, kind, title, body: text, action, question }].slice(-5);
     this.#arm(id);
     return id;
+  }
+
+  /** A warning that asks, with the button that answers: it stays until it is answered or closed,
+   *  closing it meaning "not now" (guidelines, 9.11). */
+  ask(title: string, body: string, action: ToastAction) {
+    return this.push('warn', title, body, action, true);
+  }
+
+  /** Whether notification `id` is still shown. */
+  shown(id: number | null): boolean {
+    return id !== null && this.items.some((t) => t.id === id);
   }
 
   /** A success goes away on its own; a warning more slowly; an error stays until it is clicked.
    *  A notification that offers an action leaves the time to read it and to click. */
   #arm(id: number) {
     const toast = this.items.find((t) => t.id === id);
-    if (!toast || toast.kind === 'err') return;
+    if (!toast || toast.kind === 'err' || toast.question) return;
     const delay = toast.kind === 'ok' && !toast.action ? 4500 : 9000;
     this.#timers.set(
       id,
