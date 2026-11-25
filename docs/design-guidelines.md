@@ -1062,7 +1062,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   the veil, not at the end of a drag that started in the dialog; except while an operation runs
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
   What was typed in the dialog is lost, without a question.
-- On opening, focus goes to the first field. For a destructive action, it goes to "Cancel".
+- On opening, focus goes to the first field. For a destructive action, it goes to "Cancel", the
+  delete of the Files module apart (above), a dialog with no field. An Enter held from what
+  opened the dialog repeats: its repeats are ignored, so that it never answers the dialog.
 - Tab and Shift + Tab go round the controls of the dialog, from the last to the first and back,
   each with its ring: the focus never leaves it, nor stops on what cannot be seen. This holds for
   every modal dialog, the command palette included, where Tab stays in its field.
@@ -2288,7 +2290,8 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   for good, with what the folders hold: they cannot be recovered.", or "from this machine",
   "… they do not go to the trash". What a folder holds is named only when a folder goes: "Delete
   Dockerfile from staging?", "It is deleted from the server for good: it cannot be recovered."; a
-  folder alone, "…for good, with what it holds: …". Then "Cancel", and "Delete", a danger button,
+  folder alone, "…for good, with what it holds: …"; one folder among several items, "…with what
+  the folder holds: …". Then "Cancel", and "Delete", a danger button,
   which has the focus: the one destructive confirmation that does (9.10).
 - Nothing lists again on its own, except after an action of the pane or a transfer into it:
   "Refresh" does it.

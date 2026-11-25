@@ -76,6 +76,11 @@
     if (!busy) dialogs.close(null);
   }}
   use:veil={() => !busy && dialogs.close(null)}
+  onkeydown={(e) => {
+    // An Enter held from what opened the dialog, a menu item, repeats: it never answers the dialog,
+    // above all a delete whose button has the focus (guidelines, 9.10).
+    if (e.key === 'Enter' && e.repeat) e.preventDefault();
+  }}
 >
   {#if spec}
     <form onsubmit={submit}>
