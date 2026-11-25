@@ -1665,10 +1665,10 @@ of the rail; the modules stay alive behind it, and an SSH session is not cut.
 
 **Getting there and back.** The "Settings" button at the foot of the rail, which behaves like a
 module button (pressed while the page is shown); Ctrl + , ; and the palette. No other button
-opens the page: one setting, one place to reach it. The page opens on the section of the module
-it is opened from, "Git" or "Terminal and SSH"; the other sections are one click away in its
-navigation. One exception: the palette command "Keyboard shortcuts" opens the page on the
-section of that name, the one it names. The same button, the same shortcut, a module button or
+opens the page: one setting, one place to reach it. The page opens on "General", whatever the
+module it is opened from; the other sections are one click away in its navigation. One
+exception: the palette command "Keyboard shortcuts" opens the page on the section of that name,
+the one it names. The same button, the same shortcut, a module button or
 Escape bring back the module and the tab that were shown; after Escape, the focus is on the
 "Settings" button of the rail.
 
@@ -2014,8 +2014,8 @@ right of the icon of the "Settings" button of the rail, as the badge of a toolba
 (9.2), and after the name of "General" in the navigation of the settings. It does not blink and
 does not move. An icon never carries a state alone (7): the tooltip of the button then says
 "Settings (Ctrl + ,) · Update available", its accessible name "Settings, update available",
-and the entry "General" has the same words for screen readers. The button still opens the
-section of the module (9.18): the dot on "General" leads the rest of the way.
+and the entry "General" has the same words for screen readers. The button opens the page on
+"General" (9.18), which holds the group "Updates": the dot leads there in one click.
 
 **The group "Updates"**, in "General", under "Appearance".
 

@@ -59,8 +59,8 @@
 
   let settingsButton = $state<HTMLButtonElement>();
 
-  /** The settings open on the section of the module they are opened from (guidelines, section 9.18). */
-  const toggleSettings = () => settingsPage.toggle(view === 'git' ? 'git' : view === 'ssh' ? 'ssh' : 'general');
+  /** The settings open on "General", whatever the module (guidelines, section 9.18). */
+  const toggleSettings = () => settingsPage.toggle('general');
 
   const show = (module: Module) => modules.show(module);
 

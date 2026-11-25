@@ -13,7 +13,8 @@ class SettingsPage {
   open = $state(false);
   section = $state<SectionId>('general');
 
-  /** Opens the page, on `section` if one is asked for, otherwise where it was left. */
+  /** Opens the page, on `section` if one is asked for, otherwise where it was left: the button,
+   *  the shortcut and the palette ask for "General", "Keyboard shortcuts" for its own. */
   show(section?: SectionId) {
     if (section) this.section = section;
     this.open = true;
