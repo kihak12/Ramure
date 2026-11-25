@@ -110,7 +110,7 @@ component that hard-codes one.
 |---|---|---|---|
 | `--side` | Window background: rail, tabs, toolbar, status bar, space between the cards. | `#e2e6ed` | `#0a0b0f` |
 | `--panel` | Background of the cards and of the active tab. | `#ffffff` | `#181b21` |
-| `--bg` | Recessed background, inside a card: input fields. | `#f2f4f7` | `#101216` |
+| `--bg` | Recessed background, inside a card: input fields, the header of a hunk (9.14). | `#f2f4f7` | `#101216` |
 | `--raised` | Background of buttons and of what floats: menus, dialogs, notifications. | `#ffffff` | `#20242c` |
 | `--line` | Border of buttons, fields and floating elements; separator inside a dialog, and between the zones of the detail panel of a commit (6, 9.27). | `#ccd1da` | `#343a46` |
 | `--line-soft` | Discreet separator inside a card. | `#dfe3ea` | `#262b34` |
@@ -1182,7 +1182,18 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   after a key, not after the mouse (9.9, 11).
 - The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--bg`, the recessed background, in
   `--muted`: it separates the hunks, and takes neither the color of the selection nor that of
-  the accent, which would make it look selected in dark.
+  the accent, which would make it look selected in dark. It is neither hovered nor picked: a
+  click on it does nothing.
+- The header is a band 28 px high, its text and its button centered in it, with its button or
+  without. Side by side, a long header wraps as the lines do; in one column, it scrolls sideways
+  with them, its button after it.
+- In the diff of a modified file, in the working tree or in the index, the header carries, 12 px
+  after its text, "Stage hunk" or "Unstage hunk": a small standard button (9.1) in the interface
+  font and `--ink`, always shown, since a hunk is staged whole without picking its lines. It is disabled
+  while git works. Its accessible name numbers the hunk: "Stage hunk 2". The lines scroll and
+  would cut its ring: it is drawn inside it (9.6). A diff of a commit or of a stash, the diff of a file added, deleted, renamed or
+  not tracked, and a diff too long to be shown whole, have none: their lines cannot be picked
+  either.
 - A line picked to be staged on its own has a stronger tint, `--tint-line-pick` more, and its
   sign in bold; a line hovered to be picked takes `--tint-line-hover` more (2.7). No colored
   bar on its edge.

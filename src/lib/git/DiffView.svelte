@@ -318,9 +318,17 @@
             {#if pair.full}
               <tr class="t-{pair.full.type}">
                 <td class="code" colspan="6">
-                  {pair.full.text}{#if canSelect && pair.full.type === 'hunk'}
-                    <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(pair.full!.hunk)}>{verb} hunk</button>
-                  {/if}
+                  <!-- The header of a hunk: a band of its own height, its text and its button centered in it (9.14). -->
+                  {#if pair.full.type === 'hunk'}<span class="head"
+                      >{pair.full.text}{#if canSelect}<button
+                          class="btn small hunk-btn"
+                          type="button"
+                          disabled={busy}
+                          aria-label="{verb} hunk {pair.full.hunk + 1}"
+                          onclick={() => applyHunk(pair.full!.hunk)}
+                          >{verb} hunk</button
+                        >{/if}</span
+                    >{:else}{pair.full.text}{/if}
                 </td>
               </tr>
             {:else}
@@ -387,9 +395,16 @@
               <td class="no">{line.new ?? ''}</td>
               <td class="sign">{SIGN[line.type]}</td>
               <td class="code">
-                {line.text}{#if canSelect && line.type === 'hunk'}
-                  <button class="btn small hunk-btn" type="button" disabled={busy} onclick={() => applyHunk(line.hunk)}>{verb} hunk</button>
-                {/if}
+                {#if line.type === 'hunk'}<span class="head"
+                    >{line.text}{#if canSelect}<button
+                        class="btn small hunk-btn"
+                        type="button"
+                        disabled={busy}
+                        aria-label="{verb} hunk {line.hunk + 1}"
+                        onclick={() => applyHunk(line.hunk)}
+                        >{verb} hunk</button
+                      >{/if}</span
+                  >{:else}{line.text}{/if}
               </td>
             </tr>
           {/each}
@@ -693,12 +708,28 @@
   .picked .sign {
     font-weight: var(--fw-strong);
   }
+  /* The band of a hunk header is 28 px high, with its button or without: the 24 px button keeps
+     2 px above and below, and the text is centered with it (guidelines, 9.14). */
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 28px;
+  }
+  /* Side by side, a long header wraps as the lines do: its button stays in the card. */
+  .split .head {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  /* A small standard button (9.1), in the interface font inside the code of the diff, and in
+     `--ink`, not in the `--muted` of the header. */
   .hunk-btn {
-    margin-left: 12px;
-    padding: 0 8px;
-    line-height: 16px;
+    flex: none;
+    color: var(--ink);
     font-family: var(--f-ui);
-    font-size: var(--fs-small);
-    vertical-align: top;
+  }
+  /* The lines scroll and would cut its ring: it is drawn inside it (9.6). */
+  .hunk-btn:focus-visible {
+    outline-offset: -2px;
   }
 </style>
