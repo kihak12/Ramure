@@ -4,14 +4,9 @@
   import { DEFAULTS, prefs, savePrefs } from '../git/prefs.svelte';
   import Icon from '../ui/Icon.svelte';
   import { journalDir } from '../ssh/journal';
-  import Choice from '../ui/Choice.svelte';
+  import Switch from '../ui/Switch.svelte';
   import SectionHeader from './SectionHeader.svelte';
   import SettingRow from './SettingRow.svelte';
-
-  const RECONNECT = [
-    { value: 'on', label: 'On', help: 'A lost connection is retried five times, 2 to 30 s apart.' },
-    { value: 'off', label: 'Off', help: 'The tab waits for a click on “Reconnect”.' },
-  ] as const;
 
   const changed = $derived(prefs.sshReconnect !== DEFAULTS.sshReconnect || prefs.journalDir !== DEFAULTS.journalDir);
   const setReconnect = (on: boolean) => savePrefs({ sshReconnect: on });
@@ -59,17 +54,9 @@
   <SettingRow
     id="set-reconnect"
     name="Automatic reconnection"
-    help="A session closed by you or by the server never reopens on its own."
-    group
+    help="A lost connection is retried five times, 2 to 30 s apart. Off, the tab waits for a click on “Reconnect”. A session closed by you or by the server never reopens on its own."
   >
-    <Choice
-      name="set-reconnect"
-      labelledby="set-reconnect-name"
-      describedby="set-reconnect-help"
-      value={prefs.sshReconnect ? 'on' : 'off'}
-      options={RECONNECT}
-      onchange={(value) => setReconnect(value === 'on')}
-    />
+    <Switch id="set-reconnect" describedby="set-reconnect-help" on={prefs.sshReconnect} onchange={setReconnect} />
   </SettingRow>
 </section>
 
