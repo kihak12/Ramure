@@ -252,7 +252,7 @@
       <!-- Two menus, which open above them: the foot is at the bottom of the window (9.9). -->
       <button
         class="btn small"
-        class:open={menu.isUnder(importEl)}
+        class:menu-open={menu.isUnder(importEl)}
         type="button"
         bind:this={importEl}
         aria-haspopup="menu"
@@ -263,7 +263,7 @@
       </button>
       <button
         class="btn small"
-        class:open={menu.isUnder(exportEl)}
+        class:menu-open={menu.isUnder(exportEl)}
         type="button"
         bind:this={exportEl}
         aria-haspopup="menu"
@@ -368,7 +368,7 @@
           {#if ssh.loaded && !ssh.hosts.length}
             <button
               class="btn"
-              class:open={menu.isUnder(emptyImportEl)}
+              class:menu-open={menu.isUnder(emptyImportEl)}
               type="button"
               bind:this={emptyImportEl}
               aria-haspopup="menu"
@@ -592,8 +592,9 @@
     padding: 8px 12px 12px;
     border-top: 1px solid var(--line-soft);
   }
-  /* A button whose menu is open keeps its hover (guidelines, 9.1). */
-  .btn.open {
+  /* A button whose menu is open keeps its hover (guidelines, 9.1). Not `.open`, the button of a
+     terminal tab, which stretches. */
+  .btn.menu-open {
     background: var(--hover);
     border-color: color-mix(in srgb, var(--muted) 45%, var(--line));
   }
