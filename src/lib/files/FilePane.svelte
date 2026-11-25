@@ -1223,6 +1223,17 @@
   .row.sel {
     background: var(--sel);
   }
+  /* Rows selected one after another form one block: the corners round at its two ends only. A
+     folder that receives a drop keeps its four, its outline standing out of the block
+     (guidelines, 9.6). */
+  .row.sel:not(.drop):has(+ .row.sel) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .row.sel + .row.sel:not(.drop) {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
   /* The selection of a pane that is not the active one steps back to a neutral tint: the strong
      selection says which pane Enter, Delete, F2 and the double-click act on (guidelines, 9.24). */
   .pane:not(.active) .row.sel:not(.drop) {
