@@ -4,7 +4,9 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { tick } from 'svelte';
+import { prefs, savePrefs } from '../git/prefs.svelte';
 import { dialogs } from '../ui/dialogs.svelte';
+import { exceptionFor, matchFor, normalMatch } from './opening';
 import { focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
 import { explain } from '../ssh/reasons';
@@ -574,6 +576,48 @@ class Files {
       },
     });
     if (answers) await this.refresh(pane, [renamed]);
+  }
+
+  /**
+   * "Open": a file of this machine, in the program of its exception, else in the text editor if it
+   * is text, else in the program of the system (guidelines, 9.24, "Opening a file").
+   */
+  async openFile(pane: Pane, entry: Entry, program?: string) {
+    if (pane.location?.kind !== 'local') return;
+    try {
+      await invoke('open_file', {
+        path: joinPath(pane.path, entry.name),
+        program: program ?? exceptionFor(entry.name, prefs.openWith),
+        editor: prefs.textEditor.trim() || null,
+      });
+    } catch (e) {
+      toasts.err(`Could not open ${entry.name}`, String(e));
+    }
+  }
+
+  /** "Open with…": a program for this file, and, asked for, for every file of its kind (9.24). */
+  async openWith(pane: Pane, entry: Entry) {
+    if (pane.location?.kind !== 'local') return;
+    const always = matchFor(entry.name);
+    const answers = await dialogs.ask({
+      title: `Open ${entry.name} with…`,
+      fields: [
+        { name: 'program', label: 'Program', type: 'text', mono: true, required: true, value: exceptionFor(entry.name, prefs.openWith) ?? '', hint: 'A program name, such as code, or its path.', browse: 'Choose a program' },
+        { name: 'always', label: always.label, type: 'checkbox', value: false },
+      ],
+      confirmLabel: 'Open',
+      check: async (values) => {
+        const program = String(values.program).trim();
+        return (await invoke<boolean>('program_found', { program })) ? null : `No program named ${program} was found.`;
+      },
+    });
+    if (!answers) return;
+    const program = String(answers.program).trim();
+    if (answers.always) {
+      const match = normalMatch(always.match);
+      savePrefs({ openWith: [...prefs.openWith.filter((rule) => normalMatch(rule.match) !== match), { match: always.match, program }] });
+    }
+    await this.openFile(pane, entry, program);
   }
 
   /** "Delete…": always asks, and says that nothing can be recovered (guidelines, 9.24). */

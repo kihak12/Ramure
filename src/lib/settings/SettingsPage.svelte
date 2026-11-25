@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import FilesSection from './FilesSection.svelte';
   import GeneralSection from './GeneralSection.svelte';
   import GitSection from './GitSection.svelte';
   import KeysSection from './KeysSection.svelte';
@@ -58,6 +59,8 @@
         <GitSection />
       {:else if settingsPage.section === 'ssh'}
         <SshSection />
+      {:else if settingsPage.section === 'files'}
+        <FilesSection />
       {:else}
         <KeysSection />
       {/if}

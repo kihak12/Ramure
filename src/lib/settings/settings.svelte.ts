@@ -4,6 +4,7 @@ export const SECTIONS = [
   { id: 'general', title: 'General' },
   { id: 'git', title: 'Git' },
   { id: 'ssh', title: 'Terminal and SSH' },
+  { id: 'files', title: 'Files' },
   { id: 'keys', title: 'Keyboard shortcuts' },
 ] as const;
 

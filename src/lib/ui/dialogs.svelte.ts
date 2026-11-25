@@ -15,6 +15,9 @@ export interface Field {
   min?: number;
   max?: number;
   mono?: boolean;
+  /** A text field that takes a file of this machine: a "Browse…" button beside it opens the
+   *  picker of the system, under this title (guidelines, 9.10). */
+  browse?: string;
 }
 
 export interface DialogSpec {

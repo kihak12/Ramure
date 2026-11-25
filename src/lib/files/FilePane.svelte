@@ -505,8 +505,19 @@
     const names = [...pane.selected];
     const single = names.length === 1;
     const send = sendItems(names);
+    // A file opens in another program, from this machine for now (guidelines, 9.24, "Opening a file").
+    const local = pane.location?.kind === 'local';
+    const why = !single ? 'Select one file to open it.' : local ? undefined : 'A file of a server cannot be opened yet: copy it to this machine first.';
+    const opening = entry.dir
+      ? []
+      : [
+          { label: 'Open', icon: 'file' as const, disabled: !!why, hint: why, run: () => void files.openFile(pane, entry) },
+          { label: 'Open with…', disabled: !!why, hint: why, run: () => void files.openWith(pane, entry) },
+          { separator: true } as const,
+        ];
     menu.open(e, [
       ...(single && entry.dir ? [{ label: 'Open', icon: 'folder' as const, run: () => files.open(pane, entry) }, { separator: true } as const] : []),
+      ...opening,
       ...(send.length ? [...send, { separator: true } as const] : []),
       { label: 'Rename…', icon: 'pencil', keys: 'F2', disabled: !single, hint: single ? undefined : 'Select one item to rename it.', run: () => void files.rename(pane, entry) },
       { label: 'New folder…', icon: 'folder-plus', run: () => void files.mkdir(pane) },
