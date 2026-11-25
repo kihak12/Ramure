@@ -201,6 +201,7 @@ Every theme must meet them, in light and in dark.
 | `--bad` on `--bad-soft` and `--warn-soft` (ghost danger button, destructive menu item, the banner of an operation) | 4.5:1 |
 | `--accent` and each branch color on `--panel` | 3:1 |
 | `--accent` on `--accent-soft` (the icon of an active module or of a pressed action) | 3:1 |
+| `--accent` on `--raised` (the icon of a folder in a dialog, 9.10) | 3:1 |
 | `--accent` on `--side`, `--hover-side`, `--sel` and `--hover` (the dot that says an update waits, 9.23) | 3:1 |
 | `--term-ink` on `--term-bg`, and on a search result of the terminal | 7:1 |
 | `--ink` on the tints of the two sides of the conflict editor, 10%, 24% and 30% of `--l0` and `--l1`, and on their "Keep" buttons, at rest and on hover (9.26) | 7:1 |
@@ -1075,6 +1076,20 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A warning is a box on a `--warn-soft` background, with an icon. When it warns of several
   things, each is a line of its own, 4 px from the next, so that a line that wraps is not read
   as two.
+- **The items** a dialog asks about, such as the names a copy would replace, are a list under the
+  title, before the text: one row of 24 px each, the icon of a file or of a folder, a folder in
+  `--accent` as in a pane, 6 px from the name in `--ink`, in the interface font as in a pane, cut
+  with an ellipsis and whole in its tooltip. No box and no hover: the rows are not clicked. Past
+  six rows and a half, the list scrolls, the half row saying there is more; it is then a stop of
+  the tab order, with its ring, so that the keyboard scrolls it too: what a destructive dialog
+  names is never out of its reach.
+- **Two versions** of one item are compared in a small table under the title, at the size of the
+  text, one row each: where it is, in `--muted`, cut with an ellipsis past 120 px, so that a long
+  date still fits, its full path and its host in its tooltip; its size, aligned right; its date,
+  in the format of the settings; with tabular figures (3.4). A
+  folder has no size, and a date missing is "—". The second row may end with a word in
+  `--muted` that compares it with the first.
+- A secondary button whose label cannot say all it does may carry a tooltip that does.
 - The buttons are on the last line, in the order of 9.1 ("Hierarchy"): "Cancel", then
   the action, at the right.
 - Enter triggers the main button; for a destructive action the focus is on "Cancel", and Enter
@@ -2495,13 +2510,23 @@ at half opacity (9.6).
   the reason in the foot: "Already in this folder.", "A folder cannot go into itself.", "Not
   connected."
 - **A name already there.** A copy that would replace something first asks (9.10): "Replace 2
-  items in releases?", the names, "A replaced file cannot be recovered. A folder is merged: only
-  the files of the same name inside it are replaced. “Keep both” copies them under a free name,
-  such as report (1).pdf.", then "Cancel", which has the focus, "Skip them", "Keep both", and
-  "Replace", a danger button: four buttons, the most a last line holds (9.1). With one name, "Skip
-  it", and the free name of that file in the sentence when the pane shows that folder, "copies it
-  as report (1).pdf."; otherwise "under a free name, such as report (1).pdf.", the core choosing it
-  as it copies.
+  items in releases?", or "Replace report.pdf in releases?", with "on web-prod" after the folder
+  when it is on a server. The facts come first, under the title:
+  - one name: its two versions (9.10), "In releases", what is there, then "From src", what is
+    copied, with their sizes and dates; the second row ends with "newer", "older" or "same date"
+    when both dates are known;
+  - several names: the list of all of them (9.10), each with its icon.
+
+  Then the text, one line each, in `--muted`: "A replaced file cannot be recovered."; when a
+  folder is among them, "A folder is merged: only the files of the same name inside it are
+  replaced."; when the copy brings other items, whose names are free, "The 7 other items are
+  copied unless you cancel.", or "The other item…". Then "Cancel", which has the focus, "Skip
+  them", "Keep both", and "Replace", a danger button: four buttons, the most a last line holds
+  (9.1). With one name, "Skip it". The tooltips of the two middle buttons say what they do: "Keep
+  the ones there and do not copy them."; "Copy them under free names and keep the ones there.",
+  and with one name, "Copy it as report (1).pdf and keep the one there." when the pane shows that
+  folder, otherwise "Copy it under a free name and keep the one there.", the core choosing it as
+  it copies.
 - **Keeping both** copies each item whose name is taken under the first free name: the number
   in parentheses before the extension of a file, "report (1).pdf", then "(2)", after the whole
   name of a folder or of a file whose only dot leads, "releases (1)", ".bashrc (1)". The name is

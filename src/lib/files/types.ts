@@ -17,6 +17,15 @@ export interface Entry {
   hidden: boolean;
 }
 
+/** A name already in the folder a copy goes into (`files_existing`). */
+export interface Existing {
+  name: string;
+  dir: boolean;
+  size: number;
+  /** Seconds since the epoch. */
+  modified: number | null;
+}
+
 export interface Listing {
   path: string;
   parent: string | null;
