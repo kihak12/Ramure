@@ -291,6 +291,10 @@
   let lastKey = 0;
   let echoes: number[] = [];
   let attempt: Attempt = {};
+  /** The fingerprint the user trusted in this tab: its reconnections, on their own or with
+   *  "Reconnect", send it again, and the core still checks it against the one the server presents
+   *  (guidelines, 9.15). A new tab asks again. */
+  let trusted: string | undefined;
 
   const host = $derived(session.host);
   // A local terminal talks to the Rust core through its own commands; the rest of the component is
@@ -510,7 +514,7 @@
           auth,
           cols: term.cols,
           rows: term.rows,
-          acceptFingerprint: attempt.accept ?? null,
+          acceptFingerprint: attempt.accept ?? trusted ?? null,
           rememberHost: attempt.remember ?? false,
           startupCommand: host.startupCommand.trim() || null,
           rememberSecret: attempt.keep ?? false,
@@ -525,7 +529,8 @@
       sessionId = connected.id;
       phase = { step: 'connected' };
       session.status = 'connected';
-      // Secrets do not outlive the opening of the session.
+      // The trust given to the server holds for the tab; secrets do not outlive the opening.
+      if (attempt.accept) trusted = attempt.accept;
       attempt = {};
       if (connected.learnFailed) toasts.warn('The fingerprint could not be remembered', connected.learnFailed);
       if (connected.keepFailed) toasts.warn('The secret could not be kept', `The system keyring refused it: ${connected.keepFailed}`);
