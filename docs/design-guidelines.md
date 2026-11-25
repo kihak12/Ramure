@@ -1246,6 +1246,9 @@ and a warning notification says "The fingerprint could not be remembered", then 
 do: in plain words when the cause is known (access denied, a read-only or full disk, a folder or a
 file in the way), "Access denied. Check that the file is not read-only…", otherwise the text of
 the system as it is; the test of the host form says it in its result line instead (9.21).
+"Trust this time" holds for the tab: its reconnections, on their own or with "Reconnect", do not ask
+again while the server presents the same fingerprint. Another fingerprint asks again, and so does
+a new tab on the same host.
 A fingerprint that has changed blocks the connection, and names the line of `known_hosts` to look
 at.
 
