@@ -8,16 +8,18 @@
     id,
     on,
     describedby,
+    disabled = false,
     onchange,
   }: {
     id: string;
     on: boolean;
     describedby?: string;
+    disabled?: boolean;
     onchange: (on: boolean) => void;
   } = $props();
 </script>
 
-<button {id} class="switch" class:on type="button" role="switch" aria-checked={on} aria-describedby={describedby} onclick={() => onchange(!on)}>
+<button {id} class="switch" class:on type="button" role="switch" aria-checked={on} aria-describedby={describedby} {disabled} onclick={() => onchange(!on)}>
   <span class="track" aria-hidden="true"><span class="thumb"></span></span>
   <span class="state" aria-hidden="true">{on ? 'On' : 'Off'}</span>
 </button>
@@ -25,6 +27,7 @@
 <style>
   /* The target is the track and its word, as high as a field: 32 px. */
   .switch {
+    justify-self: start;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -71,10 +74,10 @@
     background: var(--on-accent);
     transform: translateX(14px);
   }
-  .switch:hover .track {
+  .switch:not(:disabled):hover .track {
     border-color: var(--ink);
   }
-  .on:hover .track {
+  .on:not(:disabled):hover .track {
     border-color: color-mix(in srgb, var(--accent) 90%, var(--ink));
     background: color-mix(in srgb, var(--accent) 90%, var(--ink));
   }

@@ -97,7 +97,7 @@
       {#each DATE_FORMATS as format (format.value)}<option value={format.value}>{format.label}</option>{/each}
     </Select>
   </SettingRow>
-  <SettingRow id="set-clock" name="Clock" help={`The time that goes with a date, to the second: ${time(SAMPLE, '24')} or ${time(SAMPLE, '12')}.`} fact>
+  <SettingRow id="set-clock" name="Clock" help={`The time that goes with a date, to the second: ${time(SAMPLE, '24')} or ${time(SAMPLE, '12')}.`} named>
     <Choice name="set-clock" layout="segments" labelledby="set-clock-name" describedby="set-clock-help" value={prefs.clock} options={CLOCKS} onchange={(clock: Clock) => savePrefs({ clock })} />
   </SettingRow>
 </section>

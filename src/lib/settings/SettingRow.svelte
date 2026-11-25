@@ -8,8 +8,9 @@
    * `busy`: the setting is being applied, and what that is doing.
    * `group`: the control is a choice (section 9.19). It sits under the name, on the whole width,
    * and `{id}-name` is what names it.
-   * `fact`: the name states something and labels no field by `for`: its control, a button, names
-   * itself, or a choice in segments points to `{id}-name`.
+   * `fact`: the name states something and labels no field: its control, a button, names itself.
+   * `named`: the control is named by `aria-labelledby` pointing to `{id}-name`, on the right of the
+   * name, as a choice in segments: the name is no `<label>`.
    */
   let {
     id,
@@ -19,13 +20,14 @@
     busy = '',
     group = false,
     fact = false,
+    named = false,
     children,
-  }: { id: string; name: string; help?: string; error?: string; busy?: string; group?: boolean; fact?: boolean; children?: Snippet } = $props();
+  }: { id: string; name: string; help?: string; error?: string; busy?: string; group?: boolean; fact?: boolean; named?: boolean; children?: Snippet } = $props();
 </script>
 
 <div class="setting" class:group>
   <div class="text">
-    {#if group || fact}
+    {#if group || fact || named}
       <span class="name" id="{id}-name">{name}</span>
     {:else}
       <label class="name" for={id}>{name}</label>

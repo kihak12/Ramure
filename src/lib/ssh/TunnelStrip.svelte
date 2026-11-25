@@ -25,8 +25,6 @@
     failed: { words: 'Failed', icon: 'warning' },
   };
 
-  // The time of a last failure, in the American format (guidelines, 12): "11:07 PM".
-
   // Past five rows, the list scrolls: it stops where the sixth row starts, the lines under the
   // first five included.
   const SHOWN = 5;
