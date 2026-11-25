@@ -8,7 +8,8 @@ import { tick } from 'svelte';
 import { prefs, savePrefs } from '../git/prefs.svelte';
 import { dialogs } from '../ui/dialogs.svelte';
 import { exceptionFor, matchFor, normalMatch } from './opening';
-import { focusWithRing } from '../ui/focus';
+import { dateTime } from '../ui/dates';
+import { focusBack, focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
 import { explain } from '../ssh/reasons';
 import { ssh } from '../ssh/ssh.svelte';
@@ -131,6 +132,10 @@ export interface Watch {
   seen: string;
   changedAt: number;
   asked: string;
+  /** The file on the server as it was downloaded or last sent, "size:seconds", `UNREAD` when it
+   *  could not be read, null when it was not there: a send asks first when it changed meanwhile
+   *  (guidelines, 9.24). */
+  remoteStamp: string | null;
   /** Changes not sent: the row of the card, and the question. */
   pending: boolean;
   toast: number | null;
@@ -155,6 +160,8 @@ let nextTransfer = 1;
 let nextWatch = 1;
 /** A save is over once its copy has been quiet that long (guidelines, 9.24). */
 const QUIET = 1000;
+/** The stamp of a file of a server that could not be read: a send asks first (guidelines, 9.24). */
+const UNREAD = '?';
 
 function blank(location: Location | null, path = '', hidden = false, sort: Pane['sort'] = { by: 'name', desc: false }): Pane {
   return {
@@ -203,6 +210,12 @@ class Files {
   /** The rows of a file of a server being downloaded to be opened: `${paneKey}:${path}`. */
   opening = $state<string[]>([]);
   #poll: number | undefined;
+  /** The folders of copies made in this session, and those whose copy holds a change not sent
+   *  that the user was told stays: on quitting, the first go, the second stay (guidelines, 9.24). */
+  #made = new Set<string>();
+  #kept = new Set<string>();
+  /** The sends that read the file on the server again, before they copy: a cancel stops them. */
+  #checking = new Set<number>();
   /** The pane that last had the keyboard or the pointer: its name is in weight 650. */
   focused = $state(0);
   drag = $state.raw<Dragged | null>(null);
@@ -307,17 +320,23 @@ class Files {
    *  False when it was canceled. */
   async close(pane: Pane): Promise<boolean> {
     const using = this.runningWith(pane);
-    if (using.length) {
-      const way = using[0].to.paneKey === pane.key ? 'to' : 'from';
-      const what = using.length === 1 ? `A transfer ${way} ${this.label(pane)} is running. It will be stopped` : `${using.length} transfers of ${this.label(pane)} are running. They will be stopped`;
+    const unsent = this.unsentOf(pane);
+    if (using.length || unsent.length) {
+      const way = using[0]?.to.paneKey === pane.key ? 'to' : 'from';
+      const what = !using.length
+        ? ''
+        : using.length === 1
+          ? `A transfer ${way} ${this.label(pane)} is running. It will be stopped; the files already copied stay.`
+          : `${using.length} transfers of ${this.label(pane)} are running. They will be stopped; the files already copied stay.`;
       const confirmed = await dialogs.confirm({
         title: 'Close this pane?',
-        body: `${what}; the files already copied stay.`,
+        // One line per thing that stops or stays (guidelines, 9.10).
+        body: [what, this.#unsentSentence(unsent, 'Closing the pane stops watching')].filter(Boolean).join('\n'),
         confirmLabel: 'Close pane',
         danger: true,
       });
       if (!confirmed) return false;
-      for (const t of using) void invoke('transfer_cancel', { id: t.id });
+      for (const t of using) this.cancel(t);
     }
     this.#forget(pane);
     this.#disconnect(pane);
@@ -339,10 +358,14 @@ class Files {
   }
 
   /** Opens `location` in the pane, in place of what it showed. */
-  choose(pane: Pane, location: Location, path = '') {
-    // Another place: the files it opened elsewhere are no longer watched (guidelines, 9.24).
+  async choose(pane: Pane, location: Location, path = '') {
+    // Another place: the files it opened elsewhere are no longer watched, asked first while a
+    // change waits (guidelines, 9.24).
     const same = pane.location?.kind === location.kind && (location.kind === 'local' || (pane.location?.kind === 'host' && pane.location.hostId === location.hostId));
-    if (!same) this.#forget(pane);
+    if (!same) {
+      if (!(await this.#mayLeave(pane))) return;
+      this.#forget(pane);
+    }
     this.#disconnect(pane);
     pane.location = location;
     pane.path = path;
@@ -364,7 +387,8 @@ class Files {
   }
 
   /** "Cancel" in a panel of the connection: the pane chooses a location again. */
-  unchoose(pane: Pane) {
+  async unchoose(pane: Pane) {
+    if (!(await this.#mayLeave(pane))) return;
     this.#forget(pane);
     this.#disconnect(pane);
     Object.assign(pane, { location: null, phase: { step: 'idle' }, entries: [], path: '', error: '', selected: [], attempt: {} });
@@ -639,13 +663,15 @@ class Files {
     this.opening.push(key);
     try {
       const dir = known ? (parentPath(known.copy) ?? known.copy) : await invoke<string>('open_copy_dir');
+      this.#made.add(dir);
       await invoke('transfer_start', {
         params: { id: nextTransfer++, from: place, to: { kind: 'local' }, sources: [remote], dest: dir, taken: 'replace' },
         onProgress: new Channel<Progress>(),
       });
       const copy = known?.copy ?? joinPath(dir, entry.name);
       const stamp = (await invoke<string | null>('file_stamp', { path: copy })) ?? '';
-      if (known) Object.assign(known, { stamp, seen: stamp, asked: stamp, changedAt: 0 });
+      const remoteStamp = await this.#remoteStamp(place, remote);
+      if (known) Object.assign(known, { stamp, seen: stamp, asked: stamp, changedAt: 0, remoteStamp });
       else
         this.watches.push({
           id: nextWatch++,
@@ -659,6 +685,7 @@ class Files {
           seen: stamp,
           changedAt: 0,
           asked: stamp,
+          remoteStamp,
           pending: false,
           toast: null,
         });
@@ -747,6 +774,8 @@ class Files {
 
   /** "Send changes": the copy replaces the file on the server, through the card (guidelines, 9.24). */
   async sendChanges(t: Transfer) {
+    // The notification and the card can both ask: one send at a time.
+    if (t.state !== 'waiting') return;
     const w = this.watches.find((x) => x.id === t.watch);
     if (!w) return this.dismiss(t);
     if (w.toast !== null) toasts.dismiss(w.toast);
@@ -758,20 +787,62 @@ class Files {
       t.error = `The connection to ${w.label} was lost. Connect again, then retry.`;
       return;
     }
+    // The file on the server is read again, the row saying so: it cannot be sent twice (9.24).
+    t.state = 'counting';
+    this.#checking.add(t.id);
+    const now = await this.#remoteStamp(place, w.remote);
+    // Canceled meanwhile, from the card.
+    if (!this.#checking.delete(t.id)) return;
+    // The file changed on the server after it was opened, or cannot be read: asked before it is
+    // replaced. A file gone from the server is sent with no question.
+    let taken: Taken = 'replace';
+    const unread = now === UNREAD || w.remoteStamp === UNREAD;
+    if (now !== null && (unread || now !== w.remoteStamp)) {
+      const when = unread ? 0 : Number(now.split(':')[1] ?? 0);
+      const loss = unread
+        ? `Ramure could not check whether ${w.name} changed on ${w.label} after you opened it. Replacing it would lose any such changes`
+        : `The file changed on ${w.label} after you opened it${when ? ` (${dateTime(when * 1000)})` : ''}. Replacing it loses those changes`;
+      const chosen: { answer?: Taken } = {};
+      const replace = await dialogs.confirm({
+        title: `Replace ${w.name} on ${w.label}?`,
+        body: `${loss}: a replaced file cannot be recovered. “Keep both” sends your copy beside it, under a new name.`,
+        confirmLabel: 'Replace',
+        danger: true,
+        extra: { label: 'Keep both', run: () => (chosen.answer = 'keepBoth') },
+      });
+      if (replace) chosen.answer = 'replace';
+      if (!chosen.answer) {
+        t.state = 'waiting';
+        // The button pressed is gone, that of the row while it read or that of the question: the
+        // keyboard goes to the row that still waits, rather than nowhere (guidelines, 11).
+        await tick();
+        if (!document.activeElement || document.activeElement === document.body) focusBack(document.querySelector<HTMLElement>(`[data-send="${t.id}"]`));
+        return;
+      }
+      taken = chosen.answer;
+    }
     const sending = w.seen;
     t.to.place = place;
-    t.state = 'counting';
-    await this.#run(t, 'replace');
+    await this.#run(t, taken);
     // The run changed the state meanwhile.
     const ended = t.state as TransferState;
     if (ended === 'done') {
       w.stamp = sending;
       w.asked = sending;
       w.pending = false;
+      // What the server holds now is what the next send compares with. After "Keep both", the file
+      // there is still not the one opened: the next send asks again.
+      if (taken === 'replace') w.remoteStamp = await this.#remoteStamp(place, w.remote);
     } else if (ended === 'canceled') {
       // A send stopped: the change still waits, to be sent (guidelines, 9.24).
       t.state = 'waiting';
     }
+  }
+
+  /** The file `path` of a server, as "size:seconds"; null when it is not there, `UNREAD` when it
+   *  cannot be read. */
+  #remoteStamp(place: Place, path: string): Promise<string | null> {
+    return invoke<string | null>('files_stamp', { place, path }).catch(() => UNREAD);
   }
 
   /** "Stop watching": asked first while changes are not sent; the copy stays (guidelines, 9.24). */
@@ -785,15 +856,64 @@ class Files {
       });
       if (!sure) return;
     }
+    if (w.pending) this.#keep(w);
     if (w.toast !== null) toasts.dismiss(w.toast);
     this.watches = this.watches.filter((x) => x !== w);
     this.transfers = this.transfers.filter((t) => !(t.watch === w.id && (t.state === 'waiting' || t.state === 'failed')));
+  }
+
+  /** The changes not sent of the files a pane opened elsewhere. */
+  unsentOf(pane: Pane): Watch[] {
+    return this.watches.filter((w) => w.paneKey === pane.key && w.pending);
+  }
+
+  /** Every change not sent, one line each, for "Quit Ramure?" and a restart (guidelines, 9.24). */
+  get unsent(): string[] {
+    return this.watches.filter((w) => w.pending).map((w) => `Changes to ${w.name} were not sent to ${w.label}. Your copy stays at ${w.copy}.`);
+  }
+
+  /** "nginx.conf was changed and not sent to staging. Closing the pane stops watching it; your copy
+   *  stays at …". Of several files, one line per copy (guidelines, 9.24). */
+  #unsentSentence(unsent: Watch[], how: string): string {
+    if (!unsent.length) return '';
+    if (unsent.length === 1) {
+      const w = unsent[0];
+      return `${w.name} was changed and not sent to ${w.label}. ${how} it; your copy stays at ${w.copy}.`;
+    }
+    const intro = `${unsent.length} files were changed and not sent to ${unsent[0].label}. ${how} them; your copies stay at:`;
+    return [intro, ...unsent.map((w) => w.copy)].join('\n');
+  }
+
+  /** Before a pane shows another place: asked first while a change waits (guidelines, 9.24). */
+  async #mayLeave(pane: Pane): Promise<boolean> {
+    const unsent = this.unsentOf(pane);
+    if (!unsent.length) return true;
+    return dialogs.confirm({
+      title: `Leave ${this.label(pane)}?`,
+      body: this.#unsentSentence(unsent, 'Leaving stops watching'),
+      confirmLabel: 'Leave',
+      danger: true,
+    });
+  }
+
+  /** On quitting: the copies with nothing to send are deleted; the others stay (guidelines, 9.24). */
+  async cleanCopies() {
+    for (const w of this.watches) if (w.pending) this.#keep(w);
+    const dirs = [...this.#made].filter((dir) => !this.#kept.has(dir));
+    await invoke('open_copies_clean', { dirs }).catch(() => {});
+  }
+
+  /** The copy of `w` holds a change not sent, and stays. */
+  #keep(w: Watch) {
+    const dir = parentPath(w.copy);
+    if (dir) this.#kept.add(dir);
   }
 
   /** The files a pane opened elsewhere are no longer watched: it closes or shows another place.
    *  Their copies stay (guidelines, 9.24). */
   #forget(pane: Pane) {
     for (const w of this.watches.filter((x) => x.paneKey === pane.key)) {
+      if (w.pending) this.#keep(w);
       if (w.toast !== null) toasts.dismiss(w.toast);
       this.transfers = this.transfers.filter((t) => !(t.watch === w.id && (t.state === 'waiting' || t.state === 'failed')));
     }
@@ -1044,6 +1164,15 @@ class Files {
   }
 
   cancel(t: Transfer) {
+    // A send that reads the file on the server again has not started copying: it waits again, and
+    // the keyboard goes to its "Send changes", the stop button pressed being gone (guidelines, 11).
+    if (this.#checking.delete(t.id)) {
+      t.state = 'waiting';
+      void tick().then(() => {
+        if (!document.activeElement || document.activeElement === document.body) focusBack(document.querySelector<HTMLElement>(`[data-send="${t.id}"]`));
+      });
+      return;
+    }
     void invoke('transfer_cancel', { id: t.id });
   }
 
@@ -1052,6 +1181,7 @@ class Files {
     // The changes of a file opened elsewhere are sent again from its copy.
     if (t.watch !== undefined) {
       t.error = '';
+      t.state = 'waiting';
       return this.sendChanges(t);
     }
     const source = this.pane(t.from.paneKey);

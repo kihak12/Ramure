@@ -65,9 +65,9 @@ const transfersStopped = (n: number) =>
 
 /** Quitting the application stops every local terminal, those of the repositories and those of
  *  the SSH module, and the transfers of the Files module. */
-export async function mayQuit(sessions: Session[], transfers = 0, editors: string[] = []): Promise<boolean> {
+export async function mayQuit(sessions: Session[], transfers = 0, editors: string[] = [], unsent: string[] = []): Promise<boolean> {
   const { programs, unknown } = await running(sessions);
-  if (!programs && !unknown && !transfers && !editors.length) return true;
+  if (!programs && !unknown && !transfers && !editors.length && !unsent.length) return true;
   const terminals = programs
     ? programs === 1
       ? `A program is running in a terminal. It will be stopped ${LOST}.`
@@ -79,7 +79,9 @@ export async function mayQuit(sessions: Session[], transfers = 0, editors: strin
         : '';
   // The window of the conflict editor closes with the main one (guidelines, 9.26, "Its ends").
   const choices = editors.length ? `The choices not saved in the conflict editor will be lost for good: ${editors.join(', ')}.` : '';
-  const body = [terminals, transfers ? transfersStopped(transfers) : '', choices].filter(Boolean).join(' ');
+  // The changes not sent of the files opened elsewhere stay in their copies (guidelines, 9.24).
+  // One line per thing that stops or stays (9.10, 9.15).
+  const body = [terminals, transfers ? transfersStopped(transfers) : '', choices, ...unsent].filter(Boolean).join('\n');
   return dialogs.confirm({ title: 'Quit Ramure?', body, confirmLabel: 'Quit', danger: true });
 }
 
@@ -98,7 +100,7 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
  * What installing an update would lose, one line each (guidelines, 9.23): the restart closes SSH
  * sessions and their tunnels, local terminals, and what a repository tab does not keep.
  */
-export async function restartLosses(sessions: Session[], tunnels: number, repos: OpenRepo[], transfers = 0): Promise<string[]> {
+export async function restartLosses(sessions: Session[], tunnels: number, repos: OpenRepo[], transfers = 0, unsent: string[] = []): Promise<string[]> {
   const lines: string[] = [];
   const remote = sessions.filter((s) => s.kind === 'ssh' && s.status !== 'closed').length;
   if (remote) {
@@ -120,6 +122,7 @@ export async function restartLosses(sessions: Session[], tunnels: number, repos:
     );
   }
   if (transfers) lines.push(transfersStopped(transfers));
+  lines.push(...unsent);
   for (const repo of repos) {
     if (repo.busy) lines.push(`Git is working in ${repo.name}. Restarting now would stop it.`);
     if (repo.message) lines.push(`The commit message in ${repo.name} will be lost.`);

@@ -119,6 +119,19 @@ pub fn open_copy_dir() -> Result<String, String> {
     Ok(dir.display().to_string())
 }
 
+/// Deletes the folders of copies given, on quitting (guidelines, 9.24): only folders that
+/// `open_copy_dir` makes, under the temporary folder of the system, are touched.
+#[tauri::command]
+pub fn open_copies_clean(dirs: Vec<String>) {
+    let root = std::env::temp_dir().join("ramure-open");
+    for dir in dirs {
+        let dir = PathBuf::from(dir);
+        if dir.parent() == Some(root.as_path()) && dir.is_dir() {
+            let _ = std::fs::remove_dir_all(&dir);
+        }
+    }
+}
+
 /// What tells a save of a file apart: its size and its modified time, in milliseconds. `None` while
 /// it is missing, as between the two steps of a save that writes a new file and renames it.
 #[tauri::command]
@@ -174,6 +187,17 @@ mod tests {
         std::fs::write(&file, "ab").unwrap();
         assert_ne!(file_stamp(file.display().to_string()).unwrap(), first);
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn only_folders_of_copies_are_cleaned() {
+        let copy = open_copy_dir().unwrap();
+        let other = std::env::temp_dir().join(format!("ramure-not-a-copy-{}", std::process::id()));
+        std::fs::create_dir_all(&other).unwrap();
+        open_copies_clean(vec![copy.clone(), other.display().to_string()]);
+        assert!(!Path::new(&copy).exists());
+        assert!(other.exists());
+        std::fs::remove_dir_all(&other).unwrap();
     }
 
     #[test]

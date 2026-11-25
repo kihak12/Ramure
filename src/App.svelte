@@ -32,8 +32,11 @@
       try {
         const locals = [...ssh.sessions, ...workspace.tabs.flatMap((tab) => tab.repo.terminals.sessions)];
         const editors = workspace.tabs.flatMap((tab) => (tab.repo.editorWindow?.modified && tab.repo.editorWindow.file ? [tab.repo.editorWindow.file] : []));
-        if (!(await mayQuit(locals, files.running, editors))) event.preventDefault();
-        else await closeEditorWindows(workspace.tabs.map((tab) => tab.repo));
+        if (!(await mayQuit(locals, files.running, editors, files.unsent))) event.preventDefault();
+        else {
+          await closeEditorWindows(workspace.tabs.map((tab) => tab.repo));
+          await files.cleanCopies();
+        }
       } catch {
         /* let it close */
       }

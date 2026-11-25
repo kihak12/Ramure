@@ -1069,7 +1069,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
   it, its content scrolls, and its last line of buttons stays in view.
 - A 15 px title, weight 650: the name of the action ("New branch").
-  Explanatory text in `--muted`.
+  Explanatory text in `--muted`. When it says several things, each is a line of its own, 4 px
+  from the next, as in a warning.
 - A warning is a box on a `--warn-soft` background, with an icon. When it warns of several
   things, each is a line of its own, 4 px from the next, so that a line that wraps is not read
   as two.
@@ -1231,7 +1232,9 @@ own, under its graph (9.20).
   without a question.
 - Closing the window asks the same way when a program runs in a local terminal, here or under a
   repository (9.20): "Quit Ramure?", and "Quit". The text agrees with the number of terminals:
-  "Programs are running in 2 terminals. They will be stopped and their output lost."
+  "Programs are running in 2 terminals. They will be stopped and their output lost." It also says
+  what else would stop or stay, each on a line of its own (9.10): a transfer of the Files module, the choices of a conflict editor
+  in its window (9.26), a change not sent of a file opened elsewhere, whose copy stays (9.24).
 - On Windows, the application cannot tell whether a program runs. The tab of one terminal, which
   the user is looking at, closes without a question; closing the window, or the tab of a
   repository, asks as soon as a shell is open: "A terminal is open…".
@@ -2198,6 +2201,8 @@ next start does not bring back.
     words of "Quit Ramure?" (9.15); where there is no way to know, on Windows: "3 terminals are
     open. Whatever runs in them will be stopped and its output lost.";
   - "2 transfers are running. They will be stopped; the files already copied stay." (9.24);
+  - "Changes to nginx.conf were not sent to staging. Your copy stays at …", one line per file
+    (9.24);
   - "The commit message in workshop will be lost.";
   - "Git is working in workshop. Restarting now would stop it."
 - Under the box, in `--muted`, what the system will do: "Ubuntu will ask for your administrator
@@ -2392,14 +2397,38 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   - A change not sent is a row of the card of the transfers, on `--warn-soft`: "To send", the
     "up" icon in `--warn`, its route "This machine → staging", "Send changes", a small standard
     button, and "Stop watching", a ghost icon button (square). "Send changes" runs it as a copy,
-    which replaces the file on the server: "Copying…", then "Copied", the pane listing again; a
+    which replaces the file on the server: "Counting…" while Ramure reads the file on the server
+    again, then "Copying…", then "Copied", the pane listing again; a
     failure is "Failed" with its reason and "Retry"; a copy canceled is "To send" again. "Clear
     finished" leaves it, and is disabled while every row runs or waits.
   - "Stop watching" with a change not sent asks first: "Stop watching nginx.conf?", "Your
     changes were not sent to staging. Your copy stays at …", with "Cancel" and "Stop watching", a
     danger button. "Open" on a file whose copy holds a change not sent opens that copy again: it
-    is never downloaded over. Closing the pane, or showing another place in it, stops watching its
-    files; their copies stay.
+    is never downloaded over.
+  - **Never sent over a newer file.** Before a send, Ramure reads the size and the modified time
+    of the file on the server again, the row saying "Counting…": it cannot be sent twice. The same
+    as when it was opened or last sent: it sends. Not the same: a dialog (9.10), "Replace
+    nginx.conf on staging?", "The file changed on staging after you opened it (11-25-2026
+    14:30:05). Replacing it loses those changes: a replaced file cannot be recovered. “Keep both”
+    sends your copy beside it, under a new name.", with "Cancel", which has the focus, "Keep both",
+    and "Replace", a danger button. "Cancel" leaves the row "To send", and gives the keyboard back
+    to its "Send changes", with its ring after a key (11). When the file on the server
+    cannot be read, the same dialog says so: "Ramure could not check whether nginx.conf changed on
+    staging after you opened it. Replacing it would lose any such changes: …". A file gone from
+    the server is sent with no question. After "Keep both", the file on the server is still not
+    the one opened: the next send asks again.
+  - **Never dropped quietly.** Closing the pane, or showing another place in it, stops watching
+    its files. While a change waits, it asks first: "Close this pane?", "nginx.conf was changed
+    and not sent to staging. Closing the pane stops watching it; your copy stays at …", and "Close
+    pane", a danger button; or "Leave staging?", "… Leaving stops watching it; your copy stays at
+    …", and "Leave". Of several files: "3 files were changed and not sent to staging. Closing the
+    pane stops watching them; your copies stay at:", then one line per copy. A transfer of the
+    pane that runs is said on the line before (9.10). "Quit Ramure?" and "Restart and install…"
+    say it the same way, one line per file: "Changes to nginx.conf were not sent to staging. Your
+    copy stays at …" (9.15, 9.23).
+  - On quitting, the copies of this session are deleted, except those that hold a change not
+    sent, which stay where the dialogs said: in the temporary folder of the system, which Ubuntu
+    empties when it starts.
 - **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar
