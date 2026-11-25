@@ -105,7 +105,7 @@ pub fn open_file(path: String, program: Option<String>, editor: Option<String>) 
         None => None,
     };
     launch(&file, found.as_deref()).map_err(|e| match &wanted {
-        Some(program) => format!("{program} could not be started: {e}."),
+        Some(program) => format!("{program} could not be started: {e}. Check that it can be run, or choose another with “Open with…”."),
         None => format!("No program of the system opens {name}. Choose one with “Open with…”. ({e})"),
     })
 }

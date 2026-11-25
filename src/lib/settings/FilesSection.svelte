@@ -2,6 +2,7 @@
   // The section "Files" of the settings (guidelines, 9.18): the programs that open the files of
   // the Files module (9.24, "Opening a file").
   import { invoke } from '@tauri-apps/api/core';
+  import { tick } from 'svelte';
   import { open as pick } from '@tauri-apps/plugin-dialog';
   import { DEFAULTS, prefs, savePrefs, type OpenWith } from '../git/prefs.svelte';
   import { normalMatch } from '../files/opening';
@@ -13,7 +14,16 @@
 
   const found = (program: string) => invoke<boolean>('program_found', { program });
   const missing = (program: string) => `No program named ${program} was found.`;
-  const choose = () => pick({ title: 'Choose a program', multiple: false, directory: false }).catch(() => null);
+  /** The picker of the system; its failure is said under the control (guidelines, 9.18). */
+  async function choose(fail: (why: string) => void): Promise<string | null> {
+    try {
+      const chosen = await pick({ title: 'Choose a program', multiple: false, directory: false });
+      return typeof chosen === 'string' ? chosen : null;
+    } catch (e) {
+      fail(`The file picker could not open. Type the name or the path of the program instead. (${e instanceof Error ? e.message : String(e)})`);
+      return null;
+    }
+  }
 
   // --- The text editor: typed or chosen, applied once it is found, empty for the system's ---------
   let editor = $state(prefs.textEditor);
@@ -50,20 +60,27 @@
   }
 
   let list = $state<HTMLElement>();
+  let addButton = $state<HTMLButtonElement>();
+  /** The first field of row `index`, once drawn. */
+  const fieldOf = (index: number) => [...(list?.querySelectorAll<HTMLElement>('.rule') ?? [])][index]?.querySelector('input');
+
   function add() {
     rows.push(toRow({ match: '', program: '' }));
-    // The new row takes the keyboard on its first field.
-    queueMicrotask(() => list?.querySelector<HTMLInputElement>('.rule:last-child input')?.focus());
+    // The new row takes the keyboard on its first field (guidelines, 9.18).
+    void tick().then(() => fieldOf(rows.length - 1)?.focus());
   }
 
+  /** "Remove": the keyboard goes to the row that takes its place, or the one before, or "Add exception". */
   function remove(row: Row) {
+    const at = rows.indexOf(row);
     rows = rows.filter((r) => r !== row);
     save();
+    void tick().then(() => (fieldOf(Math.min(at, rows.length - 1)) ?? addButton)?.focus());
   }
 
   async function browseFor(row: Row) {
-    const chosen = await choose();
-    if (typeof chosen !== 'string') return;
+    const chosen = await choose((why) => (row.programError = why));
+    if (chosen === null) return;
     row.program = chosen;
     await check(row);
   }
@@ -97,15 +114,22 @@
         type="text"
         spellcheck="false"
         autocomplete="off"
-        placeholder="The system's"
+        placeholder="The system’s"
         aria-invalid={editorError ? 'true' : undefined}
         aria-describedby={editorError ? 'set-editor-help set-editor-error' : 'set-editor-help'}
         bind:value={editor}
         onchange={() => void setEditor(editor)}
       />
       <div class="actions">
-        <button class="btn small" type="button" onclick={async () => { const chosen = await choose(); if (typeof chosen === 'string') await setEditor(chosen); }}><Icon name="folder" size={14} /> Browse…</button>
-        <button class="btn ghost small" type="button" disabled={!editor} onclick={() => void setEditor('')}>Use the system's</button>
+        <button
+          class="btn small"
+          type="button"
+          onclick={async () => {
+            const chosen = await choose((why) => (editorError = why));
+            if (chosen !== null) await setEditor(chosen);
+          }}><Icon name="folder" size={14} /> Browse…</button
+        >
+        <button class="btn ghost small" type="button" disabled={!editor} onclick={() => void setEditor('')}>Use the system’s</button>
       </div>
     </div>
   </SettingRow>
@@ -117,6 +141,14 @@
     group
   >
     <div class="rules" bind:this={list}>
+      <!-- The labels of the two fields of a row, once there is a row (guidelines, 9.3 and 9.18). -->
+      {#if rows.length}
+        <div class="rule head" aria-hidden="true">
+          <span class="label">Extension or name</span>
+          <span></span>
+          <span class="label">Program</span>
+        </div>
+      {/if}
       {#each rows as row (row.id)}
         <div class="rule">
           <label class="cell">
@@ -130,13 +162,13 @@
             <input class="field mono" class:invalid={!!row.programError} type="text" spellcheck="false" autocomplete="off" placeholder="code" bind:value={row.program} onchange={() => void check(row)} />
             {#if row.programError}<small class="error" role="alert">{row.programError}</small>{/if}
           </label>
-          <button class="btn small" type="button" onclick={() => void browseFor(row)}>Browse…</button>
+          <button class="btn small" type="button" onclick={() => void browseFor(row)}><Icon name="folder" size={14} /> Browse…</button>
           <button class="btn ghost small icon" type="button" aria-label="Remove the exception {row.match}" title="Remove" onclick={() => remove(row)}><Icon name="trash" size={14} /></button>
         </div>
       {:else}
         <p class="empty">No exceptions. Every file opens in the text editor or the program of the system.</p>
       {/each}
-      <div><button class="btn small" type="button" onclick={add}><Icon name="plus" size={14} /> Add exception</button></div>
+      <div><button class="btn small" type="button" bind:this={addButton} onclick={add}><Icon name="plus" size={14} /> Add exception</button></div>
     </div>
   </SettingRow>
 </section>
@@ -149,7 +181,7 @@
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
   .rules {
     display: grid;
@@ -161,6 +193,12 @@
     grid-template-columns: 120px 14px minmax(0, 1fr) auto auto;
     align-items: start;
     gap: 6px;
+  }
+  /* The labels of the columns, in 12 px, weight 650, --muted, as a field's (guidelines, 9.3). */
+  .head .label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-strong);
+    color: var(--muted);
   }
   .cell {
     display: grid;

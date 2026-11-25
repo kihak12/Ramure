@@ -1079,6 +1079,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   the veil, not at the end of a drag that started in the dialog; except while an operation runs
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
   What was typed in the dialog is lost, without a question.
+- A field that takes a file or a program of this machine has "Browse…" beside it, on the same
+  line: a small standard button with the folder icon, which opens the picker of the system and
+  fills the field; a failure of the picker is said under the field, with what to do ("Open
+  with…", 9.24).
 - On opening, focus goes to the first field. For a destructive action, it goes to "Cancel", the
   delete of the Files module apart (above), a dialog with no field. An Enter held from what
   opened the dialog repeats: its repeats are ignored, so that it never answers the dialog.
@@ -1788,7 +1792,10 @@ set to reads at a glance.
   instead of the text editor or the program of the system. The first that matches is used.": a
   list under the name, one row per exception: the extension or the name in the code font
   (`.conf`, `Dockerfile`), the "chevron" icon in `--muted`, the program in the code font,
-  "Browse…", and "Remove", a ghost icon button (trash). "conf" and ".conf" are the same; case
+  "Browse…" with the folder icon, and "Remove", a ghost icon button (trash). Above the rows, the
+  labels of their two fields, "Extension or name" and "Program", as those of a field (9.3).
+  After "Remove", the keyboard goes to the row that takes its place, or to the one before, or to
+  "Add exception". A failure of "Browse…" is said under its field, with what to do. "conf" and ".conf" are the same; case
   does not matter. Empty: "No exceptions. Every file opens in the text editor or the program of
   the system."; under the list, "Add exception", a small standard button, adds a row in place,
   its first field taking the keyboard. A row applies once its two fields are valid; an error
@@ -2353,6 +2360,7 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   A failure is an error notification that says what to do: "Could not open nginx.conf", then
   "No program named code was found. Check its name or its path in the settings, or choose another
   with “Open with…”."
+  - "Open with…" has no icon of its own: its text stands in the column of the others (9.9).
   - "Open with…" is a dialog (9.10), "Open nginx.conf with…": a field "Program", in the code font,
     with "Browse…" beside it, and its hint "A program name, such as code, or its path."; a
     checkbox "Always open .conf files with it", or "Always open files named Dockerfile with it"

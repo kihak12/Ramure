@@ -145,7 +145,10 @@
                     onclick={async (e) => {
                       // Inside the label, a click would also go to the field.
                       e.preventDefault();
-                      const chosen = await pick({ title: field.browse, multiple: false, directory: false }).catch(() => null);
+                      const chosen = await pick({ title: field.browse, multiple: false, directory: false }).catch((err: unknown) => {
+                        refusal = `The file picker could not open. Type it instead. (${err instanceof Error ? err.message : String(err)})`;
+                        return null;
+                      });
                       if (typeof chosen === 'string') {
                         values[field.name] = chosen;
                         refusal = '';

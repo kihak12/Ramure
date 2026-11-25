@@ -614,8 +614,13 @@ class Files {
     if (!answers) return;
     const program = String(answers.program).trim();
     if (answers.always) {
-      const match = normalMatch(always.match);
-      savePrefs({ openWith: [...prefs.openWith.filter((rule) => normalMatch(rule.match) !== match), { match: always.match, program }] });
+      // "conf" and ".conf" are the same exception: it is replaced where it stands, keeping its rank.
+      const key = (match: string) => normalMatch(match).replace(/^\./, '');
+      const rules = [...prefs.openWith];
+      const at = rules.findIndex((rule) => key(rule.match) === key(always.match));
+      if (at >= 0) rules[at] = { match: rules[at].match, program };
+      else rules.push({ match: always.match, program });
+      savePrefs({ openWith: rules });
     }
     await this.openFile(pane, entry, program);
   }
