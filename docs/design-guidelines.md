@@ -1571,7 +1571,9 @@ reconnection" is on in the settings.
   The line of the reason keeps its place, so that the buttons do not move from one try to the
   next.
 - When the panel appears, the focus goes to "Reconnect now": the terminal under it is out of
-  the reach of the keyboard.
+  the reach of the keyboard. At each next try, the panel, shown again, gives it back to "Reconnect
+  now" if the keyboard was on the panel or in the terminal when the try started; never from
+  elsewhere, another field or another tab.
 - The countdown changes every second and is not read; a screen reader hears one sentence per
   try ("Connection lost. Attempt 2 of 5 in 5 seconds.").
 - The dot of the tab and of the header blinks in `--warn` while it waits and tries; its tooltip
