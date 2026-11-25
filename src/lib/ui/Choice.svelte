@@ -6,6 +6,7 @@
    * A choice: a few options, all in view, one of which is always selected (guidelines, section 9.19).
    * It is a group of radio buttons: the arrows move the choice, which applies at once.
    * `rows`: one option per line, with what it entails. `tiles`: side by side, with a preview.
+   * `segments`: two or three short options side by side in one control, in the column of a field.
    */
   let {
     name,
@@ -21,7 +22,7 @@
     name: string;
     value: T;
     options: readonly { value: T; label: string; help?: string }[];
-    layout?: 'rows' | 'tiles';
+    layout?: 'rows' | 'tiles' | 'segments';
     labelledby: string;
     describedby?: string;
     /** What is better shown than said: the preview of an option. */
@@ -63,8 +64,9 @@
         <span class="name">{option.label}</span>
         {#if option.help}<span class="help">{option.help}</span>{/if}
       </span>
-      <!-- The check mark keeps its place on the options not selected: an option does not change size. -->
-      <span class="mark" aria-hidden="true"><Icon name="check" size={14} /></span>
+      <!-- The check mark keeps its place on the options not selected: an option does not change size.
+           Segments have none: the weight and the tint of the chosen one say it, in their place. -->
+      {#if layout !== 'segments'}<span class="mark" aria-hidden="true"><Icon name="check" size={14} /></span>{/if}
     </label>
   {/each}
 </div>
@@ -95,6 +97,21 @@
     align-content: start;
     padding: 6px;
     border: 1px solid var(--line);
+  }
+  /* Segments: one control of 32 px, as high as a field, its options side by side (guidelines,
+     9.19). The 2 px inside the border and the 4 px corners of an option follow from it. */
+  .segments {
+    grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+  }
+  .segments .option {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    min-height: 26px;
+    padding: 0 8px;
+    border-radius: var(--radius-xs);
   }
   .option:hover {
     background: var(--hover);

@@ -115,7 +115,7 @@ export function sizeOf(done: number, total: number): string {
  * of the same day are told apart (guidelines, 9.24 and 12).
  */
 export const shortDate = (seconds: number | null) => (seconds === null ? '' : dateTime(seconds * 1000));
-export const fullDate = (seconds: number | null) => (seconds === null ? '' : fullDateTime(seconds * 1000, true));
+export const fullDate = (seconds: number | null) => (seconds === null ? '' : fullDateTime(seconds * 1000));
 
 /** The separator of a path: "/" on a server and on Linux, "\" on Windows. */
 const separator = (path: string) => (path.includes('\\') && !path.includes('/') ? '\\' : '/');

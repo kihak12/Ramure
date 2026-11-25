@@ -1565,7 +1565,7 @@ service that only one side can see. Three kinds, named with the words and the fl
   stops.
 - **A connection that the server cannot carry through** leaves the tunnel listening: the next one
   may work. Under the row, in `--warn` at 11.5 px, the last such failure only, with its time in
-  `--muted`: "Last connection refused: nothing answers at localhost:5432 on the server.", or, for
+  `--muted`, to the second, on the clock of the settings (9.18): "Last connection refused: nothing answers at localhost:5432 on the server.", or, for
   a remote forward, "…at localhost:3000 on this machine." No notification: a program that retries would raise one every second.
 - **A session that ends** stops its tunnels and frees their ports. **A lost connection** does not:
   while it is retried, the ports stay taken, so that no other program takes them; a new
@@ -1696,8 +1696,8 @@ Escape bring back the module and the tab that were shown; after Escape, the focu
   has an inner margin of 24 px.
 - A section appears in the navigation when it holds its first setting: "General", "Git",
   "Terminal and SSH", "Keyboard shortcuts". No tabs at the top of the page: tabs are repositories.
-  "General" holds the groups "Appearance" and "Updates" (9.23), and its entry carries a dot
-  while an update waits.
+  "General" holds the groups "Appearance", "Date and time" (below) and "Updates" (9.23), and its
+  entry carries a dot while an update waits.
 
 **A section.** Its title in 15 px, weight 650, the one title of a section that is not in 12 px
 (9.8): it heads the whole card. A note may follow it, in 11.5 px, `--muted`. On the right,
@@ -1707,8 +1707,9 @@ its tooltip then says so. Under the title, groups, each with a 12 px title, weig
 
 **A setting** is a row: its name in 13.5 px, `--ink`, a help text under it in 11.5 px,
 `--muted`, and its control on the right, 240 px wide. 12 px between two rows. The name is a
-noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice sits
-under the name of its setting, on the whole width of the column.
+noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice in
+rows or in tiles sits under the name of its setting, on the whole width of the column; a choice
+in segments sits on the right, as a field.
 
 **A row that states a fact** is not a setting: its name says something ("Version 0.3.0") and
 labels no field, and its control, when it has one, is a small standard button that names itself
@@ -1736,6 +1737,20 @@ said under the control, with what to do, and announced; the field keeps its look
 being at fault. In "Terminal and SSH", group "Session logs": "Log folder", "Where
 Ramure writes one file per recorded session." (9.15).
 
+**Date and time**, a group of "General", says how every date of the application is written
+(12). Its two settings are plain values, with their control on the right, so that what they are
+set to reads at a glance.
+
+- "Date format", "Every date of the application: the files, the commits, the graph.": a list
+  (9.3), each option read by its example first, the same day for all: "11-25-2026 · MM-DD-YYYY",
+  the default; "25-11-2026 · DD-MM-YYYY"; "2026-11-25 · YYYY-MM-DD"; "Nov 25, 2026 · Written out".
+- "Clock": segments (9.19), "24-hour", the default, and "12-hour"; its help shows the same
+  afternoon both ways, "The time that goes with a date, to the second: 14:30:05 or 2:30:05 PM."
+- A choice applies at once, everywhere: the Modified column of the Files module (9.24), the
+  commit detail (9.22), the date column of the graph (10.1), the date of an update (9.23), the
+  time of a tunnel's last failure (9.15). Relative dates ("3 days ago") stay relative, and the
+  session logs, which are files, keep the format of section 12.
+
 **Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
 keys (9.12), and a button that restores the default.
 
@@ -1751,7 +1766,8 @@ keys (9.12), and a button that restores the default.
 
 A few options, all in view, for a setting whose options need a word of explanation or are
 better seen than named: the theme, the way to pull, the style of the graph, the layout of the
-diff. Nothing has to be opened to compare them.
+diff; or two or three short ones, in segments: the clock. Nothing has to be opened to compare
+them.
 
 - It is a group of radio buttons: one option is always chosen. Tab enters and leaves the group;
   the arrows move the choice, which applies at once.
@@ -1760,10 +1776,19 @@ diff. Nothing has to be opened to compare them.
 - **Tiles**: the options side by side, each with a preview 64 px high above its name. For what
   is seen rather than read. A tile has a `--line` border: it is a control, at the level of a
   button or a field (6), not a card, and neither is its preview.
-- An option has 8 px corners and is at least 28 px high. Hover: a `--hover` background.
+- **Segments**: two or three short options with nothing to explain, side by side in one control
+  as high as a field, 32 px, in the column of the control of a setting: a `--line` border around
+  the group, 6 px corners, 2 px inside it, and options of 4 px corners, their names centered. The
+  chosen one has the `--sel` background and the weight 650, and no check mark: its weight and its
+  tint say it in its place. The name of the setting names the group (`aria-labelledby`). Plain
+  values go to segments when they are two or three, to a list (9.3) from four.
+- An option has 8 px corners and is at least 28 px high; a segment has 4 px corners and is
+  26 px high, the 32 px of the control less its border and the 2 px inside it, a derived value.
+  Hover: a `--hover` background.
 - The chosen option: a `--sel` background, its name in weight 650, and a check mark in
-  `--accent` on its right. Never the color alone, never a colored bar on an edge. The place
-  of the check mark is kept on the other options: an option never changes size.
+  `--accent` on its right, except in segments (above). Never the color alone, never a colored
+  bar on an edge. The place of the check mark is kept on the other options: an option never
+  changes size.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the chosen option, as on a row (9.6).
 - A preview is drawn with the tokens, never with colors of its own. A preview of a theme
   carries `data-theme` and `data-palette`, which give it the tokens of that theme whatever the
@@ -2073,7 +2098,7 @@ The install takes two steps, so that the download never interrupts and only the 
 
 | State | First line, 13.5 px, weight 650 | Second line, 11.5 px | Then |
 |---|---|---|---|
-| Available | "Version 0.4.0 is available" | "Published Nov 12, 2026. What changed is on github.com/kihak12/Ramure/releases." | "Download update" |
+| Available | "Version 0.4.0 is available" | "Published 11-12-2026. What changed is on github.com/kihak12/Ramure/releases." | "Download update" |
 | Downloading | "Downloading version 0.4.0…" | A bar, and at its right "6.2 of 11.4 MB" in tabular figures; "6.2 MB" and a bar that sweeps when the size is not known. Then the waiting ring and "Verifying…". | "Stop downloading", disabled while it verifies: nothing is left to stop |
 | Ready | "Version 0.4.0 is ready to install" | "Nothing changes until you restart. You can keep working." | "Restart and install…" |
 | Installing | "Installing version 0.4.0…" | The waiting ring and "Ramure restarts when it is done." | Nothing: it cannot stop halfway |
@@ -2216,14 +2241,15 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   told from a file at a glance, on a row at rest, hovered or selected (2.3, 2.4); the name, cut
   with an ellipsis and whole in its tooltip; for a link, the word "link" after it, in `--muted` at
   11.5 px, as "partly" (9.6). A link to a folder opens as a folder.
-- "Modified", the date and the time to the minute in 12 px, `--muted` and tabular figures ("Nov
-  9, 2026, 11:35 PM", AM or PM kept on its line), so that two versions of the same day are told
-  apart; the full date and the time to the second in its tooltip ("Monday, November 9, 2026 at
-  11:35:12 PM"). The column is 140 px; it gives way under 464 px of pane, as the columns of the
-  graph do (10.1), measured on the pane, not the window: the date of a row is then hidden from the
-  eye only and stays spoken (11), while its sort button goes, since a stop of the tab order is
-  never hidden from the eye. An order by date chosen before stays, with no chevron, until a click
-  on "Name" or "Size", or a wider pane. It sorts by the exact time.
+- "Modified", the date and the time to the second in 12 px, `--muted` and tabular figures, in the
+  format of the settings (9.18): "11-25-2026 14:30:05" by default, AM or PM kept on its line with
+  the 12-hour clock, so that two versions of the same day are told apart; the full date in its
+  tooltip ("Wednesday, November 25, 2026 at 14:30:05"). The column is 152 px, which holds the
+  longest format, "Nov 24, 2026, 10:30:00 PM"; it gives way under 464 px of pane, as the columns of
+  the graph do (10.1), measured on the pane, not the window: the date of a row is then hidden from
+  the eye only and stays spoken (11), while its sort button goes, since a stop of the tab order is
+  never hidden from the eye. An order by date chosen before stays, with no chevron, until a click on
+  "Name" or "Size", or a wider pane. It sorts by the exact time.
 - "Size", aligned on the right, in tabular figures, in kB, MB and GB of 1,000 bytes ("12.4 MB");
   empty for a folder.
 - **The parent row**, "..", comes first while the folder has a parent: the "up" icon and its
@@ -2756,7 +2782,8 @@ at the right (9.25).
 
 - The subject, `--fs-title`, `--fw-strong`, `--ink`.
 - 4 px under it, one line at 12 px: the author in `--ink`, then " · " and the date in `--muted`,
-  short ("Nov 17, 2026, 4:47 PM"), the full date in the tooltip, tabular figures.
+  short, in the format of the settings ("11-17-2026 16:47:03", 9.18), the full date in the
+  tooltip, tabular figures.
 - Then, 4 px apart, each on a line at 12 px in `--muted`: where the commit is, with its icon
   (7), the cloud and "On the remote", or the computer and "Local only, not pushed yet", when the
   repository has a remote; "Refs", then the branches and tags on the commit, their names in the
@@ -2809,7 +2836,8 @@ that keeps it from being reworded has no message zone, and so one line less.
 ### 10.1 Columns
 
 In order: Branch / tag (220 px), Graph (420 px at most, 340 px in "Classic"), Message,
-Author (150 px), Date (92 px) and SHA (66 px).
+Author (150 px), Date (92 px) and SHA (66 px). The date is the date alone, in the format of the
+settings (9.18): "Nov 25, 2026", the widest, holds in it.
 
 **The message comes first.** It wants 200 px. When it would get less, the other columns give
 way, in this order, each only as far as needed:
@@ -2985,10 +3013,11 @@ Typography:
   is (“Reconnect”, “.pub”), and a period inside would seem to be part of it;
 - no space before ":", ";", "?" and "!";
 - plurals agree: "1 commit", "10 commits";
-- dates and numbers in the American format, whatever the language of the system: a short date
-  "Nov 9, 2026", with its time where two moments of a day must be told apart "Nov 9, 2026, 11:35
-  PM", a full date "Monday, November 9, 2026 at 11:35 PM", with the seconds where they matter
-  "at 11:35:12 PM" (9.24), a number "10,000";
+- numbers in the American format, whatever the language of the system: "10,000"; dates in the
+  format chosen in the settings (9.18, "Date and time"): by default a date "11-25-2026", with its
+  time to the second where two moments of a day must be told apart "11-25-2026 14:30:05", a full
+  date in words in a tooltip "Wednesday, November 25, 2026 at 14:30:05". Text that Ramure writes
+  in a file, a session log, keeps the American format: "Nov 11, 2026 at 11:05 PM";
 - keys are named as on the keyboard: "Ctrl + Shift + N", "Enter", "Escape".
 
 ## 13. Logo

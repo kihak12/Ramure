@@ -6,6 +6,7 @@
   import { files } from '../files/files.svelte';
   import { ssh } from '../ssh/ssh.svelte';
   import Choice from '../ui/Choice.svelte';
+  import { date } from '../ui/dates';
   import { focusWithRing } from '../ui/focus';
   import Icon from '../ui/Icon.svelte';
   import ProgressBar from '../ui/ProgressBar.svelte';
@@ -42,7 +43,6 @@
     return hours < 24 ? `${hours} h ago` : `${Math.floor(hours / 24)} d ago`;
   }
 
-  const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const megabytes = (bytes: number) => (bytes / 1_048_576).toFixed(1);
 
   /** Why "Check for updates" is disabled while a version is on its way; empty when it is not. */
@@ -158,7 +158,7 @@
             <p class="wait"><span class="spinner" aria-hidden="true"></span>Ramure restarts when it is done.</p>
           {:else}
             <p class="head">Version {found.version} is available</p>
-            <p>{found.published ? `Published ${day.format(found.published)}. ` : ''}What changed is on {RELEASES}.</p>
+            <p>{found.published ? `Published ${date(found.published)}. ` : ''}What changed is on {RELEASES}.</p>
           {/if}
         </div>
         {#if phase === 'available'}

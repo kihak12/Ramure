@@ -1,14 +1,35 @@
-// Dates in the American format of the interface (guidelines, 12): the short date with its time
-// on a row, the full date in its tooltip. The time keeps AM or PM on its line.
+// Dates and times, in the format chosen in the settings, "Date and time" in "General"
+// (guidelines, 9.18 and 12): one format for the whole application.
 
-const short = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-const full = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' });
-const fullSeconds = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' });
+import { prefs, type Clock, type DateFormat } from '../git/prefs.svelte';
 
-const keep = (text: string) => text.replace(/ (AM|PM)$/, '\u00a0$1');
+const two = (n: number) => String(n).padStart(2, '0');
+const written = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const long = new Intl.DateTimeFormat('en-US', { dateStyle: 'full' });
 
-/** "Nov 9, 2026, 11:35 PM", from milliseconds. */
-export const dateTime = (ms: number) => keep(short.format(ms));
+/** The date of `ms` alone: "11-25-2026", "25-11-2026", "2026-11-25" or "Nov 25, 2026". */
+export function date(ms: number, format: DateFormat = prefs.dateFormat): string {
+  const d = new Date(ms);
+  const [day, month, year] = [two(d.getDate()), two(d.getMonth() + 1), String(d.getFullYear())];
+  if (format === 'dmy') return `${day}-${month}-${year}`;
+  if (format === 'ymd') return `${year}-${month}-${day}`;
+  if (format === 'text') return written.format(d);
+  return `${month}-${day}-${year}`;
+}
 
-/** "Monday, November 9, 2026 at 11:35 PM", or with the seconds, "at 11:35:12 PM". */
-export const fullDateTime = (ms: number, seconds = false) => keep((seconds ? fullSeconds : full).format(ms));
+/** The time of `ms`, to the second: "14:30:05", or "2:30:05 PM" with AM or PM kept on its line. */
+export function time(ms: number, clock: Clock = prefs.clock): string {
+  const d = new Date(ms);
+  const rest = `${two(d.getMinutes())}:${two(d.getSeconds())}`;
+  if (clock === '24') return `${two(d.getHours())}:${rest}`;
+  return `${d.getHours() % 12 || 12}:${rest} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
+}
+
+/** A moment, on a row: "11-25-2026 14:30:05", or written out "Nov 25, 2026, 14:30:05". */
+export function dateTime(ms: number): string {
+  const format = prefs.dateFormat;
+  return `${date(ms, format)}${format === 'text' ? ', ' : ' '}${time(ms)}`;
+}
+
+/** A moment in full, in a tooltip: "Wednesday, November 25, 2026 at 14:30:05". */
+export const fullDateTime = (ms: number) => `${long.format(ms)} at ${time(ms)}`;
