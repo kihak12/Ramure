@@ -4,6 +4,7 @@
   import Select from './Select.svelte';
   import { veil } from './veil';
   import { dialogs, type Answers, type Field } from './dialogs.svelte';
+  import { open as pick } from '@tauri-apps/plugin-dialog';
 
   let element = $state<HTMLDialogElement>();
   let values = $state<Answers>({});
@@ -119,6 +120,7 @@
             {:else}
               <!-- svelte-ignore a11y_autofocus -->
               {#if i === 0}
+                <span class="with-browse">
                 <input
                   class="field"
                   class:mono={field.mono}
@@ -134,6 +136,28 @@
                   bind:value={values[field.name]}
                   oninput={() => (refusal = '')}
                 />
+                <!-- A file of this machine: the picker of the system fills the field (guidelines, 9.10). -->
+                {#if field.browse}
+                  <button
+                    class="btn small"
+                    type="button"
+                    disabled={busy}
+                    onclick={async (e) => {
+                      // Inside the label, a click would also go to the field.
+                      e.preventDefault();
+                      const chosen = await pick({ title: field.browse, multiple: false, directory: false }).catch((err: unknown) => {
+                        refusal = `The file picker could not open. Type it instead. (${err instanceof Error ? err.message : String(err)})`;
+                        return null;
+                      });
+                      if (typeof chosen === 'string') {
+                        values[field.name] = chosen;
+                        refusal = '';
+                      }
+                      firstField?.focus();
+                    }}><Icon name="folder" size={14} /> Browse…</button
+                  >
+                {/if}
+                </span>
               {:else}
                 <input
                   class="field"
@@ -258,6 +282,16 @@
   .row small {
     color: var(--muted);
     font-size: var(--fs-small);
+  }
+  /* A field and its "Browse…", on one line, the field taking the room. */
+  .with-browse {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .with-browse input {
+    flex: 1;
+    min-width: 0;
   }
   .row small.refusal {
     color: var(--bad);

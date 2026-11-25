@@ -226,8 +226,9 @@ Manager) or the SSH agent. Ramure does not ask for a password or a passphrase it
 
 ### Not there yet
 
-- The Files module does not open or edit a file, and does not take files dropped from the file
-  manager of the system: use a pane of this machine.
+- The Files module opens a file of this machine in another program, not yet a file of a server
+  (#297), and does not take files dropped from the file manager of the system: use a pane of
+  this machine.
 - Tunnels are not read from `~/.ssh/config` (LocalForward, RemoteForward, DynamicForward), nor
   written to it, yet (#163).
 - The interface exists in English only: no other language is planned.

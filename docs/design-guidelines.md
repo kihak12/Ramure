@@ -1079,6 +1079,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   the veil, not at the end of a drag that started in the dialog; except while an operation runs
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
   What was typed in the dialog is lost, without a question.
+- A field that takes a file or a program of this machine has "Browse…" beside it, on the same
+  line: a small standard button with the folder icon, which opens the picker of the system and
+  fills the field; a failure of the picker is said under the field, with what to do ("Open
+  with…", 9.24).
 - On opening, focus goes to the first field. For a destructive action, it goes to "Cancel", the
   delete of the Files module apart (above), a dialog with no field. An Enter held from what
   opened the dialog repeats: its repeats are ignored, so that it never answers the dialog.
@@ -1715,7 +1719,7 @@ Escape bring back the module and the tab that were shown; after Escape, the focu
 - On the right, the content, which scrolls on its own. Its column is 640 px wide at most and
   has an inner margin of 24 px.
 - A section appears in the navigation when it holds its first setting: "General", "Git",
-  "Terminal and SSH", "Keyboard shortcuts". No tabs at the top of the page: tabs are repositories.
+  "Terminal and SSH", "Files", "Keyboard shortcuts". No tabs at the top of the page: tabs are repositories.
   "General" holds the groups "Appearance", "Date and time" (below) and "Updates" (9.23), and its
   entry carries a dot while an update waits.
 
@@ -1776,6 +1780,26 @@ set to reads at a glance.
   commit detail (9.22), the date column of the graph (10.1), the date of an update (9.23), the
   time of a tunnel's last failure (9.15). Relative dates ("3 days ago") stay relative, and the
   session logs, which are files, keep the format of section 12.
+
+**Files** is a section, group "Opening files", for "Open" of the Files module (9.24):
+
+- "Text editor", "Opens a text file that has no exception below. Empty: the program of the
+  system.": a field in the code font, which takes a program typed or chosen with "Browse…", and
+  applies it once it is found, with "Use the system's", a small ghost button that empties it. A
+  program that cannot be found turns the field to its error state: "No program named code was
+  found."
+- "Programs by extension", "A file with one of these extensions or names opens in its program,
+  instead of the text editor or the program of the system. The first that matches is used.": a
+  list under the name, one row per exception: the extension or the name in the code font
+  (`.conf`, `Dockerfile`), the "chevron" icon in `--muted`, the program in the code font,
+  "Browse…" with the folder icon, and "Remove", a ghost icon button (trash). Above the rows, the
+  labels of their two fields, "Extension or name" and "Program", as those of a field (9.3).
+  After "Remove", the keyboard goes to the row that takes its place, or to the one before, or to
+  "Add exception". A failure of "Browse…" is said under its field, with what to do. "conf" and ".conf" are the same; case
+  does not matter. Empty: "No exceptions. Every file opens in the text editor or the program of
+  the system."; under the list, "Add exception", a small standard button, adds a row in place,
+  its first field taking the keyboard. A row applies once its two fields are valid; an error
+  shows under its field: "Already listed.", "No program named code was found."
 
 **Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
 keys (9.12), and a button that restores the default.
@@ -2320,12 +2344,31 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   selected as text while it is drawn, and a text selected before lets go as it starts, as a click
   does. Escape, while it is drawn, puts the selection back as it was. A row is dragged from the
   row itself: the rectangle never starts on a row.
-- **The menu of a row**: "Open" for a folder, "Copy to …" (copy icon) for each other pane on
+- **The menu of a row**: "Open" for a folder; for a file, "Open" (file icon) and "Open with…",
+  then a separator (below, "Opening a file"); "Copy to …" (copy icon) for each other pane on
   another place and "Move to …" (folder icon) for each other pane on the same place, naming the
   pane and its folder ("Copy to staging · /var/www"): the keyboard way to do what dragging does.
   Then "Rename…", "New folder…", "New file…", "Copy path", and after a separator "Delete…", or
   "Delete 3 items…" for a selection of several. The empty part of a list has a menu of its own:
   "New folder…", "New file…", "Refresh", and "Show hidden files" or "Hide hidden files".
+- **Opening a file.** "Open", in the menu of a file, opens it in another program: the program of
+  its exception, in the section "Files" of the settings (9.18); else, for a text file, one whose
+  first 8 kB hold no NUL byte, the text editor of the settings; else the program the system
+  associates with its type. The double-click and Enter keep copying the file to the pane next to
+  this one. With several files selected, "Open" and "Open with…" are disabled and say "Select one
+  file to open it."; on a pane of a host, they say that a file of a server cannot be opened yet.
+  A failure is an error notification that says what to do: "Could not open nginx.conf", then
+  "No program named code was found. Check its name or its path in the settings, or choose another
+  with “Open with…”."
+  - "Open with…" has no icon of its own: its text stands in the column of the others (9.9).
+  - "Open with…" is a dialog (9.10), "Open nginx.conf with…": a field "Program", in the code font,
+    with "Browse…" beside it, and its hint "A program name, such as code, or its path."; a
+    checkbox "Always open .conf files with it", or "Always open files named Dockerfile with it"
+    for a name with no extension, which adds the exception to the settings, or replaces the one of
+    that extension; then "Cancel" and "Open". A program that cannot be found is refused under the
+    field: "No program named code was found."
+  - A program is a name found in the folders of the system's PATH, or a path, with no arguments:
+    the file is its only argument.
 - **The foot** of the pane, 26 px, in 11.5 px and `--muted`, counts: "12 items", "3 of 12 items
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar

@@ -128,6 +128,8 @@ pub fn run() {
             journal::journal_default_dir,
             journal::journal_open_dir,
             system::open_folder,
+            system::open_file,
+            system::program_found,
             local::local_write,
             local::local_resize,
             local::local_close,
