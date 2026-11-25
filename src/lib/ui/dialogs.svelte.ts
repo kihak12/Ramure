@@ -31,6 +31,9 @@ export interface DialogSpec {
   cancelLabel?: string;
   /** Destructive action: the confirmation button turns red. */
   danger?: boolean;
+  /** A destructive action whose button takes the focus, so that Enter confirms: the delete of the
+   *  Files module alone (guidelines, 9.10). */
+  confirmFirst?: boolean;
   /** Secondary actions, between "Cancel" and the main button, in this order: the dialog closes,
    *  then the action runs. Four buttons at most on the last line (guidelines, 9.1). */
   extra?: Extra | Extra[];

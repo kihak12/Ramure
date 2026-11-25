@@ -582,14 +582,20 @@ class Files {
     if (!place || !names.length) return;
     const what = names.length === 1 ? names[0] : count(names.length, 'item');
     const local = place.kind === 'local';
+    const one = names.length === 1;
+    // What a folder holds is named only when a folder goes (guidelines, 9.24).
+    const folders = names.filter((name) => pane.entries.find((e) => e.name === name)?.dir).length;
+    const holds = !folders ? '' : one ? ', with what it holds' : folders === 1 ? ', with what the folder holds' : ', with what the folders hold';
     const confirmed = await dialogs.ask({
       title: `Delete ${what} from ${local ? 'this machine' : this.label(pane)}?`,
       body: local
-        ? `${names.length === 1 ? 'It is' : 'They are'} deleted for good, with what the folders hold: ${names.length === 1 ? 'it does' : 'they do'} not go to the trash and cannot be recovered.`
-        : `${names.length === 1 ? 'It is' : 'They are'} deleted from the server for good, with what the folders hold: ${names.length === 1 ? 'it' : 'they'} cannot be recovered.`,
+        ? `${one ? 'It is' : 'They are'} deleted for good${holds}: ${one ? 'it does' : 'they do'} not go to the trash and cannot be recovered.`
+        : `${one ? 'It is' : 'They are'} deleted from the server for good${holds}: ${one ? 'it' : 'they'} cannot be recovered.`,
       confirmLabel: 'Delete',
       busyLabel: 'Deleting…',
       danger: true,
+      // The user chose what goes and confirms with Enter: "Delete" has the focus (guidelines, 9.10).
+      confirmFirst: true,
       check: async () => {
         try {
           await invoke('files_remove', { place, paths: names.map((n) => joinPath(pane.path, n)) });
