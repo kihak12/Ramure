@@ -2,7 +2,7 @@
 // branches, tags, open tabs and recent repositories.
 
 import type { Command } from '../ui/palette.svelte';
-import { abortOperation, createBranch, forcePush, push, stashChanges, switchBranch, switchToRemote } from './actions';
+import { abortOperation, createBranch, forcePush, openRepoFolder, push, stashChanges, switchBranch, switchToRemote } from './actions';
 import { bare } from './labels';
 import { layout, toggleSide, toggleSides } from './layout.svelte';
 import { recallEditor, showEditorWindow } from './editorWindow.svelte';
@@ -89,6 +89,7 @@ export function gitCommands(): Command[] {
     add({ id: 'toggle-sides', group: 'View', icon: 'panels', title: layout.sidebarHidden && layout.detailHidden ? 'Show side panels' : 'Hide side panels', keywords: 'graph full width collapse', run: toggleSides });
   }
   add({ id: 'open', group: 'Actions', icon: 'folder', title: 'Open repository…', run: () => void workspace.pick() });
+  if (repo && open) add({ id: 'open-folder', group: 'Actions', icon: 'folder', title: 'Open repository folder', keywords: 'file manager explorer files show reveal', run: () => void openRepoFolder(repo) });
   add({ id: 'clone', group: 'Actions', icon: 'cloud', title: 'Clone repository…', keywords: 'clone', run: () => (workspace.cloning = true) });
   add({ id: 'init', group: 'Actions', icon: 'plus', title: 'Initialize repository…', keywords: 'init new create', run: () => void workspace.init() });
   add({ id: 'tab-new', group: 'Actions', icon: 'plus', title: 'New tab', run: () => workspace.newTab() });

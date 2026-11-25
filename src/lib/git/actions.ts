@@ -1,6 +1,7 @@
 // Actions triggered by the menus and the toolbar: they ask the questions they need (a name, a
 // confirmation), then hand over to the repository.
 
+import { invoke } from '@tauri-apps/api/core';
 import { dialogs } from '../ui/dialogs.svelte';
 import type { MenuItem } from '../ui/menu.svelte';
 import { toasts } from '../ui/toasts.svelte';
@@ -181,6 +182,15 @@ export async function deleteRemoteTag(repo: Repo, name: string) {
 }
 
 // --- Stashes ------------------------------------------------------------------------------
+
+/** "Open": the folder of the repository, in the file manager of the system (guidelines, 9.2). */
+export async function openRepoFolder(repo: Repo) {
+  try {
+    await invoke('open_folder', { path: repo.path });
+  } catch (e) {
+    toasts.err('Could not open the folder', typeof e === 'string' ? e : String(e));
+  }
+}
 
 export async function stashChanges(repo: Repo) {
   const answers = await dialogs.ask({
