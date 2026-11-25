@@ -457,10 +457,21 @@
     return { kind: 'other', message: typeof e === 'string' ? e : String(e) };
   }
 
+  /** "Disconnect" was clicked: the end of the session is the user's, said so, and never retried. */
+  let disconnecting = false;
+
+  /** "Disconnect": the user closes the session (guidelines, 9.15). */
+  function disconnect() {
+    if (sessionId === null) return;
+    disconnecting = true;
+    invoke(API.close, { id: sessionId }).catch(() => (disconnecting = false));
+  }
+
   /** Opens the session. `auto`: number of the automatic reconnection attempt, 0 otherwise. */
   async function connect(next: Attempt = {}, auto = 0) {
     if (!term || !fit) return;
     if (local) return openLocal();
+    disconnecting = false;
     retry = auto;
     attempt = { ...attempt, ...next };
     if (host.proxyJump) {
@@ -684,6 +695,15 @@
         };
         return;
       }
+      // Closed by the user: said as such, whatever the core saw of the end (guidelines, 9.15).
+      if (disconnecting) {
+        disconnecting = false;
+        journalEnded(false);
+        ssh.tunnelsClose(session, false);
+        session.status = 'closed';
+        phase = { step: 'closed', message: 'You disconnected.' };
+        return;
+      }
       // Only a lost connection opens again on its own, and only if the setting allows it.
       if (ending === 'lost' && prefs.sshReconnect) {
         term?.write('\r\n');
@@ -779,7 +799,7 @@
       </button>
     {/if}
     {#if !local && phase.step === 'connected' && info}
-      <button class="btn small" type="button" onclick={() => sessionId !== null && void invoke(API.close, { id: sessionId })}>Disconnect</button>
+      <button class="btn small" type="button" onclick={disconnect}>Disconnect</button>
     {/if}
   </header>
   {/if}
@@ -929,8 +949,9 @@
                     ? 'Connection lost'
                     : 'Session ended'}{/if}
             </h3>
-            <!-- A failure is announced at once: the focus goes to the button, and the reason would not be read. -->
-            <p class:err={phase.step === 'error'} role={phase.step === 'error' ? 'alert' : undefined}>{phase.message}</p>
+            <!-- How it ended is announced, a failure at once: the focus goes to the button, and the
+                 sentence would not be read. -->
+            <p class:err={phase.step === 'error'} role={phase.step === 'error' ? 'alert' : 'status'}>{phase.message}</p>
             <div class="row">
               <!-- A local terminal is never "reconnected": it is restarted. -->
               <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Restart' : 'Reconnect'}</button>
