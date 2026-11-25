@@ -180,6 +180,8 @@ Every theme must meet them, in light and in dark.
 | `--ink` on `--panel`, `--bg`, `--sel`, `--hover`, `--hover-side` | 7:1 |
 | `--ink` in a message capsule or a branch label, at rest and on hover, the capsules of the lane under the pointer included | 7:1 |
 | `--ink` on a line of a diff, added or removed, at rest, hovered to be picked and picked (9.14) | 7:1 |
+| `--ink` on the tints of the conflict editor (9.26): a line of a side, at rest and kept, the bar of a side, a chip in a bar, in the gutter and in a "Keep" button, a "Keep" button at rest and hovered, a line of the current conflict in the common ancestor; and on the line of the caret and on text selected, over `--bg` and over a line of a side | 7:1 |
+| `--muted` on a line of a side set aside (9.26) | 4.5:1 |
 | The letter of a file state on its tint, on a row at rest, hovered or selected (9.6) | 4.5:1 |
 | The icon of a notification on its tint (9.11), and the initials of an author in "Classic" on theirs (10.3) | 3:1 |
 | The line of a lane on its own sleeve, under the pointer, on a row at rest, hovered or selected (10.2): of the same color, the line stays apart from it; the sleeve carries no information | 2:1 |
@@ -326,12 +328,24 @@ not change them: they hold for the four, which `npm run check` checks.
 | `--tint-removed` | A removed line of a diff | 20% | 20% |
 | `--tint-line-hover` | What a line of a diff hovered to be picked adds to its tint | 10% | 7% |
 | `--tint-line-pick` | What a picked line, and a change marked inside a line, add to its tint | 18% | 13% |
+| `--tint-side` | In the conflict editor (9.26), a line of a conflict in a side, a line of the result kept from a side or merged by git from it, and the bar of a side | 10% | 10% |
+| `--tint-side-kept` | A line of a side whose side is kept | 24% | 24% |
+| `--tint-side-chip` | The chip "1" or "2" of a side | 30% | 30% |
+| `--tint-keep` | A "Keep" button of a band, over `--raised` | 12% | 12% |
+| `--tint-keep-hover` | A "Keep" button hovered | 24% | 24% |
+| `--tint-keep-border` | The border of a "Keep" button, over `--line` | 55% | 55% |
+| `--tint-current-line` | A line of the current conflict in the common ancestor, `--muted` over `--bg` | 30% | 30% |
+| `--tint-caret-line` | The line of the caret in an editor of text, `--accent`, only while it has the keyboard | 6% | 6% |
+| `--tint-text-sel` | Text selected, `--accent` | 30% | 30% |
 
 - The steps of a line are shorter in dark: the picked line keeps `--ink` at 7:1, and the line at
   rest can be as strong as in light. A line, hovered or picked, stays apart from the one before
   (2.4 and `npm run check`).
 - The letter of a file state is halfway between its color and `--ink`: its tint lets the row show
   through, and the letter reads on it at rest, hovered and selected.
+- The tints of the conflict editor are the same in light and in dark: `--ink` reads at 7:1 on each
+  that carries text, in the four themes (2.4 and `npm run check`); the border of "Keep" carries
+  none.
 
 ## 3. Typography
 
@@ -2484,35 +2498,39 @@ shrinks, and the columns scroll sideways, as one; the header, the toolbar and th
   and the others face in the same place, from the first. Two lines are alike when what they share
   at their start and their end, spaces around left out, makes at least half of the shorter; past
   200 rows changed on each side, the rows face in the same place only. A blank stays where it
-  lines up the rows, under the band of a conflict to decide while the line below is typed.
+  lines up the rows, under the band of a conflict to decide while the line below is typed. A
+  blank before the first line of a conflict goes under its header in a side, and under its band
+  in the result: the header and the band stay level, whatever their lines.
 - **No wrapping:** a wrapped line would break the rows. A long line scrolls sideways, each column
   on its own.
 
 **The two sides**, read only, each with its line numbers in `--muted`, as in a diff (9.14).
 
 - **Side 1, on the left, is the user's** in every operation, whatever git calls it: in a rebase,
-  "Your commit", the commit being replayed, which git calls "theirs"; in a merge, a cherry-pick or
-  a revert, "Your version". Side 2, on the right, is the other: "Upstream", the commits already
-  applied, or "The incoming version". The bar of each side gives its number in a chip, "1" or
-  "2", then its name in weight 650, then the commit it comes from in the code font and `--muted`,
-  cut first, then "Keep all", a small standard button that keeps this side in every conflict left.
+  "Your commit", the commit being replayed, which git calls "theirs"; in a merge, a cherry-pick or a
+  revert, "Your version". Side 2, on the right, is the other: "Upstream", the commits already
+  applied, or "The incoming version". The bar of each side, on the color of its side at
+  `--tint-side` over `--panel`, gives its number in a chip, "1" or "2", then its name in weight 650,
+  then the commit it comes from in the code font and `--muted`, cut first, then "Keep all", a small
+  standard button that keeps this side in every conflict left.
 - The two sides take the first two colors of the graph, `--l0` for side 1 and `--l1` for side 2,
   as the preview of the graph does (2.2): the one other place they are allowed. Their tints are
   checked against `--ink` in every theme (2.4). The result has no color of its own: its lines take
   the tint of the side they were kept from.
 - **The chip** of a side, "1" or "2", is the letter of a file state (9.6): the code font, weight
-  650, on 30% of the color of its side, 16 px in the bars, 14 px in the gutter of the result,
-  whose lines are 18 px.
-- **A line of a conflict** takes a tint of 10% of its side's color. When its side is kept, the
-  tint goes to 24%, as a line picked in a diff gets stronger (9.14); set aside, its text goes to
-  `--muted`.
+  650, on the color of its side at `--tint-side-chip` (30%, 2.7), 16 px in the bars, 14 px in the
+  gutter of the result, whose lines are 18 px.
+- **A line of a conflict** takes its side's color at `--tint-side` (10%). When its side is kept, the
+  tint goes to `--tint-side-kept` (24%), as a line picked in a diff gets stronger (9.14); set aside,
+  its text goes to `--muted`.
 - **A change that does not conflict**, a line that a side changed from the common ancestor outside
-  the conflicts, takes 10% of the color of its side, as a line of a conflict at rest, and a "+"
-  in `--muted` in a narrow gutter of its own, before the numbers of the lines, the sign of a line
-  added in a diff (9.14) from the ancestor to this side, so that the color does not say it alone
-  (11); its tooltip says "Changed from the common ancestor, merged by git". It has no header and no
-  arrow: git has already merged it into the result, and there is nothing to keep. Without a common ancestor, a file added on both sides, nothing is marked outside the
-  conflicts; nor in a side where a conflict is not found, whose lines would pass for changes.
+  the conflicts, takes the color of its side at `--tint-side`, as a line of a conflict at rest, and
+  a "+" in `--muted` in a narrow gutter of its own, before the numbers of the lines, the sign of a
+  line added in a diff (9.14) from the ancestor to this side, so that the color does not say it
+  alone (11); its tooltip says "Changed from the common ancestor, merged by git". It has no header
+  and no arrow: git has already merged it into the result, and there is nothing to keep. Without a
+  common ancestor, a file added on both sides, nothing is marked outside the conflicts; nor in a
+  side where a conflict is not found, whose lines would pass for changes.
 - **The header of a conflict**, a row of 28 px above its first line, on each side: "Conflict 1 ·
   5 lines" in 11.5 px and `--muted`, then "· kept" or "· set aside" when it is; the header of the
   current conflict is in `--ink` and weight 650, the one mark of the current conflict in the
@@ -2567,20 +2585,21 @@ conflict with its arrow or on its band; it stays editable."
   the two apart: "Kept from side 1" for a line kept from a conflict, "Merged by git from side 1"
   for a change that did not conflict. These marks follow the lines when the text above them is
   typed; a line typed in, split or deleted loses its mark, as a line typed by hand has none.
-- **The band of a conflict**, a row of 28 px, faces its headers in the sides. A conflict not
-  decided yet is not shown as the markers of git: its band stands in their place, on
-  `--warn-soft`, with the letter "!" (9.6), "Conflict 2 of 3", then what decides it, small
-  buttons: "Keep" with the chip "1", "Keep" with the chip "2", the chip at 14 px as in the gutter,
-  standard, each with 12% of the color of its side, 24% on hover in place of `--hover`, and a border
-  of 55% of that color, all of it on hover; their tooltips name the side ("Keep your commit",
-  "Keep upstream"). Then "More", a small ghost button with a 14 px chevron, whose menu (9.9) holds
-  "Keep both", "Keep both, reversed" and "Keep neither", their hints naming the order; "More" is
-  the one label that is not a verb, as the menu "View" of the toolbar (9.2). After a choice in
-  that menu, the band it opened from gives way to the band of the conflict decided: the keyboard
-  goes to the result. The caret steps over
-  the band. The markers stay in the file underneath, so that saving is refused while one is left.
-  The numbers of the lines it hides are skipped: the result counts the lines of the file, markers
-  included, until the conflict is decided.
+- **The band of a conflict**, a row of 28 px, faces its headers in the sides. A conflict not decided
+  yet is not shown as the markers of git: its band stands in their place, on `--warn-soft`, with the
+  letter "!" (9.6), "Conflict 2 of 3", then what decides it, small buttons: "Keep" with the chip
+  "1", "Keep" with the chip "2", the chip at 14 px as in the gutter, standard, each on the color of
+  its side at `--tint-keep` (12%), `--tint-keep-hover` (24%) on hover in place of `--hover`, and a
+  border of that color at `--tint-keep-border` (55%) over `--line`, all of it on hover; their
+  tooltips name the side ("Keep your commit", "Keep upstream"). Then "More", a small ghost button
+  with a 14 px chevron, whose menu (9.9) holds "Keep both", "Keep both, reversed" and "Keep
+  neither", their hints naming the order; "More" is the one label that is not a verb, as the menu
+  "View" of the toolbar (9.2). After a choice in that menu, the band it opened from gives way to the
+  band of the conflict decided: the keyboard goes to the result, its caret in that conflict, where
+  the eye is, at the start of its first line, or just under its band when it keeps no line; the
+  columns stay where they are. The caret steps over the band. The markers stay in the file
+  underneath, so that saving is refused while one is left. The numbers of the lines it hides are
+  skipped: the result counts the lines of the file, markers included, until the conflict is decided.
 - Decided, the band stays, above its lines, as the headers of the sides are: on `--panel`, with a
   `--line-soft` line above it, "Conflict 2 of 3 · kept from your commit · 4 lines" (in the middle
   of a sentence, a side is named in lower case, 12), "kept from both", "no line kept" or "edited by
@@ -2601,7 +2620,11 @@ conflict with its arrow or on its band; it stays editable."
   focus: nothing is lost that Ctrl + Z does not bring back, so it is not a destructive action.
 - **Ctrl + Z** goes back through the choices, an arrow, a cross, a button, and the typing, in the
   order they were made, wherever the focus is in the editor: what was typed since the last choice
-  first, then that choice, then what was typed before it.
+  first, then that choice, then what was typed before it. It shows what it undoes, the focus
+  staying where it is: the conflict whose choice it takes back becomes the current one and comes
+  into view if it is not, and what it becomes is announced, "Choice undone, conflict 1, to
+  decide", or, for a choice of several conflicts ("Keep all"), "Choice undone, 3 conflicts back as
+  they were"; the typing it undoes comes into view.
 
 **The overview strip**, 12 px wide, at the right of the result, beside its scrollbar, on `--panel`
 with a `--line-soft` line on its left: the whole file at a glance, the three columns having the
@@ -2631,15 +2654,15 @@ strip carries no mark, and a click there goes to the end of the file.
 **The common ancestor**, under the three columns, across their width, 180 px high and 40% of the
 editor at most, read only, shows the current conflict as it was before both changes, with the 3
 lines around it, numbered as in the file. Its lines take the tint of a current conflict, `--muted`
-at 30%, and the panel follows the current conflict. Its place in the ancestor comes from the diffs
-of the ancestor against each side, so that it shows whatever the style of the conflict markers
-(the ancestor written between them, with `merge.conflictStyle diff3`, is the way left when neither
-side gives it). The caption of its bar says which conflict and which lines, so that the tint does
-not say it alone (11): "Before both changes: conflict 2, line 35."; when the ancestor had no line
-there, "Before both changes: conflict 3 had no line here, both sides added theirs after line 50.",
-the 3 lines around the place shown; when the conflict is not found in it, "Before both changes.
-Conflict 2 was not found in it.", the whole ancestor shown. It is not announced: the sides say the
-conflict reached.
+at `--tint-current-line` (30%), and the panel follows the current conflict. Its place in the
+ancestor comes from the diffs of the ancestor against each side, so that it shows whatever the style
+of the conflict markers (the ancestor written between them, with `merge.conflictStyle diff3`, is the
+way left when neither side gives it). The caption of its bar says which conflict and which lines, so
+that the tint does not say it alone (11): "Before both changes: conflict 2, line 35."; when the
+ancestor had no line there, "Before both changes: conflict 3 had no line here, both sides added
+theirs after line 50.", the 3 lines around the place shown; when the conflict is not found in it,
+"Before both changes. Conflict 2 was not found in it.", the whole ancestor shown. It is not
+announced: the sides say the conflict reached.
 
 **Keyboard.**
 
@@ -2652,13 +2675,14 @@ conflict reached.
   the inner ring of 9.6 on its header; Enter keeps the side, Delete (or Backspace) sets it aside;
   ← and → scroll a long line sideways, since it does not wrap. What the conflict becomes is
   announced: "Conflict 1, Your commit, 4 lines, kept".
-- However the result takes the keyboard, with Tab, as the editor opens or after a choice of
-  "More", it takes it where the eye is, and the columns stay where they are. While it does not
+- However the result takes the keyboard, with Tab or as the editor opens, it takes it where the
+  eye is, and the columns stay where they are; after a choice of "More", in the conflict decided
+  (above). While it does not
   have the keyboard, its caret waits there, scroll after scroll: where it was when that is in
   view, otherwise on the current conflict when that is in view (just under its band while it is to
   decide, since the band takes no caret), otherwise on the first line wholly in view. Typing then
   scrolls nothing either. The result shows that it has the keyboard by its caret and by the tint
-  of the line of the caret, `--accent` at 6%, which shows only then.
+  of the line of the caret, `--accent` at `--tint-caret-line` (6%), which shows only then.
 - The two "Keep all" buttons name their side for a screen reader: "Keep all of your commit".
 - F8 and Shift + F8 go to the next and the previous conflict, F7 and Shift + F7 to the next and
   the previous change merged by git, Ctrl + S saves once nothing is left

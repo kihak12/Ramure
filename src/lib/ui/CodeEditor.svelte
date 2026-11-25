@@ -6,8 +6,8 @@
   export interface Mark {
     from: number;
     to: number;
-    /** Gives the class `cm-mark-<kind>`. */
-    kind: 'ours' | 'theirs' | 'base' | 'marker' | 'focus';
+    /** Gives the class `cm-mark-<kind>`: the lines of the current conflict, in the common ancestor. */
+    kind: 'focus';
   }
 
   const setMarks = StateEffect.define<Mark[]>();
@@ -49,17 +49,15 @@
       border: 'none',
       borderRight: '1px solid var(--line-soft)',
     },
-    '.cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) 6%, transparent)' },
+    // The line of the caret is told only while the editor has the keyboard (guidelines, 2.7).
+    '.cm-activeLine': { backgroundColor: 'transparent' },
+    '&.cm-focused .cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--accent) var(--tint-caret-line), transparent)' },
     '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--ink)' },
     '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-      backgroundColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
+      backgroundColor: 'color-mix(in srgb, var(--accent) var(--tint-text-sel), transparent)',
     },
-    '.cm-mark-ours': { backgroundColor: 'color-mix(in srgb, var(--l0) 18%, transparent)' },
-    '.cm-mark-theirs': { backgroundColor: 'color-mix(in srgb, var(--l1) 18%, transparent)' },
-    '.cm-mark-base': { backgroundColor: 'color-mix(in srgb, var(--muted) 14%, transparent)' },
-    '.cm-mark-marker': { backgroundColor: 'var(--warn-soft)', color: 'var(--warn)', fontWeight: 'var(--fw-strong)' },
     // The current conflict reads by its stronger tint, with no colored bar on the edge of the line.
-    '.cm-mark-focus': { backgroundColor: 'color-mix(in srgb, var(--c, var(--accent)) 30%, transparent)' },
+    '.cm-mark-focus': { backgroundColor: 'color-mix(in srgb, var(--c, var(--muted)) var(--tint-current-line), transparent)' },
   });
 </script>
 
