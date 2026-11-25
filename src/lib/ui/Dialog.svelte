@@ -88,12 +88,13 @@
       <!-- The content scrolls if the window is too low; the last line stays in view (guidelines, 9.10). -->
       <div class="content">
       <h2>{spec.title}</h2>
-      {#if spec.body}<p class="body">{spec.body}</p>{/if}
+      <!-- Several things said, one line each, apart from the next: a line that wraps is not read as two (9.10). -->
+      {#if spec.body}<div class="body lines">{#each spec.body.split('\n') as line, i (i)}<p>{line}</p>{/each}</div>{/if}
       {#if spec.warning}
         <!-- One line per thing to warn of, apart from the next: a line that wraps is not read as two. -->
         <div class="warning">
           <Icon name="warning" />
-          <div class="lines">{#each spec.warning.split('\n') as line (line)}<p>{line}</p>{/each}</div>
+          <div class="lines">{#each spec.warning.split('\n') as line, i (i)}<p>{line}</p>{/each}</div>
         </div>
       {/if}
       {#if spec.note}<p class="body">{spec.note}</p>{/if}
@@ -269,6 +270,8 @@
   .lines {
     display: grid;
     gap: 4px;
+  }
+  .warning .lines {
     color: var(--ink);
   }
   .lines p {

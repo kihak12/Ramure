@@ -22,7 +22,7 @@ export interface Field {
 
 export interface DialogSpec {
   title: string;
-  /** Explanatory text, under the title. */
+  /** Explanatory text, under the title; one line per thing it says. */
   body?: string;
   /** Warning, shown in a box; one line per thing to warn of. */
   warning?: string;

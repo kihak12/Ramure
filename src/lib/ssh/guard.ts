@@ -80,7 +80,8 @@ export async function mayQuit(sessions: Session[], transfers = 0, editors: strin
   // The window of the conflict editor closes with the main one (guidelines, 9.26, "Its ends").
   const choices = editors.length ? `The choices not saved in the conflict editor will be lost for good: ${editors.join(', ')}.` : '';
   // The changes not sent of the files opened elsewhere stay in their copies (guidelines, 9.24).
-  const body = [terminals, transfers ? transfersStopped(transfers) : '', choices, ...unsent].filter(Boolean).join(' ');
+  // One line per thing that stops or stays (9.10, 9.15).
+  const body = [terminals, transfers ? transfersStopped(transfers) : '', choices, ...unsent].filter(Boolean).join('\n');
   return dialogs.confirm({ title: 'Quit Ramure?', body, confirmLabel: 'Quit', danger: true });
 }
 

@@ -85,7 +85,11 @@
             <!-- Changes of a file opened elsewhere: sent only on this answer (guidelines, 9.24). -->
             <span class="bar"></span>
             <!-- Not in the cell of the amounts, which clips: the ring of the button stays whole (11). -->
-            <span class="send"><button class="btn small" type="button" onclick={() => void files.sendChanges(t)}>Send changes</button></span>
+            <span class="send"
+              ><button class="btn small" type="button" data-send={t.id} aria-label="Send changes of {t.title}" onclick={() => void files.sendChanges(t)}
+                >Send changes</button
+              ></span
+            >
           {:else}
             <span class="bar"><ProgressBar percent={percent(t)} tone={TONE[t.state]} /></span>
             <span class="amounts">{amounts(t)}</span>
