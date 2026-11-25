@@ -17,7 +17,8 @@ Tauri 2, Rust, Svelte 5.
   guidelines are right; a rule changes in the guidelines first.
 - Whenever a component, a style, a token, an icon or a piece of interface text changes, have the
   change reviewed by the `design-reviewer` subagent before proposing it. Give it the list of
-  changed files: it is read-only and cannot run `git`. Give it screenshots of the change too, in
+  changed files, and the sections of the guidelines the change touches: it is read-only and
+  cannot run `git`, and it reads those sections, not the whole document. Give it screenshots of the change too, in
   light and in dark, whenever you can take them: without them it only judges the code. Fix the
   violations it reports, the most severe first, and settle its drifts with whoever asked for
   the change.

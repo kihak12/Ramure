@@ -162,6 +162,34 @@ a scale with each other.
 In every run, the quotations that were checked were right. One run per row: a difference of a
 few points between two rows is noise.
 
+### The guidelines read in part
+
+November 25, 2026, the first runs on the English version of the test (#280). The definition reads
+the contents of the guidelines, the sections that hold for every change, those of what the change
+touches, and searches the rest, in place of the whole document. Sonnet, through a
+general-purpose agent that read the definition, with the screenshots. The definition keeps
+`high`.
+
+| Effort | Found | Decoys reported | As in the key | Screen | Violations | Drifts | Duration | Tokens |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `medium` | 24 / 25 | 1 / 12 | 21 / 24 | 5 / 6 | 26 | 7 | 1 min 53 | 150,973 |
+| `high` | 25 / 25 | 1 / 12 | 24 / 25 | 5 / 6 | 28 | 5 | 3 min 27 | 180,474 |
+
+- **Read.** Sections 1, 2.1 to 2.4, 2.7, 3 to 8, most of 9.1 to 9.11, 11, 12 and 14: the change
+  touches almost every one, so the reading in part left out little more than 9.12 to 9.27, 10,
+  13 and 15, and the cost stays that of a whole reading. A change that touches few sections reads
+  far less: the review of #281, given 9.18, 9.23 and 11 to read, took 35,536 tokens.
+- **`medium`.** It missed A3, the icon at 15 px. It scored S4 at 6 instead of 4 and Y2 at 2
+  instead of 6, the `.chip` written again not being seen. It folded A4 into S5, at 6 instead of
+  10. It scored C5 at 8 but labelled it "major", where the table makes 8 "blocking". Hence `high`.
+- **`high`.** Only S4, at 6 instead of 4, departs from the key, as in the earlier runs within a
+  point or two.
+- **Decoy reported, in both runs.** D3, the spinning icon of "Retrieving…", was taken for a
+  violation of the shared `.spinner`. Section 8 allows a spinning icon among the waiting
+  indicators, then gives `.spinner` as the class of the waiting ring, and both runs read the
+  second sentence as covering the first. No run on the French version did.
+- **Screen.** As before: E1 to E5 reported, not E6.
+
 ## Taking the screenshots again
 
 When a file of `change/` or `src/app.css` changes, the screenshots are out of date. With the

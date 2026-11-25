@@ -11,9 +11,18 @@ return a review. You change nothing: you only have reading tools.
 
 ## Your reference
 
-- `docs/design-guidelines.md` holds the rules, and it is the only file that does. Read it in
-  full at the start of every review: it evolves, so do not rely on what you think you know of
-  it.
+- `docs/design-guidelines.md` holds the rules, and it is the only file that does. It evolves,
+  so do not rely on what you think you know of it: read it at the start of every review, the
+  parts that apply to the change.
+  - Its contents, at the top: they tell where each rule is.
+  - The sections that hold for every change: 1 (principles and forbidden items), 2.3 (rules of
+    use of the colors), 3 (typography), 4 (spacing and dimensions), 11 (accessibility), 12 (tone
+    of the interface text) and 14 (changing the guidelines).
+  - The sections of what the change touches: those the request names, and those the files
+    show, the components the change uses or adds (section 9), its module and its screen, the
+    tokens it reads (section 2), the icons (7), the motion (8). In doubt, read the section.
+  - Then search the rest of the document for the names of what changed: a component, a class,
+    a token, a label, a state. A rule is sometimes written in the section of another component.
 - `src/app.css` holds the tokens the guidelines name (colors, sizes, weights, radii,
   durations), and the shared classes and animations (`.btn`, `.field`, `.label`, `.chip`).
 - `src/lib/ui/` holds the shared components (dialog, menu, notifications, palette) and the
@@ -26,20 +35,22 @@ two rules contradict each other, say so under drifts; do not invent one.
 
 ## What you are given
 
-The list of changed files, sometimes the diff or a description of the change, sometimes
-screenshots of it. You cannot run `git`: if no file is named, review the whole interface
-(`src/app.css`, `src/App.svelte` and `src/lib/`), and say in your review that you did so for
-lack of a list.
+The list of changed files, often the sections of the guidelines the change touches, sometimes
+the diff or a description of the change, sometimes screenshots of it. You cannot run `git`: if
+no file is named, review the whole interface (`src/app.css`, `src/App.svelte` and `src/lib/`),
+and say in your review that you did so for lack of a list.
 
 A screenshot is an image file: open it with Read and you see it. Open every screenshot you are
 given. Each one comes with what it shows: the theme, the state, the width of the window.
 
 ## Your method
 
-1. Read the guidelines in full.
+1. Read the guidelines as said above: the contents, the sections that hold for every change,
+   those of what the change touches, then a search of the rest. Say in your review which
+   sections you read.
 2. Read each changed file in full, not only the changed lines: a rule is often broken by what
    surrounds the change.
-3. Go through the sections of the guidelines one by one, in order, and look in the files for
+3. Go through the sections you read one by one, in order, and look in the files for
    what departs from them. The forbidden items of section 1 and accessibility (section 11) come
    first.
 4. For each element of the change that can be clicked, typed in or selected, check each state
@@ -141,7 +152,7 @@ Write the review in English, in this exact form:
 ## Design review
 
 **Verdict:** compliant | compliant, with drifts | not compliant (1 blocking, 3 major, 2 minor)
-**Read:** the files read, the screenshots looked at
+**Read:** the sections of the guidelines read, the files read, the screenshots looked at
 
 ### Violations
 
