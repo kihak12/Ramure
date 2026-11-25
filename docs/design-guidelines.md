@@ -1560,7 +1560,7 @@ service that only one side can see. Three kinds, named with the words and the fl
   stops.
 - **A connection that the server cannot carry through** leaves the tunnel listening: the next one
   may work. Under the row, in `--warn` at 11.5 px, the last such failure only, with its time in
-  `--muted`: "Last connection refused: nothing answers at localhost:5432 on the server.", or, for
+  `--muted`, to the second, on the clock of the settings (9.18): "Last connection refused: nothing answers at localhost:5432 on the server.", or, for
   a remote forward, "…at localhost:3000 on this machine." No notification: a program that retries would raise one every second.
 - **A session that ends** stops its tunnels and frees their ports. **A lost connection** does not:
   while it is retried, the ports stay taken, so that no other program takes them; a new
@@ -1702,8 +1702,9 @@ its tooltip then says so. Under the title, groups, each with a 12 px title, weig
 
 **A setting** is a row: its name in 13.5 px, `--ink`, a help text under it in 11.5 px,
 `--muted`, and its control on the right, 240 px wide. 12 px between two rows. The name is a
-noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice sits
-under the name of its setting, on the whole width of the column.
+noun, not a verb. The controls are those of section 9.3, and the choice (9.19): a choice in
+rows or in tiles sits under the name of its setting, on the whole width of the column; a choice
+in segments sits on the right, as a field.
 
 **A row that states a fact** is not a setting: its name says something ("Version 0.3.0") and
 labels no field, and its control, when it has one, is a small standard button that names itself
@@ -1774,8 +1775,11 @@ them.
   as high as a field, 32 px, in the column of the control of a setting: a `--line` border around
   the group, 6 px corners, 2 px inside it, and options of 4 px corners, their names centered. The
   chosen one has the `--sel` background and the weight 650, and no check mark: its weight and its
-  tint say it in its place. The name of the setting names the group (`aria-labelledby`).
-- An option has 8 px corners and is at least 28 px high. Hover: a `--hover` background.
+  tint say it in its place. The name of the setting names the group (`aria-labelledby`). Plain
+  values go to segments when they are two or three, to a list (9.3) from four.
+- An option has 8 px corners and is at least 28 px high; a segment has 4 px corners and is
+  26 px high, the 32 px of the control less its border and the 2 px inside it, a derived value.
+  Hover: a `--hover` background.
 - The chosen option: a `--sel` background, its name in weight 650, and a check mark in
   `--accent` on its right, except in segments (above). Never the color alone, never a colored
   bar on an edge. The place of the check mark is kept on the other options: an option never
@@ -2827,7 +2831,8 @@ that keeps it from being reworded has no message zone, and so one line less.
 ### 10.1 Columns
 
 In order: Branch / tag (220 px), Graph (420 px at most, 340 px in "Classic"), Message,
-Author (150 px), Date (92 px) and SHA (66 px).
+Author (150 px), Date (92 px) and SHA (66 px). The date is the date alone, in the format of the
+settings (9.18): "Nov 25, 2026", the widest, holds in it.
 
 **The message comes first.** It wants 200 px. When it would get less, the other columns give
 way, in this order, each only as far as needed:
