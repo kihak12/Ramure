@@ -121,9 +121,11 @@
     void tick().then(() => focusWithRing(endButton));
   });
   // The card appears: the focus goes to "Reconnect now". The terminal, cut off, is of no use any
-  // more, and out of the reach of the keyboard under the card.
+  // more, and out of the reach of the keyboard under the card. At each next try the card is drawn
+  // again: it takes the keyboard back only if it had it, or the terminal, when the try started.
+  let keyboardHere = false;
   $effect(() => {
-    if (phase.step !== 'lost' || phase.attempt !== 1) return;
+    if (phase.step !== 'lost' || (phase.attempt !== 1 && !keyboardHere)) return;
     void tick().then(() => focusWithRing(retryButton));
   });
   // An unknown server, or a fingerprint that changed: the focus goes to the first button of the
@@ -463,6 +465,8 @@
     if (local) return openLocal();
     retry = auto;
     attempt = { ...attempt, ...next };
+    // Before the card gives way to the one of the try, and the focus with it.
+    if (auto) keyboardHere = !!rootEl?.contains(document.activeElement);
     if (host.proxyJump) {
       phase = { step: 'error', message: 'This host goes through a bastion (ProxyJump). Connecting through a bastion is not supported yet.' };
       session.status = 'closed';
