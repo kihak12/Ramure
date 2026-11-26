@@ -22,6 +22,10 @@ export interface Field {
 
 export interface DialogSpec {
   title: string;
+  /** The items the dialog asks about, one row each under the title (guidelines, 9.10). */
+  items?: { name: string; dir: boolean }[];
+  /** Two versions of one item compared, one row each under the title (guidelines, 9.10). */
+  versions?: Version[];
   /** Explanatory text, under the title; one line per thing it says. */
   body?: string;
   /** Warning, shown in a box; one line per thing to warn of. */
@@ -59,6 +63,22 @@ export type Answers = Record<string, FieldValue>;
 export interface Extra {
   label: string;
   run: () => void;
+  /** What it does, when its label cannot say it all (guidelines, 9.10). */
+  title?: string;
+}
+
+/** One version of an item, compared with another in a dialog. */
+export interface Version {
+  /** Where it is: "In releases". */
+  label: string;
+  /** Its full path and its host. */
+  where: string;
+  /** Its size, empty for a folder. */
+  size: string;
+  /** Its date, "—" when unknown. */
+  date: string;
+  /** A word that compares it with the version above: "newer". */
+  mark?: string;
 }
 
 class Dialogs {

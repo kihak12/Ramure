@@ -505,6 +505,8 @@ pub struct Meta {
     pub kind: Kind,
     pub size: u64,
     pub mode: Option<u32>,
+    /// Seconds since 1970, when the system gives it.
+    pub modified: Option<i64>,
 }
 
 impl Meta {
@@ -525,7 +527,7 @@ impl Meta {
         };
         #[cfg(not(unix))]
         let mode = None;
-        Meta { kind, size: meta.len(), mode }
+        Meta { kind, size: meta.len(), mode, modified: meta.modified().ok().and_then(seconds) }
     }
 
     fn remote(attrs: &FileAttributes) -> Self {
@@ -535,7 +537,7 @@ impl Meta {
             FileType::Symlink => Kind::Link,
             FileType::Other => Kind::Other,
         };
-        Meta { kind, size: attrs.size.unwrap_or(0), mode: attrs.permissions.map(|m| m & 0o7777) }
+        Meta { kind, size: attrs.size.unwrap_or(0), mode: attrs.permissions.map(|m| m & 0o7777), modified: attrs.mtime.map(i64::from) }
     }
 
     pub fn is_dir(&self) -> bool {
@@ -770,14 +772,29 @@ pub async fn files_stamp(state: State<'_, FilesState>, place: Place, path: Strin
     Ok(stamp)
 }
 
+/// A name already in a folder, with what the dialog that asks shows of it (guidelines, 9.24).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Existing {
+    name: String,
+    dir: bool,
+    size: u64,
+    /// Seconds since 1970, when the system gives it.
+    modified: Option<i64>,
+}
+
 /// The names among `names` that already exist in `dir`: a copy there would replace them.
 #[tauri::command]
-pub async fn files_existing(state: State<'_, FilesState>, place: Place, dir: String, names: Vec<String>) -> Result<Vec<String>, FsError> {
+pub async fn files_existing(state: State<'_, FilesState>, place: Place, dir: String, names: Vec<String>) -> Result<Vec<Existing>, FsError> {
     let fs = state.fs(place)?;
+    existing(&fs, &dir, names).await
+}
+
+async fn existing(fs: &Fs, dir: &str, names: Vec<String>) -> Result<Vec<Existing>, FsError> {
     let mut taken = Vec::new();
     for name in names {
-        if fs.lstat(&fs.join(&dir, &name)).await?.is_some() {
-            taken.push(name);
+        if let Some(meta) = fs.lstat(&fs.join(dir, &name)).await? {
+            taken.push(Existing { name, dir: meta.is_dir(), size: meta.size, modified: meta.modified });
         }
     }
     Ok(taken)
@@ -950,6 +967,19 @@ mod tests {
         #[cfg(unix)]
         assert_eq!(find("link").map(|e| (e.kind, e.dir)), Some((Kind::Link, true)));
         assert!(listing.parent.is_some());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn the_names_already_there_say_their_kind_size_and_time() {
+        let dir = std::env::temp_dir().join(format!("ramure-existing-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(dir.join("assets")).unwrap();
+        std::fs::write(dir.join("report.pdf"), b"12345").unwrap();
+        let names = ["report.pdf", "assets", "new.txt"].map(String::from).to_vec();
+        let taken = existing(&Fs::Local, &dir.to_string_lossy(), names).await.unwrap();
+        assert_eq!(taken.iter().map(|t| t.name.as_str()).collect::<Vec<_>>(), ["report.pdf", "assets"]);
+        assert!(!taken[0].dir && taken[0].size == 5 && taken[0].modified.is_some());
+        assert!(taken[1].dir);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

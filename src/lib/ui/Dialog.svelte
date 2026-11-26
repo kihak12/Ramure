@@ -88,6 +88,30 @@
       <!-- The content scrolls if the window is too low; the last line stays in view (guidelines, 9.10). -->
       <div class="content">
       <h2>{spec.title}</h2>
+      <!-- The facts first: the items asked about, or the two versions of one (9.10). -->
+      {#if spec.items?.length}
+        <!-- Past six rows and a half it scrolls: a stop of the tab order, so that the keyboard reaches every name (9.10). -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <ul class="items" role="list" aria-label="Names" tabindex={spec.items.length > 6 ? 0 : undefined}>
+          {#each spec.items as item, i (i)}
+            <li class:dir={item.dir} title={item.name}><Icon name={item.dir ? 'folder' : 'file'} size={16} /><span>{item.name}</span></li>
+          {/each}
+        </ul>
+      {/if}
+      {#if spec.versions?.length}
+        <table class="versions">
+          <tbody>
+            {#each spec.versions as version, i (i)}
+              <tr>
+                <th scope="row" title={version.where}><span>{version.label}</span></th>
+                <td class="size">{version.size}</td>
+                <td>{version.date}</td>
+                <td class="mark">{version.mark ?? ''}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
       <!-- Several things said, one line each, apart from the next: a line that wraps is not read as two (9.10). -->
       {#if spec.body}<div class="body lines">{#each spec.body.split('\n') as line, i (i)}<p>{line}</p>{/each}</div>{/if}
       {#if spec.warning}
@@ -193,6 +217,7 @@
             class="btn"
             type="button"
             disabled={busy}
+            title={extra.title}
             onclick={() => {
               // Closing the dialog empties `spec`: the action is kept beforehand, or it can no longer be read.
               const run = extra.run;
@@ -251,6 +276,62 @@
     margin: 0;
     font-size: var(--fs-title);
     font-weight: var(--fw-strong);
+  }
+  /* The items asked about: rows of a pane, not clicked; past six rows and a half, they scroll. */
+  .items {
+    max-height: 156px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+  .items li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    color: var(--ink);
+  }
+  .items li :global(.icon) {
+    flex: none;
+    color: var(--muted);
+  }
+  .items li.dir :global(.icon) {
+    color: var(--accent);
+  }
+  .items span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Two versions of one item: where, size, date, and a word that compares them. */
+  .versions {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .versions th,
+  .versions td {
+    padding: 2px 12px 2px 0;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .versions th {
+    font-weight: inherit;
+    text-align: left;
+    color: var(--muted);
+  }
+  .versions th span {
+    display: block;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .versions .size {
+    text-align: right;
+  }
+  .versions .mark {
+    padding-right: 0;
+    color: var(--muted);
   }
   .body {
     margin: 0;

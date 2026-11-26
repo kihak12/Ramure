@@ -6,7 +6,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow, UserAttentionType } from '@tauri-apps/api/window';
 import { tick } from 'svelte';
 import { prefs, savePrefs } from '../git/prefs.svelte';
-import { dialogs } from '../ui/dialogs.svelte';
+import { dialogs, type Version } from '../ui/dialogs.svelte';
 import { exceptionFor, matchFor, normalMatch } from './opening';
 import { dateTime } from '../ui/dates';
 import { focusBack, focusWithRing } from '../ui/focus';
@@ -21,7 +21,10 @@ import {
   nameOf,
   numbered,
   parentPath,
+  shortDate,
+  size,
   type Entry,
+  type Existing,
   type Listing,
   type Place,
   type Progress,
@@ -1064,33 +1067,80 @@ class Files {
     if (!from || !to) return;
     let mode: Taken = 'skip';
     try {
-      const taken = await invoke<string[]>('files_existing', { place: to, dir: dest, names });
+      const taken = await invoke<Existing[]>('files_existing', { place: to, dir: dest, names });
       if (taken.length) {
         // What the buttons answered; set from their callbacks, which TypeScript does not follow.
         const chosen: { answer: Taken | null } = { answer: null };
-        const shown = taken.length > 6 ? `${taken.slice(0, 6).join(', ')} and ${taken.length - 6} more` : taken.join(', ');
+        const one = taken.length === 1;
+        const first = taken[0];
+        const copied = (name: string) => source.entries.find((e) => e.name === name);
+        const isDir = (t: Existing) => t.dir || !!copied(t.name)?.dir;
         // The free name of the first one, as an example, among the names the destination pane
         // shows when it shows that folder: the core finds the real ones as it copies.
-        const isDir = source.entries.find((e) => e.name === taken[0])?.dir ?? false;
         const visible = target.path === dest;
-        const there = new Set(visible ? target.entries.map((e) => e.name) : [...taken]);
+        const there = new Set(visible ? target.entries.map((e) => e.name) : taken.map((t) => t.name));
         for (const name of names) there.add(name);
         let n = 1;
-        while (there.has(numbered(taken[0], isDir, n))) n++;
-        const example = numbered(taken[0], isDir, n);
+        while (there.has(numbered(first.name, isDir(first), n))) n++;
+        const example = numbered(first.name, isDir(first), n);
+        // The facts first: the two versions of one name, or the list of the names (9.10, 9.24).
+        const folderOf = (path: string) => nameOf(path) || path;
+        const targetLabel = this.label(target);
+        let versions: Version[] | undefined;
+        if (one) {
+          // The copied file as it is now, not as the pane listed it: it may have changed since.
+          const now = await invoke<Existing[]>('files_existing', { place: from, dir: source.path, names: [first.name] }).catch(() => []);
+          const mine: Pick<Existing, 'dir' | 'size' | 'modified'> | undefined = now[0] ?? copied(first.name);
+          const when = (seconds: number | null | undefined) => (seconds ? shortDate(seconds) : '—');
+          const mark =
+            first.modified && mine?.modified
+              ? mine.modified > first.modified
+                ? 'newer'
+                : mine.modified < first.modified
+                  ? 'older'
+                  : 'same date'
+              : undefined;
+          versions = [
+            { label: `In ${folderOf(dest)}`, where: `${joinPath(dest, first.name)} · ${targetLabel}`, size: isDir(first) ? '' : size(first.size), date: when(first.modified) },
+            {
+              label: `From ${folderOf(source.path)}`,
+              where: `${joinPath(source.path, first.name)} · ${this.label(source)}`,
+              size: mine && !mine.dir ? size(mine.size) : '',
+              date: when(mine?.modified),
+              mark,
+            },
+          ];
+        }
+        // Then the consequences, one line each.
+        const others = names.length - taken.length;
+        const body = [
+          'A replaced file cannot be recovered.',
+          taken.some(isDir) ? 'A folder is merged: only the files of the same name inside it are replaced.' : '',
+          others ? (others === 1 ? 'The other item is copied unless you cancel.' : `The ${others.toLocaleString('en-US')} other items are copied unless you cancel.`) : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
         // The name is promised only when the pane shows the folder it goes into.
-        const both =
-          taken.length === 1 && visible
-            ? `“Keep both” copies it as ${example}.`
-            : `“Keep both” copies ${taken.length === 1 ? 'it' : 'them'} under a free name, such as ${example}.`;
+        const both = !one
+          ? 'Copy them under free names and keep the ones there.'
+          : visible
+            ? `Copy it as ${example} and keep the one there.`
+            : 'Copy it under a free name and keep the one there.';
+        const on = to.kind === 'remote' ? ` on ${targetLabel}` : '';
         const confirmed = await dialogs.confirm({
-          title: `Replace ${taken.length === 1 ? taken[0] : count(taken.length, 'item')} in ${nameOf(dest)}?`,
-          body: `${taken.length === 1 ? 'This name already exists' : `These names already exist`} there: ${shown}. A replaced file cannot be recovered. A folder is merged: only the files of the same name inside it are replaced. ${both}`,
+          title: `Replace ${one ? first.name : count(taken.length, 'item')} in ${folderOf(dest)}${on}?`,
+          items: one ? undefined : taken.map((t) => ({ name: t.name, dir: isDir(t) })),
+          versions,
+          body,
           confirmLabel: 'Replace',
           danger: true,
           extra: [
-            { label: taken.length === 1 ? 'Skip it' : 'Skip them', run: () => (chosen.answer = 'skip') },
-            { label: 'Keep both', run: () => (chosen.answer = 'keepBoth') },
+            {
+              label: one ? 'Skip it' : 'Skip them',
+              title: one ? 'Keep the one there and do not copy it.' : 'Keep the ones there and do not copy them.',
+              run: () => (chosen.answer = 'skip'),
+            },
+            { label: 'Keep both', title: both, run: () => (chosen.answer = 'keepBoth') },
           ],
         });
         if (confirmed) chosen.answer = 'replace';

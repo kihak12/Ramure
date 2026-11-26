@@ -128,6 +128,8 @@ function check(name, t, dark) {
   // The date of a folder row that receives a drop (9.24).
   need('--muted on --accent-soft', contrast(t['--muted'], t['--accent-soft']), 4.5);
   need('--accent on --panel', contrast(t['--accent'], t['--panel']), 3);
+  // The icon of a folder in a dialog (9.10).
+  need('--accent on --raised', contrast(t['--accent'], t['--raised']), 3);
   // The selection of a pane that is not the active one (9.24): the text, the date and the folder
   // icon read on it, and it stands apart from the row at rest, the hovered row and the selection.
   const quiet = mix(t['--muted'], s['--tint-sel-quiet'], t['--panel']);
