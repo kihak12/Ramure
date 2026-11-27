@@ -610,6 +610,7 @@
     onkeydown={onKey}
     onfocus={onFocus}
     tabindex="0"
+    data-main
     role="listbox"
     aria-label="Commit history"
     aria-activedescendant={repo.current ? `${uid}-commit-${repo.selected}` : undefined}

@@ -7,8 +7,11 @@ export interface Command {
   /** Group the command is listed under: “Actions”, “Branches”… */
   group: string;
   icon?: IconName;
-  /** Detail shown on the right: keyboard shortcut, path, state. */
+  /** Detail shown on the right: keyboard shortcut, path, state; for a command that cannot run,
+   *  why, as a lower-case fragment ("no remote branch"). */
   hint?: string;
+  /** The hint in full, in its tooltip, when it is cut or a fragment of a longer reason. */
+  detail?: string;
   /** Keyboard shortcut bound to the command, already formatted (`Ctrl + Shift + F`). */
   shortcut?: string;
   /** Extra words for the search (other words for an action, for instance). */

@@ -1168,6 +1168,19 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating, centered, 11% from the top of the window, 640 px wide at most.
 - A 15 px input. Results as rows (9.6), with the shortcut of each command on the right.
 - A shortcut key is drawn like a key: 10.5 px, 4 px corners, a thicker bottom edge.
+- Its field has the keyboard as long as the palette is open, and says so by a 2 px line in
+  `--accent` under it, in place of its outline (11).
+- **The keyboard.** The palette is one stop: Tab does not leave its field. ↑ and ↓ move from one
+  command that can be run to the next; Home and End go to the first and the last while the field
+  is empty, and move in the text once something is typed, the list scrolled to its very end.
+  Enter runs the command; Escape closes the palette and gives the keyboard back to what had it.
+- What a row says on its right, a path, a count or a git command, in the code font (3.1), is cut
+  with an ellipsis and whole in its tooltip.
+- A command that cannot be run now is shown grayed, at 45%, with the reason on its row, a
+  lower-case fragment in `--muted` that is not grayed, so that it reads ("no remote branch",
+  "git is working", "nothing to stash"), its longer form, if any, in its tooltip ("cannot be
+  reworded here"), as a disabled button says why (9.1); the arrows pass it, and Enter on it, when
+  the filter leaves only it, does nothing.
 
 ### 9.13 Status bar
 
@@ -1871,7 +1884,16 @@ keys (9.12), and a button that restores the default.
 
 - A click on the combination starts recording: the row takes an `--accent-soft` background and
   says "Press the shortcut…", in `--ink`, weight 650; the accessible name of the button says
-  that a combination is awaited. Backspace removes the shortcut, Escape cancels.
+  that a combination is awaited. Backspace removes the shortcut, Escape cancels, and so does
+  the keyboard going elsewhere, Tab, which is never a shortcut and goes on to the next control,
+  or a click elsewhere: the keys typed next go where they are typed.
+- A combination that cannot be a shortcut is refused under the row, the recording going on: a
+  combination that edits text, a key with neither Ctrl nor Alt that is not a function key, and
+  a key that acts inside the module of the action, which would stop working there: F2, which
+  renames in the lists; F5 and Alt + ↑ in a pane of the Files module; F7, F8, Shift + F7,
+  Shift + F8 and Ctrl + S in the conflict editor; Ctrl + Enter in the commit message. The
+  sentence says what the key does, then what to do: "F2 renames in the lists. Press another
+  combination." It goes when the recording ends.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
 - A group whose shortcuts act in one module only says so after its name, in weight 400:
@@ -3137,6 +3159,13 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element. The labels of the graph are reached through
   the branch list (9.4).
+- **A module or a tab shown from the keyboard takes it**: a module shortcut, a command of the
+  palette, Ctrl + Tab between repositories. The part that was shown is now out of reach, and the
+  keyboard left in it would be nowhere: it goes where it was last in the part shown, else to its
+  main control, the graph, the filter of the host book, the list of the active pane, with its
+  ring; the settings, the entry of their navigation. A module shown with the mouse on the rail
+  leaves the keyboard on the rail; nothing takes it at launch. A command of the palette chosen
+  with a click gives the keyboard the same way, without the ring.
 - **Shortcuts.** A shortcut belongs to the whole application or to one module, Git, SSH or Files. A
   combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
   searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
