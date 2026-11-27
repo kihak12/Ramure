@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
+  import { focusBack, focusLost, usable } from '../ui/focus';
   import { display, keys } from '../ui/keys.svelte';
   import Terminal from '../ssh/Terminal.svelte';
   import { mayCloseTerminal } from '../ssh/guard';
@@ -15,6 +16,34 @@
 
   const terminals = $derived(repo.terminals);
   let panelEl = $state<HTMLElement>();
+  let tabsEl = $state<HTMLElement>();
+  // The active tab stays on screen when the tabs overflow (9.7), a new one too, once it is laid out.
+  $effect(() => {
+    void terminals.activeKey;
+    void tick().then(() =>
+      requestAnimationFrame(() => tabsEl?.querySelector('.tab.current')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })),
+    );
+  });
+
+  /** The tab list (9.7, 9.20): one stop of the tab order, the current tab; ← and → go to the
+   *  previous and the next tab, Home and End to the first and the last, which show as they take
+   *  the keyboard; Enter gives the keyboard to the terminal of the tab. */
+  function tabKey(e: KeyboardEvent) {
+    const tabs = terminals.sessions;
+    const at = tabs.findIndex((s) => s.key === terminals.activeKey);
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      panelEl?.querySelector<HTMLElement>(`.session[data-session="${terminals.activeKey}"] .xterm-helper-textarea`)?.focus();
+      return;
+    }
+    const to =
+      e.key === 'ArrowRight' ? at + 1 : e.key === 'ArrowLeft' ? at - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
+    if (to === null || !tabs.length) return;
+    e.preventDefault();
+    const next = tabs[(to + tabs.length) % tabs.length];
+    terminals.activate(next.key);
+    void tick().then(() => tabsEl?.querySelectorAll<HTMLElement>('[role="tab"]')[tabs.indexOf(next)]?.focus());
+  }
 
   const combo = $derived(keys.binding('toggle-terminal'));
   const hideTitle = $derived(`Hide terminal${combo ? ` (${display(combo)})` : ''}`);
@@ -22,7 +51,13 @@
 
   /** The cross or the middle click: if a program runs in the terminal, ask first. */
   async function closeTab(session: Session) {
-    if (await mayCloseTerminal(session)) terminals.close(session.key);
+    if (!(await mayCloseTerminal(session))) return;
+    terminals.close(session.key);
+    // The cross pressed is gone: the keyboard goes to the tab shown now, or to the graph (11).
+    await tick();
+    if (!focusLost()) return;
+    const tab = tabsEl?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+    focusBack(tab ?? usable('[role="listbox"][aria-label="Commit history"]'));
   }
 
   /** What a tab says on hover: the shell and its starting folder, which the header does not show. */
@@ -78,7 +113,7 @@
 
 <section class="panel" bind:this={panelEl} data-terminals aria-label="Repository terminal">
   <header>
-    <div class="tabs" role="tablist" aria-label="Repository terminals">
+    <div class="tabs" role="tablist" aria-label="Repository terminals" bind:this={tabsEl}>
       {#each terminals.sessions as session (session.key)}
         {@const current = session.key === terminals.activeKey}
         {@const stopped = session.status === 'closed'}
@@ -88,8 +123,10 @@
             type="button"
             role="tab"
             aria-selected={current}
+            tabindex={current ? 0 : -1}
             title={about(session)}
             onclick={() => terminals.activate(session.key)}
+            onkeydown={tabKey}
             onauxclick={(e) => {
               // Middle click: closes the tab.
               if (e.button === 1) void closeTab(session);
@@ -101,7 +138,15 @@
             </span>
             <span class="name">{session.title}</span>
           </button>
-          <button class="close" type="button" aria-label="Close terminal {session.title}" title="Close terminal" onclick={() => void closeTab(session)}>
+          <!-- Only the cross of the current tab is a stop, after it (9.7). -->
+          <button
+            class="close"
+            type="button"
+            tabindex={current ? 0 : -1}
+            aria-label="Close terminal {session.title}"
+            title="Close terminal"
+            onclick={() => void closeTab(session)}
+          >
             <Icon name="x" size={14} />
           </button>
         </div>
@@ -155,6 +200,8 @@
     margin: 0 -4px;
     padding: 4px;
     overflow-x: auto;
+    /* A tab that takes the focus scrolls until it is whole, its ring too, to the left of the "+" (9.7). */
+    scroll-padding-inline: 4px 40px;
     scrollbar-width: none;
   }
   .tab {
@@ -187,6 +234,8 @@
     height: 100%;
     padding: 0 4px 0 8px;
     border: 0;
+    /* The ring of a tab follows its corners (9.7). */
+    border-radius: var(--radius);
     background: none;
     cursor: pointer;
     color: inherit;
@@ -230,8 +279,9 @@
   .close:focus-visible {
     opacity: 1;
   }
+  /* A veil of --ink, not a hover token: it sits on a tab hovered or current (9.7). */
   .close:hover {
-    background: var(--line);
+    background: color-mix(in srgb, var(--ink) 12%, transparent);
     color: var(--ink);
   }
   /* “+” after the last tab: it stays visible when the tabs overflow. */

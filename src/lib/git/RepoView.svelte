@@ -17,7 +17,7 @@
   import WorkPanel from './WorkPanel.svelte';
   import { workspace } from './workspace.svelte';
   import Splitter from '../ui/Splitter.svelte';
-  import { focusBack } from '../ui/focus';
+  import { focusBack, focusSoon, usable as usable2 } from '../ui/focus';
   import { openInWindow } from './editorWindow.svelte';
   import type { EditorSnapshot } from './conflictWindow';
 
@@ -79,7 +79,7 @@
       detailEl?.querySelector('ul.files button.open'),
       detailEl?.querySelector('textarea'),
     ].find(usable);
-    focusBack(target);
+    focusSoon(target ?? usable2('[role="listbox"][aria-label="Commit history"]'));
   }
   // A new tab, or a folder that could not be opened: the start page replaces the graph.
   const empty = $derived(!repo.result && !repo.loading);

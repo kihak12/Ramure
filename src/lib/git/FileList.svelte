@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import Icon, { type IconName } from '../ui/Icon.svelte';
-  import { focusWithRing } from '../ui/focus';
+  import { focusBack, focusWithRing } from '../ui/focus';
   import { besideList } from './fileLists';
   import type { ChangeKind, FileChange } from './types';
 
@@ -83,7 +83,8 @@
     const row = rows?.[Math.max(0, Math.min(rows.length - 1, index))];
     if (!row) return;
     current = files[Math.max(0, Math.min(files.length - 1, index))]?.path ?? null;
-    focusWithRing(row);
+    // With its ring after a key, without it after a click (11).
+    focusBack(row);
   }
 
   /**
@@ -103,7 +104,7 @@
     const now = document.activeElement;
     if (now && now !== document.body && now.isConnected) return;
     if (listEl?.isConnected && files.length) return focusRow(Math.min(at, files.length - 1));
-    focusWithRing(besideList(scope, order ?? 0));
+    focusBack(besideList(scope, order ?? 0));
   }
   let running = false;
 
@@ -174,7 +175,7 @@
           title={action.unavailable?.(file) ?? (action.key ? `${action.label} (${action.key})` : action.label)}
           aria-label="{action.label}: {file.path}"
           disabled={disabled || !!action.unavailable?.(file)}
-          onclick={() => action.run(file)}><Icon name={action.icon} size={14} /></button
+          onclick={() => void runKey(action, file, files.indexOf(file))}><Icon name={action.icon} size={14} /></button
         >
       {/each}
     </li>
