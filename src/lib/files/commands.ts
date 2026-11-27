@@ -47,6 +47,7 @@ export function filesCommands(): Command[] {
       title: pane?.hidden ? 'Hide hidden files' : 'Show hidden files',
       keywords: 'dot files hidden',
       disabled: !pane?.location,
+      hint: pane?.location ? undefined : 'no location chosen',
       run: () => {
         if (!pane) return;
         pane.hidden = !pane.hidden;
@@ -79,6 +80,7 @@ export function filesCommands(): Command[] {
       icon: 'x',
       title: 'Clear finished transfers',
       disabled: !files.transfers.some((t) => t.state !== 'counting' && t.state !== 'copying'),
+      hint: files.transfers.some((t) => t.state !== 'counting' && t.state !== 'copying') ? undefined : 'no finished transfer',
       run: () => files.clearFinished(),
     },
   ];

@@ -8,9 +8,21 @@
   import RepoView from './RepoView.svelte';
   import { workspace } from './workspace.svelte';
   import { motion } from '../ui/motion';
+  import { remember, rescue } from '../ui/focus';
 
   /** True when the Git module is on screen. */
   let { active = true }: { active?: boolean } = $props();
+
+  // A repository tab shown from the keyboard (Ctrl + Tab) takes it, as a module does (11).
+  const views: Record<number, HTMLElement> = {};
+  let shownTab: number | null = null;
+  $effect(() => {
+    const id = workspace.activeId;
+    const changed = shownTab !== null && shownTab !== id;
+    shownTab = id;
+    if (!changed || !active) return;
+    void tick().then(() => setTimeout(() => rescue(views[id])));
+  });
 
   // The active tab stays on screen when the tabs overflow: the bar scrolls to it, and the scroll
   // margin keeps it to the left of the “+”.
@@ -63,7 +75,7 @@
   <div class="views">
     {#each workspace.tabs as tab (tab.id)}
       {@const current = tab.id === workspace.activeId}
-      <section class="view" class:hidden={!current} inert={!current} role="tabpanel">
+      <section class="view" class:hidden={!current} inert={!current} role="tabpanel" bind:this={views[tab.id]} use:remember>
         <RepoView repo={tab.repo} active={active && current} />
       </section>
     {/each}

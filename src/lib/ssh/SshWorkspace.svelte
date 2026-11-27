@@ -187,7 +187,7 @@
     </header>
     <label class="search">
       <Icon name="search" size={14} />
-      <input type="search" placeholder="Filter by name, address, group, tag" aria-label="Filter hosts" bind:value={filter} />
+      <input type="search" placeholder="Filter by name, address, group, tag" aria-label="Filter hosts" data-main bind:value={filter} />
     </label>
 
     <div class="scroll">
