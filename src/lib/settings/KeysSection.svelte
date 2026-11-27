@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
+  import { focusBack } from '../ui/focus';
   import { comboOf, display, keys, refusal, SHORTCUTS } from '../ui/keys.svelte';
   import SectionHeader from './SectionHeader.svelte';
   import { settingsPage } from './settings.svelte';
@@ -124,9 +126,13 @@
         title="Restore default shortcut"
         aria-label="Restore default shortcut for “{shortcut.title}”"
         disabled={!keys.isCustom(shortcut.id)}
-        onclick={() => {
+        onclick={(e) => {
+          // Back to the default, the button is disabled and drops the keyboard: it goes to the
+          // combination of the row (guidelines, 11).
+          const combo = e.currentTarget.previousElementSibling;
           keys.reset(shortcut.id);
           notice = null;
+          void tick().then(() => combo instanceof HTMLElement && focusBack(combo));
         }}
       >
         <Icon name="undo" size={14} />
@@ -222,7 +228,13 @@
     border-radius: var(--radius-s);
     background: none;
     cursor: pointer;
-    transition: border-color var(--t-fast) var(--ease);
+    transition:
+      border-color var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* When pressed, a button shrinks to 97% (guidelines, 8). */
+  .combo:active {
+    transform: scale(0.97);
   }
   .combo:hover {
     border-color: var(--line);
@@ -255,6 +267,13 @@
     background: none;
     color: var(--muted);
     cursor: pointer;
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* When pressed, a button shrinks to 97% (guidelines, 8). */
+  .reset:active:not(:disabled) {
+    transform: scale(0.97);
   }
   .reset:hover:not(:disabled) {
     background: var(--line);

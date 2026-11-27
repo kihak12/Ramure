@@ -7,6 +7,7 @@
   import { DEFAULTS, prefs, savePrefs, type OpenWith } from '../git/prefs.svelte';
   import { normalMatch } from '../files/opening';
   import Icon from '../ui/Icon.svelte';
+  import { focusBack } from '../ui/focus';
   import SectionHeader from './SectionHeader.svelte';
   import SettingRow from './SettingRow.svelte';
 
@@ -67,7 +68,7 @@
   function add() {
     rows.push(toRow({ match: '', program: '' }));
     // The new row takes the keyboard on its first field (guidelines, 9.18).
-    void tick().then(() => fieldOf(rows.length - 1)?.focus());
+    void tick().then(() => focusBack(fieldOf(rows.length - 1)));
   }
 
   /** "Remove": the keyboard goes to the row that takes its place, or the one before, or "Add exception". */
@@ -75,7 +76,7 @@
     const at = rows.indexOf(row);
     rows = rows.filter((r) => r !== row);
     save();
-    void tick().then(() => (fieldOf(Math.min(at, rows.length - 1)) ?? addButton)?.focus());
+    void tick().then(() => focusBack(fieldOf(Math.min(at, rows.length - 1)) ?? addButton));
   }
 
   async function browseFor(row: Row) {
@@ -129,7 +130,18 @@
             if (chosen !== null) await setEditor(chosen);
           }}><Icon name="folder" size={14} /> Browse…</button
         >
-        <button class="btn ghost small" type="button" disabled={!editor} onclick={() => void setEditor('')}>Use the system’s</button>
+        <button
+          class="btn ghost small"
+          type="button"
+          disabled={!editor}
+          onclick={async () => {
+            // The system's chosen, the button is disabled: the keyboard goes to the field (11).
+            const field = document.getElementById('set-editor');
+            await setEditor('');
+            await tick();
+            if (field) focusBack(field);
+          }}>Use the system’s</button
+        >
       </div>
     </div>
   </SettingRow>
@@ -163,7 +175,7 @@
             {#if row.programError}<small class="error" role="alert">{row.programError}</small>{/if}
           </label>
           <button class="btn small" type="button" onclick={() => void browseFor(row)}><Icon name="folder" size={14} /> Browse…</button>
-          <button class="btn ghost small icon" type="button" aria-label="Remove the exception {row.match}" title="Remove" onclick={() => remove(row)}><Icon name="trash" size={14} /></button>
+          <button class="btn ghost small icon" type="button" aria-label={row.match ? `Remove the exception ${row.match}` : 'Remove this exception'} title="Remove" onclick={() => remove(row)}><Icon name="trash" size={14} /></button>
         </div>
       {:else}
         <p class="empty">No exceptions. Every file opens in the text editor or the program of the system.</p>

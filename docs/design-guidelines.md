@@ -541,7 +541,9 @@ The interface has four levels. Each is recognized by its background.
   the arrow up also for a change that waits to be sent to a server (9.24),
   the frame with an arrow that leaves it toward the top right for a window of its own. An icon that stands for a git
   command (pull, push, stash) is never borrowed for something else.
-- A button made of an icon alone has a tooltip and an accessible name (`aria-label`). An icon
+- A button made of an icon alone has a tooltip and an accessible name (`aria-label`). One
+  repeated on each row of a list names its row in its accessible name, the tooltip saying the
+  action alone: "Move up: Fix the parser", "Remove ramure from the list". An icon
   that accompanies text is hidden from screen readers (`aria-hidden`).
 - An icon alone sits at the exact center of its button, which the hover background shows. The
   padding that the browser gives a button (1 px by 6 px) would push a 16 px icon out of a 24 px
@@ -969,7 +971,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   background. A row being dragged keeps its place in the list at half opacity, while the system
   draws it under the pointer. In the interactive rebase, a commit melded into the one above it
   (squash, fixup) is indented by 24 px, the width of the grip and its gap, and a dropped commit
-  keeps its subject, struck through, in `--muted`.
+  keeps its subject, struck through, in `--muted`. Its "Move up" and "Move down" move the row
+  with the keyboard; at an end of the list, the button pressed is disabled, and the other one
+  of the row takes the keyboard.
 
 ### 9.7 Tabs
 
@@ -985,7 +989,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   a veil of `--ink` at 12%, not a hover token: it sits on a tab that is hovered (`--hover-side`)
   or active (`--panel`), and the veil shows on both, in light and in dark.
 - The same goes for the cross of a row that appears on hover, such as a recent repository on the
-  start page: `--line` on hover, since it sits on a hovered row.
+  start page: `--line` on hover, since it sits on a hovered row. A recent repository removed with
+  it gives the keyboard to the row that takes its place, the previous one, else to "Open
+  repository…".
 - The "+" button follows the last tab: an icon alone, 28 × 28 px, no background at rest and
   `--hover-side` on hover. It stays in view when the tabs overflow. Its tooltip and its accessible
   name say what it opens, with the shortcut: "New local terminal (Ctrl + Shift + N)".
@@ -1097,6 +1103,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   selection, and confirms with Enter; the focus is on "Delete", with its ring. Escape cancels. A click on the veil cancels too, when it is pressed and released on
   the veil, not at the end of a drag that started in the dialog; except while an operation runs
   in the dialog, a clone for instance: a stray click must not stop it, Escape and the button do.
+  A clone that fails says why under its fields, and the keyboard, dropped by the fields and the
+  buttons disabled while it ran, goes to "Clone", as after a refusal with no field (below).
   What was typed in the dialog is lost, without a question.
 - A field that takes a file or a program of this machine has "Browse…" beside it, on the same
   line: a small standard button with the folder icon, which opens the picker of the system and
@@ -1149,6 +1157,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A notification stays for as long as the pointer or the focus is on it; its delay starts again
   when they leave. When what the action undoes was run from the keyboard, the focus goes to the
   button of the action: it is one key away.
+- A notification closed or answered with the keyboard on it gives the keyboard back to where it
+  was before it came to the notification, when that is still there; never to nowhere (11).
 - The close button is 24 × 24 px.
 
 | Type | Duration |
@@ -1387,7 +1397,9 @@ panel shows.
 Ramure keeps no copy of them. Its last line, at rest: "Close", "Import key…", "Generate key",
 all standard, since no action is expected more than the others (9.1).
 
-- **Generating** opens a form in the dialog, under the list (9.6).
+- **Generating** opens a form in the dialog, under the list (9.6). Its "Cancel", or the key
+  created, closes the form, and the keyboard goes to "Generate key". A key that cannot be
+  created says why under the form, and the keyboard goes back to "Create key".
 - **Importing** opens the file picker of the system, "Choose a private key". The key is copied
   into `~/.ssh` under the same name, readable by its owner only, with its public key: the `.pub`
   beside it, or the one the private key carries. A PuTTY key (`.ppk`) without a passphrase is
@@ -1835,7 +1847,8 @@ set to reads at a glance.
 
 - "Text editor", "Opens a text file that has no exception below. Empty: the program of the
   system.": a field in the code font, which takes a program typed or chosen with "Browse…", and
-  applies it once it is found, with "Use the system's", a small ghost button that empties it. A
+  applies it once it is found, with "Use the system’s", a small ghost button that empties it,
+  then is disabled and gives the keyboard to the field. A
   program that cannot be found turns the field to its error state: "No program named code was
   found."
 - "Programs by extension", "A file with one of these extensions or names opens in its program,
@@ -1852,7 +1865,8 @@ set to reads at a glance.
   shows under its field: "Already listed.", "No program named code was found."
 
 **Keyboard shortcuts** are a section. A row is the name of the action, its combination drawn as
-keys (9.12), and a button that restores the default.
+keys (9.12), and a button that restores the default, then is disabled and gives the keyboard to
+the combination of its row.
 
 - A click on the combination starts recording: the row takes an `--accent-soft` background and
   says "Press the shortcut…", in `--ink`, weight 650; the accessible name of the button says
@@ -2166,7 +2180,7 @@ and the entry "General" has the same words for screen readers. The button opens 
 
 - **"Version 0.3.0"**, the version that runs, a row that states a fact (9.18). Its control is
   "Check for updates", a small standard button; while it runs it says "Checking…" and cannot be
-  clicked (9.1). It is disabled too while a version downloads, is ready or installs: that version
+  clicked (9.1), then gets back the keyboard it had. It is disabled too while a version downloads, is ready or installs: that version
   is not looked for again, the box under it is the reason, and its tooltip says it ("Version
   0.4.0 is downloading.", "Version 0.4.0 is ready to install."). Under it, as for the test of a
   host (9.21):
