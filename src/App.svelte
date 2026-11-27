@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { gitCommands } from './lib/git/commands';
   import { workspace } from './lib/git/workspace.svelte';
   import { mayQuit } from './lib/ssh/guard';
@@ -22,7 +22,7 @@
   import SettingsPage from './lib/settings/SettingsPage.svelte';
   import { settingsPage } from './lib/settings/settings.svelte';
   import { updates } from './lib/ui/updates.svelte';
-  import { keepFocusInDialogs, keepFocusThroughDisabling } from './lib/ui/focus';
+  import { keepFocusInDialogs, keepFocusThroughDisabling, remember, rescue } from './lib/ui/focus';
   import { closeEditorWindows, listenEditorWindows } from './lib/git/editorWindow.svelte';
 
   // Closing the window stops every local terminal: if a program runs in one, ask first.
@@ -63,6 +63,20 @@
 
   let settingsButton = $state<HTMLButtonElement>();
 
+  // A module shown from the keyboard takes it: the part that was shown is now inert, and the
+  // keyboard left in it would be nowhere (guidelines, 11). Not at launch: nothing takes it then.
+  const sections: Partial<Record<string, HTMLElement>> = {};
+  let launched = false;
+  $effect(() => {
+    const root = sections[shown];
+    if (!launched) {
+      launched = true;
+      return;
+    }
+    // After the palette or a dialog has given its focus back, to a part that may now be inert.
+    void tick().then(() => setTimeout(() => rescue(root)));
+  });
+
   /** The settings open on "General", whatever the module (guidelines, section 9.18). */
   const toggleSettings = () => settingsPage.toggle('general');
 
@@ -71,9 +85,9 @@
   /** Every command available now, with its shortcut. */
   function commands(): Command[] {
     const general: Command[] = [
-      { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Show repositories', disabled: shown === 'git', run: () => show('git') },
-      { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Show SSH terminal', disabled: shown === 'ssh', run: () => show('ssh') },
-      { id: 'view-files', group: 'Modules', icon: 'folder', title: 'Show files', keywords: 'sftp explorer browse transfer upload download', disabled: shown === 'files', run: () => show('files') },
+      { id: 'view-git', group: 'Modules', icon: 'branch', title: 'Show repositories', disabled: shown === 'git', hint: shown === 'git' ? 'shown' : undefined, run: () => show('git') },
+      { id: 'view-ssh', group: 'Modules', icon: 'terminal', title: 'Show SSH terminal', disabled: shown === 'ssh', hint: shown === 'ssh' ? 'shown' : undefined, run: () => show('ssh') },
+      { id: 'view-files', group: 'Modules', icon: 'folder', title: 'Show files', keywords: 'sftp explorer browse transfer upload download', disabled: shown === 'files', hint: shown === 'files' ? 'shown' : undefined, run: () => show('files') },
       { id: 'settings', group: 'Modules', icon: 'settings', title: settingsPage.open ? 'Close settings' : 'Settings', keywords: 'preferences options theme dark light colors style graph', run: toggleSettings },
       {
         id: 'terminal-new',
@@ -171,10 +185,14 @@
 
   <!-- The views stay mounted: an SSH session survives a visit to the graph or to the settings. -->
   <main>
-    <section class="pane" class:hidden={shown !== 'git'} inert={shown !== 'git'}><GitWorkspace active={shown === 'git'} /></section>
-    <section class="pane" class:hidden={shown !== 'ssh'} inert={shown !== 'ssh'}><SshWorkspace active={shown === 'ssh'} /></section>
-    <section class="pane" class:hidden={shown !== 'files'} inert={shown !== 'files'} aria-label="Files"><FilesWorkspace /></section>
-    <section class="pane" class:hidden={shown !== 'settings'} inert={shown !== 'settings'} aria-label="Settings"><SettingsPage /></section>
+    <section class="pane" class:hidden={shown !== 'git'} inert={shown !== 'git'} bind:this={sections.git} use:remember><GitWorkspace active={shown === 'git'} /></section>
+    <section class="pane" class:hidden={shown !== 'ssh'} inert={shown !== 'ssh'} bind:this={sections.ssh} use:remember><SshWorkspace active={shown === 'ssh'} /></section>
+    <section class="pane" class:hidden={shown !== 'files'} inert={shown !== 'files'} aria-label="Files" bind:this={sections.files} use:remember
+      ><FilesWorkspace /></section
+    >
+    <section class="pane" class:hidden={shown !== 'settings'} inert={shown !== 'settings'} aria-label="Settings" bind:this={sections.settings} use:remember
+      ><SettingsPage /></section
+    >
   </main>
 </div>
 

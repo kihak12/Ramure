@@ -131,11 +131,23 @@
     untrack(() => repo.loadDetail());
   });
 
+  // Escape closes the diff, unless what has the keyboard uses it itself: a field it clears, a menu,
+  // a dialog, the command log (guidelines, 9.14 and 11).
   function onKey(e: KeyboardEvent) {
-    if (e.key === 'Escape' && repo.openFile) {
-      e.preventDefault();
-      repo.closeDiff();
-    }
+    if (e.key !== 'Escape' || !repo.openFile || e.defaultPrevented) return;
+    const target = e.target instanceof Element ? e.target : null;
+    if (target?.closest('textarea, select, dialog, [role="menu"], [data-command-log]')) return;
+    // A field that holds text empties it first; an empty field lets Escape through.
+    if (target instanceof HTMLInputElement && target.value) return;
+    e.preventDefault();
+    repo.closeDiff();
+  }
+
+  // A click on a part that takes no focus leaves the keyboard on the page, outside the view: the
+  // diff of the tab shown closes all the same, unless a menu or a dialog is open (9.14).
+  function onPageKey(e: KeyboardEvent) {
+    if (!active || e.target !== document.body || document.querySelector('dialog[open], [role="menu"]')) return;
+    onKey(e);
   }
 
   onMount(() => {
@@ -154,6 +166,8 @@
     };
   });
 </script>
+
+<svelte:window onkeydown={onPageKey} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="view" onkeydown={onKey}>
@@ -195,7 +209,8 @@
       <div class="middle" bind:clientHeight={middleHeight} inert={covered}>
         <!-- Hidden, the graph stays mounted: its position and its selection are kept. -->
         <div class="center" bind:this={centerEl} hidden={graphHidden} inert={graphHidden}>
-          <Graph {repo} {active} />
+          <!-- Under an open diff, the graph is out of the tab order: a stop that cannot be seen (9.14). -->
+          <Graph {repo} {active} covered={!!repo.openFile} />
           {#if repo.openFile}
             <DiffView
               title={repo.openFile.title}

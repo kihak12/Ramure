@@ -811,6 +811,7 @@
           class:stale={pane.loading}
           role="listbox"
           tabindex="0"
+          data-main={files.focused === pane.key ? '' : undefined}
           aria-label="Files of {label}"
           aria-multiselectable="true"
           aria-activedescendant={atParent ? upId : currentIndex >= 0 ? rowId(currentIndex) : undefined}

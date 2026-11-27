@@ -35,6 +35,34 @@ export function focusWithRing(element: HTMLElement | null | undefined) {
   window.addEventListener('pointerdown', off, true);
 }
 
+const last = new WeakMap<HTMLElement, HTMLElement>();
+
+/** Remembers the last element of `root` that had the keyboard (a Svelte action). */
+export function remember(root: HTMLElement) {
+  const keep = (event: FocusEvent) => {
+    if (event.target instanceof HTMLElement) last.set(root, event.target);
+  };
+  root.addEventListener('focusin', keep);
+  return { destroy: () => root.removeEventListener('focusin', keep) };
+}
+
+/**
+ * A module or a tab was just shown: when the keyboard is nowhere, or in the part that was hidden,
+ * it goes to `root`, where it was last, else to its main control (`data-main`), else to its first
+ * one, with its ring after a key (guidelines, 11). A focus that is still somewhere is left alone:
+ * the rail clicked keeps it.
+ */
+export function rescue(root: HTMLElement | null | undefined) {
+  if (!root) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && !active.closest('[inert]')) return;
+  const usable = (el: HTMLElement | undefined): el is HTMLElement =>
+    !!el && el.isConnected && !el.closest('[inert]') && el.getClientRects().length > 0;
+  const before = last.get(root);
+  const main = [...root.querySelectorAll<HTMLElement>('[data-main]')].find(usable);
+  focusBack(usable(before) ? before : (main ?? tabbables(root)[0]));
+}
+
 /** The controls of `root` that Tab reaches, in order: of a group of radio buttons, the one checked. */
 function tabbables(root: HTMLElement): HTMLElement[] {
   const all = [...root.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [contenteditable="true"], [tabindex]')];

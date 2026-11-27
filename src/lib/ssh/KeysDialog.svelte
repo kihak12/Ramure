@@ -144,6 +144,8 @@
 
 <dialog
   bind:this={element}
+  aria-labelledby="keys-title"
+  aria-describedby="keys-intro"
   oncancel={(e) => {
     e.preventDefault();
     close();
@@ -152,8 +154,8 @@
 >
   <div class="box">
     <header>
-      <h2>SSH keys</h2>
-      <p>The keys of <code>~/.ssh</code>. They stay there: Ramure keeps no copy of them.</p>
+      <h2 id="keys-title">SSH keys</h2>
+      <p id="keys-intro">The keys of <code>~/.ssh</code>. They stay there: Ramure keeps no copy of them.</p>
     </header>
 
     <div class="list" bind:this={listEl}>

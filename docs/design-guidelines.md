@@ -1071,7 +1071,13 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
   it, its content scrolls, and its last line of buttons stays in view.
-- A 15 px title, weight 650: the name of the action ("New branch").
+- A 15 px title, weight 650: the name of the action ("New branch"). A file is named by its
+  name, never its path: "Discard changes to InfraConfig.java?", its folder on a line of the
+  text, "In src/main/java/com/araxxe/infra.", which wraps anywhere, a path having no space. A
+  word longer than the line wraps anywhere: a title never makes the dialog wider.
+- The dialog names itself by its title and describes itself by what it says, its facts, its
+  text, its warning (`aria-labelledby`, `aria-describedby`): a screen reader that lands on
+  "Cancel" hears what is asked (11).
   Explanatory text in `--muted`. When it says several things, each is a line of its own, 4 px
   from the next, as in a warning.
 - A warning is a box on a `--warn-soft` background, with an icon. When it warns of several
@@ -1163,6 +1169,19 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Floating, centered, 11% from the top of the window, 640 px wide at most.
 - A 15 px input. Results as rows (9.6), with the shortcut of each command on the right.
 - A shortcut key is drawn like a key: 10.5 px, 4 px corners, a thicker bottom edge.
+- Its field has the keyboard as long as the palette is open, and says so by a 2 px line in
+  `--accent` under it, in place of its outline (11).
+- **The keyboard.** The palette is one stop: Tab does not leave its field. ↑ and ↓ move from one
+  command that can be run to the next; Home and End go to the first and the last while the field
+  is empty, and move in the text once something is typed, the list scrolled to its very end.
+  Enter runs the command; Escape closes the palette and gives the keyboard back to what had it.
+- What a row says on its right, a path, a count or a git command, in the code font (3.1), is cut
+  with an ellipsis and whole in its tooltip.
+- A command that cannot be run now is shown grayed, at 45%, with the reason on its row, a
+  lower-case fragment in `--muted` that is not grayed, so that it reads ("no remote branch",
+  "git is working", "nothing to stash"), its longer form, if any, in its tooltip ("cannot be
+  reworded here"), as a disabled button says why (9.1); the arrows pass it, and Enter on it, when
+  the filter leaves only it, does nothing.
 
 ### 9.13 Status bar
 
@@ -1177,6 +1196,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   stays the last command.
 - During an operation, the right side starts with the waiting ring and a few words:
   "Switching to main…", or "Working…" when the operation has no name of its own.
+- **The command log**, which the last command opens over the graph, is a stop of the tab order
+  right after its button while it is open, though drawn above it, as a menu follows what opened
+  it; its ring is drawn inside its edge, and the keyboard scrolls it. Escape closes it, after a
+  menu or a dialog open over it, which use it first, and gives the keyboard back to its button
+  when it was in it.
 
 ### 9.14 Diff
 
@@ -1200,7 +1224,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   list, otherwise to the current row of that list; the list left empty, to the next list of the
   changes, as for a key in the list (9.6); otherwise to the list of the graph that takes the place
   of the diff. The ring comes with it
-  after a key, not after the mouse (9.9, 11).
+  after a key, not after the mouse (9.9, 11). Escape closes the diff from the diff, from the list
+  that opened it, or from anywhere in the repository, a click on a part that takes no focus
+  included, but a field that holds text, a menu, a dialog or the command log, which use it
+  first: one press does one thing. An empty field lets it through. While the diff lies over the graph, the graph
+  is out of the reach of the keyboard (`inert`): Tab never lands on what cannot be seen.
 - The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--bg`, the recessed background, in
   `--muted`: it separates the hunks, and takes neither the color of the selection nor that of
   the accent, which would make it look selected in dark. It is neither hovered nor picked: a
@@ -1861,7 +1889,16 @@ keys (9.12), and a button that restores the default.
 
 - A click on the combination starts recording: the row takes an `--accent-soft` background and
   says "Press the shortcut…", in `--ink`, weight 650; the accessible name of the button says
-  that a combination is awaited. Backspace removes the shortcut, Escape cancels.
+  that a combination is awaited. Backspace removes the shortcut, Escape cancels, and so does
+  the keyboard going elsewhere, Tab, which is never a shortcut and goes on to the next control,
+  or a click elsewhere: the keys typed next go where they are typed.
+- A combination that cannot be a shortcut is refused under the row, the recording going on: a
+  combination that edits text, a key with neither Ctrl nor Alt that is not a function key, and
+  a key that acts inside the module of the action, which would stop working there: F2, which
+  renames in the lists; F5 and Alt + ↑ in a pane of the Files module; F7, F8, Shift + F7,
+  Shift + F8 and Ctrl + S in the conflict editor; Ctrl + Enter in the commit message. The
+  sentence says what the key does, then what to do: "F2 renames in the lists. Press another
+  combination." It goes when the recording ends.
 - When the new combination belonged to another action, a warning box says so under the row.
 - A filter field above the list searches the names, the groups and the combinations.
 - A group whose shortcuts act in one module only says so after its name, in weight 400:
@@ -2052,7 +2089,10 @@ need the room.
   clicked; the form stays usable. "Cancel" closes the dialog and the result of the test is
   dropped.
 - **The result** sits in a line under "Test connection", never in a notification: the dialog
-  is where the user looks.
+  is where the user looks. The fields scroll: as it shows, the result is brought into view, the
+  one move of the content that "The button just pressed does not move" (9.1) allows, since it
+  shows what the button produced. A success is announced from a status kept in the dialog, a
+  failure as an alert; a question takes the keyboard, or waits under the button (11).
   - Success: the check icon and "Connection succeeded", in `--ok`, then how it authenticated, in
     `--muted` ("key id_ed25519", "SSH agent", "password") and how long it took.
   - Success with a fingerprint that could not be remembered ("Trust and remember", and
@@ -2701,7 +2741,10 @@ files of the same operation open there too, until the operation ends.
   shows as soon as its page is mounted, on the color of the window and before the repository is
   read, since a hidden view is given no frame to wait for; the size and the place that 4.2 keeps
   are those of the main window. Until the repository is read, the card says "In conflict" with no
-  figure. Escape and Ctrl + S act on the editor from its list too; F8 and F7, in the editor.
+  figure. Escape and Ctrl + S act on the editor from its list too, or from nowhere, never from a
+  menu or a dialog of the window, which use Escape first, nor from a notification; F8 and F7, in
+  the editor. With no file left open, every conflict resolved, Escape closes the window. Under the
+  strip of a file no longer in conflict, Escape closes the window, but from a menu or a dialog.
 - **Saved, it goes on**: the file leaves the list, and the editor opens the next one, the row that
   took its place, or the first. With no file left, the card of the editor says "All conflicts are
   resolved." and "Continue the merge to finish." (the rebase, the cherry-pick, the revert), and
@@ -3140,6 +3183,13 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   conflict, else the commit message, the file just resolved being staged. A target disabled while git works,
   the message field, gets the keyboard once enabled. The ring comes with it after a key, not
   after the mouse.
+- **A module or a tab shown from the keyboard takes it**: a module shortcut, a command of the
+  palette, Ctrl + Tab between repositories. The part that was shown is now out of reach, and the
+  keyboard left in it would be nowhere: it goes where it was last in the part shown, else to its
+  main control, the graph, the filter of the host book, the list of the active pane, with its
+  ring; the settings, the entry of their navigation. A module shown with the mouse on the rail
+  leaves the keyboard on the rail; nothing takes it at launch. A command of the palette chosen
+  with a click gives the keyboard the same way, without the ring.
 - **Shortcuts.** A shortcut belongs to the whole application or to one module, Git, SSH or Files. A
   combination has one role in each module: Ctrl + Shift + F fetches in the Git module and
   searches a terminal in the SSH module. In a terminal, only shortcuts with Shift, Alt or a
@@ -3215,7 +3265,7 @@ here is what is read in the documentation of git and in a terminal.
 | an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort`. In the banner, "Abort…" opens its confirmation (9.1); a command that names the operation says it: "Abort revert…". |
 | amend | "Amend last commit" |
 | reword | "Reword", "Reword message"; a reworded commit, "Commit reworded" |
-| discard | "Discard changes…", for what is not committed; it asks first (9.1) |
+| discard | "Discard changes…", for what is not committed; it asks first (9.1): "Discard changes to InfraConfig.java?", "In src/main/java/com/araxxe/infra.", then the warning |
 | the changes not yet committed | "uncommitted changes" in a sentence; "working changes" in a command: "Show working changes" |
 | stash apply, stash drop | "Apply stash", "Drop stash" |
 | commit, tag, reset, HEAD | Kept as they are, in lower case except HEAD. |
