@@ -606,9 +606,10 @@ the branch being switched to, in the status bar, on the row and the tab of a hos
 to, on the row of a tunnel that starts (9.15), on the row of a file of a server downloaded to be
 opened (9.24). It is the shared class `.spinner` of
 `src/app.css`, whose `--spinner` property gives it another color. Words always say the state
-beside it, so the ring itself is hidden from screen readers. One exception: on the tab of a host
-being connected to, the ring stands alone in the place of the dot, and carries the name of the
-state (9.15). `.spinner` is the ring alone: a spinning icon is not written with it, and is not a
+beside it, so the ring itself is hidden from screen readers. Two exceptions, where the ring
+stands alone and carries the name of the state: on the tab of a host being connected to, in the
+place of the dot (9.15), and on the tab of a repository at work, in the place of its icon,
+"Working" (9.7). `.spinner` is the ring alone: a spinning icon is not written with it, and is not a
 ring written again.
 
 **When a repository is opened** or after a full reload, the rows of the graph come in one after
@@ -1040,7 +1041,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Home and End to the first and the last item that can be chosen,
-  Enter to choose, Escape to close. Tab closes it too, as Escape does, the focus going back to
+  Enter to choose, Escape to close. A disabled item, its content at 45% opacity, is reached by
+  the arrows too and shows it is current, but is not chosen: Enter and Space leave the menu
+  open. It says why to a screen reader as it is reached, and again when chosen; the mouse reads
+  why in its tooltip. Tab closes it too, as Escape does, the focus going back to
   whoever had it, with its ring: a menu is not a stop of the tab order.
 - Appears in `--t-fast`, from the point of the click.
 - No scrollbar is drawn over an open menu (9.6).
@@ -1049,7 +1053,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   no room for it below, as in the foot of the host book (9.15), it opens above, 4 px from it; where
   it would leave the window on the left, its left edge goes on the left edge of the button. It
   always appears from the corner nearest the button. While it is open, the button keeps its hover
-  and says so (`aria-expanded`), as "View" does (9.2). Escape, Tab, or a click outside, closes it
+  and says so (`aria-expanded`), as "View" does (9.2); a button drawn outside the components, the
+  "More" of a conflict (9.26), says it too, closed from the start. Escape, Tab, or a click outside, closes it
   and gives the focus back to the button; after Escape or Tab, the button shows its focus ring.
 - While a menu is open, the tooltip of the element that opened it, a row or a button, keeps
   quiet, where it would cover the first items. This holds even when the click came while the
@@ -1256,6 +1261,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - A line picked to be staged on its own has a stronger tint, `--tint-line-pick` more, and its
   sign in bold; a line hovered to be picked takes `--tint-line-hover` more (2.7). No colored
   bar on its edge.
+- A screen reader hears the area of the lines by its name, "Lines of report.pdf", its keys in its
+  description, and each line the keyboard cursor reaches: "Added line 12, picked: …" (11).
 - From the keyboard, the lines behave like a list (9.6): ↑ and ↓ move from one changed line to
   the next, Home and End go to the first and to the last, with the inner ring on the line; Space
   picks the line, or lets go of it; Shift with any of these keys extends the choice; Enter
@@ -2552,7 +2559,8 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   selected · 24 MB", and "· 3 hidden" while hidden files are not shown.
 - **Under the veil** of a connection that is not open, the list and the buttons of the path bar
   cannot be reached: the panel is all there is to do.
-- **While it lists**, the waiting ring and "Loading…" take the place of the count, and the rows
+- **While it lists**, the waiting ring and "Loading…" take the place of the count, said to a
+  screen reader only when the listing lasts more than half a second, and the rows
   of the folder it leaves stay at 45% until the new ones come. A folder that cannot be listed
   says why in place of the rows, the warning icon in `--bad` before the sentence ("Access denied
   to /root. Check its permissions."), with "Go up", a small standard button.
@@ -3199,8 +3207,11 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   Tab, until the next click. A focus given back after a gesture of the mouse, a click on "Close"
   for instance, comes without the ring, as the browser does for a click.
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
-  order. Escape closes the topmost floating element. The labels of the graph are reached through
-  the branch list (9.4).
+  order, and goes round, as in a dialog (9.10): Tab from the last control of a window goes to the
+  first (in the main window, the first button of the rail), and Shift + Tab from the first to
+  the last. The window itself is never a stop, where the keyboard would show nowhere. Escape
+  closes the topmost floating element. The labels of the graph are reached through the branch
+  list (9.4).
 - **The focus is never lost.** A control disabled while it has the keyboard, a button of the
   toolbar while git works, gets it back once enabled, if nothing else took it meanwhile. A
   control that goes, with what it did, gives the keyboard to the one that takes its place: after
@@ -3243,6 +3254,18 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
   hidden from the eye only. A text meant
   for screen readers alone takes the shared class `.spoken` of `src/app.css`: hidden from the
   eye, never from the accessibility tree, which `visibility: hidden` or `display: none` would do.
+- **What is announced, and how.** A status created already filled is often not read: news a
+  screen reader is told without the focus moving goes through the two regions kept in the page,
+  a status and an alert (`announcer.say`, `src/lib/ui/announce.svelte.ts`), or through a region of
+  the component kept in the page and filled. An alert created with its text, the error under a
+  field or in a dialog, is read at once, and may keep its `role="alert"`. Two news of the same
+  instant are said one after the other. A description read through `aria-describedby` may be
+  `hidden`: the reference reads it, as the reason of a disabled item of a menu (9.9). Only what the user asked for or must know is said:
+  the answer to "Check for updates", an operation that stopped, what git starts doing, the line
+  of the keyboard cursor in a diff, a warning that comes; never what changes on its own, the
+  timings of the status bar, the clock of the last fetch, each line of a clone. A count told by an
+  icon says its meaning in words: "2 to pull", "3 modified"; a busy mark is an image with a name
+  ("Working"); a button that opens a menu says whether it is open (`aria-expanded`).
 - **Both themes.** A screen is not finished until it has been checked in light and in dark.
 
 ## 12. Tone of the interface text

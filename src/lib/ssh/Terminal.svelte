@@ -18,6 +18,7 @@
   import { explain } from './reasons';
   import { newJournal, resumed, shown, type JournalOpen } from './journal';
   import { addressOf, tunnelLabel, type Closed, type Connected, type SshError } from './types';
+  import { announcer } from '../ui/announce.svelte';
 
   let {
     session,
@@ -107,6 +108,19 @@
     if (phase.step !== 'lost') return '';
     const delay = RETRIES[phase.attempt - 1];
     return `Connection lost. Attempt ${phase.attempt} of ${RETRIES.length} in ${delay} second${delay === 1 ? '' : 's'}.`;
+  });
+  // What the session becomes is said through the regions kept in the page: a region created
+  // already filled, in a panel or in the strip, is often not read (guidelines, 11). A failure is
+  // said at once; the focus goes to the button of the panel, and its sentence would not be read.
+  $effect(() => {
+    const now = phase;
+    if (now.step === 'lost') announcer.say(announce);
+    else if (now.step === 'error') announcer.say(now.message, true);
+    else if (now.step === 'closed') announcer.say(strip ? (now.brief ?? now.message) : now.message);
+    else if (now.step === 'connecting' && strip) announcer.say('Opening local terminal…');
+  });
+  $effect(() => {
+    if (invalid) announcer.say('Invalid expression', true);
   });
   let retryButton = $state<HTMLButtonElement>();
   let endButton = $state<HTMLButtonElement>();
@@ -837,11 +851,11 @@
           onkeydown={onFieldKey}
         />
       </label>
-      {#if invalid}
-        <span class="count bad" id="search-count-{session.key}" role="alert">Invalid expression</span>
-      {:else}
-        <span class="count" id="search-count-{session.key}" role="status">{countText}</span>
-      {/if}
+      <!-- One region, kept and filled, says the count; an expression that is not valid is said at
+           once, by the alert kept in the page, and not twice (guidelines, 9.15 and 11). -->
+      <span class="count" class:bad={invalid} id="search-count-{session.key}" role="status"
+        >{#if invalid}<span aria-hidden="true">Invalid expression</span>{:else}{countText}{/if}</span
+      >
       <button class="btn ghost small" type="button" aria-label="Previous result" title="Previous result (Shift + Enter)" disabled={!results?.count} onclick={() => find('previous')}>
         <Icon name="up" size={14} />
       </button>
@@ -941,7 +955,7 @@
             <h3><Icon name="warning" /> Connection lost</h3>
             <!-- The countdown changes every second: it is not read, only the announcement is. -->
             <p aria-hidden="true">{waitText}</p>
-            <p class="spoken" role="status">{announce}</p>
+            <p class="spoken">{announce}</p>
             <!-- The line of the reason keeps its place: the buttons do not move from one attempt to the
                  next. Empty, it holds a non-breaking space, which keeps its height. -->
             <p class="muted reason">{phase.reason || '\u00a0'}</p>
@@ -959,9 +973,8 @@
                     ? 'Connection lost'
                     : 'Session ended'}{/if}
             </h3>
-            <!-- How it ended is announced, a failure at once: the focus goes to the button, and the
-                 sentence would not be read. -->
-            <p class:err={phase.step === 'error'} role={phase.step === 'error' ? 'alert' : 'status'}>{phase.message}</p>
+            <!-- How it ended is announced by the effect above, a failure at once. -->
+            <p class:err={phase.step === 'error'}>{phase.message}</p>
             <div class="row">
               <!-- A local terminal is never "reconnected": it is restarted. -->
               <button class="btn primary" type="button" bind:this={endButton} onclick={reconnect}><Icon name="refresh" size={14} /> {local ? 'Restart' : 'Reconnect'}</button>
@@ -979,10 +992,10 @@
     <div class="strip">
       {#if phase.step === 'connecting'}
         <span class="spinner" aria-hidden="true"></span>
-        <span class="said" role="status">Opening local terminal…</span>
+        <span class="said">Opening local terminal…</span>
       {:else if phase.step === 'closed' || phase.step === 'error'}
         {@const said = phase.step === 'closed' ? (phase.brief ?? phase.message) : phase.message}
-        <span class="said" class:bad={phase.step === 'error'} role="alert" title={said}>{said}</span>
+        <span class="said" class:bad={phase.step === 'error'} title={said}>{said}</span>
         <button class="btn primary small" type="button" bind:this={endButton} onclick={reconnect}>Restart</button>
         <button class="btn ghost small" type="button" onclick={onclose}>Close tab</button>
       {/if}

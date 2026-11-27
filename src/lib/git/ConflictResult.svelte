@@ -198,6 +198,9 @@
       };
       const more = bandButton('btn ghost small cm-band-more', 'Keep both, or neither', `More choices for conflict ${n}`, (b) => this.calls.more(this.id, b));
       more.setAttribute('aria-haspopup', 'menu');
+      // Closed, until its menu opens and says it is open (guidelines, 9.9 and 11).
+      more.setAttribute('aria-expanded', 'false');
+      more.dataset.expands = '';
       more.innerHTML = `More${iconMarkup('chevron', 14)}`;
       band.append(letter, bandText(this.text), keep(1), keep(2), more);
       reachOnPress(band, this.calls);

@@ -1,3 +1,8 @@
+<script module lang="ts">
+  /** What the answer of the last check said, kept while the settings come and go. */
+  let told = '';
+</script>
+
 <script lang="ts">
   import { tick } from 'svelte';
   import { focusBack } from '../ui/focus';
@@ -12,6 +17,7 @@
   import ProgressBar from '../ui/ProgressBar.svelte';
   import { updates } from '../ui/updates.svelte';
   import SettingRow from './SettingRow.svelte';
+  import { announcer } from '../ui/announce.svelte';
 
   // The group "Updates" of the settings (guidelines, section 9.23): the version that runs, the
   // check, and the box of a version that waits, whose install takes two steps.
@@ -22,6 +28,16 @@
   const found = $derived(updates.found);
   const phase = $derived(updates.phase);
   const checked = $derived(updates.checked);
+
+  // The answer to "Check for updates", and a version found: said once each, not again when the
+  // page is shown again (11). The box then says its changes in its own region.
+  $effect(() => {
+    if (updates.checking || !checked || checked.failure || !checked.manual) return;
+    const answer = found ? `Version ${found.version} is available.` : 'Ramure is up to date.';
+    if (told === `${checked.at}:${answer}`) return;
+    told = `${checked.at}:${answer}`;
+    announcer.say(answer);
+  });
 
   // "Checked 5 min ago": the words follow the clock.
   let now = $state(Date.now());
@@ -136,7 +152,7 @@
             </p>
             {#if checked.failure.reason}<p class="reason mono">{checked.failure.reason}</p>{/if}
           {:else if !found}
-            <p class="result" role="status">
+            <p class="result">
               <span class="ok"><Icon name="check" size={14} /></span>
               <span>Ramure is up to date. <span class="muted">Checked {ago(checked.at)}.</span></span>
             </p>

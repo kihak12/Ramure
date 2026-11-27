@@ -133,12 +133,14 @@
 
   // Escape closes the diff, unless what has the keyboard uses it itself: a field it clears, a menu,
   // a dialog, the command log (guidelines, 9.14 and 11).
+  const NOT_TEXT = new Set(['radio', 'checkbox', 'button', 'submit', 'reset', 'range', 'color', 'file']);
   function onKey(e: KeyboardEvent) {
     if (e.key !== 'Escape' || !repo.openFile || e.defaultPrevented) return;
     const target = e.target instanceof Element ? e.target : null;
     if (target?.closest('textarea, select, dialog, [role="menu"], [data-command-log]')) return;
-    // A field that holds text empties it first; an empty field lets Escape through.
-    if (target instanceof HTMLInputElement && target.value) return;
+    // A field that holds text empties it first; an empty field lets Escape through. A radio button
+    // or a box always has a value, and is no field: the diff layout closes the diff (9.14).
+    if (target instanceof HTMLInputElement && !NOT_TEXT.has(target.type) && target.value) return;
     e.preventDefault();
     repo.closeDiff();
   }

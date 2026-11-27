@@ -19,6 +19,7 @@
   import CommandPalette from './lib/ui/CommandPalette.svelte';
   import { palette, type Command } from './lib/ui/palette.svelte';
   import Notifications from './lib/ui/Notifications.svelte';
+  import Announcements from './lib/ui/Announcements.svelte';
   import SettingsPage from './lib/settings/SettingsPage.svelte';
   import { settingsPage } from './lib/settings/settings.svelte';
   import { updates } from './lib/ui/updates.svelte';
@@ -201,6 +202,7 @@
 <Dialog />
 <ContextMenu />
 <Notifications />
+<Announcements />
 
 <style>
   .shell {

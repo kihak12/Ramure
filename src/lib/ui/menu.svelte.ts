@@ -131,6 +131,12 @@ class Menu {
   openUnder(anchor: HTMLElement, items: () => MenuItem[], keyboard = false) {
     const box = anchor.getBoundingClientRect();
     this.current = { x: box.right, y: box.bottom + 4, items, anchor, keyboard };
+    // A button drawn outside the components, which says it has a menu but not whether it is open
+    // ("More" of a conflict): it says so while its menu is open (guidelines, 9.9 and 11).
+    if (anchor.dataset.expands !== undefined || (anchor.hasAttribute('aria-haspopup') && !anchor.hasAttribute('aria-expanded'))) {
+      anchor.dataset.expands = '';
+      anchor.setAttribute('aria-expanded', 'true');
+    }
   }
 
   /** True while the menu dropped down by `anchor` is open. */
@@ -144,6 +150,7 @@ class Menu {
    *  without the ring, as the button does (guidelines, 9.9). */
   close(keyboard = false, outside = false) {
     const anchor = this.current?.anchor;
+    if (anchor?.dataset.expands !== undefined) anchor.setAttribute('aria-expanded', 'false');
     const origin = this.current?.origin ?? this.current?.back;
     this.current = null;
     // Closed by the window (its focus lost, its size changed): the ring follows the last gesture.

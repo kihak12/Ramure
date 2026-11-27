@@ -8,6 +8,7 @@
   import { prefs, savePrefs, type DiffMode } from './prefs.svelte';
   import type { Diff } from './types';
   import { motion } from '../ui/motion';
+  import { announcer } from '../ui/announce.svelte';
 
   let {
     title,
@@ -303,6 +304,25 @@
 
   const applySelection = () => onapply?.([...selected]);
   const applyHunk = (hunk: number) => onapply?.(changes.filter((l) => l.hunk === hunk).map((l) => l.index));
+
+  // The half warning, said as it comes or changes, not at each pick (11).
+  let halvesSaid = 0;
+  $effect(() => {
+    const n = halves.length;
+    if (n && n !== halvesSaid) announcer.say(`You picked only one half of ${n === 1 ? 'a modified line' : `${n} modified lines`}.`);
+    halvesSaid = n;
+  });
+
+  // The line of the keyboard cursor, and whether it is picked, said as it moves (guidelines, 9.14
+  // and 11): the area keeps the focus, and the line itself cannot take it.
+  const keysId = `diff-keys-${uid}`;
+  $effect(() => {
+    if (cursor < 0 || !parsed) return;
+    const line = parsed.lines.find((l) => l.index === cursor);
+    if (!line || (line.type !== 'add' && line.type !== 'del')) return;
+    const where = line.type === 'add' ? `Added line ${line.new}` : `Removed line ${line.old}`;
+    announcer.say(`${where}${selected.has(line.index) ? ', picked' : ''}: ${line.text.trim() || 'empty'}`);
+  });
 </script>
 
 <section
@@ -343,17 +363,31 @@
     </div>
     <button class="btn" type="button" onclick={onclose} title="Close the diff (Escape)"><Icon name="x" size={14} /> Close</button>
   </header>
+  {#if canSelect}
+    <p class="spoken" id={keysId}>↑ and ↓ move from one changed line to the next, Home and End go to the ends, Space picks a line or lets go of it, Shift extends, Enter stages what is picked.</p>
+  {/if}
 
   {#if error}
-    <p class="note err">{error}</p>
+    <p class="note err" role="alert">{error}</p>
   {:else if loading && !parsed}
     <p class="note">Loading the diff…</p>
   {:else if parsed && parsed.lines.length === 0}
     <p class="note">No content changes to show: the file is empty, or only its mode changed.</p>
   {:else if parsed && split}
     <!-- The area keeps the focus and handles the keys, like the lists of the application. -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
-    <div class="lines mono" class:selectable={canSelect} class:has-cursor={cursor >= 0} tabindex="0" bind:this={linesEl} onkeydown={onKey} onfocus={onFocus}>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions, a11y_no_noninteractive_element_interactions -->
+    <div
+      class="lines mono"
+      class:selectable={canSelect}
+      class:has-cursor={cursor >= 0}
+      tabindex="0"
+      role="region"
+      aria-label="Lines of {title}"
+      aria-describedby={canSelect ? keysId : undefined}
+      bind:this={linesEl}
+      onkeydown={onKey}
+      onfocus={onFocus}
+    >
       <table class="split">
         <colgroup><col class="c-no" /><col class="c-sign" /><col /><col class="c-no" /><col class="c-sign" /><col /></colgroup>
         <tbody>
@@ -419,8 +453,19 @@
     </div>
   {:else if parsed}
     <!-- The area keeps the focus and handles the keys, like the lists of the application. -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
-    <div class="lines mono" class:selectable={canSelect} class:has-cursor={cursor >= 0} tabindex="0" bind:this={linesEl} onkeydown={onKey} onfocus={onFocus}>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions, a11y_no_noninteractive_element_interactions -->
+    <div
+      class="lines mono"
+      class:selectable={canSelect}
+      class:has-cursor={cursor >= 0}
+      tabindex="0"
+      role="region"
+      aria-label="Lines of {title}"
+      aria-describedby={canSelect ? keysId : undefined}
+      bind:this={linesEl}
+      onkeydown={onKey}
+      onfocus={onFocus}
+    >
       <table>
         <tbody>
           {#each parsed.lines as line (line.index)}
@@ -461,7 +506,7 @@
 
   <!-- Under the lines, so as not to move them under the pointer while they are being picked. -->
   {#if halves.length}
-    <p class="lonely" role="status">
+    <p class="lonely">
       <Icon name="warning" size={14} />
       <span>
         You picked only one half of {halves.length === 1 ? 'a modified line' : `${halves.length} modified lines`}: the old version and

@@ -4,6 +4,7 @@
   import Icon from '../ui/Icon.svelte';
   import type { Repo } from './repo.svelte';
   import { motion } from '../ui/motion';
+  import { announcer } from '../ui/announce.svelte';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -50,6 +51,11 @@
     const timer = window.setInterval(() => (now = Date.now()), 30_000);
     return () => window.clearInterval(timer);
   });
+
+  // What git starts doing, said once: "Switching to main…" (11).
+  $effect(() => {
+    if (repo.busy) announcer.say(repo.switching ? `Switching to ${repo.switching}…` : repo.busy === 'reword' ? 'Rewording…' : 'Working…');
+  });
 </script>
 
 <svelte:window onkeydowncapture={onLogKey} />
@@ -68,7 +74,9 @@
   >
     {last ? `$ ${last.command}` : 'Command log'}
   </button>
-  <div class="stats" aria-live="polite">
+  <!-- Not a live region: the timings and the clock of the last fetch change on their own, and
+       would be read at each scroll and each minute. What git does is said once (11). -->
+  <div class="stats">
     {#if repo.busy}
       {@const doing = repo.switching ? `Switching to ${repo.switching}…` : repo.busy === 'reword' ? 'Rewording…' : 'Working…'}
       <span class="busy" title={doing}><span class="spinner" aria-hidden="true"></span><span class="doing">{doing}</span></span>

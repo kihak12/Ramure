@@ -8,6 +8,7 @@
   import { OPERATION, type Repo } from './repo.svelte';
   import { motion } from '../ui/motion';
   import { abortOperation } from './actions';
+  import { announcer } from '../ui/announce.svelte';
 
   /** `window`: the banner of the window of the conflict editor, whose list is beside the editor
    *  (guidelines, 9.26, "Its own window"). */
@@ -15,6 +16,14 @@
 
   const operation = $derived(repo.status?.operation ?? null);
   const conflicts = $derived(repo.conflicts.length);
+
+  // The operation that stopped is said as the banner shows, once (11).
+  let said: string | null = null;
+  $effect(() => {
+    const now = operation;
+    if (now && now !== said) announcer.say(`${OPERATION[now]} in progress`);
+    said = now;
+  });
 
   /** The operation ended, and the banner with the button pressed: the keyboard goes to the graph,
    *  where the result shows (guidelines, 11). */
@@ -40,7 +49,6 @@
 {#if operation}
   <div
     class="banner"
-    role="status"
     onfocusin={() => (holding = true)}
     onfocusout={(e) => {
       if (e.relatedTarget && !(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) holding = false;

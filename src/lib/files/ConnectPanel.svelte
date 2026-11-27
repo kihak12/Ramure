@@ -6,6 +6,7 @@
   import { focusWithRing } from '../ui/focus';
   import { keyringAvailable, NO_KEYRING } from '../ssh/secrets';
   import { files, type Pane } from './files.svelte';
+  import { announcer } from '../ui/announce.svelte';
 
   let { pane }: { pane: Pane } = $props();
 
@@ -17,6 +18,10 @@
   let keep = $state(false);
   let keyring = $state<boolean | null>(null);
   let card = $state<HTMLElement>();
+  // Said through the region kept in the page: the panel is created already filled (guidelines, 11).
+  $effect(() => {
+    if (phase.step === 'connecting') announcer.say(`Connecting to ${target}…`);
+  });
 
   // The panel gives the keyboard to its field, or to its main button, as soon as it shows: a
   // panel that asks nothing keeps it out of the way (guidelines, 9.15).
@@ -51,7 +56,7 @@
   <div class="card" class:bad={phase.step === 'hostKeyChanged'} bind:this={card}>
     {#if phase.step === 'connecting'}
       <span class="spinner wait" aria-hidden="true"></span>
-      <p class="lead" role="status">Connecting to <b class="mono">{target}</b>…</p>
+      <p class="lead">Connecting to <b class="mono">{target}</b>…</p>
     {:else if phase.step === 'idle'}
       <h3>Not connected</h3>
       <p class="muted">{host?.alias ?? 'This host'} · <span class="mono">{target}</span></p>

@@ -5,6 +5,7 @@
   import { comboOf, display, keys, refusal, SHORTCUTS } from '../ui/keys.svelte';
   import SectionHeader from './SectionHeader.svelte';
   import { settingsPage } from './settings.svelte';
+  import { announcer } from '../ui/announce.svelte';
 
   // The action whose new combination is awaited.
   let recording = $state<string | null>(null);
@@ -82,6 +83,10 @@
       filter = '';
     }
   }
+
+  $effect(() => {
+    if (notice) announcer.say(notice.text, !!recording);
+  });
 </script>
 
 <!-- In the capture phase: the combination being recorded must trigger no other action. -->
@@ -155,7 +160,7 @@
       </button>
     </div>
     {#if notice?.id === shortcut.id}
-      <p class="notice" role="status"><Icon name="warning" /> <span>{notice.text}</span></p>
+      <p class="notice"><Icon name="warning" /> <span>{notice.text}</span></p>
     {/if}
   {:else}
     <p class="empty">No shortcut matches “{filter.trim()}”.</p>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { slide } from 'svelte/transition';
   import { focusBack, focusLost, usable } from '../ui/focus';
   import Icon from '../ui/Icon.svelte';
@@ -9,6 +9,7 @@
   import type { Repo } from './repo.svelte';
   import type { FileChange } from './types';
   import { motion } from '../ui/motion';
+  import { announcer } from '../ui/announce.svelte';
 
   let { repo }: { repo: Repo } = $props();
 
@@ -59,6 +60,8 @@
   }
   // Ctrl + Enter while committing is not possible: the reason is brought forward, until it changes.
   let nudged = $state(false);
+  /** Each refused Ctrl + Enter, said each time (11). */
+  let nudges = $state(0);
   $effect(() => {
     void blocker;
     nudged = false;
@@ -78,12 +81,23 @@
     if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
     if (canCommit) void commit();
-    else if (blocker) nudged = true;
+    else if (blocker) {
+      nudged = true;
+      nudges++;
+    }
   }
 
   /** The file open in the conflict editor, wherever it is: the buttons of its row wait (9.26, "One editor"). */
   const inEditor = (f: FileChange) =>
     f.path === (repo.conflictFile?.path ?? repo.editorWindow?.file) ? 'This file is open in the conflict editor.' : null;
+
+  $effect(() => {
+    if (leftOut) announcer.say(leftOut);
+  });
+  $effect(() => {
+    void nudges;
+    if (untrack(() => nudged && blocker)) announcer.say(untrack(() => blocker));
+  });
 
   /** Commits; the keyboard, dropped while the field and the button were disabled, goes back to
    *  the message, or to the graph when the panel gave way to the new commit (guidelines, 11). */
@@ -192,14 +206,14 @@
         {#if leftOut}
           <!-- "Commit" would leave out the lines picked: a warning, with what stages them (9.14). -->
           <div class="hint">
-            <p id="commit-left-out" class="why small warned" aria-live="polite"><Icon name="warning" size={14} /><span>{leftOut}</span></p>
+            <p id="commit-left-out" class="why small warned"><Icon name="warning" size={14} /><span>{leftOut}</span></p>
             {@render stage()}
           </div>
         {/if}
         {#if blocker}
           <div class="hint">
-            <!-- Ctrl + Enter refused: an icon is added to the color, and the text, inserted again, is announced again. -->
-            <p id="commit-blocker" class="why small" class:nudged aria-live="polite">
+            <!-- Ctrl + Enter refused: an icon is added to the color, and the text is said again at each press. -->
+            <p id="commit-blocker" class="why small" class:nudged>
               {#key nudged}
                 {#if nudged}<Icon name="warning" size={14} />{/if}
                 <span>{blocker}</span>

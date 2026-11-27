@@ -67,9 +67,9 @@
           }}
         >
           {#if tab.repo.locked}
-            <span class="spinner" aria-label="Working"></span>
+            <span class="spinner" role="img" aria-label="Working"></span>
           {:else if tab.repo.status?.operation}
-            <span class="alert" title="An operation is waiting to be finished"><Icon name="warning" size={14} /></span>
+            <span class="alert" role="img" aria-label="An operation is waiting to be finished" title="An operation is waiting to be finished"><Icon name="warning" size={14} /></span>
           {:else}
             <Icon name={tab.repo.path ? 'branch' : 'plus'} size={14} />
           {/if}

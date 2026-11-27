@@ -446,7 +446,7 @@
           <!-- What the keyring keeps for this account, and the way to forget it. -->
           <div class="full kept">
             {#if held.password}
-              <small role="status">The password of this account is kept in the system keyring.</small>
+              <small>The password of this account is kept in the system keyring.</small>
               <button class="btn ghost small" type="button" onclick={() => void forgetHeld('password')}>Forget password</button>
               {#if forgetError.password}<small class="bad" role="alert">{forgetError.password}</small>{/if}
             {:else if keyring === false}
@@ -486,7 +486,7 @@
               <small class="note" role="status">{keyNote}</small>
             {:else if held.passphrase}
               <div class="kept">
-                <small role="status">The passphrase of this key is kept in the system keyring.</small>
+                <small>The passphrase of this key is kept in the system keyring.</small>
                 <button class="btn ghost small" type="button" onclick={() => void forgetHeld('passphrase')}>Forget passphrase</button>
                 {#if forgetError.passphrase}<small class="bad" role="alert">{forgetError.passphrase}</small>{/if}
               </div>
