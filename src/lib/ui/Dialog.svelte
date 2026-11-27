@@ -20,6 +20,20 @@
   let refusal = $state('');
   let busy = $state(false);
   let firstField = $state<HTMLInputElement>();
+  // What the dialog says, in the order it shows it, for screen readers.
+  const described = $derived(
+    spec
+      ? [
+          spec.items?.length && 'dialog-items',
+          spec.versions?.length && 'dialog-versions',
+          spec.body && 'dialog-body',
+          spec.warning && 'dialog-warning',
+          spec.note && 'dialog-note',
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined
+      : undefined,
+  );
 
   const initial = (field: Field) => field.value ?? (field.type === 'checkbox' ? false : field.type === 'number' ? 0 : '');
 
@@ -68,8 +82,11 @@
 </script>
 
 <!-- `oncancel`: Escape. A click on the veil closes too. -->
+<!-- The dialog names itself by its title and describes itself by what it says (guidelines, 9.10 and 11). -->
 <dialog
   bind:this={element}
+  aria-labelledby="dialog-title"
+  aria-describedby={described}
   oncancel={(e) => {
     e.preventDefault();
     // An action that runs in the dialog lasts an instant and cannot stop halfway: neither Escape
@@ -87,19 +104,19 @@
     <form onsubmit={submit}>
       <!-- The content scrolls if the window is too low; the last line stays in view (guidelines, 9.10). -->
       <div class="content">
-      <h2>{spec.title}</h2>
+      <h2 id="dialog-title">{spec.title}</h2>
       <!-- The facts first: the items asked about, or the two versions of one (9.10). -->
       {#if spec.items?.length}
         <!-- Past six rows and a half it scrolls: a stop of the tab order, so that the keyboard reaches every name (9.10). -->
         <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <ul class="items" role="list" aria-label="Names" tabindex={spec.items.length > 6 ? 0 : undefined}>
+        <ul class="items" id="dialog-items" role="list" aria-label="Names" tabindex={spec.items.length > 6 ? 0 : undefined}>
           {#each spec.items as item, i (i)}
             <li class:dir={item.dir} title={item.name}><Icon name={item.dir ? 'folder' : 'file'} size={16} /><span>{item.name}</span></li>
           {/each}
         </ul>
       {/if}
       {#if spec.versions?.length}
-        <table class="versions">
+        <table class="versions" id="dialog-versions">
           <tbody>
             {#each spec.versions as version, i (i)}
               <tr>
@@ -113,15 +130,15 @@
         </table>
       {/if}
       <!-- Several things said, one line each, apart from the next: a line that wraps is not read as two (9.10). -->
-      {#if spec.body}<div class="body lines">{#each spec.body.split('\n') as line, i (i)}<p>{line}</p>{/each}</div>{/if}
+      {#if spec.body}<div class="body lines" id="dialog-body">{#each spec.body.split('\n') as line, i (i)}<p>{line}</p>{/each}</div>{/if}
       {#if spec.warning}
         <!-- One line per thing to warn of, apart from the next: a line that wraps is not read as two. -->
-        <div class="warning">
+        <div class="warning" id="dialog-warning">
           <Icon name="warning" />
           <div class="lines">{#each spec.warning.split('\n') as line, i (i)}<p>{line}</p>{/each}</div>
         </div>
       {/if}
-      {#if spec.note}<p class="body">{spec.note}</p>{/if}
+      {#if spec.note}<p class="body" id="dialog-note">{spec.note}</p>{/if}
 
       {#each fields as field, i (field.name)}
         {#if field.type === 'checkbox'}
@@ -272,10 +289,12 @@
     padding: 4px;
     overflow-y: auto;
   }
+  /* A name longer than the line wraps anywhere: a title never makes the dialog wider (9.10). */
   h2 {
     margin: 0;
     font-size: var(--fs-title);
     font-weight: var(--fw-strong);
+    overflow-wrap: anywhere;
   }
   /* The items asked about: rows of a pane, not clicked; past six rows and a half, they scroll. */
   .items {

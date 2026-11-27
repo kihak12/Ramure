@@ -1070,7 +1070,13 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   (9.12): when a dialog grows, a result or a question appearing in it, only what is below the
   change moves (9.1, "Hierarchy"). Its height stops 24 px above the bottom of the window: past
   it, its content scrolls, and its last line of buttons stays in view.
-- A 15 px title, weight 650: the name of the action ("New branch").
+- A 15 px title, weight 650: the name of the action ("New branch"). A file is named by its
+  name, never its path: "Discard changes to InfraConfig.java?", its folder on a line of the
+  text, "In src/main/java/com/araxxe/infra.", which wraps anywhere, a path having no space. A
+  word longer than the line wraps anywhere: a title never makes the dialog wider.
+- The dialog names itself by its title and describes itself by what it says, its facts, its
+  text, its warning (`aria-labelledby`, `aria-describedby`): a screen reader that lands on
+  "Cancel" hears what is asked (11).
   Explanatory text in `--muted`. When it says several things, each is a line of its own, 4 px
   from the next, as in a warning.
 - A warning is a box on a `--warn-soft` background, with an icon. When it warns of several
@@ -2042,7 +2048,10 @@ need the room.
   clicked; the form stays usable. "Cancel" closes the dialog and the result of the test is
   dropped.
 - **The result** sits in a line under "Test connection", never in a notification: the dialog
-  is where the user looks.
+  is where the user looks. The fields scroll: as it shows, the result is brought into view, the
+  one move of the content that "The button just pressed does not move" (9.1) allows, since it
+  shows what the button produced. A success is announced from a status kept in the dialog, a
+  failure as an alert; a question takes the keyboard, or waits under the button (11).
   - Success: the check icon and "Connection succeeded", in `--ok`, then how it authenticated, in
     `--muted` ("key id_ed25519", "SSH agent", "password") and how long it took.
   - Success with a fingerprint that could not be remembered ("Trust and remember", and
@@ -3191,7 +3200,7 @@ here is what is read in the documentation of git and in a terminal.
 | an operation that stopped | "Continue", "Skip", "Abort…", as `--continue`, `--skip` and `--abort`. In the banner, "Abort…" opens its confirmation (9.1); a command that names the operation says it: "Abort revert…". |
 | amend | "Amend last commit" |
 | reword | "Reword", "Reword message"; a reworded commit, "Commit reworded" |
-| discard | "Discard changes…", for what is not committed; it asks first (9.1) |
+| discard | "Discard changes…", for what is not committed; it asks first (9.1): "Discard changes to InfraConfig.java?", "In src/main/java/com/araxxe/infra.", then the warning |
 | the changes not yet committed | "uncommitted changes" in a sentence; "working changes" in a command: "Show working changes" |
 | stash apply, stash drop | "Apply stash", "Drop stash" |
 | commit, tag, reset, HEAD | Kept as they are, in lower case except HEAD. |

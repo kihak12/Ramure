@@ -254,6 +254,12 @@
   let run = 0;
   let secretEl = $state<HTMLInputElement>();
   let testButton = $state<HTMLButtonElement>();
+  let resultsEl = $state<HTMLElement>();
+  // A result, or a question, under the button: the fields scroll, and it would show out of view.
+  const shown = $derived(test.step !== 'idle' && test.step !== 'running');
+  $effect(() => {
+    if (shown) void tick().then(() => resultsEl?.scrollIntoView({ block: 'nearest' }));
+  });
 
   // The clicked button is gone (a question), or was disabled during the test: once the result
   // shows, the keyboard comes back to "Test connection" rather than getting lost.
@@ -378,6 +384,7 @@
 
 <dialog
   bind:this={element}
+  aria-labelledby="host-title"
   oncancel={(e) => {
     e.preventDefault();
     close();
@@ -399,7 +406,7 @@
     >
       <!-- The fields scroll if the window is too low; the last line stays in view (guidelines, 9.10). -->
       <div class="content">
-      <h2>{form.id ? `Edit ${editing?.alias ?? 'host'}` : 'New host'}</h2>
+      <h2 id="host-title">{form.id ? `Edit ${editing?.alias ?? 'host'}` : 'New host'}</h2>
 
       {#if form.proxyJump}
         <p class="warning">
@@ -599,19 +606,26 @@
         {/if}
       </div>
 
+      <!-- The result of the test: brought into view as it shows, and announced from a region kept in
+           the page (guidelines, 9.21 and 11). -->
+      <div class="results" class:none={!shown} bind:this={resultsEl}>
+      <!-- Success, kept in the page and filled, so that it is announced as a status (9.21, 11). -->
+      <div class="said" role="status">
       {#if test.step === 'ok'}
-        <p class="test ok" role="status">
+        <p class="test ok">
           <Icon name="check" size={14} />
           <span><b>Connection succeeded</b> <span class="how">{test.method}, in {Math.round(test.ms)} ms</span></span>
         </p>
         {#if test.learnFailed}
           <!-- The server was accepted for this test, but not written in known_hosts (guidelines, 9.21). -->
-          <p class="test warn" role="status">
+          <p class="test warn">
             <Icon name="warning" size={14} />
             <span><b>The fingerprint could not be remembered</b> <span class="how mono">{test.learnFailed}</span></span>
           </p>
         {/if}
-      {:else if test.step === 'fail'}
+      {/if}
+      </div>
+      {#if test.step === 'fail'}
         <p class="test bad" role="alert"><Icon name="warning" size={14} /> <span>{test.message}</span></p>
       {:else if test.step === 'hostKey'}
         <div class="test ask" role="group" aria-label="Unknown server">
@@ -659,6 +673,7 @@
           {#if test.error}<p class="err" id="host-secret-error" role="alert">{test.error}</p>{/if}
         </div>
       {/if}
+      </div>
 
       </div>
 
@@ -726,6 +741,8 @@
     margin: 0;
     font-size: var(--fs-title);
     font-weight: var(--fw-strong);
+    /* A long name wraps anywhere: the title never makes the dialog wider (9.10). */
+    overflow-wrap: anywhere;
   }
   .warning {
     display: flex;
@@ -906,6 +923,20 @@
     color: var(--warn);
   }
   /* The result of the test, between the fields and the buttons (guidelines, section 9.21). */
+  .results,
+  .said {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  /* The status is always there, empty but for a success: it adds no gap of its own. */
+  .results {
+    gap: 0;
+  }
+  /* No result yet: the gap of the fields before it is given back. */
+  .results.none {
+    margin-top: -12px;
+  }
   .test {
     display: flex;
     align-items: flex-start;
