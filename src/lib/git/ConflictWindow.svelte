@@ -204,6 +204,9 @@
     const combo = comboOf(e);
     // Under the strip, the file is no longer in conflict: its choices cannot go anywhere, and
     // only Escape and the strip's "Close" act, closing the window (9.26, "Its ends").
+    const target = e.target instanceof Element ? e.target : null;
+    // A menu of the window uses Escape first, as a dialog does (9.9).
+    if (target?.closest('[role="menu"]')) return;
     if (orphaned) {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -216,9 +219,18 @@
       void back();
       return;
     }
-    // From the list of the files, Escape and Ctrl + S act on the editor as they do in it.
-    const inEditor = e.target instanceof Element && e.target.closest('[data-conflict-editor]');
-    if (inEditor || !editor) return;
+    // From the list of the files, Escape and Ctrl + S act on the editor as they do in it. Not from
+    // a menu, a notification or a dialog of the window: their Escape is their own (guidelines, 9.9).
+    if (target?.closest('[data-conflict-editor]')) return;
+    if (target && target !== document.body && !target.closest('[data-conflict-files]')) return;
+    // No file open, every conflict resolved: Escape closes the window, its work done (9.26).
+    if (!editor) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        void close();
+      }
+      return;
+    }
     if (e.key === 'Escape') {
       e.preventDefault();
       editor.requestClose();
@@ -238,7 +250,7 @@
     <OperationBanner {repo} place="window" />
   {/if}
   <div class="body">
-    <section class="list" aria-label="Files in conflict">
+    <section class="list" aria-label="Files in conflict" data-conflict-files>
       <header><span class="label">In conflict{loaded ? ` · ${repo.conflicts.length}` : ''}</span></header>
       <div class="rows">
         <FileList files={repo.conflicts} active={repo.conflictFile?.path ?? null} disabled={repo.locked} onopen={(file) => void openFile(file, null)} />

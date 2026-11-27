@@ -15,7 +15,8 @@
   import type { CommitRow } from './types';
 
   /** `active`: the tab of this graph is the one in view, in the module in view. */
-  let { repo, active = true }: { repo: Repo; active?: boolean } = $props();
+  /** `covered`: a diff lies over the graph; it is then out of the reach of the keyboard (9.14). */
+  let { repo, active = true, covered = false }: { repo: Repo; active?: boolean; covered?: boolean } = $props();
   // Hidden tabs stay mounted: the ids of the rows belong to each one.
   const uid = $props.id();
 
@@ -574,6 +575,7 @@
 
 <div
   class="graph"
+  inert={covered}
   class:ribbon
   class:no-who={!columns.who}
   class:no-date={!columns.date}

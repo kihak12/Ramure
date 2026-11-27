@@ -1176,6 +1176,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   stays the last command.
 - During an operation, the right side starts with the waiting ring and a few words:
   "Switching to main…", or "Working…" when the operation has no name of its own.
+- **The command log**, which the last command opens over the graph, is a stop of the tab order
+  right after its button while it is open, though drawn above it, as a menu follows what opened
+  it; its ring is drawn inside its edge, and the keyboard scrolls it. Escape closes it, after a
+  menu or a dialog open over it, which use it first, and gives the keyboard back to its button
+  when it was in it.
 
 ### 9.14 Diff
 
@@ -1195,7 +1200,11 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   list, otherwise to the current row of that list; the list left empty, to the next list of the
   changes, as for a key in the list (9.6); otherwise to the list of the graph that takes the place
   of the diff. The ring comes with it
-  after a key, not after the mouse (9.9, 11).
+  after a key, not after the mouse (9.9, 11). Escape closes the diff from the diff, from the list
+  that opened it, or from anywhere in the repository, a click on a part that takes no focus
+  included, but a field that holds text, a menu, a dialog or the command log, which use it
+  first: one press does one thing. An empty field lets it through. While the diff lies over the graph, the graph
+  is out of the reach of the keyboard (`inert`): Tab never lands on what cannot be seen.
 - The header of a hunk, `@@ -1,3 +1,6 @@`, sits on `--bg`, the recessed background, in
   `--muted`: it separates the hunks, and takes neither the color of the selection nor that of
   the accent, which would make it look selected in dark. It is neither hovered nor picked: a
@@ -2691,7 +2700,10 @@ files of the same operation open there too, until the operation ends.
   shows as soon as its page is mounted, on the color of the window and before the repository is
   read, since a hidden view is given no frame to wait for; the size and the place that 4.2 keeps
   are those of the main window. Until the repository is read, the card says "In conflict" with no
-  figure. Escape and Ctrl + S act on the editor from its list too; F8 and F7, in the editor.
+  figure. Escape and Ctrl + S act on the editor from its list too, or from nowhere, never from a
+  menu or a dialog of the window, which use Escape first, nor from a notification; F8 and F7, in
+  the editor. With no file left open, every conflict resolved, Escape closes the window. Under the
+  strip of a file no longer in conflict, Escape closes the window, but from a menu or a dialog.
 - **Saved, it goes on**: the file leaves the list, and the editor opens the next one, the row that
   took its place, or the first. With no file left, the card of the editor says "All conflicts are
   resolved." and "Continue the merge to finish." (the rebase, the cherry-pick, the revert), and
