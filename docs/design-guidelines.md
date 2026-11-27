@@ -1037,7 +1037,12 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   it gives the focus back the same way to the list that had it, the one holding the row clicked.
   Closed by the window, its focus lost or its size changed, it gives it back as after the last
   gesture. Asked for from the keyboard, the row keeps its ring while the menu is open. A text
-  field keeps the menu of the system, to cut, copy and paste.
+  field keeps the editing menu of the engine, to cut, copy and paste, from the mouse and from the
+  keyboard, and so does a terminal, from the mouse and the Menu key (Shift + F10, a function key,
+  goes to its program, 11); a text selected with the mouse keeps it too, to copy it. Its
+  items are those of the engine, in its words. Elsewhere, a right-click that opens no menu of the
+  application opens nothing: never the navigation menu of the engine, whose "Back" and "Reload"
+  have no place in an application, and would lose the state of the window.
 - A destructive action is in `--bad`, last, after a separator. Its hover is in `--bad-soft`.
 - A label ends with "…" when the action opens a dialog.
 - Keyboard: arrows to move, Home and End to the first and the last item that can be chosen,
