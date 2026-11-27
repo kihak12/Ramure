@@ -318,10 +318,15 @@ export async function abortOperation(repo: Repo) {
 export async function discardFiles(repo: Repo, files: FileChange[]) {
   if (!files.length) return;
   const one = files.length === 1;
-  const what = one ? `“${files[0].path}”` : `${files.length} files`;
+  // A file by its name in the title, its folder on a line of the text: a long path wraps there,
+  // never in the title (guidelines, 9.10).
+  const path = files[0].path;
+  const cut = path.lastIndexOf('/');
+  const what = one ? path.slice(cut + 1) : `${files.length} files`;
   const onlyNew = files.every((f) => f.kind === 'untracked');
   const confirmed = await dialogs.confirm({
     title: onlyNew ? `Delete ${what}?` : `Discard changes to ${what}?`,
+    body: one && cut > 0 ? `In ${path.slice(0, cut)}.` : undefined,
     warning: onlyNew
       ? one
         ? 'This file is new: git cannot restore it.'

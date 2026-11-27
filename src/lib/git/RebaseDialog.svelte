@@ -80,6 +80,8 @@
 
 <dialog
   bind:this={element}
+  aria-labelledby="rebase-title"
+  aria-describedby="rebase-intro"
   oncancel={(e) => {
     e.preventDefault();
     cancel();
@@ -96,8 +98,8 @@
       }}
     >
       <header>
-        <h2>Interactive rebase</h2>
-        <p>
+        <h2 id="rebase-title">Interactive rebase</h2>
+        <p id="rebase-intro">
           {items.length} commit{items.length === 1 ? '' : 's'} of <b class="mono">{repo.branch ?? 'HEAD'}</b>, from the oldest (at the top) to the newest (at the bottom).
           Drag a row or use the arrows to change the order.
         </p>

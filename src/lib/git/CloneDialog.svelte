@@ -95,6 +95,7 @@
 
 <dialog
   bind:this={element}
+  aria-labelledby="clone-title"
   oncancel={(e) => {
     e.preventDefault();
     cancel();
@@ -107,7 +108,7 @@
   <form onsubmit={run}>
     <!-- The content scrolls if the window is too low; the last line stays in view (guidelines, 9.10). -->
     <div class="content">
-    <h2>Clone repository</h2>
+    <h2 id="clone-title">Clone repository</h2>
 
     <label class="row">
       <span class="label">Repository URL</span>
