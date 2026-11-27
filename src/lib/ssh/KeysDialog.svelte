@@ -4,7 +4,7 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import Icon from '../ui/Icon.svelte';
   import { veil } from '../ui/veil';
-  import { focusWithRing } from '../ui/focus';
+  import { focusBack } from '../ui/focus';
   import { tick } from 'svelte';
   import { forgetSecret, secretsHeld } from './secrets';
   import { ssh } from './ssh.svelte';
@@ -40,7 +40,7 @@
       await forgetSecret({ kind: 'passphrase', path: key.path });
       held[key.path] = false;
       // The button is gone: the focus goes to the button next to it, of the same key.
-      focusWithRing(listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key.name)}"] .copy`));
+      focusBack(listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key.name)}"] .copy`));
     } catch (e) {
       result = { ok: false, text: `The system keyring could not forget the passphrase of ${key.name}: ${said(e)}` };
     }
@@ -61,6 +61,14 @@
       element.close();
     }
   });
+
+  /** The form of a new key goes with its buttons: the keyboard goes to "Generate key" (11). */
+  function backToList() {
+    void tick().then(() => {
+      const button = [...(element?.querySelectorAll<HTMLButtonElement>('footer button') ?? [])].find((b) => b.textContent?.includes('Generate key'));
+      if (button) focusBack(button);
+    });
+  }
 
   function startCreating() {
     // First free name: id_ed25519, then id_ed25519_2, id_ed25519_3…
@@ -88,10 +96,19 @@
       passphrase = '';
       confirm = '';
       result = { ok: true, text: `Key created: ${key.path}` };
+      backToList();
     } catch (err) {
       error = typeof err === 'string' ? err : String(err);
     } finally {
       busy = false;
+    }
+    // "Create key", disabled while it ran, dropped the keyboard: a failure, said under the form,
+    // gives it back to it (guidelines, 9.15, "Keys").
+    if (creating) {
+      await tick();
+      const active = document.activeElement;
+      if (!active || active === document.body || active === element)
+        focusBack(element?.querySelector<HTMLElement>('button[type="submit"][form="new-key"]'));
     }
   }
 
@@ -133,9 +150,9 @@
     } finally {
       importing = false;
       // The button, disabled during the import, had lost the focus, which fell on the page or on
-      // the dialog: it gets it back, with its ring (guidelines, 11).
+      // the dialog: it gets it back, with its ring after a key (guidelines, 11).
       const active = document.activeElement;
-      if (!active || active === document.body || active === element) await tick().then(() => focusWithRing(importEl));
+      if (!active || active === document.body || active === element) await tick().then(() => focusBack(importEl));
     }
   }
 
@@ -228,7 +245,14 @@
         {#if result && !result.ok && !creating}<p class="bad" role="alert"><Icon name="warning" size={14} /><span>{result.text}</span></p>{/if}
       </div>
       {#if creating}
-        <button class="btn" type="button" onclick={() => (creating = false)}>Cancel</button>
+        <button
+          class="btn"
+          type="button"
+          onclick={() => {
+            creating = false;
+            backToList();
+          }}>Cancel</button
+        >
         <button class="btn primary" type="submit" form="new-key" disabled={!ready}>{busy ? 'Creating…' : 'Create key'}</button>
       {:else}
         <button class="btn" type="button" onclick={close}>Close</button>

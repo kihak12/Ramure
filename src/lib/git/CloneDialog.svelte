@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import { focusBack } from '../ui/focus';
   import { veil } from '../ui/veil';
   import { Channel, invoke } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';
@@ -84,6 +86,13 @@
       error = failed.message ?? String(e);
     } finally {
       running = false;
+    }
+    // The fields and the buttons were disabled while it ran, and dropped the keyboard: a failure,
+    // said under them, gives it to "Clone", as a refusal with no field does (guidelines, 9.10).
+    if (workspace.cloning) {
+      await tick();
+      const active = document.activeElement;
+      if (!active || active === document.body || active === element) focusBack(element?.querySelector<HTMLElement>('button[type="submit"]'));
     }
   }
 

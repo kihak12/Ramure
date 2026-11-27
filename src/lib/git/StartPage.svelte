@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import Icon, { type IconName } from '../ui/Icon.svelte';
+  import { focusBack } from '../ui/focus';
   import Logo from '../ui/Logo.svelte';
   import type { Repo } from './repo.svelte';
   import { workspace } from './workspace.svelte';
@@ -17,6 +19,17 @@
     if (Math.abs(hours) < 24) return relative.format(hours, 'hour');
     return relative.format(Math.round(hours / 24), 'day');
   }
+
+  let startEl = $state<HTMLElement>();
+
+  /** "Remove from the list": the row goes with its cross; the keyboard goes to the row that takes
+   *  its place, the previous one, else to "Open repository…" (guidelines, 11). */
+  async function forget(path: string, at: number) {
+    workspace.forget(path);
+    await tick();
+    const rows = startEl?.querySelectorAll<HTMLElement>('button.recent') ?? [];
+    focusBack(rows[Math.min(at, rows.length - 1)] ?? startEl?.querySelector<HTMLElement>('button.action'));
+  }
 </script>
 
 {#snippet action(icon: IconName, title: string, text: string, run: () => void)}
@@ -26,7 +39,7 @@
   </button>
 {/snippet}
 
-<div class="start">
+<div class="start" bind:this={startEl}>
   <div class="inner">
     <header>
       <span class="mark"><Logo size={42} /></span>
@@ -58,7 +71,7 @@
                 <span class="path mono">{recent.path}</span>
                 <span class="when">{ago(recent.at)}</span>
               </button>
-              <button class="forget" type="button" aria-label="Remove {recent.name} from the list" title="Remove from the list" onclick={() => workspace.forget(recent.path)}>
+              <button class="forget" type="button" aria-label="Remove {recent.name} from the list" title="Remove from the list" onclick={() => void forget(recent.path, i)}>
                 <Icon name="x" size={14} />
               </button>
             </li>
@@ -200,7 +213,8 @@
   }
   /* The background follows the pointer, and the keyboard focus: a click leaves no hover behind (guidelines, 9.6). */
   li:hover,
-  li:has(:focus-visible) {
+  li:has(:focus-visible),
+  li:has(:global(.focus-ring)) {
     background: var(--hover);
   }
   .recent {
@@ -211,6 +225,8 @@
     gap: 8px;
     padding: 8px 10px;
     border: 0;
+    /* The ring of the keyboard follows the corners of the row (guidelines, 9.6). */
+    border-radius: var(--radius);
     background: none;
     cursor: pointer;
     text-align: left;
@@ -262,8 +278,10 @@
   .forget:active {
     transform: scale(0.97);
   }
+  /* The cross shows with the row, on hover and while the row holds the keyboard (9.6). */
   li:hover .forget,
-  .forget:focus-visible {
+  li:has(:focus-visible) .forget,
+  li:has(:global(.focus-ring)) .forget {
     opacity: 1;
   }
   .forget:hover {

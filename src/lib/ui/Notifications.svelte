@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { flip } from 'svelte/animate';
+  import { focusBack } from './focus';
   import { fly } from 'svelte/transition';
   import Icon from './Icon.svelte';
   import { toasts } from './toasts.svelte';
@@ -21,11 +23,25 @@
 
   /** Gives the focus to the action button as soon as it appears, when asked to. */
   function focused(node: HTMLButtonElement, wanted: boolean) {
-    if (wanted) node.focus();
+    if (wanted) focusBack(node);
+  }
+
+  // Where the keyboard was before it came to the notifications: it goes back there once the
+  // notification it is on is closed or answered, rather than nowhere (guidelines, 9.11 and 11).
+  let cameFrom: HTMLElement | null = null;
+  function entering(event: FocusEvent) {
+    const from = event.relatedTarget;
+    if (from instanceof HTMLElement && !from.closest('.toasts')) cameFrom = from;
+  }
+  async function giveBack() {
+    await tick();
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected && !active.closest('[inert]')) return;
+    if (cameFrom?.isConnected && !cameFrom.closest('[inert]') && cameFrom.getClientRects().length) focusBack(cameFrom);
   }
 </script>
 
-<div class="toasts" aria-live="polite">
+<div class="toasts" aria-live="polite" onfocusin={entering}>
   {#each toasts.items as toast (toast.id)}
     {@const title = clip(toast.title)}
     <div
@@ -36,8 +52,8 @@
       onfocusin={() => toasts.hold(toast.id)}
       onfocusout={() => toasts.release(toast.id)}
       animate:flip={{ duration: motion.med }}
-      in:fly={{ y: 24, duration: motion.med }}
-      out:fly={{ y: 16, duration: motion.fast }}
+      in:fly={{ y: 10, duration: motion.med }}
+      out:fly={{ y: 8, duration: motion.fast }}
     >
       <span class="badge"><Icon name={ICON[toast.kind]} size={14} /></span>
       <div class="text">
@@ -57,12 +73,16 @@
           onclick={() => {
             toasts.dismiss(toast.id);
             action.run();
+            void giveBack();
           }}
         >
           {action.label}
         </button>
       {/if}
-      <button class="close" type="button" aria-label="Close notification" title="Close notification" onclick={() => toasts.dismiss(toast.id)}>
+      <button class="close" type="button" aria-label="Close notification: {toast.title}" title="Close notification" onclick={() => {
+          toasts.dismiss(toast.id);
+          void giveBack();
+        }}>
         <Icon name="x" size={14} />
       </button>
     </div>
