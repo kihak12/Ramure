@@ -22,7 +22,7 @@
   import SettingsPage from './lib/settings/SettingsPage.svelte';
   import { settingsPage } from './lib/settings/settings.svelte';
   import { updates } from './lib/ui/updates.svelte';
-  import { keepFocusInDialogs, remember, rescue } from './lib/ui/focus';
+  import { keepFocusInDialogs, keepFocusThroughDisabling, remember, rescue } from './lib/ui/focus';
   import { closeEditorWindows, listenEditorWindows } from './lib/git/editorWindow.svelte';
 
   // Closing the window stops every local terminal: if a program runs in one, ask first.
@@ -46,6 +46,7 @@
 
   // Tab never leaves a modal dialog for a stop that cannot be seen (guidelines, 9.10 and 11).
   onMount(() => keepFocusInDialogs());
+  onMount(() => keepFocusThroughDisabling());
 
   // The windows of the conflict editor (guidelines, 9.26, "Its own window").
   onMount(() => listenEditorWindows(() => workspace.tabs.map((tab) => tab.repo)));

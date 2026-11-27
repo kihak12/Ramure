@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import { untrack } from 'svelte';
+  import { focusBack, focusLost, focusSoon, usable } from '../ui/focus';
+  import { showFiles } from './showFiles';
   import { slide } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
   import { OPERATION, type Repo } from './repo.svelte';
@@ -11,10 +15,37 @@
 
   const operation = $derived(repo.status?.operation ?? null);
   const conflicts = $derived(repo.conflicts.length);
+
+  /** The operation ended, and the banner with the button pressed: the keyboard goes to the graph,
+   *  where the result shows (guidelines, 11). */
+  async function ended(done: Promise<unknown>) {
+    await done;
+    await tick();
+    if (focusLost()) focusBack(usable('[role="listbox"][aria-label="Commit history"]'));
+  }
+
+  // The banner goes when the repository is read again after the operation, later than the button
+  // pressed: if the keyboard was in it, it goes to the graph then (11).
+  let holding = false;
+  $effect(() => {
+    if (operation) return;
+    untrack(() => {
+      if (!holding) return;
+      holding = false;
+      void tick().then(() => focusLost() && focusSoon(usable('[role="listbox"][aria-label="Commit history"]')));
+    });
+  });
 </script>
 
 {#if operation}
-  <div class="banner" role="status" transition:slide={{ duration: motion.med }}>
+  <div
+    class="banner"
+    role="status"
+    onfocusin={() => (holding = true)}
+    onfocusout={(e) => {
+      if (e.relatedTarget && !(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) holding = false;
+    }}
+    transition:slide={{ duration: motion.med }}>
     <span class="glyph"><Icon name="warning" size={18} /></span>
     <div class="text">
       <b>{OPERATION[operation]} in progress</b>
@@ -32,7 +63,7 @@
           {/if}
         </span>
         {#if place === 'main'}
-          <button class="btn ghost small" type="button" onclick={() => repo.showWip()}>Show files</button>
+          <button class="btn ghost small" type="button" onclick={() => void showFiles(repo)}>Show files</button>
         {/if}
       </span>
     </div>
@@ -42,16 +73,16 @@
       type="button"
       disabled={repo.locked || conflicts > 0}
       title={conflicts > 0 ? 'Resolve the conflicts first' : undefined}
-      onclick={() => void repo.operate('continue')}>
+      onclick={() => void ended(repo.operate('continue'))}>
       <Icon name="play" size={14} /> Continue
     </button>
     {#if operation !== 'merge'}
-      <button class="btn" type="button" disabled={repo.locked} onclick={() => void repo.operate('skip')} title="Leave out the current commit and move on to the next one">
+      <button class="btn" type="button" disabled={repo.locked} onclick={() => void ended(repo.operate('skip'))} title="Leave out the current commit and move on to the next one">
         <Icon name="skip" size={14} /> Skip
       </button>
     {/if}
     <!-- Aborting loses the conflicts already resolved: a dialog confirms it (guidelines, 9.1, “Hierarchy”). -->
-    <button class="btn ghost bad" type="button" disabled={repo.locked} onclick={() => void abortOperation(repo)} title="Go back to the state before the operation">
+    <button class="btn ghost bad" type="button" disabled={repo.locked} onclick={() => void ended(abortOperation(repo))} title="Go back to the state before the operation">
       <Icon name="stop" size={14} /> Abort…
     </button>
   </div>

@@ -8,7 +8,7 @@
   import RepoView from './RepoView.svelte';
   import { workspace } from './workspace.svelte';
   import { motion } from '../ui/motion';
-  import { remember, rescue } from '../ui/focus';
+  import { focusBack, focusLost, remember, rescue } from '../ui/focus';
 
   /** True when the Git module is on screen. */
   let { active = true }: { active?: boolean } = $props();
@@ -33,6 +33,19 @@
   });
 
   // The “+” says what it opens, with its shortcut (guidelines, section 9.7).
+  // A tab closed, by its cross, the middle click or Ctrl + W: the keyboard it had, or the cross
+  // pressed, is gone; it goes to the tab shown now (guidelines, 11).
+  let count = workspace.tabs.length;
+  $effect(() => {
+    const now = workspace.tabs.length;
+    const closed = now < count;
+    count = now;
+    if (!closed || !active) return;
+    void tick().then(() => {
+      if (focusLost()) focusBack(tabsEl?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]'));
+    });
+  });
+
   const newTab = $derived(`New tab${keys.binding('tab-new') ? ` (${display(keys.binding('tab-new'))})` : ''}`);
 </script>
 
@@ -130,7 +143,7 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     padding: 6px 4px 6px 10px;
     border: 0;
     /* The corners of the tab: the focus ring follows them. */

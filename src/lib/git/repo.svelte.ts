@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { tick } from 'svelte';
 import type { EditorSnapshot } from './conflictWindow';
 import { openInWindow, operationEnded } from './editorWindow.svelte';
-import { focusBack } from '../ui/focus';
+import { focusBack, focusSoon, usable as visibleOne } from '../ui/focus';
 import { besideList } from './fileLists';
 import { focusWithRing } from '../ui/focus';
 import { toasts } from '../ui/toasts.svelte';
@@ -802,7 +802,8 @@ export class Repo {
     const instead = opener.at >= 0 ? rows[Math.min(opener.at, rows.length - 1)] : undefined;
     const emptied = opener.list && !opener.list.isConnected && opener.panel ? besideList(opener.panel, Number(opener.list.dataset.order ?? 0)) : null;
     const target = [opener.element, instead, opener.list?.querySelector('[tabindex="0"]'), emptied, view?.querySelector('.center [role="listbox"]')].find(usable);
-    focusBack(target);
+    // Nothing found where it was: the graph, which is always there (11).
+    focusSoon(target ?? visibleOne('[role="listbox"][aria-label="Commit history"]'));
   }
 
   openWorkDiff(file: FileChange, staged: boolean) {

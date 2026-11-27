@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
+  import { showFiles } from './showFiles';
   import type { Repo } from './repo.svelte';
 
   /**
@@ -15,7 +16,7 @@
 <div class="strip">
   <span class="glyph"><Icon name="pencil" size={16} /></span>
   <span class="text">{files} with uncommitted changes</span>
-  <button class="btn small" type="button" onclick={() => repo.showWip()}>Show working changes</button>
+  <button class="btn small" type="button" onclick={() => void showFiles(repo)}>Show working changes</button>
 </div>
 
 <style>

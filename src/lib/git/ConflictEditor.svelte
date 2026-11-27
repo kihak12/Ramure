@@ -7,7 +7,7 @@
   import { dialogs } from '../ui/dialogs.svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu } from '../ui/menu.svelte';
-  import { focusBack } from '../ui/focus';
+  import { focusBack, focusLost } from '../ui/focus';
   import ConflictResult, { type OverviewMark, type RegionInfo, type ResultSnapshot } from './ConflictResult.svelte';
   import type { EditorSnapshot } from './conflictWindow';
   import ConflictSide, { type SideConflict } from './ConflictSide.svelte';
@@ -521,8 +521,16 @@
   }
 
   /** "Keep all": a side in every conflict left to decide. */
-  function keepAll(side: Side) {
-    void apply(blocks.flatMap((_, i) => (!edited[i] && !isDecided(picks[i]) ? [{ block: i, pick: choose(side, first) }] : [])));
+  async function keepAll(side: Side, pressed: HTMLButtonElement) {
+    const had = document.activeElement === pressed;
+    await apply(blocks.flatMap((_, i) => (!edited[i] && !isDecided(picks[i]) ? [{ block: i, pick: choose(side, first) }] : [])));
+    // Every conflict decided, "Keep all" is disabled and drops the keyboard, a moment later in
+    // WebKit: it goes to the next step, "Save and mark resolved", or the first button of the header
+    // (guidelines, 9.26 and 11).
+    await tick();
+    if (!(pressed.disabled && had) && !focusLost()) return;
+    const save = sectionEl?.querySelector<HTMLButtonElement>('[data-save]');
+    focusBack(save && !save.disabled ? save : sectionEl?.querySelector<HTMLElement>('header .btn'));
   }
 
   /** Typing in a conflict: edited by hand from now on. */
@@ -636,6 +644,7 @@
     <button
       class="btn primary small"
       type="button"
+      data-save
       disabled={!canSave}
       onclick={save}
       title={canSave
@@ -776,7 +785,7 @@
       <span class="side-chip" aria-hidden="true">{n}</span>
       <b>{names[side]}</b>
       <small class="mono" title={commit}>{commit}</small>
-      <button class="btn small" type="button" disabled={!open} onclick={() => keepAll(side)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side].toLowerCase()}">Keep all</button>
+      <button class="btn small" type="button" disabled={!open} onclick={(e) => void keepAll(side, e.currentTarget)} title="Keep this side in every conflict left" aria-label="Keep all of {names[side].toLowerCase()}">Keep all</button>
     </div>
     {#if side === 'ours'}
       <ConflictSide

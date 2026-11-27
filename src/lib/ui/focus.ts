@@ -22,8 +22,13 @@ export function focusBack(element: HTMLElement | null | undefined) {
 
 export function focusWithRing(element: HTMLElement | null | undefined) {
   if (!element) return;
-  element.focus();
+  // Before the focus: an element that reacts to its arrival sees that it comes with the ring.
   element.classList.add('focus-ring');
+  element.focus();
+  if (document.activeElement !== element) {
+    element.classList.remove('focus-ring');
+    return;
+  }
   // The ring goes with the focus, or at the first click: the mouse takes over again, and an element
   // that keeps the focus (the list of the graph, one of whose rows is clicked) no longer shows it.
   const off = () => {
@@ -103,4 +108,87 @@ export function keepFocusInDialogs(): () => void {
   };
   window.addEventListener('keydown', onKey, true);
   return () => window.removeEventListener('keydown', onKey, true);
+}
+
+/**
+ * A control disabled while it has the keyboard, a toolbar button while git works for instance,
+ * loses it: WebKit drops the focus to the page. It is given back to the control once enabled
+ * again, if nothing else took it meanwhile (guidelines, 11: the focus is never lost). Installed
+ * once, by the window.
+ */
+export function keepFocusThroughDisabling(): () => void {
+  let watched: MutationObserver | null = null;
+  const stop = () => {
+    watched?.disconnect();
+    watched = null;
+  };
+  const onOut = (event: FocusEvent) => {
+    const el = event.target;
+    if (!(el instanceof HTMLButtonElement || el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) return;
+    if (event.relatedTarget) return;
+    // The attribute is set before the blur it causes: an element blurred for another reason is
+    // still enabled here.
+    if (!el.disabled) return;
+    stop();
+    const keyboard = byKeyboard();
+    watched = new MutationObserver(() => {
+      if (!el.isConnected) return stop();
+      if (el.disabled) return;
+      stop();
+      const active = document.activeElement;
+      if (active && active !== document.body) return;
+      if (keyboard) focusWithRing(el);
+      else el.focus();
+    });
+    watched.observe(el, { attributes: true, attributeFilter: ['disabled'] });
+  };
+  // Another element takes the keyboard: the one disabled no longer waits for it.
+  const onIn = () => stop();
+  document.addEventListener('focusout', onOut, true);
+  document.addEventListener('focusin', onIn, true);
+  return () => {
+    stop();
+    document.removeEventListener('focusout', onOut, true);
+    document.removeEventListener('focusin', onIn, true);
+  };
+}
+
+/** The keyboard is nowhere: on the page, or in a part that cannot be reached. */
+export function focusLost(): boolean {
+  const active = document.activeElement;
+  return !active || active === document.body || !active.isConnected || !!active.closest('[inert]');
+}
+
+/** Gives the keyboard to the first control of `root` that Tab reaches, with its ring after a key. */
+export function focusFirstIn(root: Element | null | undefined): boolean {
+  if (!(root instanceof HTMLElement)) return false;
+  const first = tabbables(root)[0];
+  if (!first) return false;
+  focusBack(first);
+  return true;
+}
+
+/** The first element matching `selector` that can be seen and reached: of a hidden tab, none. */
+export function usable<T extends HTMLElement>(selector: string): T | undefined {
+  return [...document.querySelectorAll<T>(selector)].find((el) => !el.closest('[inert]') && el.getClientRects().length > 0);
+}
+
+/**
+ * Gives the keyboard to `el`, with its ring after a key; a control disabled for now (the message
+ * field while git works) gets it once enabled, if the keyboard is still nowhere then (11).
+ */
+export function focusSoon(el: HTMLElement | null | undefined) {
+  if (!el) return;
+  const disabled = (el as HTMLButtonElement).disabled;
+  if (!disabled) return focusBack(el);
+  const keyboard = byKeyboard();
+  const watch = new MutationObserver(() => {
+    if (!el.isConnected) return watch.disconnect();
+    if ((el as HTMLButtonElement).disabled) return;
+    watch.disconnect();
+    if (!focusLost()) return;
+    if (keyboard) focusWithRing(el);
+    else el.focus();
+  });
+  watch.observe(el, { attributes: true, attributeFilter: ['disabled'] });
 }

@@ -14,6 +14,7 @@
     options,
     layout = 'rows',
     labelledby,
+    label,
     describedby,
     preview,
     onchange,
@@ -23,7 +24,9 @@
     value: T;
     options: readonly { value: T; label: string; help?: string }[];
     layout?: 'rows' | 'tiles' | 'segments';
-    labelledby: string;
+    /** The id of what names the group; or `label`, its name, where no text on screen does. */
+    labelledby?: string;
+    label?: string;
     describedby?: string;
     /** What is better shown than said: the preview of an option. */
     preview?: Snippet<[T]>;
@@ -45,6 +48,7 @@
   class:keyboard
   role="radiogroup"
   aria-labelledby={labelledby}
+  aria-label={labelledby ? undefined : label}
   aria-describedby={describedby}
   style:--count={options.length}
   onpointerdown={() => {

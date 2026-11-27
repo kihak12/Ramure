@@ -997,8 +997,9 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   opening as it takes the keyboard, which stays on the tabs so that the arrows go on (9.15);
   Enter or a click gives it to the terminal.
 - When the tabs overflow, the bar scrolls to the active tab, and to a tab that takes the focus,
-  so that it stays whole to the left of the "+": the bar keeps 40 px of scroll room on its right,
-  the width of the "+" and its margins (a derived value, not a gap of 4.1). The "+" covers the
+  so that it stays whole to the left of the "+", its ring too: the bar keeps 40 px of scroll room
+  on its right, the width of the "+" and its margins, and 4 px on its left, the room of the ring
+  (derived values, not gaps of 4.1). The "+" covers the
   room on its right with the window background, a flat shadow in `--side` that no one sees as a
   shadow: no tab shows past it.
 
@@ -1212,6 +1213,10 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
 - Added line: a background at `--tint-added` of `--ok`, a "+" sign in `--ok`. Removed line: a
   background at `--tint-removed` of `--bad`, a "−" sign in `--bad` (2.7).
 - The sign is always there: color alone never says whether a line is added or removed.
+- **Its layout**, "Unified" or "Side by side", is a choice in segments (9.19) in the header of the
+  card, named "Diff layout" for a screen reader: one stop, on the layout shown, the arrows change
+  it. It never shrinks: the hint, then the counts, give way first, and the name of the file keeps
+  80 px; when even that does not fit, the header wraps, rather than cut "Close".
 - **The keyboard.** A diff opens in the center, to the left of the list of files that opened it:
   in the order of the screen, Shift + Tab reaches it from that list. However it closes, by
   Escape, by "Close", or by itself when its file leaves its list, the keyboard it took away goes
@@ -1903,7 +1908,7 @@ keys (9.12), and a button that restores the default.
 
 A few options, all in view, for a setting whose options need a word of explanation or are
 better seen than named: the theme, the way to pull, the style of the graph, the layout of the
-diff; or two or three short ones, in segments: the clock. Nothing has to be opened to compare
+diff; or two or three short ones, in segments: the clock, the layout of an open diff (9.14). Nothing has to be opened to compare
 them.
 
 The control of a setting follows from its options: on or off, a switch (9.3); two or three short
@@ -1922,7 +1927,8 @@ better seen, tiles; many options, or plain values, a list (9.3).
   as high as a field, 32 px, in the column of the control of a setting: a `--line` border around
   the group, 6 px corners, 2 px inside it, and options of 4 px corners, their names centered. The
   chosen one has the `--sel` background and the weight 650, and no check mark: its weight and its
-  tint say it in its place. The name of the setting names the group (`aria-labelledby`). Plain
+  tint say it in its place. The name of the setting names the group (`aria-labelledby`); where no
+  text on screen names it, its accessible name does ("Diff layout", 9.14). Plain
   values go to segments when they are two or three, to a list (9.3) from four.
 - An option has 8 px corners and is at least 28 px high; a segment has 4 px corners and is
   26 px high, the 32 px of the control less its border and the 2 px inside it, a derived value.
@@ -1970,6 +1976,10 @@ A local terminal under the graph, opened in the folder of the repository, to run
   title in weight 650; the others are in `--muted`, `--hover` on hover. The cross is visible on
   the active tab and on hover on the others; a middle click closes a tab too. The "+" is 24 ×
   24 px, "New terminal in this repository".
+- **The keyboard in the tabs**, as in the SSH module (9.7): the list is one stop, the current
+  tab, then its cross, then "+"; ← and → go to the previous and the next tab, from the last back
+  to the first, Home and End to the first and the last, which show as they take the keyboard; Enter gives the keyboard to the
+  terminal of the tab. A tab closed gives the keyboard to the tab shown in its place.
 - **Each repository has its own terminals.** They belong to the tab of the repository: switching
   tabs or modules, or hiding the terminal, does not stop them. Closing the tab of the repository
   stops them. They are not tabs of the SSH module, and Ctrl + Shift + N still opens a terminal
@@ -2975,6 +2985,8 @@ announced: the sides say the conflict reached.
   scrolls nothing either. The result shows that it has the keyboard by its caret and by the tint
   of the line of the caret, `--accent` at `--tint-caret-line` (6%), which shows only then.
 - The two "Keep all" buttons name their side for a screen reader: "Keep all of your commit".
+  "Keep all" that decides the last conflict is disabled for good: the keyboard goes to "Save and
+  mark resolved", the next step.
 - F8 and Shift + F8 go to the next and the previous conflict, F7 and Shift + F7 to the next and
   the previous change merged by git, Ctrl + S saves once nothing is left
   to decide, Escape closes, after "Close without saving?" when something was changed: "The
@@ -3159,6 +3171,18 @@ many parallel branches has a wide graph, and a card of the same width shows fewe
 - **Keyboard.** Every action is possible without a mouse. The tab order follows the visual
   order. Escape closes the topmost floating element. The labels of the graph are reached through
   the branch list (9.4).
+- **The focus is never lost.** A control disabled while it has the keyboard, a button of the
+  toolbar while git works, gets it back once enabled, if nothing else took it meanwhile. A
+  control that goes, with what it did, gives the keyboard to the one that takes its place: after
+  "Stage hunk", the "Stage hunk" of the next hunk, or the lines of the diff after the last; after
+  "Continue", "Skip" or "Abort…" that end an operation, the graph, the banner keeping it while
+  the operation stops again;
+  after "Show working changes", the first list of the changes; after a commit, the message, or
+  the graph when nothing is left; after an action of a file in conflict, its list (9.6); after a
+  closed tab, the tab shown in its place; after the editor of a conflict closes, the next file in
+  conflict, else the commit message, the file just resolved being staged. A target disabled while git works,
+  the message field, gets the keyboard once enabled. The ring comes with it after a key, not
+  after the mouse.
 - **A module or a tab shown from the keyboard takes it**: a module shortcut, a command of the
   palette, Ctrl + Tab between repositories. The part that was shown is now out of reach, and the
   keyboard left in it would be nowhere: it goes where it was last in the part shown, else to its
