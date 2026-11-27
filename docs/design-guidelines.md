@@ -904,8 +904,8 @@ Sidebar, file lists, graph, palette results, lists inside a dialog.
   out of the block. The ring of the keyboard follows the corners of its row.
 - **No colored bar on the edge** to mark the selection.
 - Keyboard focus: a 1.5 px inner ring in `--accent` on the current row, the one the arrows
-  move: the selected row, or in a list of files a row that is not selected (the parent row, or
-  the row last reached once the selection is taken away, 9.24). **Never an outline around the
+  move: the selected row, or in a list of files a row that is not selected (the parent row, the
+  row last reached once the selection is taken away, or a row reached with Ctrl, 9.24). **Never an outline around the
   whole list.** Focus stays on the list, which handles the arrow keys; if no row is selected when
   it receives focus, the first one becomes selected, except after a press on the empty part of a
   list of files, which takes the selection away (9.24).
@@ -2422,7 +2422,10 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   Alt or Meta alone (11). A drop selects no first row in the pane that receives the files. The
   arrows move the current row, with the inner ring of 9.6; Shift with an arrow extends the
   selection; from the parent row, which is never selected, the range starts at the first item,
-  with Shift + click too. A double-click, or Enter, opens a folder. On a file, it copies the file
+  with Shift + click too. Ctrl with an arrow, Page Up or Down, Home or End moves the current row
+  among the items, the parent row apart, and leaves the selection as it is, and Space adds the
+  current row to it or takes it out: rows that are not next to each other are selected from the
+  keyboard as Ctrl + click does. Ctrl + Shift with them extends the selection, as Shift does. A double-click, or Enter, opens a folder. On a file, it copies the file
   to the pane next to this one, on its right, or on its left for the last pane: into the folder
   that pane shows, as a drag does, after asking about a name already there (9.10), never a move,
   even between two folders of the same place, where the menu offers "Move to …" and Ctrl + drop
@@ -2432,6 +2435,19 @@ buttons is drawn inside them, as in the path bar. Then rows of 24 px (4.3, 9.6):
   was not copied", with "Choose a place in the pane next to this one first.", "The pane next to
   this one is not connected yet." or "Already in this folder." F2 renames, Delete deletes, the
   Menu key opens the menu.
+- **The focus is never lost in a pane.** When what had the keyboard goes, a location chosen, a
+  connection open, the picker back after "Choose another location" or "Cancel", "Go up", "Up" at
+  the root, the keyboard goes to the list of the pane, else to the filter of the picker. A folder
+  entered with Enter starts on its parent row, with the ring, and so does the list of an empty
+  folder when it takes the keyboard; a list that takes the keyboard before its rows come gets its
+  current row once they come. Space does nothing on the parent row. In the card of the transfers, a
+  button that goes, with what it did or later, when its transfer changes state, gives the
+  keyboard to the last button of its row, the one that took its place ("Cancel transfer" becomes
+  "Remove", "Send changes" becomes "Cancel transfer"), else of the row in its place, the next
+  then the previous; with no row left, to the active pane, as Ctrl + Tab does. "Clear finished",
+  disabled once it has cleared, gives it to the last button of the first row left. "Retry" gives
+  it to the "Cancel transfer" of the copy started again, once its checks are done, or, when the
+  copy does not start, as a row that goes.
 - **A click on the empty part** of the list, under the rows, takes the selection away, as
   Escape does; the focus it gives the list does not select the first row (9.6). The list keeps the height of two rows empty under its last row, so that a full
   folder has an empty part too, once scrolled to the end.
