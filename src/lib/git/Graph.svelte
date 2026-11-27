@@ -692,10 +692,11 @@
             {#if commit.wip}
               <span class="wip-tag mono">// WIP</span>
               {#if wip}
-                {#if wip.conflicts}<span class="stat bad" title="Files in conflict"><Icon name="warning" size={14} />{wip.conflicts}</span>{/if}
-                {#if wip.modified}<span class="stat warn" title="Modified files"><Icon name="pencil" size={14} />{wip.modified}</span>{/if}
-                {#if wip.added}<span class="stat ok" title="New files"><Icon name="plus" size={14} />{wip.added}</span>{/if}
-                {#if wip.deleted}<span class="stat bad" title="Deleted files"><Icon name="minus" size={14} />{wip.deleted}</span>{/if}
+                <!-- The meaning of each count, in words for screen readers: an icon alone says nothing (11). -->
+                {#if wip.conflicts}<span class="stat bad" title="Files in conflict"><Icon name="warning" size={14} /><span aria-hidden="true">{wip.conflicts}</span><span class="spoken">{wip.conflicts} in conflict,</span></span>{/if}
+                {#if wip.modified}<span class="stat warn" title="Modified files"><Icon name="pencil" size={14} /><span aria-hidden="true">{wip.modified}</span><span class="spoken">{wip.modified} modified,</span></span>{/if}
+                {#if wip.added}<span class="stat ok" title="New files"><Icon name="plus" size={14} /><span aria-hidden="true">{wip.added}</span><span class="spoken">{wip.added} new,</span></span>{/if}
+                {#if wip.deleted}<span class="stat bad" title="Deleted files"><Icon name="minus" size={14} /><span aria-hidden="true">{wip.deleted}</span><span class="spoken">{wip.deleted} deleted</span></span>{/if}
               {:else}
                 <span class="subject muted">{repo.wipCount} changed file{repo.wipCount === 1 ? '' : 's'}</span>
               {/if}

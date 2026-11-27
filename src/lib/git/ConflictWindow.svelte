@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Announcements from '../ui/Announcements.svelte';
   // The window of the conflict editor (guidelines, 9.26, "Its own window"): the banner of the
   // operation, the files in conflict, and the editor, for the repository of the main window.
   import { emitTo, listen } from '@tauri-apps/api/event';
@@ -281,6 +282,7 @@
 <Dialog />
 <ContextMenu />
 <Notifications />
+<Announcements />
 
 <style>
   .window {

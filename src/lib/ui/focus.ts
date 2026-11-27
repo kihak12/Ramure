@@ -49,7 +49,9 @@ function tabbables(root: HTMLElement): HTMLElement[] {
 
 /**
  * Tab and Shift + Tab go round the controls of the modal dialog that has the keyboard, and never
- * leave it for a stop that cannot be seen (guidelines, 9.10 and 11). Installed once, by the window.
+ * leave it for a stop that cannot be seen (guidelines, 9.10 and 11). Out of a dialog, they go round
+ * the controls of the window the same way: past the last one, or before the first, WebKitGTK gives
+ * the keyboard to the window itself, a stop that shows nothing (11). Installed once, by the window.
  */
 export function keepFocusInDialogs(): () => void {
   const onKey = (event: KeyboardEvent) => {
@@ -73,6 +75,30 @@ export function keepFocusInDialogs(): () => void {
       focusWithRing(items[event.shiftKey ? last : 0]);
     }
   };
+  // After the components: a key they took (the shell of a terminal, a field that keeps Tab) is
+  // theirs.
+  const onPageKey = (event: KeyboardEvent) => {
+    const tab = event.key === 'Tab' || event.code === 'Tab';
+    if (!tab || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (document.querySelector('dialog[open]')) return;
+    const focused = document.activeElement;
+    if (!(focused instanceof HTMLElement) || focused === document.body) return;
+    const items = tabbables(document.body);
+    const first = items[0];
+    const last = items.at(-1);
+    if (!first || !last) return;
+    // Nothing that Tab reaches after the focus, or before it with Shift: round to the other end.
+    const beyond = event.shiftKey
+      ? !(first.compareDocumentPosition(focused) & Node.DOCUMENT_POSITION_FOLLOWING)
+      : !(focused.compareDocumentPosition(last) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (!beyond) return;
+    event.preventDefault();
+    focusWithRing(event.shiftKey ? last : first);
+  };
   window.addEventListener('keydown', onKey, true);
-  return () => window.removeEventListener('keydown', onKey, true);
+  window.addEventListener('keydown', onPageKey);
+  return () => {
+    window.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('keydown', onPageKey);
+  };
 }

@@ -49,15 +49,28 @@
   function popStash() {
     void repo.refOp({ op: 'stash-pop', index: 0 }, 'Stash popped', 'Could not pop stash');
   }
+
+  const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
 </script>
 
-{#snippet tool(icon: IconName, label: string, title: string, disabled: boolean, run: () => void, badge?: string, spin?: boolean, pressed?: boolean)}
+<!-- `said`: what the badge counts, in words, for screen readers: "Pull, 2 commits to pull" (11). -->
+{#snippet tool(
+  icon: IconName,
+  label: string,
+  title: string,
+  disabled: boolean,
+  run: () => void,
+  badge?: string,
+  spin?: boolean,
+  pressed?: boolean,
+  said?: string,
+)}
   <button class="tool" type="button" {title} {disabled} aria-pressed={pressed} onclick={run}>
     <span class="glyph" class:spin>
       <Icon name={icon} size={18} />
-      {#if badge}<span class="badge">{badge}</span>{/if}
+      {#if badge}<span class="badge" aria-hidden={said ? 'true' : undefined}>{badge}</span>{/if}
     </span>
-    <span class="text">{label}</span>
+    <span class="text">{label}{#if badge && said}<span class="spoken">, {said}</span>{/if}</span>
   </button>
 {/snippet}
 
@@ -87,6 +100,9 @@
       !ready || !status?.upstream,
       () => void repo.sync('pull'),
       status?.behind ? String(status.behind) : undefined,
+      false,
+      undefined,
+      status?.behind ? `${plural(status.behind, 'commit')} to pull` : undefined,
     )}
     {@render tool(
       'push',
@@ -95,6 +111,9 @@
       !ready || !status?.branch,
       () => void push(repo),
       status?.ahead ? String(status.ahead) : undefined,
+      false,
+      undefined,
+      status?.ahead ? `${plural(status.ahead, 'commit')} to push` : undefined,
     )}
   </div>
   <div class="tools" role="group" aria-label="Branches and stashes">
@@ -102,7 +121,7 @@
       if (repo.head) void createBranch(repo, repo.head.sha, repo.branch ?? 'HEAD');
     })}
     {@render tool('stash', 'Stash', 'Set the working changes aside', !ready || repo.wipCount === 0, () => void stashChanges(repo))}
-    {@render tool('pop', 'Pop', 'Apply the latest stash and drop it', !ready || stashes === 0, popStash, stashes ? String(stashes) : undefined)}
+    {@render tool('pop', 'Pop', 'Apply the latest stash and drop it', !ready || stashes === 0, popStash, stashes ? String(stashes) : undefined, false, undefined, stashes ? plural(stashes, 'stash', 'stashes') : undefined)}
   </div>
 
   <div class="tools right">
@@ -115,6 +134,7 @@
       terminalBadge,
       false,
       terminals.shown,
+      terminalBadge ? `${plural(terminals.running, 'shell')} running` : undefined,
     )}
     {@render tool('refresh', 'Reload', 'Read the history of the repository again', !ready, () => void repo.reload())}
     {@render tool('folder', 'Open', 'Open in the file manager', !repo.result, () => void openRepoFolder(repo))}

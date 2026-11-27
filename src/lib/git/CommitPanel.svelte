@@ -239,7 +239,7 @@
         <p class="muted">This commit changes no files.</p>
       {/if}
     {:else}
-      <div class="skeleton" aria-label="Loading files">
+      <div class="skeleton" role="img" aria-label="Loading files">
         <span></span><span></span><span></span>
       </div>
     {/if}

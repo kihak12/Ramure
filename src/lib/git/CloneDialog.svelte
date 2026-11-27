@@ -7,6 +7,7 @@
   import { toasts } from '../ui/toasts.svelte';
   import type { CommandLog, Done } from './types';
   import { workspace } from './workspace.svelte';
+  import { announcer } from '../ui/announce.svelte';
 
   const STORAGE_KEY = 'ramure.cloneDir';
 
@@ -91,6 +92,10 @@
     if (running) void invoke('git_clone_cancel');
     else workspace.cloning = false;
   }
+
+  $effect(() => {
+    if (running) announcer.say('Cloning the repository…');
+  });
 </script>
 
 <dialog
@@ -141,7 +146,7 @@
          its place, without the buttons moving on a click on “Clone” (guidelines, 9.1, “Hierarchy”). -->
     <div class="status">
       {#if running}
-        <div class="progress" role="status">
+        <div class="progress">
           <ProgressBar percent={Number.isNaN(percent) ? null : percent} />
           <small class="mono">{progress}</small>
         </div>

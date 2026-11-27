@@ -305,8 +305,12 @@
               <span class="mark">{#if repo.switching === branch.name}<span class="spinner" aria-hidden="true"></span>{:else if branch.current}<Icon name="check" size={14} />{/if}</span>
               <span class="name">{branch.name}</span>
               {#if branch.gone}<span class="chip gone" title="The tracked remote branch no longer exists">gone</span>{/if}
-              {#if branch.ahead}<span class="chip" title="{branch.ahead} commit{branch.ahead === 1 ? '' : 's'} to push"><Icon name="up" size={10} />{branch.ahead}</span>{/if}
-              {#if branch.behind}<span class="chip" title="{branch.behind} commit{branch.behind === 1 ? '' : 's'} to pull"><Icon name="down" size={10} />{branch.behind}</span>{/if}
+              {#if branch.ahead}<span class="chip" title="{branch.ahead} commit{branch.ahead === 1 ? '' : 's'} to push"
+                  ><Icon name="up" size={10} /><span aria-hidden="true">{branch.ahead}</span><span class="spoken">, {branch.ahead} to push</span></span
+                >{/if}
+              {#if branch.behind}<span class="chip" title="{branch.behind} commit{branch.behind === 1 ? '' : 's'} to pull"
+                  ><Icon name="down" size={10} /><span aria-hidden="true">{branch.behind}</span><span class="spoken">, {branch.behind} to pull</span></span
+                >{/if}
             </button>
           </li>
         {:else}

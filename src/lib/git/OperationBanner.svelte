@@ -4,6 +4,7 @@
   import { OPERATION, type Repo } from './repo.svelte';
   import { motion } from '../ui/motion';
   import { abortOperation } from './actions';
+  import { announcer } from '../ui/announce.svelte';
 
   /** `window`: the banner of the window of the conflict editor, whose list is beside the editor
    *  (guidelines, 9.26, "Its own window"). */
@@ -11,10 +12,18 @@
 
   const operation = $derived(repo.status?.operation ?? null);
   const conflicts = $derived(repo.conflicts.length);
+
+  // The operation that stopped is said as the banner shows, once (11).
+  let said: string | null = null;
+  $effect(() => {
+    const now = operation;
+    if (now && now !== said) announcer.say(`${OPERATION[now]} in progress`);
+    said = now;
+  });
 </script>
 
 {#if operation}
-  <div class="banner" role="status" transition:slide={{ duration: motion.med }}>
+  <div class="banner" transition:slide={{ duration: motion.med }}>
     <span class="glyph"><Icon name="warning" size={18} /></span>
     <div class="text">
       <b>{OPERATION[operation]} in progress</b>

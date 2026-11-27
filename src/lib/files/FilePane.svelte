@@ -11,6 +11,7 @@
   import LocationPicker from './LocationPicker.svelte';
   import { files, MAX_PANES, visible, type Pane, type SortBy } from './files.svelte';
   import { fullDate, joinPath, nameOf, parentPath, segments, shortDate, size, type Entry } from './types';
+  import { announcer } from '../ui/announce.svelte';
 
   let { pane }: { pane: Pane } = $props();
 
@@ -642,6 +643,25 @@
   const footDrop = $derived(
     files.drag && over ? (over.refusal || files.verb(files.drag, pane, over.named, over.copy)) : '',
   );
+
+  // Said through the regions kept in the page, which a reader notices when they are filled
+  // (guidelines, 11): what a drop would do, a file that starts opening, and a folder that takes
+  // long to list. A quick listing, as after each action, says nothing.
+  $effect(() => {
+    if (footDrop) announcer.say(footDrop);
+  });
+  let wasOpening: string[] = [];
+  $effect(() => {
+    const prefix = `${pane.key}:`;
+    const now = files.opening.filter((k) => k.startsWith(prefix));
+    for (const k of now) if (!wasOpening.includes(k)) announcer.say(`Opening ${k.slice(prefix.length).split(/[\\/]/).pop()}…`);
+    wasOpening = now;
+  });
+  $effect(() => {
+    if (!pane.loading) return;
+    const late = setTimeout(() => announcer.say('Loading…'), 500);
+    return () => clearTimeout(late);
+  });
 </script>
 
 <!-- A modifier alone (Shift, Ctrl held during a click) is not a use of the keyboard. -->
@@ -679,7 +699,8 @@
         {#if pane.location.kind === 'local'}
           <Icon name="laptop" size={14} />
         {:else if pane.phase.step === 'connecting'}
-          <span class="spinner" role="img" aria-label={STATUS.connecting}></span>
+          <!-- The state is in words beside it (guidelines, 8). -->
+          <span class="spinner" aria-hidden="true"></span>
         {:else}
           <span
             class="dot"
@@ -882,7 +903,7 @@
                 <!-- Downloaded, or opened in another program: a word, never a ring or a color alone
                      (guidelines, 8 and 9.24). -->
                 {#if files.opening.includes(`${pane.key}:${joinPath(pane.path, entry.name)}`)}
-                  <span class="link" role="status">opening…</span>
+                  <span class="link">opening…</span>
                 {:else if watch}
                   <span class="link" class:unsent={watch.pending}>{watch.pending ? 'not sent' : 'open'}</span>
                 {/if}
@@ -912,9 +933,9 @@
 
     <footer class:dropping={!!footDrop} class:refused={!!over?.refusal}>
       {#if footDrop}
-        <span role="status">{footDrop}</span>
+        <span>{footDrop}</span>
       {:else if pane.loading}
-        <span class="spinner" aria-hidden="true"></span><span role="status">Loading…</span>
+        <span class="spinner" aria-hidden="true"></span><span>Loading…</span>
       {:else if ready && !pane.error}
         <span>
           {#if pane.selected.length}

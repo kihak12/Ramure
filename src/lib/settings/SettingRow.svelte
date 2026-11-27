@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { announcer } from '../ui/announce.svelte';
 
   /**
    * The row of a setting: its name and its help on the left, its control on the right (guidelines,
@@ -23,6 +24,11 @@
     named = false,
     children,
   }: { id: string; name: string; help?: string; error?: string; busy?: string; group?: boolean; fact?: boolean; named?: boolean; children?: Snippet } = $props();
+
+  // What the setting is doing, said through the region kept in the page (guidelines, 11).
+  $effect(() => {
+    if (busy) announcer.say(busy);
+  });
 </script>
 
 <div class="setting" class:group>
@@ -39,7 +45,7 @@
     {#if error}
       <p class="error" id="{id}-error" role="alert">{error}</p>
     {:else if busy}
-      <p class="busy" role="status"><span class="spinner" aria-hidden="true"></span>{busy}</p>
+      <p class="busy"><span class="spinner" aria-hidden="true"></span>{busy}</p>
     {/if}
   </div>
 </div>

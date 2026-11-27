@@ -2,6 +2,7 @@
   import Icon from './Icon.svelte';
   import { display } from './keys.svelte';
   import { menu, type MenuItem } from './menu.svelte';
+  import { announcer } from './announce.svelte';
 
   let element = $state<HTMLDivElement>();
   let veil = $state<HTMLDivElement>();
@@ -43,7 +44,7 @@
       origin = box ? `${y < open.y ? 'bottom' : 'top'} ${x === box.left && open.x - width < 4 ? 'left' : 'right'}` : '';
       // Opened from the keyboard, the first item takes the focus. With the mouse, the menu does: no
       // item is current until one has been hovered or reached, and Space checks nothing.
-      if (keyboard) element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+      if (keyboard) element.querySelector<HTMLButtonElement>(ENABLED)?.focus();
       else element.focus();
     });
   });
@@ -65,9 +66,17 @@
     return () => window.removeEventListener('mouseup', nudge, { capture: true });
   });
 
+  // A disabled item is reached by the arrows and says why it cannot be chosen (guidelines, 9.9).
+  const ENABLED = 'button:not([aria-disabled="true"])';
+
   /** `pointer`: chosen with a click, not from the keyboard (Enter or Space give a click without `detail`). */
   function pick(item: MenuItem, pointer = false) {
-    if ('separator' in item || item.disabled) return;
+    if ('separator' in item) return;
+    if (item.disabled) {
+      // Chosen anyway: its reason is said again, and the menu stays open.
+      if (item.hint) announcer.say(item.hint);
+      return;
+    }
     // A checkable item applies at once and leaves the menu open: several can be changed in a row.
     if (item.checked === undefined) menu.close(false, pointer);
     item.run();
@@ -92,12 +101,14 @@
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
     keyboard = true;
-    const buttons = [...element.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
-    // Home and End: the first and the last item that can be chosen.
+    // Home and End: the first and the last item that can be chosen. The arrows reach every item,
+    // a disabled one too, which says why.
     if (event.key === 'Home' || event.key === 'End') {
-      buttons[event.key === 'Home' ? 0 : buttons.length - 1]?.focus();
+      const enabled = [...element.querySelectorAll<HTMLButtonElement>(ENABLED)];
+      enabled[event.key === 'Home' ? 0 : enabled.length - 1]?.focus();
       return;
     }
+    const buttons = [...element.querySelectorAll<HTMLButtonElement>('button')];
     const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
     // No current item: ↓ goes to the first, ↑ to the last.
     const from = at < 0 && event.key === 'ArrowUp' ? 0 : at;
@@ -148,10 +159,13 @@
           role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
           aria-checked={item.checked}
           class:danger={item.danger}
-          disabled={item.disabled}
+          aria-disabled={item.disabled ? 'true' : undefined}
+          aria-describedby={item.disabled && item.hint ? `menu-why-${i}` : undefined}
           title={item.hint}
           onclick={(e) => pick(item, e.detail > 0)}
-          onpointerenter={(event) => event.currentTarget.focus()}
+          onpointerenter={(event) => {
+            if (!item.disabled) event.currentTarget.focus();
+          }}
         >
           <span class="glyph">{#if item.icon}<Icon name={item.icon} size={16} />{/if}</span>
           <span class="text">{item.label}</span>
@@ -163,6 +177,7 @@
             <span class="check">{#if item.checked}<Icon name="check" size={16} />{/if}</span>
           {/if}
         </button>
+        {#if item.disabled && item.hint}<span hidden id="menu-why-{i}">{item.hint}</span>{/if}
       {/if}
     {/each}
   </div>
@@ -212,20 +227,23 @@
     text-align: left;
     transition: background var(--t-fast) var(--ease);
   }
-  button:hover:not(:disabled),
+  button:hover:not([aria-disabled='true']),
   button:focus-visible,
   .keyboard button:focus {
     background: var(--accent-soft);
     outline: none;
   }
-  button:disabled {
-    opacity: 0.45;
+  /* Its content is dimmed, not its background: reached by the arrows, it shows it is current. */
+  button[aria-disabled='true'] {
     cursor: not-allowed;
+  }
+  button[aria-disabled='true'] > * {
+    opacity: 0.45;
   }
   button.danger {
     color: var(--bad);
   }
-  button.danger:hover:not(:disabled),
+  button.danger:hover:not([aria-disabled='true']),
   button.danger:focus-visible,
   .keyboard button.danger:focus {
     background: var(--bad-soft);
