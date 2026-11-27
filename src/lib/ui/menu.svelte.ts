@@ -59,7 +59,7 @@ if (typeof window !== 'undefined') {
   // has the focus, not always to that one: its own menu did not open, and the engine showed its
   // own. It is sent again to the element that has the focus, or, for a list that keeps the focus
   // and points to its current row (`aria-activedescendant`, the graph), to that row. A text field
-  // keeps the menu of the system (cut, copy, paste).
+  // keeps the editing menu of the engine (cut, copy, paste): see the listener below.
   window.addEventListener(
     'contextmenu',
     (event) => {
@@ -82,23 +82,52 @@ if (typeof window !== 'undefined') {
       const target = row || focused;
       event.preventDefault();
       event.stopPropagation();
-      // A `contextmenu` that nobody handled has the menu of the engine as its default action: the
-      // window prevents it last, if it bubbles up to the window without a menu having stopped it.
-      const resent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
-      const quiet = (e: Event) => {
-        if (e === resent) e.preventDefault();
-      };
+      // Sent by the script, it has no default action of the engine: one that no menu takes opens
+      // nothing.
       resending = true;
-      window.addEventListener('contextmenu', quiet);
       try {
-        target.dispatchEvent(resent);
+        target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
       } finally {
-        window.removeEventListener('contextmenu', quiet);
         resending = false;
       }
     },
     true,
   );
+  // A right-click that no menu of the application took opens nothing: the navigation menu of the
+  // engine ("Back", "Reload") has no place in an application, and "Reload" would lose the state of
+  // the window. Its editing menu stays where it serves: a text field (cut, copy, paste), a
+  // terminal, whose field xterm puts under the pointer as the click comes, and a text selected
+  // with the mouse (copy) (guidelines, 9.9). From the keyboard, the engine may aim at the element
+  // under the corner of the one that has the focus: the focused field counts too.
+  window.addEventListener('contextmenu', (event) => {
+    if (event.defaultPrevented) return;
+    const editing = (element: unknown) => element instanceof Element && (textField(element) || !!element.closest('.xterm'));
+    if (editing(event.target) || (fromKeyboard(event) && editing(document.activeElement))) return;
+    if (onSelection(event.clientX, event.clientY)) return;
+    event.preventDefault();
+  });
+}
+
+/** True when the point is on the text selected in the page. */
+function onSelection(x: number, y: number) {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return false;
+  for (let i = 0; i < selection.rangeCount; i++) {
+    for (const box of selection.getRangeAt(i).getClientRects()) {
+      if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) return true;
+    }
+  }
+  return false;
+}
+
+/** The inputs that take no text: a right-click on them gets no menu of the system. */
+const NOT_TEXT = new Set(['radio', 'checkbox', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image', 'hidden']);
+
+/** True for a field where text is typed, which keeps the menu of the system (guidelines, 9.9). */
+function textField(element: Element) {
+  if (element instanceof HTMLInputElement) return !NOT_TEXT.has(element.type);
+  if (element instanceof HTMLTextAreaElement) return true;
+  return element instanceof HTMLElement && element.isContentEditable;
 }
 
 class Menu {
