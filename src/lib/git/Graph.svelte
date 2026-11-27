@@ -420,7 +420,8 @@
 
   /** Keyboard focus: the list always has a selected and visible commit, which carries the marker. */
   function onFocus() {
-    if (!commits.length || !scroller?.matches(':focus-visible')) return;
+    // From the keyboard: Tab, or a focus the application gives with the ring (a tab shown, 11).
+    if (!commits.length || !(scroller?.matches(':focus-visible') || scroller?.classList.contains('focus-ring'))) return;
     if (repo.selected < 0) repo.selected = 0;
     reveal(repo.selected);
   }

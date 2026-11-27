@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
-  import { focusBack, focusLost, usable } from '../ui/focus';
+  import { focusBack, focusLost, focusWithRing, usable } from '../ui/focus';
   import { display, keys } from '../ui/keys.svelte';
   import Terminal from '../ssh/Terminal.svelte';
   import { mayCloseTerminal } from '../ssh/guard';
@@ -42,7 +42,8 @@
     e.preventDefault();
     const next = tabs[(to + tabs.length) % tabs.length];
     terminals.activate(next.key);
-    void tick().then(() => tabsEl?.querySelectorAll<HTMLElement>('[role="tab"]')[tabs.indexOf(next)]?.focus());
+    // A key: the tab shows its ring, even when the list was reached with a click.
+    void tick().then(() => focusWithRing(tabsEl?.querySelectorAll<HTMLElement>('[role="tab"]')[tabs.indexOf(next)]));
   }
 
   const combo = $derived(keys.binding('toggle-terminal'));

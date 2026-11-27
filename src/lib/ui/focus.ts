@@ -22,8 +22,13 @@ export function focusBack(element: HTMLElement | null | undefined) {
 
 export function focusWithRing(element: HTMLElement | null | undefined) {
   if (!element) return;
-  element.focus();
+  // Before the focus: an element that reacts to its arrival sees that it comes with the ring.
   element.classList.add('focus-ring');
+  element.focus();
+  if (document.activeElement !== element) {
+    element.classList.remove('focus-ring');
+    return;
+  }
   // The ring goes with the focus, or at the first click: the mouse takes over again, and an element
   // that keeps the focus (the list of the graph, one of whose rows is clicked) no longer shows it.
   const off = () => {
