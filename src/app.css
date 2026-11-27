@@ -822,6 +822,12 @@ dialog {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+/* A field given the keyboard by a script shows the focus of a field, not a ring (guidelines, 9.3). */
+.field.focus-ring:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
 
 /* A dialog takes the focus when it opens: its fields are what show it. */
 dialog:focus-visible {

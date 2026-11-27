@@ -5,6 +5,7 @@
 
 <script lang="ts">
   import { tick } from 'svelte';
+  import { focusBack } from '../ui/focus';
   import { prefs, savePrefs } from '../git/prefs.svelte';
   import { workspace } from '../git/workspace.svelte';
   import { mayRestart, restartLosses } from '../ssh/guard';
@@ -12,7 +13,6 @@
   import { ssh } from '../ssh/ssh.svelte';
   import Switch from '../ui/Switch.svelte';
   import { date } from '../ui/dates';
-  import { focusWithRing } from '../ui/focus';
   import Icon from '../ui/Icon.svelte';
   import ProgressBar from '../ui/ProgressBar.svelte';
   import { updates } from '../ui/updates.svelte';
@@ -77,7 +77,7 @@
   let box = $state<HTMLElement>();
   async function follow() {
     await tick();
-    focusWithRing(box?.querySelector<HTMLButtonElement>('button'));
+    focusBack(box?.querySelector<HTMLButtonElement>('button'));
   }
 
   function download() {
@@ -107,6 +107,8 @@
       await follow();
     }
   }
+
+  let checkButton = $state<HTMLButtonElement>();
 </script>
 
 <section class="group" aria-labelledby="group-updates">
@@ -121,7 +123,21 @@
       {#if info.canUpdate}
         <!-- While it runs, the button says so (guidelines, 9.1). A version that downloads, is ready
              or installs is not looked for again: the box is the reason, and the tooltip says it. -->
-        <button class="btn small check" type="button" disabled={updates.checking || settled !== ''} title={settled} onclick={() => void updates.check(true)}>
+        <button
+          class="btn small check"
+          type="button"
+          bind:this={checkButton}
+          disabled={updates.checking || settled !== ''}
+          title={settled}
+          onclick={async () => {
+            // Disabled while it checks, it drops the keyboard: it gets it back after (guidelines, 11).
+            const keyboard = document.activeElement === checkButton;
+            await updates.check(true);
+            await tick();
+            const active = document.activeElement;
+            if (keyboard && (!active || active === document.body) && checkButton && !checkButton.disabled) focusBack(checkButton);
+          }}
+        >
           {updates.checking ? 'Checking…' : 'Check for updates'}
         </button>
         {#if !updates.checking && checked}

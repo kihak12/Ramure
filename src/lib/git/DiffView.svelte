@@ -1,6 +1,9 @@
 <script lang="ts">
   import { SvelteSet } from 'svelte/reactivity';
   import { fly } from 'svelte/transition';
+  import { tick } from 'svelte';
+  import Choice from '../ui/Choice.svelte';
+  import { focusBack, focusLost } from '../ui/focus';
   import Icon from '../ui/Icon.svelte';
   import { prefs, savePrefs, type DiffMode } from './prefs.svelte';
   import type { Diff } from './types';
@@ -106,6 +109,16 @@
     selected.clear();
     anchor = -1;
     cursor = -1;
+  });
+  // The keyboard was in the diff, on "Stage hunk" or "Stage 3 lines" for instance: the diff read
+  // again has no such button, and the keyboard goes to its lines (guidelines, 9.14 and 11).
+  let holding = false;
+  $effect(() => {
+    void diff;
+    if (!holding) return;
+    void tick().then(() => {
+      if (focusLost() && linesEl?.isConnected) focusBack(linesEl);
+    });
   });
   // The lines picked are known outside the diff, and forgotten when it closes (9.14).
   $effect(() => {
@@ -282,6 +295,12 @@
     root?.querySelector<HTMLElement>('.lines')?.focus();
   };
   const setMode = (mode: DiffMode) => savePrefs({ diffMode: mode });
+  const MODES = [
+    { value: 'unified', label: 'Unified' },
+    { value: 'split', label: 'Side by side' },
+  ] as const satisfies readonly { value: DiffMode; label: string }[];
+  // The radio buttons of each diff are a group of their own: a hidden tab keeps its diff.
+  const uid = $props.id();
 
   const applySelection = () => onapply?.([...selected]);
   const applyHunk = (hunk: number) => onapply?.(changes.filter((l) => l.hunk === hunk).map((l) => l.index));
@@ -296,7 +315,6 @@
 
   // The line of the keyboard cursor, and whether it is picked, said as it moves (guidelines, 9.14
   // and 11): the area keeps the focus, and the line itself cannot take it.
-  const uid = $props.id();
   const keysId = `diff-keys-${uid}`;
   $effect(() => {
     if (cursor < 0 || !parsed) return;
@@ -307,14 +325,29 @@
   });
 </script>
 
-<section class="diff" bind:this={root} aria-label="Diff of {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
+<section
+  class="diff"
+  bind:this={root}
+  onfocusin={() => (holding = true)}
+  onfocusout={(e) => {
+    // Gone to another part of the window: a button that leaves takes the keyboard nowhere, it does not count.
+    if (e.relatedTarget && !root?.contains(e.relatedTarget as Node)) holding = false;
+  }} aria-label="Diff of {title}" in:fly={{ y: 14, duration: motion.med }} out:fly={{ y: 10, duration: motion.fast }}>
   <header>
     <div class="names">
       <b class="mono" {title}>{title}</b>
       {#if subtitle}<small>{subtitle}</small>{/if}
     </div>
     {#if canSelect && selected.size}
-      <button class="btn small" type="button" onclick={() => selected.clear()}>Clear selection</button>
+      <button
+        class="btn small"
+        type="button"
+        onclick={() => {
+          // The button goes with the selection: the keyboard goes to the lines.
+          selected.clear();
+          void tick().then(() => focusLost() && linesEl && focusBack(linesEl));
+        }}>Clear selection</button
+      >
       <button class="btn primary small" type="button" disabled={busy} onclick={applySelection} title="Enter, in the list of lines">
         {verb} {selected.size.toLocaleString('en-US')} line{selected.size === 1 ? '' : 's'}
       </button>
@@ -324,9 +357,9 @@
     {#if parsed && (parsed.added || parsed.removed)}
       <span class="count mono"><span class="plus">+{parsed.added}</span> <span class="minus">−{parsed.removed}</span></span>
     {/if}
-    <div class="modes" role="group" aria-label="Diff layout">
-      <button type="button" aria-pressed={!split} onclick={() => setMode('unified')} title="One column">Unified</button>
-      <button type="button" aria-pressed={split} onclick={() => setMode('split')} title="Old on the left, new on the right">Side by side</button>
+    <!-- The layout, a choice in segments (9.19): one stop, on the layout shown; the arrows change it. -->
+    <div class="modes">
+      <Choice name="diff-mode-{uid}" layout="segments" label="Diff layout" value={split ? 'split' : 'unified'} options={MODES} onchange={setMode} />
     </div>
     <button class="btn" type="button" onclick={onclose} title="Close the diff (Escape)"><Icon name="x" size={14} /> Close</button>
   </header>
@@ -519,16 +552,19 @@
   .diff > header {
     grid-row: 1;
   }
+  /* At the narrowest, the header wraps rather than cut "Close" (9.14). */
   header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    padding: 6px 10px 6px 14px;
+    gap: 6px 10px;
+    padding: 6px 10px 6px 12px;
     border-bottom: 1px solid var(--line-soft);
     min-width: 0;
   }
+  /* The name of the file keeps a place of its own: the hint and the counts give way before it. */
   .names {
-    flex: 1;
+    flex: 1 0 80px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -549,41 +585,18 @@
     font-size: var(--fs-small);
   }
   .hint {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
   .count {
     font-size: var(--fs-label);
     white-space: nowrap;
   }
-  /* Toggle between the two layouts */
+  /* The layout: segments, which never shrink; the hint gives way first (9.14). */
   .modes {
-    display: flex;
-    padding: 2px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--bg);
-  }
-  .modes button {
-    padding: 2px 9px;
-    border: 0;
-    border-radius: var(--radius-s);
-    background: none;
-    color: var(--muted);
-    font-size: var(--fs-label);
-    cursor: pointer;
-    white-space: nowrap;
-    transition:
-      background var(--t-fast) var(--ease),
-      color var(--t-fast) var(--ease);
-  }
-  .modes button:hover {
-    color: var(--ink);
-  }
-  .modes button[aria-pressed='true'] {
-    background: var(--raised);
-    color: var(--ink);
-    font-weight: var(--fw-strong);
-    box-shadow: var(--shadow-soft);
+    flex: none;
   }
   .plus {
     color: var(--ok);
@@ -593,7 +606,7 @@
   }
   .note {
     margin: 0;
-    padding: 18px;
+    padding: 16px;
     color: var(--muted);
   }
   .note.err {

@@ -128,6 +128,7 @@
 <dialog
   bind:this={element}
   aria-labelledby="export-title"
+  aria-describedby="export-intro"
   oncancel={(e) => {
     e.preventDefault();
     if (!busy) close();
@@ -141,7 +142,7 @@
   <form class="box" onsubmit={exportChosen} onkeydown={onKey}>
     <header>
       <h2 id="export-title">Export to ~/.ssh/config</h2>
-      <p>Ramure adds or updates these hosts. The rest of the file is left untouched, and the old file is copied to <code>~/.ssh/config.ramure.bak</code>.</p>
+      <p id="export-intro">Ramure adds or updates these hosts. The rest of the file is left untouched, and the old file is copied to <code>~/.ssh/config.ramure.bak</code>.</p>
       {#if someModified}
         <p>A changed entry keeps the version of the file until you check it.</p>
       {/if}

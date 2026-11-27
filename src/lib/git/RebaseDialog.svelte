@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import { focusBack } from '../ui/focus';
   import { veil } from '../ui/veil';
   import { flip } from 'svelte/animate';
   import Icon from '../ui/Icon.svelte';
@@ -76,10 +77,30 @@
     repo.rebasePlan = null;
     await repo.rebaseInteractive(base, todo);
   }
+
+  /** "Move up" or "Move down": the row moves with the keyboard; at an end, the button pressed is
+   *  disabled and drops it, and the other one of the row takes it (guidelines, 11). */
+  function moved(e: MouseEvent, from: number, to: number) {
+    const pressed = e.currentTarget as HTMLButtonElement;
+    const moves = pressed.parentElement;
+    // The button had the focus: pressed from the keyboard, or clicked (a click focuses it too).
+    const held = document.activeElement === pressed;
+    move(from, to);
+    void tick().then(() => {
+      if (!held || !moves) return;
+      // The row moved in the list, or the button pressed was disabled where it is, which WebKit
+      // drops a moment later: the keyboard goes to the button of the row that can still be pressed.
+      const active = document.activeElement;
+      if (active && active !== document.body && active !== element && !(active as HTMLButtonElement).disabled) return;
+      focusBack(pressed.isConnected && !pressed.disabled ? pressed : moves.querySelector<HTMLButtonElement>('button:not(:disabled)'));
+    });
+  }
 </script>
 
 <dialog
   bind:this={element}
+  aria-labelledby="rebase-title"
+  aria-describedby="rebase-intro"
   oncancel={(e) => {
     e.preventDefault();
     cancel();
@@ -96,8 +117,8 @@
       }}
     >
       <header>
-        <h2>Interactive rebase</h2>
-        <p>
+        <h2 id="rebase-title">Interactive rebase</h2>
+        <p id="rebase-intro">
           {items.length} commit{items.length === 1 ? '' : 's'} of <b class="mono">{repo.branch ?? 'HEAD'}</b>, from the oldest (at the top) to the newest (at the bottom).
           Drag a row or use the arrows to change the order.
         </p>
@@ -147,8 +168,10 @@
               {/if}
             </div>
             <span class="moves">
-              <button type="button" aria-label="Move up" title="Move up" disabled={n === 0} onclick={() => move(n, n - 1)}><Icon name="up" size={14} /></button>
-              <button type="button" aria-label="Move down" title="Move down" disabled={n === items.length - 1} onclick={() => move(n, n + 1)}><Icon name="down" size={14} /></button>
+              <button type="button" aria-label="Move up: {item.subject}" title="Move up" disabled={n === 0} onclick={(e) => moved(e, n, n - 1)}><Icon name="up" size={14} /></button>
+              <button type="button" aria-label="Move down: {item.subject}" title="Move down" disabled={n === items.length - 1} onclick={(e) => moved(e, n, n + 1)}
+                ><Icon name="down" size={14} /></button
+              >
             </span>
           </li>
         {/each}

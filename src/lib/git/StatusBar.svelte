@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusBack } from '../ui/focus';
   import { fly } from 'svelte/transition';
   import Icon from '../ui/Icon.svelte';
   import type { Repo } from './repo.svelte';
@@ -8,6 +9,21 @@
   let { repo }: { repo: Repo } = $props();
 
   let showLog = $state(false);
+  let logButton = $state<HTMLButtonElement>();
+  let logEl = $state<HTMLElement>();
+
+  // Escape closes the command log first, the topmost floating element, and gives the keyboard back
+  // to its button when the keyboard was in it (guidelines, 9.13 and 11).
+  function onLogKey(e: KeyboardEvent) {
+    // The log of a tab not shown leaves Escape alone.
+    // A menu or a dialog open over it uses Escape first: the next press closes the log.
+    if (!showLog || e.key !== 'Escape' || !logEl?.getClientRects().length || document.querySelector('dialog[open], [role="menu"]')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const inside = !!logEl?.contains(document.activeElement);
+    showLog = false;
+    if (inside) focusBack(logButton);
+  }
   // Clock of the status bar: ages “2 min ago” without any other event.
   let now = $state(Date.now());
 
@@ -42,9 +58,12 @@
   });
 </script>
 
+<svelte:window onkeydowncapture={onLogKey} />
+
 <footer class="status">
   <span class="branch mono">{#if repo.branch}<Icon name="branch" size={14} /> {repo.branch}{/if}</span>
   <button
+    bind:this={logButton}
     class="log-btn"
     class:mono={!!last}
     type="button"
@@ -79,7 +98,9 @@
   </div>
 
   {#if showLog}
-    <div class="log" transition:fly={{ y: 10, duration: motion.med }}>
+    <!-- A stop of the tab order after its button, so that the keyboard scrolls it (9.13). -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div class="log" data-command-log role="region" aria-label="Command log" tabindex="0" bind:this={logEl} transition:fly={{ y: 10, duration: motion.med }}>
       <span class="label">Command log · most recent first</span>
       {#each [...repo.journal].reverse() as entry, i (i)}
         <div class="entry mono" class:failed={!entry.ok}>
@@ -170,6 +191,10 @@
   }
   .stats .bad {
     color: var(--bad);
+  }
+  /* The log scrolls: its ring is drawn inside its edge. */
+  .log:focus-visible {
+    outline-offset: -2px;
   }
   .log {
     position: absolute;

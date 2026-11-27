@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick, untrack } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { focusBack } from '../ui/focus';
+  import { focusBack, focusLost, usable } from '../ui/focus';
   import Icon from '../ui/Icon.svelte';
   import { discardFiles } from './actions';
   import FileList from './FileList.svelte';
@@ -80,7 +80,7 @@
   function onKey(e: KeyboardEvent) {
     if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
-    if (canCommit) void repo.commit();
+    if (canCommit) void commit();
     else if (blocker) {
       nudged = true;
       nudges++;
@@ -98,6 +98,16 @@
     void nudges;
     if (untrack(() => nudged && blocker)) announcer.say(untrack(() => blocker));
   });
+
+  /** Commits; the keyboard, dropped while the field and the button were disabled, goes back to
+   *  the message, or to the graph when the panel gave way to the new commit (guidelines, 11). */
+  async function commit() {
+    await repo.commit();
+    await tick();
+    if (!focusLost()) return;
+    const field = document.getElementById('commit-message');
+    focusBack(field && !field.closest('[inert]') ? field : usable('[role="listbox"][aria-label="Commit history"]'));
+  }
 </script>
 
 <!-- data-file-lists: where the keyboard goes when a list of files empties (guidelines, 9.6). -->
@@ -219,7 +229,7 @@
         type="button"
         disabled={!canCommit}
         aria-describedby={describedBy}
-        onclick={() => void repo.commit()}
+        onclick={() => void commit()}
         title={blocker || 'Ctrl + Enter'}
       >
         {#if repo.amend}

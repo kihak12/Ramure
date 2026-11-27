@@ -123,6 +123,7 @@
 <dialog
   bind:this={element}
   aria-labelledby="import-title"
+  aria-describedby="import-intro"
   oncancel={(e) => {
     e.preventDefault();
     if (!busy) close();
@@ -136,7 +137,7 @@
   <form class="box" onsubmit={importChosen} onkeydown={onKey}>
     <header>
       <h2 id="import-title">{TITLE[ssh.importing?.source ?? 'ramure']}</h2>
-      <p>Ramure adds the hosts you check to the book. A host of the book is never changed or deleted.</p>
+      <p id="import-intro">Ramure adds the hosts you check to the book. A host of the book is never changed or deleted.</p>
     </header>
 
     <div class="list">

@@ -4,7 +4,7 @@
   import { onDestroy, tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
   import { menu, type MenuItem } from '../ui/menu.svelte';
-  import { focusWithRing } from '../ui/focus';
+  import { focusBack, focusWithRing } from '../ui/focus';
   import { ssh, STATUS } from '../ssh/ssh.svelte';
   import { count } from '../ssh/types';
   import ConnectPanel from './ConnectPanel.svelte';
@@ -63,6 +63,26 @@
   );
 
   let listEl = $state<HTMLElement>();
+  let paneEl = $state<HTMLElement>();
+
+  // The keyboard was in this pane, and what had it went: a location chosen, a connection open, the
+  // picker back after "Choose another location", "Go up", "Up" at the root. It goes to the list of
+  // the pane, else to the filter of the picker, with its ring after a key (guidelines, 9.24).
+  let holding = false;
+  $effect(() => {
+    void pane.location;
+    void pane.phase.step;
+    void pane.path;
+    void listEl;
+    if (!holding) return;
+    void tick().then(() => {
+      const active = document.activeElement;
+      // A control disabled where it is ("Up" at the root) may keep the focus in WebKit: it counts as lost.
+      if (active && active !== document.body && active.isConnected && !active.closest('[inert]') && !(active as HTMLButtonElement).disabled) return;
+      const target = listEl?.isConnected ? listEl : paneEl?.querySelector<HTMLElement>('.picker input');
+      if (target) focusBack(target);
+    });
+  });
   let crumbsEl = $state<HTMLElement>();
   // The end of a long path stays in view; a short one starts on the left (guidelines, 9.24).
   $effect(() => {
@@ -206,11 +226,14 @@
     listEl?.querySelector<HTMLElement>(`#${atParent ? upId : rowId(currentIndex)}`)?.scrollIntoView({ block: 'nearest' });
   }
 
-  function move(to: number, extend: boolean) {
+  /** Moves the current row: with Shift, the selection extends to it; with Ctrl, it stays as it is,
+   *  so that Space adds rows that are not next to each other (guidelines, 9.24, "Selecting"). */
+  function move(to: number, extend: boolean, keep = false) {
     if (!rows.length) return;
     const index = Math.max(0, Math.min(rows.length - 1, to));
     const name = rows[index].name;
-    if (extend) selectRange(name);
+    if (keep) pane.current = name;
+    else if (extend) selectRange(name);
     else selectOnly(name);
     void scrollToCurrent();
   }
@@ -239,34 +262,36 @@
     }
     const entry = currentIndex >= 0 ? rows[currentIndex] : null;
     const page = Math.max(1, Math.floor((listEl?.clientHeight ?? 240) / 24) - 1);
+    // Ctrl with a key that moves: the current row moves, the selection stays (9.24).
+    const keep = (e.ctrlKey || e.metaKey) && !e.shiftKey;
     switch (e.key) {
       case 'ArrowDown':
         if (e.altKey) return;
         e.preventDefault();
-        move(currentIndex + 1, e.shiftKey);
+        move(currentIndex + 1, e.shiftKey, keep);
         return;
       case 'ArrowUp':
         e.preventDefault();
         if (e.altKey) files.up(pane);
-        else if (parent !== null && !e.shiftKey && currentIndex <= 0) toParentRow();
-        else move(currentIndex < 0 ? 0 : currentIndex - 1, e.shiftKey);
+        else if (parent !== null && !e.shiftKey && !keep && currentIndex <= 0) toParentRow();
+        else move(currentIndex < 0 ? 0 : currentIndex - 1, e.shiftKey, keep);
         return;
       case 'PageDown':
         e.preventDefault();
-        move(currentIndex + page, e.shiftKey);
+        move(currentIndex + page, e.shiftKey, keep);
         return;
       case 'PageUp':
         e.preventDefault();
-        move(currentIndex - page, e.shiftKey);
+        move(currentIndex - page, e.shiftKey, keep);
         return;
       case 'Home':
         e.preventDefault();
-        if (parent !== null && !e.shiftKey) toParentRow();
-        else move(0, e.shiftKey);
+        if (parent !== null && !e.shiftKey && !keep) toParentRow();
+        else move(0, e.shiftKey, keep);
         return;
       case 'End':
         e.preventDefault();
-        move(rows.length - 1, e.shiftKey);
+        move(rows.length - 1, e.shiftKey, keep);
         return;
       case 'Enter':
         if (atParent) {
@@ -274,7 +299,10 @@
           files.up(pane);
         } else if (entry?.dir) {
           e.preventDefault();
-          files.open(pane, entry);
+          // The folder entered starts on its parent row, with the ring: the keyboard is somewhere (9.24).
+          void files.list(pane, joinPath(pane.path, entry.name)).then(() => {
+            if (pane.current === null) pane.current = parentPath(pane.path) !== null ? UP : (rows[0]?.name ?? null);
+          });
         } else if (entry) {
           // A file goes to the pane next to this one, with the selection when it is part of it.
           // Enter held down copies once.
@@ -304,8 +332,9 @@
         void files.refresh(pane);
         return;
       case ' ':
+        // On the parent row, which is never selected, or in an empty list, Space does nothing (9.24).
+        e.preventDefault();
         if (entry) {
-          e.preventDefault();
           pane.selected = selected.has(entry.name) ? pane.selected.filter((n) => n !== entry.name) : [...pane.selected, entry.name];
           pane.anchor = entry.name;
         }
@@ -327,6 +356,16 @@
     }
   }
 
+  // The list took the keyboard before its rows came (a location chosen, a connection open): once
+  // they are there, it gets its current row, with its ring; a folder with only its parent row
+  // starts on it (guidelines, 9.6 and 9.24).
+  $effect(() => {
+    void rows.length;
+    void parent;
+    if (pane.current !== null || band || files.drag || !listEl || document.activeElement !== listEl) return;
+    onListFocus();
+  });
+
   /** A list that takes the focus with no current row starts on the first (guidelines, 9.6). */
   function onListFocus() {
     files.focused = pane.key;
@@ -336,6 +375,9 @@
       pane.current = rows[0].name;
       pane.anchor = rows[0].name;
       if (!pane.selected.length) pane.selected = [rows[0].name];
+    } else if (pane.current === null && parent !== null && !files.drag) {
+      // A folder with only its parent row starts on it: the ring shows where the keyboard is (9.24).
+      pane.current = UP;
     }
   }
 
@@ -679,7 +721,15 @@
   bind:clientWidth={paneWidth}
   data-pane={pane.key}
   aria-label={label}
-  onfocusin={() => (files.focused = pane.key)}
+  bind:this={paneEl}
+  onfocusin={() => {
+    files.focused = pane.key;
+    holding = true;
+  }}
+  onfocusout={(e) => {
+    // Gone elsewhere: a control that leaves takes the keyboard nowhere, it does not count.
+    if (e.relatedTarget && !paneEl?.contains(e.relatedTarget as Node)) holding = false;
+  }}
   onpointerdown={() => (files.focused = pane.key)}
   ondragover={dragOver}
   ondragleave={dragLeave}
@@ -832,6 +882,7 @@
           class:stale={pane.loading}
           role="listbox"
           tabindex="0"
+          data-main={files.focused === pane.key ? '' : undefined}
           aria-label="Files of {label}"
           aria-multiselectable="true"
           aria-activedescendant={atParent ? upId : currentIndex >= 0 ? rowId(currentIndex) : undefined}

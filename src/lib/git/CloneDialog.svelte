@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import { focusBack } from '../ui/focus';
   import { veil } from '../ui/veil';
   import { Channel, invoke } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';
@@ -86,6 +88,13 @@
     } finally {
       running = false;
     }
+    // The fields and the buttons were disabled while it ran, and dropped the keyboard: a failure,
+    // said under them, gives it to "Clone", as a refusal with no field does (guidelines, 9.10).
+    if (workspace.cloning) {
+      await tick();
+      const active = document.activeElement;
+      if (!active || active === document.body || active === element) focusBack(element?.querySelector<HTMLElement>('button[type="submit"]'));
+    }
   }
 
   function cancel() {
@@ -100,6 +109,7 @@
 
 <dialog
   bind:this={element}
+  aria-labelledby="clone-title"
   oncancel={(e) => {
     e.preventDefault();
     cancel();
@@ -112,7 +122,7 @@
   <form onsubmit={run}>
     <!-- The content scrolls if the window is too low; the last line stays in view (guidelines, 9.10). -->
     <div class="content">
-    <h2>Clone repository</h2>
+    <h2 id="clone-title">Clone repository</h2>
 
     <label class="row">
       <span class="label">Repository URL</span>

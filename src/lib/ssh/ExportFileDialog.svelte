@@ -127,6 +127,7 @@
 <dialog
   bind:this={element}
   aria-labelledby="export-file-title"
+  aria-describedby="export-file-intro"
   oncancel={(e) => {
     e.preventDefault();
     if (!busy) close();
@@ -139,7 +140,7 @@
   <form class="box" onsubmit={exportChosen} onkeydown={onKey}>
     <header>
       <h2 id="export-file-title">Export to a Ramure file</h2>
-      <p>Ramure writes the hosts you check into a file you can hand to someone. Passwords and passphrases are never written.</p>
+      <p id="export-file-intro">Ramure writes the hosts you check into a file you can hand to someone. Passwords and passphrases are never written.</p>
       <p>The file holds names, addresses, users, key paths, groups, tags, colors, startup commands and tunnels.</p>
       {#if hosts.length > 8}
         <label class="search">

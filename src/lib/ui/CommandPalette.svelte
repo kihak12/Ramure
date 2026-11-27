@@ -60,7 +60,29 @@
     command.run();
   }
 
+  /** The first or the last command that can be run. */
+  function end(last: boolean) {
+    const order = results.map((_, i) => i);
+    const found = (last ? order.reverse() : order).find((i) => !results[i].disabled);
+    if (found === undefined) return;
+    active = found;
+    // To the very end of the list, the title of the first group and the last row in view.
+    queueMicrotask(() => list?.scrollTo({ top: last ? list.scrollHeight : 0 }));
+  }
+
   function onKey(event: KeyboardEvent) {
+    // The palette is one stop: Tab does not leave the field for what cannot be seen (9.12).
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      return;
+    }
+    // Home and End go to the ends of the list while the field is empty; once something is typed,
+    // they move in the text (9.6, 9.12).
+    if ((event.key === 'Home' || event.key === 'End') && !query && !event.shiftKey) {
+      event.preventDefault();
+      end(event.key === 'End');
+      return;
+    }
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       move(1);
@@ -125,7 +147,8 @@
           >
             <span class="glyph">{#if command.icon}<Icon name={command.icon} size={16} />{/if}</span>
             <span class="title">{command.title}</span>
-            {#if command.hint}<span class="hint">{command.hint}</span>{/if}
+            <!-- A git command is in the code font (3.1); the hint is cut, and whole in its tooltip (3.4). -->
+            {#if command.hint}<span class="hint" class:mono={command.hint.startsWith('git ')} title={command.detail ?? command.hint}>{command.hint}</span>{/if}
             {#if command.shortcut}<span class="keys">{#each command.shortcut.split(' + ') as part, n (n)}<kbd>{part}</kbd>{/each}</span>{/if}
           </div>
         {:else}
@@ -181,6 +204,11 @@
     border-bottom: 1px solid var(--line);
     color: var(--muted);
   }
+  /* The field has the keyboard as long as the palette is open: a line in the accent under it
+     takes the place of its outline (11). */
+  .search:focus-within {
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
   .search input {
     flex: 1;
     min-width: 0;
@@ -213,9 +241,12 @@
   .item[aria-selected='true'] {
     background: var(--sel);
   }
+  /* A command that cannot run is dimmed, but not the reason on its row, which must read (9.12). */
   .item.disabled {
-    opacity: 0.45;
     cursor: not-allowed;
+  }
+  .item.disabled > :not(.hint) {
+    opacity: 0.45;
   }
   .glyph {
     flex: none;
@@ -240,6 +271,9 @@
     text-align: right;
     color: var(--muted);
     font-size: var(--fs-small);
+  }
+  .hint.mono {
+    font-family: var(--f-mono);
   }
   .keys {
     flex: none;

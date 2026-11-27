@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
+  import { focusBack } from '../ui/focus';
   import { comboOf, display, keys, refusal, SHORTCUTS } from '../ui/keys.svelte';
   import SectionHeader from './SectionHeader.svelte';
   import { settingsPage } from './settings.svelte';
@@ -39,6 +41,12 @@
 
   function onKey(event: KeyboardEvent) {
     if (!recording) return;
+    // Tab is never a shortcut: it ends the recording and goes on to the next control (9.18).
+    if (event.code === 'Tab' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      recording = null;
+      notice = null;
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     const id = recording;
@@ -55,9 +63,11 @@
     }
     const combo = comboOf(event);
     if (!combo) return; // a modifier key alone: wait for the rest
+    // Refused, the recording goes on: what the key does, or why, then what to do (12).
+    const local = keys.local(id, combo);
     const problem = refusal(combo);
-    if (problem) {
-      notice = { id, text: `${display(combo)}: ${problem}` };
+    if (problem || local) {
+      notice = { id, text: `${problem ? `${display(combo)}: ${problem}` : local} Press another combination.` };
       return;
     }
     const taken = keys.rival(id, combo);
@@ -114,6 +124,14 @@
           ? `Shortcut for “${shortcut.title}”: waiting for the new shortcut.`
           : `Shortcut for “${shortcut.title}”: ${combo ? display(combo) : 'none'}. Click to change it.`}
         onclick={() => start(shortcut.id)}
+        onblur={() => {
+          // The keyboard or a click went elsewhere: the recording ends there, and the keys typed
+          // next go where they are typed (guidelines, 9.18).
+          if (recording === shortcut.id) {
+            recording = null;
+            notice = null;
+          }
+        }}
       >
         {#if recording === shortcut.id}
           <span class="wait">Press the shortcut…</span>
@@ -129,9 +147,13 @@
         title="Restore default shortcut"
         aria-label="Restore default shortcut for “{shortcut.title}”"
         disabled={!keys.isCustom(shortcut.id)}
-        onclick={() => {
+        onclick={(e) => {
+          // Back to the default, the button is disabled and drops the keyboard: it goes to the
+          // combination of the row (guidelines, 11).
+          const combo = e.currentTarget.previousElementSibling;
           keys.reset(shortcut.id);
           notice = null;
+          void tick().then(() => combo instanceof HTMLElement && focusBack(combo));
         }}
       >
         <Icon name="undo" size={14} />
@@ -227,7 +249,13 @@
     border-radius: var(--radius-s);
     background: none;
     cursor: pointer;
-    transition: border-color var(--t-fast) var(--ease);
+    transition:
+      border-color var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* When pressed, a button shrinks to 97% (guidelines, 8). */
+  .combo:active {
+    transform: scale(0.97);
   }
   .combo:hover {
     border-color: var(--line);
@@ -260,6 +288,13 @@
     background: none;
     color: var(--muted);
     cursor: pointer;
+    transition:
+      background var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease);
+  }
+  /* When pressed, a button shrinks to 97% (guidelines, 8). */
+  .reset:active:not(:disabled) {
+    transform: scale(0.97);
   }
   .reset:hover:not(:disabled) {
     background: var(--line);
@@ -274,7 +309,7 @@
     gap: 8px;
     margin: 2px 0 6px;
     padding: 8px 10px;
-    border-radius: var(--radius-s);
+    border-radius: var(--radius);
     background: var(--warn-soft);
     color: var(--warn);
   }

@@ -1,6 +1,14 @@
+<script module lang="ts">
+  /** "Retry" pressed: the transfers there before it, while the copy started again has not come.
+   *  Kept out of the card, which goes while its last row is started again. */
+  let retrying: { before: Set<string> } | null = null;
+</script>
+
 <script lang="ts">
   // The card of the transfers, under the panes: progress, cancel, result (guidelines, 9.24).
+  import { tick } from 'svelte';
   import Icon from '../ui/Icon.svelte';
+  import { byKeyboard, focusBack } from '../ui/focus';
   import ProgressBar from '../ui/ProgressBar.svelte';
   import { count } from '../ssh/types';
   import { files, type Transfer } from './files.svelte';
@@ -17,6 +25,88 @@
   };
 
   const running = (t: Transfer) => t.state === 'counting' || t.state === 'copying';
+
+  let cardEl = $state<HTMLElement>();
+
+  /**
+   * The card keeps the keyboard (guidelines, 9.24 and 11). A button of a row is replaced when the
+   * state of its transfer changes, later than the press ("Cancel transfer" becomes "Remove" once
+   * the copy has stopped), or its row goes: whenever the card changes and the keyboard is then
+   * nowhere, it goes to the last button of the same row, else of the row in its place, the next
+   * then the previous; with no row left, to the active pane.
+   */
+  let last: { id: string; at: number } | null = null;
+  /** The rows of the card, those on screen. */
+  const rowsNow = () => [...(cardEl?.isConnected ? cardEl.querySelectorAll<HTMLElement>('li[data-transfer]') : [])];
+  const lastButton = (row: HTMLElement | undefined) => (row ? [...row.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')].at(-1) : undefined);
+  function noteFocus(event: FocusEvent) {
+    const row = event.target instanceof Element ? event.target.closest<HTMLElement>('li[data-transfer]') : null;
+    const rows = [...(cardEl?.querySelectorAll<HTMLElement>('li[data-transfer]') ?? [])];
+    last = { id: row?.dataset.transfer ?? '', at: row ? rows.indexOf(row) : 0 };
+  }
+  function leaving(event: FocusEvent) {
+    // Gone elsewhere with the keyboard or the mouse: the card no longer holds it.
+    if (event.relatedTarget && !cardEl?.contains(event.relatedTarget as Node)) last = null;
+  }
+  function giveBack() {
+    const active = document.activeElement;
+    const lost = !active || active === document.body || !active.isConnected || (active as HTMLButtonElement).disabled;
+    const rows = rowsNow();
+    if (retrying) {
+      // "Retry": the copy started again takes the row's place once its checks are done; the
+      // keyboard waits for it, then goes to its "Cancel transfer".
+      const before = retrying.before;
+      const fresh = rows.find((r) => !before.has(r.dataset.transfer ?? ''));
+      if (fresh) {
+        retrying = null;
+        if (lost) focusBack(lastButton(fresh));
+        return;
+      }
+      if (lost) return;
+      retrying = null;
+    }
+    if (!last || !lost) return;
+    const row = rows.find((r) => r.dataset.transfer === last?.id) ?? rows[Math.min(last.at, rows.length - 1)];
+    const target = lastButton(row);
+    if (target) return focusBack(target);
+    const pane = files.pane(files.focused);
+    last = null;
+    if (pane) void files.focus(pane, byKeyboard());
+  }
+  function retry(t: Transfer) {
+    // The changes of a watched file are sent again in the same row: nothing to wait for.
+    if (t.watch === undefined) {
+      retrying = { before: new Set(files.transfers.filter((o) => o.id !== t.id).map((o) => String(o.id))) };
+      // The copy started again lasts until it ends; one that is over with no row came to nothing
+      // (it could not start, every name was skipped): the keyboard goes on as after a row that goes.
+      void files.retry(t).finally(() => {
+        if (!retrying) return;
+        retrying = null;
+        giveBack();
+      });
+      return;
+    }
+    void files.retry(t);
+  }
+
+  $effect(() => {
+    if (!cardEl) return;
+    // A card that comes back with the copy started again by "Retry" (its row was the last one).
+    giveBack();
+    const watch = new MutationObserver(() => giveBack());
+    watch.observe(cardEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+    return () => watch.disconnect();
+  });
+  // The card goes with its last row (Remove, Clear finished): the keyboard goes to the active pane.
+  $effect(() => () => {
+    if (!last || retrying) return;
+    const pane = files.pane(files.focused);
+    void tick().then(() => {
+      const active = document.activeElement;
+      if ((!active || active === document.body) && pane) void files.focus(pane, byKeyboard());
+    });
+  });
+
   /** The bar takes the color of the result once it has ended (guidelines, 9.24). */
   const TONE = { waiting: 'warn', counting: 'accent', copying: 'accent', done: 'ok', incomplete: 'warn', failed: 'bad', canceled: 'muted' } as const;
   const finished = $derived(files.transfers.some((t) => !running(t) && t.state !== 'waiting'));
@@ -55,7 +145,14 @@
   }
 </script>
 
-<section class="transfers" aria-label="Transfers">
+<!-- A click elsewhere, on a part that takes no focus: the card no longer holds the keyboard. -->
+<svelte:window
+  onpointerdowncapture={(e) => {
+    if (!cardEl?.contains(e.target as Node)) last = null;
+  }}
+/>
+
+<section class="transfers" aria-label="Transfers" bind:this={cardEl} onfocusin={noteFocus} onfocusout={leaving}>
   <header>
     <span class="label count">Transfers · {files.transfers.length}</span>
     <button class="btn ghost small" type="button" disabled={!finished} onclick={() => files.clearFinished()}>Clear finished</button>
@@ -64,7 +161,7 @@
     {#each files.transfers as t (t.id)}
       {@const more = details(t)}
       <!-- A result to act on sits on a tinted box (guidelines, 9.24). -->
-      <li class:warn={t.state === 'incomplete' || t.state === 'waiting'} class:bad={t.state === 'failed'}>
+      <li data-transfer={t.id} class:warn={t.state === 'incomplete' || t.state === 'waiting'} class:bad={t.state === 'failed'}>
         <div class="row">
           <span class="state s-{t.state}">
             {#if running(t)}
@@ -103,7 +200,7 @@
               <Icon name="stop" size={14} />
             </button>
           {:else if t.state === 'failed'}
-            <button class="icon-btn" type="button" aria-label="Retry transfer of {t.title}" title="Retry" onclick={() => void files.retry(t)}>
+            <button class="icon-btn" type="button" aria-label="Retry transfer of {t.title}" title="Retry" onclick={() => retry(t)}>
               <Icon name="refresh" size={14} />
             </button>
           {:else}

@@ -8,9 +8,21 @@
   import RepoView from './RepoView.svelte';
   import { workspace } from './workspace.svelte';
   import { motion } from '../ui/motion';
+  import { focusBack, focusLost, remember, rescue } from '../ui/focus';
 
   /** True when the Git module is on screen. */
   let { active = true }: { active?: boolean } = $props();
+
+  // A repository tab shown from the keyboard (Ctrl + Tab) takes it, as a module does (11).
+  const views: Record<number, HTMLElement> = {};
+  let shownTab: number | null = null;
+  $effect(() => {
+    const id = workspace.activeId;
+    const changed = shownTab !== null && shownTab !== id;
+    shownTab = id;
+    if (!changed || !active) return;
+    void tick().then(() => setTimeout(() => rescue(views[id])));
+  });
 
   // The active tab stays on screen when the tabs overflow: the bar scrolls to it, and the scroll
   // margin keeps it to the left of the “+”.
@@ -21,6 +33,19 @@
   });
 
   // The “+” says what it opens, with its shortcut (guidelines, section 9.7).
+  // A tab closed, by its cross, the middle click or Ctrl + W: the keyboard it had, or the cross
+  // pressed, is gone; it goes to the tab shown now (guidelines, 11).
+  let count = workspace.tabs.length;
+  $effect(() => {
+    const now = workspace.tabs.length;
+    const closed = now < count;
+    count = now;
+    if (!closed || !active) return;
+    void tick().then(() => {
+      if (focusLost()) focusBack(tabsEl?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]'));
+    });
+  });
+
   const newTab = $derived(`New tab${keys.binding('tab-new') ? ` (${display(keys.binding('tab-new'))})` : ''}`);
 </script>
 
@@ -63,7 +88,7 @@
   <div class="views">
     {#each workspace.tabs as tab (tab.id)}
       {@const current = tab.id === workspace.activeId}
-      <section class="view" class:hidden={!current} inert={!current} role="tabpanel">
+      <section class="view" class:hidden={!current} inert={!current} role="tabpanel" bind:this={views[tab.id]} use:remember>
         <RepoView repo={tab.repo} active={active && current} />
       </section>
     {/each}
@@ -118,7 +143,7 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     padding: 6px 4px 6px 10px;
     border: 0;
     /* The corners of the tab: the focus ring follows them. */

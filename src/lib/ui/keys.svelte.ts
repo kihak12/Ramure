@@ -77,6 +77,20 @@ const DEFAULTS = new Map(SHORTCUTS.map((s) => [s.id, s.keys]));
 /** Text editing combinations: they cannot be given to an action. */
 const RESERVED = new Set(['Ctrl+C', 'Ctrl+V', 'Ctrl+X', 'Ctrl+A', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+Shift+Z']);
 
+/** Keys that act inside a list, an editor or a field of a module, where they are: given to an
+ *  action, they would stop doing it there (guidelines, 9.18 and 11). No scope: every module. */
+const LOCAL: { combo: string; scope?: Scope; does: string }[] = [
+  { combo: 'F2', does: 'F2 renames in the lists.' },
+  { combo: 'F5', scope: 'files', does: 'F5 refreshes a pane of the Files module.' },
+  { combo: 'Alt+ArrowUp', scope: 'files', does: 'Alt + ↑ goes up a folder in the Files module.' },
+  { combo: 'F7', scope: 'git', does: 'F7 goes to the previous conflict in the conflict editor.' },
+  { combo: 'Shift+F7', scope: 'git', does: 'Shift + F7 is used by the conflict editor.' },
+  { combo: 'F8', scope: 'git', does: 'F8 goes to the next conflict in the conflict editor.' },
+  { combo: 'Shift+F8', scope: 'git', does: 'Shift + F8 is used by the conflict editor.' },
+  { combo: 'Ctrl+S', scope: 'git', does: 'Ctrl + S saves in the conflict editor.' },
+  { combo: 'Ctrl+Enter', scope: 'git', does: 'Ctrl + Enter commits from the commit message.' },
+];
+
 /** Combination of a keyboard event, such as `Ctrl+Shift+F`; empty for a modifier key alone. */
 export function comboOf(event: KeyboardEvent): string {
   let key = event.key;
@@ -109,7 +123,7 @@ export function refusal(combo: string): string {
 export const display = (combo: string) =>
   combo
     .split(/\+(?!$)/)
-    .map((key) => (key === 'PageDown' ? 'Page Down' : key === 'PageUp' ? 'Page Up' : key))
+    .map((key) => ({ PageDown: 'Page Down', PageUp: 'Page Up', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' })[key] ?? key)
     .join(' + ');
 
 /**
@@ -144,6 +158,14 @@ class Keys {
   /** Command bound to a combination in the module `scope`, if there is one. */
   find(combo: string, scope: Scope): string | null {
     return SHORTCUTS.find((s) => this.binding(s.id) === combo && (!s.scope || s.scope === scope))?.id ?? null;
+  }
+
+  /** What `combo` already does inside the module of `id`, where it cannot be taken from; empty
+   *  when it does nothing there. */
+  local(id: string, combo: string): string {
+    const own = SHORTCUTS.find((s) => s.id === id);
+    const found = LOCAL.find((l) => l.combo === combo && (!own?.scope || !l.scope || l.scope === own.scope));
+    return found?.does ?? '';
   }
 
   /** The action that would lose `combo` if it were given to `id`, if there is one. */
